@@ -1,0 +1,40 @@
+# Node
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+
+# IDEs and editors
+.vscode/
+.idea/
+.DS_Store
+
+# Test coverage
+coverage/
+
+# Misc
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Nest CLI output
+.nest-cli.json
+
+
+.dynamodb/shared-local-instance.db
+
+#CDK
+cdk.out/
+infrastructure/.env
+infrastructure/cdk.context.json
+*storybook.log
+storybook-static
+
+.env
+.github/WORKFLOW_VARS.md

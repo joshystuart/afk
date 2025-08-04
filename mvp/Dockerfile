@@ -59,6 +59,5 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 # Expose ttyd port
 EXPOSE 7681
 
-# Start ttyd with claude
-CMD ["ttyd", "-p", "7681", "-W", "/workspace", "claude"]
+CMD ["ttyd", "-p", "7681", "-W", "claude"]
 

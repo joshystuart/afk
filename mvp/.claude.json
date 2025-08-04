@@ -1,0 +1,23 @@
+{
+  "hasCompletedOnboarding": true,
+  "lastOnboardingVersion": "1.0.51",
+  "projects": {
+    "/workspace": {
+      "allowedTools": [],
+      "history": [],
+      "dontCrawlDirectory": false,
+      "enableArchitectTool": false,
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "approvedMcprcServers": [],
+      "rejectedMcprcServers": [],
+      "exampleFiles": [],
+      "exampleFilesGeneratedAt": 1741180925950,
+      "hasCompletedProjectOnboarding": true,
+      "hasTrustDialogAccepted": true
+    }
+  },
+  "lastReleaseNotesSeen": "1.0.65",
+  "bypassPermissionsModeAccepted": true,
+  "verbose": true
+}

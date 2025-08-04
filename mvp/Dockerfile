@@ -25,7 +25,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   dnsutils \
   aggregate \
   jq \
+  curl \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install ttyd from GitHub releases
+RUN TTYD_VERSION=$(curl -s https://api.github.com/repos/tsl0922/ttyd/releases/latest | grep tag_name | cut -d '"' -f 4) && \
+    curl -sL https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64 -o /usr/local/bin/ttyd && \
+    chmod +x /usr/local/bin/ttyd
 
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
@@ -49,4 +55,10 @@ ENV PATH=$PATH:/usr/local/share/npm-global/bin
 
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+
+# Expose ttyd port
+EXPOSE 7681
+
+# Start ttyd with claude
+CMD ["ttyd", "-p", "7681", "-W", "/workspace", "claude"]
 

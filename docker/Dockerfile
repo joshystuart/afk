@@ -12,6 +12,7 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
 RUN apt-get update && apt-get install -y --no-install-recommends \
   less \
   git \
+  openssh-client \
   procps \
   sudo \
   fzf \
@@ -40,9 +41,10 @@ RUN mkdir -p /usr/local/share/npm-global && \
 ARG USERNAME=node
 
 # Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/node/.claude
+RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d
 COPY .claude.json /home/node/.claude.json
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d && \
+    chmod 700 /home/node/.ssh
 
 WORKDIR /workspace
 

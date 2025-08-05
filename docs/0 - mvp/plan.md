@@ -54,7 +54,7 @@ Since Wetty is having connection issues, here are alternative approaches:
 
 1. **Create Dockerfile with ttyd**
    ```dockerfile
-   # Dockerfile.mvp
+   # Dockerfile.docker
    FROM ubuntu:22.04
    
    # Avoid prompts from apt
@@ -109,14 +109,14 @@ Since Wetty is having connection issues, here are alternative approaches:
 
 2. **Create Docker Compose for MVP**
    ```yaml
-   # docker-compose.mvp.yml
+   # docker-compose.docker.yml
    version: '3.8'
    
    services:
      claude-ttyd:
        build:
          context: .
-         dockerfile: Dockerfile.mvp
+         dockerfile: Dockerfile.docker
        ports:
          - "7681:7681"  # ttyd web interface
        volumes:
@@ -246,7 +246,7 @@ Since Wetty is having connection issues, here are alternative approaches:
 5. **Run and Test MVP**
    ```bash
    # Using ttyd approach:
-   docker-compose -f docker-compose.mvp.yml up --build
+   docker-compose -f docker-compose.docker.yml up --build
    
    # Open browser to http://localhost:7681
    # No login required with ttyd!

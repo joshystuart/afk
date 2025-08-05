@@ -192,7 +192,11 @@ cleanup() {
     # Kill any remaining tmux sessions
     tmux kill-server 2>/dev/null || true
     
-    # SSH cleanup is handled by the setup-ssh.sh trap
+    # SSH cleanup - source the setup script to access cleanup function
+    if [ "$SSH_SETUP_DONE" = true ] && [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
+        source "$SCRIPT_DIR/setup-ssh.sh"
+        cleanup_ssh 2>/dev/null || true
+    fi
     
     log_info "Cleanup completed"
 }

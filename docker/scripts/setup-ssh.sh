@@ -187,8 +187,8 @@ cleanup_ssh() {
     log_info "SSH cleanup completed"
 }
 
-# Register cleanup trap
-trap cleanup_ssh EXIT
+# Note: Cleanup is handled by the parent startup script
+# Do not register EXIT trap here as it would cleanup before git operations
 
 # Main execution
 main() {

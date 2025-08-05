@@ -9,6 +9,13 @@ services:
       - "7681:7681"
     environment:
       - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
+      # Git Integration Environment Variables
+      - REPO_URL=${REPO_URL}
+      - REPO_BRANCH=${REPO_BRANCH:-main}
+      - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
+      - GIT_USER_NAME=${GIT_USER_NAME:-Claude User}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-claude@example.com}
+      - GIT_SSH_HOST=${GIT_SSH_HOST}
     volumes:
       - ./workspace:/workspace
       - /var/run/docker.sock:/var/run/docker.sock

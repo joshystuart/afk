@@ -41,10 +41,12 @@ RUN mkdir -p /usr/local/share/npm-global && \
 ARG USERNAME=node
 
 # Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d
+RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts
 COPY .claude.json /home/node/.claude.json
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d && \
-    chmod 700 /home/node/.ssh
+COPY scripts/ /home/node/scripts/
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts && \
+    chmod 700 /home/node/.ssh && \
+    chmod +x /home/node/scripts/*.sh
 
 WORKDIR /workspace
 
@@ -61,5 +63,5 @@ RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 # Expose ttyd port
 EXPOSE 7681
 
-CMD ["ttyd", "-p", "7681", "-W", "claude"]
+CMD ["/home/node/scripts/start-claude.sh"]
 

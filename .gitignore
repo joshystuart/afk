@@ -40,3 +40,4 @@ storybook-static
 .github/WORKFLOW_VARS.md
 
 .serena
+docker/workspace/*

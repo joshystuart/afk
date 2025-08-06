@@ -95,7 +95,15 @@ setup_git() {
             # Run git initialization in workspace directory
             cd "$WORKSPACE_DIR"
             
-            if bash "$SCRIPT_DIR/init-git.sh" "$REPO_URL"; then
+            # Source SSH agent environment if available and run git init with environment
+            if [ -f "$HOME/.ssh/agent.env" ]; then
+                source "$HOME/.ssh/agent.env"
+                env SSH_AUTH_SOCK="$SSH_AUTH_SOCK" SSH_AGENT_PID="$SSH_AGENT_PID" bash "$SCRIPT_DIR/init-git.sh" "$REPO_URL"
+            else
+                bash "$SCRIPT_DIR/init-git.sh" "$REPO_URL"
+            fi
+            
+            if [ $? -eq 0 ]; then
                 GIT_SETUP_DONE=true
                 
                 # Determine the repository directory name

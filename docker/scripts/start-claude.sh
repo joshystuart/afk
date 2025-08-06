@@ -147,9 +147,33 @@ configure_git_identity() {
     log_info "Git identity configured: $GIT_USER_NAME <$GIT_USER_EMAIL>"
 }
 
-# Start ttyd with tmux session
+# Start ttyd with simple claude command (no tmux)
+start_claude_simple() {
+    log_step "Starting Claude Code directly via ttyd (no tmux)"
+    
+    # Ensure working directory exists
+    if [ ! -d "$WORKING_DIR" ]; then
+        log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
+        mkdir -p "$WORKING_DIR"
+    fi
+    
+    # Change to working directory
+    cd "$WORKING_DIR"
+    
+    log_info "Starting ttyd on port $TTYD_PORT (simple mode)"
+    log_info "Working directory: $(pwd)"
+    log_info "Access the terminal at: http://localhost:$TTYD_PORT"
+    
+    # Start ttyd with claude directly - same as the original working command
+    exec ttyd \
+        --port "$TTYD_PORT" \
+        --writable \
+        claude
+}
+
+# Start ttyd with tmux session (original method)
 start_claude_terminal() {
-    log_step "Starting Claude Code terminal via ttyd"
+    log_step "Starting Claude Code terminal via ttyd with tmux"
     
     # Ensure working directory exists
     if [ ! -d "$WORKING_DIR" ]; then
@@ -275,7 +299,10 @@ main() {
     ) &
     
     # Step 5: Start the terminal (this will block)
-    start_claude_terminal
+    # Using simple mode for now to avoid tmux issues
+    start_claude_simple
+    # To use tmux mode, uncomment this and comment the line above:
+    # start_claude_terminal
 }
 
 # Show usage information

@@ -217,6 +217,124 @@ start_claude_terminal() {
         "
 }
 
+# Diagnostic version to debug tmux issues
+start_claude_terminal_debug() {
+    log_step "Starting Claude Code terminal via ttyd with tmux (DEBUG MODE)"
+    
+    # Ensure working directory exists
+    if [ ! -d "$WORKING_DIR" ]; then
+        log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
+        mkdir -p "$WORKING_DIR"
+    fi
+    
+    # Change to working directory
+    cd "$WORKING_DIR"
+    
+    log_info "Starting ttyd on port $TTYD_PORT (debug mode)"
+    log_info "Working directory: $(pwd)"
+    log_info "Access the terminal at: http://localhost:$TTYD_PORT"
+    
+    # Test 1: Simple tmux command without session creation
+    log_info "Test 1: Running ttyd with simple tmux command"
+    exec ttyd \
+        --port "$TTYD_PORT" \
+        --writable \
+        --debug 2 \
+        tmux new-session -A -s afk-main
+}
+
+# Alternative approach: Run tmux inside a shell
+start_claude_terminal_alt1() {
+    log_step "Starting Claude Code terminal via ttyd with tmux (Alternative 1)"
+    
+    # Ensure working directory exists
+    if [ ! -d "$WORKING_DIR" ]; then
+        log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
+        mkdir -p "$WORKING_DIR"
+    fi
+    
+    # Change to working directory
+    cd "$WORKING_DIR"
+    
+    log_info "Starting ttyd on port $TTYD_PORT (alt1)"
+    log_info "Working directory: $(pwd)"
+    log_info "Access the terminal at: http://localhost:$TTYD_PORT"
+    
+    # Start ttyd with bash that immediately runs tmux
+    exec ttyd \
+        --port "$TTYD_PORT" \
+        --writable \
+        bash -c "cd '$WORKING_DIR' && tmux new-session -A -s afk-main"
+}
+
+# Alternative approach: Use sh instead of bash
+start_claude_terminal_alt2() {
+    log_step "Starting Claude Code terminal via ttyd with tmux (Alternative 2)"
+    
+    # Ensure working directory exists
+    if [ ! -d "$WORKING_DIR" ]; then
+        log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
+        mkdir -p "$WORKING_DIR"
+    fi
+    
+    # Change to working directory
+    cd "$WORKING_DIR"
+    
+    log_info "Starting ttyd on port $TTYD_PORT (alt2)"
+    log_info "Working directory: $(pwd)"
+    log_info "Access the terminal at: http://localhost:$TTYD_PORT"
+    
+    # Use sh instead of bash
+    exec ttyd \
+        --port "$TTYD_PORT" \
+        --writable \
+        sh -c "cd '$WORKING_DIR' && exec tmux new-session -A -s afk-main"
+}
+
+# Dual TTY approach: Start two separate ttyd instances
+start_claude_dual_tty() {
+    log_step "Starting dual TTY sessions - Claude and Manual"
+    
+    # Environment variables for ports
+    local claude_port="${CLAUDE_PORT:-7681}"
+    local manual_port="${MANUAL_PORT:-7682}"
+    
+    # Ensure working directory exists
+    if [ ! -d "$WORKING_DIR" ]; then
+        log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
+        mkdir -p "$WORKING_DIR"
+    fi
+    
+    # Change to working directory
+    cd "$WORKING_DIR"
+    
+    log_info "Starting dual TTY sessions:"
+    log_info "  Claude session: http://localhost:$claude_port"
+    log_info "  Manual session: http://localhost:$manual_port"
+    log_info "Working directory: $(pwd)"
+    
+    # Start manual bash session in background
+    ttyd \
+        --port "$manual_port" \
+        --writable \
+        bash &
+
+    local manual_pid=$!
+    log_info "Manual session started (PID: $manual_pid) on port $manual_port"
+
+    # Wait a moment for the first session to start
+    sleep 2
+    
+    # Start Claude session in foreground (this will block)
+    log_info "Starting Claude session on port $claude_port"
+    
+    # Use same approach as simple mode - just call claude directly
+    exec ttyd \
+        --port "$claude_port" \
+        --writable \
+        claude
+}
+
 # Cleanup function
 cleanup() {
     log_info "Shutting down AFK terminal"
@@ -270,7 +388,13 @@ print_banner() {
     log_info "Git User: $GIT_USER_NAME <$GIT_USER_EMAIL>"
     log_info "SSH Key: ${SSH_PRIVATE_KEY:+'Provided'}${SSH_PRIVATE_KEY:-'Not provided'}"
     log_info "Working Directory: $WORKING_DIR"
-    log_info "TTY Port: $TTYD_PORT"
+    log_info "Terminal Mode: ${TERMINAL_MODE:-simple}"
+    if [ "${TERMINAL_MODE:-simple}" = "dual" ]; then
+        log_info "Claude Port: ${CLAUDE_PORT:-7681}"
+        log_info "Manual Port: ${MANUAL_PORT:-7682}"
+    else
+        log_info "TTY Port: $TTYD_PORT"
+    fi
     echo
 }
 
@@ -299,10 +423,39 @@ main() {
     ) &
     
     # Step 5: Start the terminal (this will block)
-    # Using simple mode for now to avoid tmux issues
-    start_claude_simple
-    # To use tmux mode, uncomment this and comment the line above:
-    # start_claude_terminal
+    # Select terminal mode based on TERMINAL_MODE environment variable
+    TERMINAL_MODE="${TERMINAL_MODE:-simple}"
+    
+    case "$TERMINAL_MODE" in
+        simple)
+            log_info "Using simple mode (no tmux)"
+            start_claude_simple
+            ;;
+        tmux)
+            log_info "Using original tmux mode"
+            start_claude_terminal
+            ;;
+        debug)
+            log_info "Using debug mode"
+            start_claude_terminal_debug
+            ;;
+        alt1)
+            log_info "Using alternative 1 (bash -c with tmux)"
+            start_claude_terminal_alt1
+            ;;
+        alt2)
+            log_info "Using alternative 2 (sh -c with tmux)"
+            start_claude_terminal_alt2
+            ;;
+        dual)
+            log_info "Using dual TTY mode (separate Claude and Manual sessions)"
+            start_claude_dual_tty
+            ;;
+        *)
+            log_warning "Unknown terminal mode: $TERMINAL_MODE, defaulting to simple"
+            start_claude_simple
+            ;;
+    esac
 }
 
 # Show usage information
@@ -317,6 +470,9 @@ usage() {
     echo "  GIT_USER_EMAIL    - Git user email (default: claude@example.com)"
     echo "  WORKSPACE_DIR     - Workspace directory (default: /workspace)"
     echo "  TTYD_PORT         - TTY port (default: 7681)"
+    echo "  TERMINAL_MODE     - Terminal mode: simple, tmux, dual (default: simple)"
+    echo "  CLAUDE_PORT       - Claude session port for dual mode (default: 7681)"
+    echo "  MANUAL_PORT       - Manual session port for dual mode (default: 7682)"
     echo
     echo "Examples:"
     echo "  # Start with public repository"
@@ -324,6 +480,9 @@ usage() {
     echo
     echo "  # Start with private repository"
     echo "  REPO_URL=git@github.com:user/repo.git SSH_PRIVATE_KEY=\$(cat key | base64) $0"
+    echo
+    echo "  # Start dual mode (Claude + Manual sessions)"
+    echo "  TERMINAL_MODE=dual REPO_URL=https://github.com/user/repo.git $0"
     echo
     echo "  # Start without repository"
     echo "  $0"

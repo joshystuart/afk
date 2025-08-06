@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   aggregate \
   jq \
   curl \
+  tmux \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd from GitHub releases
@@ -60,8 +61,8 @@ ENV PATH=$PATH:/usr/local/share/npm-global/bin
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
 
-# Expose ttyd port
-EXPOSE 7681
+# Expose ttyd ports
+EXPOSE 7681 7682
 
 CMD ["/home/node/scripts/start-claude.sh"]
 

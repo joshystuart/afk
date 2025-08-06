@@ -1,12 +1,12 @@
-version: '3.8'
-
 services:
   afk-terminal:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: afk
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
     ports:
-      - "7681:7681"
+      - "7681:7681"  # Claude session port
+      - "7682:7682"  # Manual session port
     environment:
       - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
       # Git Integration Environment Variables
@@ -16,8 +16,12 @@ services:
       - GIT_USER_NAME=${GIT_USER_NAME:-Claude User}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-claude@example.com}
       - GIT_SSH_HOST=${GIT_SSH_HOST}
+      # Terminal mode: simple, tmux, debug, alt1, alt2, dual
+      - TERMINAL_MODE=${TERMINAL_MODE:-simple}
+      # Dual mode port configuration
+      - CLAUDE_PORT=${CLAUDE_PORT:-7681}
+      - MANUAL_PORT=${MANUAL_PORT:-7682}
     volumes:
-      - ./workspace:/workspace
       - /var/run/docker.sock:/var/run/docker.sock
     privileged: true
     restart: unless-stopped

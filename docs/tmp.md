@@ -1,6 +1,9 @@
 ```shell
-docker build -t afk .
-docker run -e CLAUDE_CODE_OAUTH_TOKEN=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 -p 7681:7681 -it afk /bin/bash
+docker build -t afk . --no-cache
+```
+
+```shell
+docker run -e CLAUDE_CODE_OAUTH_TOKEN= -p 7681:7681 -it afk /bin/bash
 ```
 
 ```shell
@@ -10,18 +13,50 @@ ttyd -p 7681 -W claude
 ```Dockerfile
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/osg_curl_ca_bundle.pem
 ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
-ENV CLAUDE_CODE_OAUTH_TOKEN=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
+ENV CLAUDE_CODE_OAUTH_TOKEN=
 ```
 
 
+## Simple debug setup
+```shell
+TERMINAL_MODE=debug \
+SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
+REPO_URL=git@github.com:origin-retail/rewards-ledger-micro-site.git \
+CLAUDE_CODE_OAUTH_TOKEN= \
+GIT_USER_NAME="Josh Stuart" \
+GIT_USER_EMAIL="joshstuartx@gmail.com" \
+docker-compose up --force-recreate
+```
+
+## Simple dual
+```shell
+TERMINAL_MODE=dual \
+SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
+REPO_URL=git@github.com:origin-retail/rewards-ledger-micro-site.git \
+CLAUDE_CODE_OAUTH_TOKEN= \
+GIT_USER_NAME="Josh Stuart" \
+GIT_USER_EMAIL="joshstuartx@gmail.com" \
+docker-compose up --force-recreate
+```
+
+
+## Normal 
+```shell
+SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
+REPO_URL=git@github.com:origin-retail/rewards-ledger-micro-site.git \
+CLAUDE_CODE_OAUTH_TOKEN= \
+GIT_USER_NAME="Josh Stuart" \
+GIT_USER_EMAIL="joshstuartx@gmail.com" \
+docker-compose up
+```
 
 ```shell
 SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
 REPO_URL=git@github.com:origin-retail/rewards-ledger-micro-site.git \
-CLAUDE_CODE_OAUTH_TOKEN=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 \
+CLAUDE_CODE_OAUTH_TOKEN= \
 GIT_USER_NAME="Josh Stuart" \
 GIT_USER_EMAIL="joshstuartx@gmail.com" \
-docker-compose up
+docker-compose build --no-cache
 ```
 
 
@@ -31,7 +66,7 @@ docker-compose up
     -p 7681:7681 \
     --privileged \
     --restart unless-stopped \
-    -e CLAUDE_CODE_OAUTH_TOKEN="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" \
+    -e CLAUDE_CODE_OAUTH_TOKEN="" \
     -e REPO_URL="${REPO_URL}" \
     -e REPO_BRANCH="${REPO_BRANCH:-main}" \
     -e SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519 | base64 -w 0)" \

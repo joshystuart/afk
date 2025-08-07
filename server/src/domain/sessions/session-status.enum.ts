@@ -1,0 +1,7 @@
+export enum SessionStatus {
+  INITIALIZING = 'INITIALIZING',
+  STARTING = 'STARTING',
+  RUNNING = 'RUNNING',
+  STOPPED = 'STOPPED',
+  ERROR = 'ERROR',
+}

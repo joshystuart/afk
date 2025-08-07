@@ -95,10 +95,7 @@ Phase 2 builds upon the git-integrated Docker containers from Phase 1 to create 
        "class-transformer": "^0.5.1",
        "pino": "^8.0.0",
        "nestjs-pino": "^3.0.0",
-       "@nestjs/jwt": "^10.0.0",
-       "@nestjs/passport": "^10.0.0",
-       "passport-jwt": "^4.0.0",
-       "bcrypt": "^5.0.0",
+
        "uuid": "^9.0.0"
      },
      "devDependencies": {
@@ -133,10 +130,7 @@ server/
 │   │   │   │   └── http-exception.filter.ts
 │   │   │   ├── interceptors/
 │   │   │   │   └── response.interceptor.ts
-│   │   │   ├── guards/
-│   │   │   │   └── jwt-auth.guard.ts
 │   │   │   └── decorators/
-│   │   │       └── jwt-auth.decorator.ts
 │   │   └── response/
 │   │       └── response.service.ts
 │   ├── interactors/
@@ -156,12 +150,16 @@ server/
 │   ├── domain/
 │   │   ├── sessions/
 │   │   │   ├── session.entity.ts
-│   │   │   ├── session-id.value-object.ts
+│   │   │   ├── session.factory.ts
+│   │   │   ├── session-id.dto.ts
+│   │   │   ├── session-id-dto.factory.ts
 │   │   │   ├── session-status.enum.ts
-│   │   │   └── session-config.value-object.ts
+│   │   │   ├── session-config.dto.ts
+│   │   │   └── session-config-dto.factory.ts
 │   │   └── containers/
 │   │       ├── container.entity.ts
-│   │       └── port-pair.value-object.ts
+│   │       ├── port-pair.dto.ts
+│   │       └── port-pair-dto.factory.ts
 │   ├── services/
 │   │   ├── docker/
 │   │   │   ├── docker-engine.service.ts
@@ -243,10 +241,6 @@ export class AppConfig {
   public readonly session!: SessionConfig;
 
   @ValidateNested()
-  @Type(() => AuthConfig)
-  public readonly auth!: AuthConfig;
-
-  @ValidateNested()
   @Type(() => LoggerConfig)
   public readonly logger!: LoggerConfig;
 }
@@ -319,33 +313,19 @@ export class AppModule {}
 ```typescript
 // src/domain/sessions/session.entity.ts
 export class Session {
-  private constructor(
-    public readonly id: SessionId,
+  constructor(
+    public readonly id: SessionIdDto,
     public readonly name: string,
-    public readonly config: SessionConfig,
+    public readonly config: SessionConfigDto,
     public status: SessionStatus,
     public readonly containerId: string | null,
-    public readonly ports: PortPair | null,
+    public readonly ports: PortPairDto | null,
     public readonly createdAt: Date,
     public updatedAt: Date,
     public lastAccessedAt: Date | null,
   ) {}
 
-  static create(name: string, config: SessionConfig): Session {
-    return new Session(
-      SessionId.generate(),
-      name,
-      config,
-      SessionStatus.INITIALIZING,
-      null,
-      null,
-      new Date(),
-      new Date(),
-      null,
-    );
-  }
-
-  assignContainer(containerId: string, ports: PortPair): void {
+  assignContainer(containerId: string, ports: PortPairDto): void {
     this.containerId = containerId;
     this.ports = ports;
     this.status = SessionStatus.STARTING;
@@ -374,23 +354,65 @@ export class Session {
   }
 }
 
-// src/domain/sessions/session-id.value-object.ts
-export class SessionId {
+// src/domain/sessions/session.factory.ts
+@Injectable()
+export class SessionFactory {
+  constructor(
+    private readonly sessionIdFactory: SessionIdDtoFactory,
+  ) {}
+
+  create(name: string, config: SessionConfigDto): Session {
+    return new Session(
+      this.sessionIdFactory.generate(),
+      name,
+      config,
+      SessionStatus.INITIALIZING,
+      null,
+      null,
+      new Date(),
+      new Date(),
+      null,
+    );
+  }
+
+  fromData(data: {
+    id: string;
+    name: string;
+    config: SessionConfigDto;
+    status: SessionStatus;
+    containerId?: string;
+    ports?: PortPairDto;
+    createdAt: Date;
+    updatedAt: Date;
+    lastAccessedAt?: Date;
+  }): Session {
+    return new Session(
+      this.sessionIdFactory.fromString(data.id),
+      data.name,
+      data.config,
+      data.status,
+      data.containerId || null,
+      data.ports || null,
+      data.createdAt,
+      data.updatedAt,
+      data.lastAccessedAt || null,
+    );
+  }
+}
+
+// src/domain/sessions/session-id.dto.ts
+export class SessionIdDto {
   constructor(private readonly value: string) {
     if (!value || !this.isValidUuid(value)) {
       throw new Error('Invalid session ID');
     }
   }
 
-  static generate(): SessionId {
-    return new SessionId(uuid.v4());
-  }
-
   toString(): string {
     return this.value;
   }
 
-  equals(other: SessionId): boolean {
+  equals(other: SessionIdDto): boolean {
     return this.value === other.value;
   }
 
@@ -400,8 +422,20 @@ export class SessionId {
   }
 }
 
-// src/domain/sessions/session-config.value-object.ts
-export class SessionConfig {
+// src/domain/sessions/session-id-dto.factory.ts
+@Injectable()
+export class SessionIdDtoFactory {
+  generate(): SessionIdDto {
+    return new SessionIdDto(uuid.v4());
+  }
+
+  fromString(value: string): SessionIdDto {
+    return new SessionIdDto(value);
+  }
+}
+
+// src/domain/sessions/session-config.dto.ts
+export class SessionConfigDto {
   constructor(
     public readonly repoUrl: string | null,
     public readonly branch: string,
@@ -410,9 +444,13 @@ export class SessionConfig {
     public readonly hasSSHKey: boolean,
     public readonly terminalMode: TerminalMode,
   ) {}
+}
 
-  static createDefault(): SessionConfig {
-    return new SessionConfig(
+// src/domain/sessions/session-config-dto.factory.ts
+@Injectable()
+export class SessionConfigDtoFactory {
+  createDefault(): SessionConfigDto {
+    return new SessionConfigDto(
       null,
       'main',
       'Claude User',
@@ -421,10 +459,21 @@ export class SessionConfig {
       TerminalMode.SIMPLE,
     );
   }
+
+  create(params: Partial<SessionConfigDto>): SessionConfigDto {
+    return new SessionConfigDto(
+      params.repoUrl ?? null,
+      params.branch ?? 'main',
+      params.gitUserName ?? 'Claude User',
+      params.gitUserEmail ?? 'claude@example.com',
+      params.hasSSHKey ?? false,
+      params.terminalMode ?? TerminalMode.SIMPLE,
+    );
+  }
 }
 
-// src/domain/containers/port-pair.value-object.ts
-export class PortPair {
+// src/domain/containers/port-pair.dto.ts
+export class PortPairDto {
   constructor(
     public readonly claudePort: number,
     public readonly manualPort: number,
@@ -449,12 +498,22 @@ export class PortPair {
     };
   }
 }
+
+// src/domain/containers/port-pair-dto.factory.ts
+@Injectable()
+export class PortPairDtoFactory {
+  create(claudePort: number, manualPort: number): PortPairDto {
+    return new PortPairDto(claudePort, manualPort);
+  }
+}
 ```
 
 **Success Criteria:**
 - Domain models encapsulate business rules
-- Value objects ensure data integrity
+- DTOs ensure data integrity and type safety
 - Entities have clear lifecycle methods
+- Factories handle object creation with dependency injection
+- Static methods are avoided in favor of DI
 
 **Estimated Time:** 5-6 hours
 
@@ -612,6 +671,7 @@ export class PortManagerService {
   constructor(
     private readonly config: DockerConfig,
     private readonly logger: Logger,
+    private readonly portPairFactory: PortPairDtoFactory,
   ) {
     this.initializePortPool();
   }
@@ -620,12 +680,12 @@ export class PortManagerService {
     await this.syncWithRunningContainers();
   }
 
-  async allocatePortPair(): Promise<PortPair> {
+  async allocatePortPair(): Promise<PortPairDto> {
     const claudePort = await this.allocatePort();
     
     try {
       const manualPort = await this.allocatePort();
-      return new PortPair(claudePort, manualPort);
+      return this.portPairFactory.create(claudePort, manualPort);
     } catch (error) {
       // Rollback claude port allocation if manual port fails
       this.releasePort(claudePort);
@@ -633,7 +693,7 @@ export class PortManagerService {
     }
   }
 
-  async releasePortPair(ports: PortPair): Promise<void> {
+  async releasePortPair(ports: PortPairDto): Promise<void> {
     this.releasePort(ports.claudePort);
     this.releasePort(ports.manualPort);
   }
@@ -694,7 +754,7 @@ export class SessionRepository {
     this.sessions.set(session.id.toString(), session);
   }
 
-  async findById(id: SessionId): Promise<Session | null> {
+  async findById(id: SessionIdDto): Promise<Session | null> {
     return this.sessions.get(id.toString()) || null;
   }
 
@@ -713,11 +773,11 @@ export class SessionRepository {
     return sessions;
   }
 
-  async delete(id: SessionId): Promise<void> {
+  async delete(id: SessionIdDto): Promise<void> {
     this.sessions.delete(id.toString());
   }
 
-  async exists(id: SessionId): boolean {
+  async exists(id: SessionIdDto): boolean {
     return this.sessions.has(id.toString());
   }
 }
@@ -743,6 +803,8 @@ export class CreateSessionInteractor {
     private readonly dockerEngine: DockerEngineService,
     private readonly portManager: PortManagerService,
     private readonly sessionRepository: SessionRepository,
+    private readonly sessionFactory: SessionFactory,
+    private readonly sessionConfigFactory: SessionConfigDtoFactory,
     private readonly logger: Logger,
   ) {}
 
@@ -753,16 +815,16 @@ export class CreateSessionInteractor {
     await this.validateRequest(request);
 
     // Create domain entity
-    const sessionConfig = new SessionConfig(
-      request.repoUrl,
-      request.branch || 'main',
-      request.gitUserName || 'Claude User',
-      request.gitUserEmail || 'claude@example.com',
-      !!request.sshPrivateKey,
-      request.terminalMode || TerminalMode.SIMPLE,
-    );
+    const sessionConfig = this.sessionConfigFactory.create({
+      repoUrl: request.repoUrl,
+      branch: request.branch,
+      gitUserName: request.gitUserName,
+      gitUserEmail: request.gitUserEmail,
+      hasSSHKey: !!request.sshPrivateKey,
+      terminalMode: request.terminalMode,
+    });
 
-    const session = Session.create(request.name, sessionConfig);
+    const session = this.sessionFactory.create(request.name, sessionConfig);
 
     try {
       // Allocate ports
@@ -877,7 +939,7 @@ export class SessionLifecycleInteractor {
     private readonly logger: Logger,
   ) {}
 
-  async stopSession(sessionId: SessionId): Promise<void> {
+  async stopSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
     
     if (!session) {
@@ -900,7 +962,7 @@ export class SessionLifecycleInteractor {
     }
   }
 
-  async deleteSession(sessionId: SessionId): Promise<void> {
+  async deleteSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
     
     if (!session) {
@@ -932,7 +994,7 @@ export class SessionLifecycleInteractor {
     }
   }
 
-  async restartSession(sessionId: SessionId): Promise<void> {
+  async restartSession(sessionId: SessionIdDto): Promise<void> {
     await this.stopSession(sessionId);
     
     const session = await this.sessionRepository.findById(sessionId);
@@ -975,17 +1037,11 @@ export class CreateSessionController {
   })
   @ApiResponse({ status: 201, type: CreateSessionResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @JwtAuth()
   async createSession(
     @Body() request: CreateSessionRequestDto,
-    @CurrentUser() user: User,
   ): Promise<ApiResponse<CreateSessionResponseDto>> {
     try {
-      const session = await this.createSessionInteractor.execute({
-        ...request,
-        userId: user.id,
-      });
+      const session = await this.createSessionInteractor.execute(request);
 
       const response = CreateSessionResponseDto.fromDomain(session);
       return this.responseService.success(response, 201);
@@ -1007,13 +1063,10 @@ export class ListSessionsController {
   @Get()
   @ApiOperation({ summary: 'List all sessions' })
   @ApiQuery({ name: 'status', required: false, enum: SessionStatus })
-  @JwtAuth()
   async listSessions(
     @Query('status') status?: SessionStatus,
-    @CurrentUser() user: User,
   ): Promise<ApiResponse<SessionResponseDto[]>> {
     const sessions = await this.listSessionsInteractor.execute({
-      userId: user.id,
       status,
     });
 
@@ -1144,7 +1197,6 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   constructor(
     private readonly sessionSubscriptionService: SessionSubscriptionService,
     private readonly dockerEngine: DockerEngineService,
-    private readonly jwtService: JwtService,
     private readonly logger: Logger,
   ) {}
 
@@ -1152,19 +1204,9 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   server: Server;
 
   async handleConnection(client: Socket) {
-    try {
-      const token = this.extractToken(client);
-      const user = await this.validateToken(token);
-      
-      client.data.userId = user.id;
-      this.logger.log('Client connected', { 
-        clientId: client.id,
-        userId: user.id,
-      });
-    } catch (error) {
-      this.logger.error('Connection authentication failed', error);
-      client.disconnect();
-    }
+    this.logger.log('Client connected', { 
+      clientId: client.id,
+    });
   }
 
   async handleDisconnect(client: Socket) {
@@ -1181,7 +1223,6 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       await this.sessionSubscriptionService.subscribe(
         client.id,
         data.sessionId,
-        client.data.userId,
       );
 
       client.join(`session:${data.sessionId}`);
@@ -1213,16 +1254,6 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      // Verify user has access to this session
-      const hasAccess = await this.sessionSubscriptionService.verifyAccess(
-        client.data.userId,
-        data.sessionId,
-      );
-
-      if (!hasAccess) {
-        throw new Error('Access denied');
-      }
-
       // Start streaming logs
       const stream = await this.dockerEngine.streamContainerLogs(
         data.containerId,
@@ -1267,24 +1298,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
     });
   }
 
-  private extractToken(client: Socket): string {
-    const auth = client.handshake.auth?.token || client.handshake.headers?.authorization;
-    
-    if (!auth) {
-      throw new Error('No authentication token provided');
-    }
 
-    return auth.replace('Bearer ', '');
-  }
-
-  private async validateToken(token: string): Promise<User> {
-    try {
-      const payload = this.jwtService.verify(token);
-      return { id: payload.sub, email: payload.email };
-    } catch (error) {
-      throw new Error('Invalid token');
-    }
-  }
 }
 ```
 
@@ -1298,25 +1312,21 @@ export class SessionSubscriptionService {
 
   constructor(
     private readonly sessionRepository: SessionRepository,
+    private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly logger: Logger,
   ) {}
 
   async subscribe(
     clientId: string,
     sessionId: string,
-    userId: string,
   ): Promise<void> {
-    // Verify session exists and user has access
+    // Verify session exists
     const session = await this.sessionRepository.findById(
-      new SessionId(sessionId),
+      this.sessionIdFactory.fromString(sessionId),
     );
 
     if (!session) {
       throw new Error('Session not found');
-    }
-
-    if (session.userId !== userId) {
-      throw new Error('Access denied');
     }
 
     // Add subscription
@@ -1350,138 +1360,19 @@ export class SessionSubscriptionService {
     }
   }
 
-  async verifyAccess(userId: string, sessionId: string): Promise<boolean> {
-    const session = await this.sessionRepository.findById(
-      new SessionId(sessionId),
-    );
-    return session?.userId === userId;
-  }
+
 }
 ```
 
 **Success Criteria:**
-- WebSocket connections are authenticated
+- WebSocket connections work properly
 - Real-time updates work for subscribed sessions
 - Log streaming functions properly
 - Connection cleanup on disconnect
 
 **Estimated Time:** 8-10 hours
 
-### Task 8: Implement Authentication and Authorization
-**Description:** Add JWT-based authentication with guards and decorators.
-
-**JWT Auth Guard:**
-```typescript
-// src/libs/common/guards/jwt-auth.guard.ts
-@Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(
-    private readonly logger: Logger,
-    private readonly reflector: Reflector,
-  ) {
-    super();
-  }
-
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (isPublic) {
-      return true;
-    }
-
-    return super.canActivate(context);
-  }
-
-  handleRequest(err: any, user: any, info: any) {
-    if (err || !user) {
-      this.logger.warn('Authentication failed', { error: err, info });
-      throw err || new UnauthorizedException('Authentication failed');
-    }
-    return user;
-  }
-}
-
-// src/libs/common/decorators/jwt-auth.decorator.ts
-export function JwtAuth() {
-  return applyDecorators(
-    UseGuards(JwtAuthGuard),
-    ApiBearerAuth(),
-  );
-}
-
-export function Public() {
-  return SetMetadata('isPublic', true);
-}
-
-// src/libs/common/decorators/current-user.decorator.ts
-export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
-  },
-);
-```
-
-**Auth Module:**
-```typescript
-// src/auth/auth.module.ts
-@Module({
-  imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.registerAsync({
-      useFactory: (config: AuthConfig) => ({
-        secret: config.jwtSecret,
-        signOptions: {
-          expiresIn: config.jwtExpiresIn,
-        },
-      }),
-      inject: [AuthConfig],
-    }),
-  ],
-  providers: [AuthService, JwtStrategy],
-  controllers: [AuthController],
-  exports: [AuthService, JwtModule],
-})
-export class AuthModule {}
-
-// src/auth/jwt.strategy.ts
-@Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly config: AuthConfig,
-    private readonly userService: UserService,
-  ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: config.jwtSecret,
-    });
-  }
-
-  async validate(payload: JwtPayload): Promise<User> {
-    const user = await this.userService.findById(payload.sub);
-    
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    return user;
-  }
-}
-```
-
-**Success Criteria:**
-- JWT authentication works for API endpoints
-- WebSocket connections are authenticated
-- Guards protect routes properly
-- Token refresh mechanism works
-
-**Estimated Time:** 6-8 hours
-
-### Task 9: Add Comprehensive Error Handling and Monitoring
+### Task 8: Add Comprehensive Error Handling and Monitoring
 **Description:** Implement global error handling, structured logging, and monitoring.
 
 **Global Exception Filter:**
@@ -1589,7 +1480,6 @@ export class LoggerModule {
 ```typescript
 // src/health/health.controller.ts
 @Controller('health')
-@Public()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
@@ -1988,24 +1878,36 @@ describe('CreateSessionInteractor', () => {
   let dockerEngine: jest.Mocked<DockerEngineService>;
   let portManager: jest.Mocked<PortManagerService>;
   let sessionRepository: jest.Mocked<SessionRepository>;
+  let sessionFactory: jest.Mocked<SessionFactory>;
+  let sessionConfigFactory: jest.Mocked<SessionConfigDtoFactory>;
+  let portPairFactory: jest.Mocked<PortPairDtoFactory>;
 
   beforeEach(() => {
     dockerEngine = createMock<DockerEngineService>();
     portManager = createMock<PortManagerService>();
     sessionRepository = createMock<SessionRepository>();
+    sessionFactory = createMock<SessionFactory>();
+    sessionConfigFactory = createMock<SessionConfigDtoFactory>();
+    portPairFactory = createMock<PortPairDtoFactory>();
     
     interactor = new CreateSessionInteractor(
       dockerEngine,
       portManager,
       sessionRepository,
+      sessionFactory,
+      sessionConfigFactory,
       createMock<Logger>(),
     );
   });
 
   it('should create session with valid configuration', async () => {
     const request = createValidRequest();
-    const ports = new PortPair(7681, 7682);
+    const mockSession = createMockSession();
+    const mockConfig = createMockSessionConfig();
+    const ports = portPairFactory.create(7681, 7682);
     
+    sessionConfigFactory.create.mockReturnValue(mockConfig);
+    sessionFactory.create.mockReturnValue(mockSession);
     portManager.allocatePortPair.mockResolvedValue(ports);
     dockerEngine.createContainer.mockResolvedValue({ id: 'container-123' });
     sessionRepository.save.mockResolvedValue(undefined);
@@ -2013,7 +1915,11 @@ describe('CreateSessionInteractor', () => {
     const result = await interactor.execute(request);
 
     expect(result).toBeDefined();
-    expect(result.status).toBe(SessionStatus.RUNNING);
+    expect(sessionConfigFactory.create).toHaveBeenCalledWith(expect.objectContaining({
+      repoUrl: request.repoUrl,
+      branch: request.branch,
+    }));
+    expect(sessionFactory.create).toHaveBeenCalledWith(request.name, mockConfig);
     expect(portManager.allocatePortPair).toHaveBeenCalled();
     expect(dockerEngine.createContainer).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -2025,8 +1931,12 @@ describe('CreateSessionInteractor', () => {
 
   it('should cleanup resources on failure', async () => {
     const request = createValidRequest();
-    const ports = new PortPair(7681, 7682);
+    const mockSession = createMockSession();
+    const mockConfig = createMockSessionConfig();
+    const ports = portPairFactory.create(7681, 7682);
     
+    sessionConfigFactory.create.mockReturnValue(mockConfig);
+    sessionFactory.create.mockReturnValue(mockSession);
     portManager.allocatePortPair.mockResolvedValue(ports);
     dockerEngine.createContainer.mockRejectedValue(new Error('Docker error'));
 
@@ -2040,11 +1950,9 @@ describe('CreateSessionInteractor', () => {
 ### Integration Tests
 - End-to-end session creation flow
 - WebSocket connection and message flow
-- Authentication and authorization
 - Container lifecycle management
 
 ### E2E Tests
-- User login and authentication
 - Create session with git repository
 - Access terminal interfaces
 - Real-time status updates
@@ -2077,8 +1985,6 @@ describe('CreateSessionInteractor', () => {
    - Resilient to Docker API failures
 
 5. **Security:**
-   - JWT authentication properly implemented
-   - WebSocket connections authenticated
    - SSH keys handled securely
    - No sensitive data in logs
 

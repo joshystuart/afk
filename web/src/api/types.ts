@@ -12,9 +12,8 @@ export const SessionStatus = {
 export type SessionStatus = typeof SessionStatus[keyof typeof SessionStatus];
 
 export const TerminalMode = {
-  CLAUDE: 'claude',
-  MANUAL: 'manual',
-  DUAL: 'dual',
+  SIMPLE: 'SIMPLE',
+  DUAL: 'DUAL',
 } as const;
 
 export type TerminalMode = typeof TerminalMode[keyof typeof TerminalMode];
@@ -43,7 +42,14 @@ export interface Session {
 }
 
 export interface CreateSessionRequest {
-  config: SessionConfigDto;
+  name: string;
+  repoUrl?: string;
+  branch?: string;
+  gitUserName?: string;
+  gitUserEmail?: string;
+  sshPrivateKey?: string;
+  terminalMode?: TerminalMode;
+  claudeToken?: string;
 }
 
 export interface CreateSessionResponse {

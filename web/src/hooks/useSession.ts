@@ -65,11 +65,11 @@ export const useSession = () => {
     error,
     
     // Actions
-    createSession: createSessionMutation.mutate,
-    startSession: startSessionMutation.mutate,
-    stopSession: stopSessionMutation.mutate,
-    restartSession: restartSessionMutation.mutate,
-    deleteSession: deleteSessionMutation.mutate,
+    createSession: createSessionMutation.mutateAsync,
+    startSession: startSessionMutation.mutateAsync,
+    stopSession: stopSessionMutation.mutateAsync,
+    restartSession: restartSessionMutation.mutateAsync,
+    deleteSession: deleteSessionMutation.mutateAsync,
     refetchSessions,
     getSession: getSessionQuery,
     setCurrentSession,
@@ -81,5 +81,12 @@ export const useSession = () => {
     isStopping: stopSessionMutation.isPending,
     isRestarting: restartSessionMutation.isPending,
     isDeleting: deleteSessionMutation.isPending,
+    
+    // Mutation errors
+    createError: createSessionMutation.error,
+    startError: startSessionMutation.error,
+    stopError: stopSessionMutation.error,
+    restartError: restartSessionMutation.error,
+    deleteError: deleteSessionMutation.error,
   };
 };

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEmail, IsEnum, MinLength, MaxLength, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsEnum, MinLength, MaxLength, IsUrl, Allow } from 'class-validator';
 import { TerminalMode } from '../../../domain/sessions/terminal-mode.enum';
 
 export class CreateSessionRequest {
@@ -36,5 +36,6 @@ export class CreateSessionRequest {
   claudeToken?: string;
 
   // This would be populated from authentication context
+  @Allow()
   userId?: string;
 }

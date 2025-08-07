@@ -19,49 +19,47 @@ import { useForm, Controller } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { TerminalMode, type CreateSessionRequest } from '../api/types';
-import { ROUTES, DEFAULT_DOCKER_IMAGES, TERMINAL_MODE_LABELS } from '../utils/constants';
+import { ROUTES, TERMINAL_MODE_LABELS } from '../utils/constants';
 
 interface CreateSessionForm {
-  image: string;
-  mode: TerminalMode;
-  workspacePath?: string;
+  name: string;
+  repoUrl?: string;
+  branch?: string;
+  terminalMode: TerminalMode;
 }
 
 const CreateSession: React.FC = () => {
   const navigate = useNavigate();
-  const { createSession, isCreating, error, clearError } = useSession();
+  const { createSession, isCreating, createError, clearError } = useSession();
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<CreateSessionForm>({
     defaultValues: {
-      image: DEFAULT_DOCKER_IMAGES[0].value,
-      mode: TerminalMode.DUAL,
-      workspacePath: '/workspace',
+      name: '',
+      repoUrl: '',
+      branch: 'main',
+      terminalMode: TerminalMode.DUAL,
     },
   });
-
-  const selectedImage = watch('image');
-  const selectedImageInfo = DEFAULT_DOCKER_IMAGES.find(img => img.value === selectedImage);
 
   const onSubmit = async (data: CreateSessionForm) => {
     try {
       clearError();
       const request: CreateSessionRequest = {
-        config: {
-          image: data.image,
-          mode: data.mode,
-          workspacePath: data.workspacePath || undefined,
-        },
+        name: data.name,
+        repoUrl: data.repoUrl || undefined,
+        branch: data.branch || undefined,
+        terminalMode: data.terminalMode,
       };
       
       await createSession(request);
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
-      // Error is handled by the useSession hook
+      // Error will be displayed via the error state from useSession
+      console.error('Failed to create session:', err);
     }
   };
 
@@ -81,13 +79,13 @@ const CreateSession: React.FC = () => {
         </Typography>
       </Box>
 
-      {error && (
+      {createError && (
         <Alert
           severity="error"
           sx={{ mb: 3 }}
           onClose={clearError}
         >
-          {error}
+          {createError.message || 'Failed to create session. Please try again.'}
         </Alert>
       )}
 
@@ -100,34 +98,66 @@ const CreateSession: React.FC = () => {
               </Typography>
 
               <Controller
-                name="image"
+                name="name"
                 control={control}
-                rules={{ required: 'Docker image is required' }}
+                rules={{ 
+                  required: 'Session name is required',
+                  minLength: { value: 3, message: 'Name must be at least 3 characters' },
+                  maxLength: { value: 50, message: 'Name must be at most 50 characters' }
+                }}
                 render={({ field }) => (
-                  <FormControl fullWidth margin="normal" error={!!errors.image}>
-                    <InputLabel>Docker Image</InputLabel>
-                    <Select {...field} label="Docker Image">
-                      {DEFAULT_DOCKER_IMAGES.map((image) => (
-                        <MenuItem key={image.value} value={image.value}>
-                          {image.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.image && (
-                      <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
-                        {errors.image.message}
-                      </Typography>
-                    )}
-                  </FormControl>
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Session Name"
+                    margin="normal"
+                    helperText="A descriptive name for your session"
+                    error={!!errors.name}
+                  />
+                )}
+              />
+              {errors.name && (
+                <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
+                  {errors.name.message}
+                </Typography>
+              )}
+
+              <Controller
+                name="repoUrl"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Git Repository URL (Optional)"
+                    margin="normal"
+                    helperText="URL of the git repository to clone"
+                    error={!!errors.repoUrl}
+                  />
                 )}
               />
 
               <Controller
-                name="mode"
+                name="branch"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Git Branch (Optional)"
+                    margin="normal"
+                    helperText="Branch to checkout (defaults to main)"
+                    error={!!errors.branch}
+                  />
+                )}
+              />
+
+              <Controller
+                name="terminalMode"
                 control={control}
                 rules={{ required: 'Terminal mode is required' }}
                 render={({ field }) => (
-                  <FormControl fullWidth margin="normal" error={!!errors.mode}>
+                  <FormControl fullWidth margin="normal" error={!!errors.terminalMode}>
                     <InputLabel>Terminal Mode</InputLabel>
                     <Select {...field} label="Terminal Mode">
                       {Object.entries(TERMINAL_MODE_LABELS).map(([value, label]) => (
@@ -136,27 +166,12 @@ const CreateSession: React.FC = () => {
                         </MenuItem>
                       ))}
                     </Select>
-                    {errors.mode && (
+                    {errors.terminalMode && (
                       <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
-                        {errors.mode.message}
+                        {errors.terminalMode.message}
                       </Typography>
                     )}
                   </FormControl>
-                )}
-              />
-
-              <Controller
-                name="workspacePath"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Workspace Path (Optional)"
-                    margin="normal"
-                    helperText="Path inside the container where your code will be mounted"
-                    error={!!errors.workspacePath}
-                  />
                 )}
               />
 
@@ -184,27 +199,6 @@ const CreateSession: React.FC = () => {
 
         <Grid size={{ xs: 12, md: 4 }}>
           <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Image Information
-              </Typography>
-              {selectedImageInfo && (
-                <Box>
-                  <Typography variant="body1" fontWeight="medium" gutterBottom>
-                    {selectedImageInfo.label}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" paragraph>
-                    {selectedImageInfo.description}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" fontFamily="monospace">
-                    {selectedImageInfo.value}
-                  </Typography>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card sx={{ mt: 2 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Terminal Modes

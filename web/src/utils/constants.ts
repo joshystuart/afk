@@ -30,9 +30,8 @@ export const SESSION_STATUS_LABELS = {
 } as const;
 
 export const TERMINAL_MODE_LABELS = {
-  claude: 'Claude Only',
-  manual: 'Manual Only',
-  dual: 'Dual Terminal',
+  SIMPLE: 'Simple Terminal',
+  DUAL: 'Dual Terminal',
 } as const;
 
 export const DEFAULT_DOCKER_IMAGES = [

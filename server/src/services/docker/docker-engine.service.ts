@@ -3,21 +3,36 @@ import * as Dockerode from 'dockerode';
 import { DockerConfig } from '../../libs/config/docker.config';
 import { ContainerInfo, ContainerStats, ContainerCreateOptions } from '../../domain/containers/container.entity';
 
-@Injectable()
 export class DockerEngineService {
   private docker: Dockerode;
   private readonly logger = new Logger(DockerEngineService.name);
 
   constructor(private readonly config: DockerConfig) {
-    this.docker = new Dockerode({
-      socketPath: config.socketPath,
-    });
+    // Use DOCKER_HOST if set, otherwise fall back to config socketPath
+    const dockerOptions: any = {};
+    
+    if (process.env.DOCKER_HOST) {
+      if (process.env.DOCKER_HOST.startsWith('unix://')) {
+        dockerOptions.socketPath = process.env.DOCKER_HOST.replace('unix://', '');
+      } else {
+        // For TCP connections
+        dockerOptions.host = process.env.DOCKER_HOST;
+      }
+    } else {
+      dockerOptions.socketPath = config.socketPath;
+    }
+
+    this.docker = new Dockerode(dockerOptions);
+    this.logger.log('Docker client initialized', { options: dockerOptions });
   }
 
   async createContainer(options: ContainerCreateOptions): Promise<Dockerode.Container> {
     this.logger.log('Creating container', { options });
     
     try {
+      // Verify Docker connectivity first
+      await this.ping();
+      
       const container = await this.docker.createContainer({
         Image: this.config.imageName,
         Env: this.buildEnvironment(options),
@@ -115,7 +130,12 @@ export class DockerEngineService {
   }
 
   async ping(): Promise<void> {
-    await this.docker.ping();
+    try {
+      await this.docker.ping();
+    } catch (error) {
+      this.logger.error('Docker ping failed', error);
+      throw new Error(`Cannot connect to Docker daemon: ${error.message}`);
+    }
   }
 
   private buildEnvironment(options: ContainerCreateOptions): string[] {

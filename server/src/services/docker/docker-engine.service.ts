@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
-import { DockerConfig } from '../../libs/config/docker.config';
+import { AppConfig } from '../../libs/config/app.config';
 import { ContainerInfo, ContainerStats, ContainerCreateOptions } from '../../domain/containers/container.entity';
 
 export class DockerEngineService {
   private docker: Dockerode;
   private readonly logger = new Logger(DockerEngineService.name);
 
-  constructor(private readonly config: DockerConfig) {
+  constructor(private readonly config: AppConfig) {
     // Use DOCKER_HOST if set, otherwise fall back to config socketPath
     const dockerOptions: any = {};
     
@@ -19,7 +19,7 @@ export class DockerEngineService {
         dockerOptions.host = process.env.DOCKER_HOST;
       }
     } else {
-      dockerOptions.socketPath = config.socketPath;
+      dockerOptions.socketPath = config.docker.socketPath;
     }
 
     this.docker = new Dockerode(dockerOptions);
@@ -34,7 +34,7 @@ export class DockerEngineService {
       await this.ping();
       
       const container = await this.docker.createContainer({
-        Image: this.config.imageName,
+        Image: this.config.docker.imageName,
         Env: this.buildEnvironment(options),
         ExposedPorts: this.buildExposedPorts(options.ports),
         HostConfig: {

@@ -16,13 +16,16 @@ export class AppConfig {
 
   @ValidateNested()
   @Type(() => DockerConfig)
-  public readonly docker!: DockerConfig;
+  @IsOptional()
+  public readonly docker: DockerConfig = new DockerConfig();
 
   @ValidateNested()
   @Type(() => SessionConfig)
-  public readonly session!: SessionConfig;
+  @IsOptional()
+  public readonly session: SessionConfig = new SessionConfig();
 
   @ValidateNested()
   @Type(() => LoggerConfig)
-  public readonly logger!: LoggerConfig;
+  @IsOptional()
+  public readonly logger: LoggerConfig = new LoggerConfig();
 }

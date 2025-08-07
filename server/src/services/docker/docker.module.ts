@@ -9,7 +9,6 @@ import { DockerConfig } from '../../libs/config/docker.config';
     DockerEngineService,
     PortManagerService,
     PortPairDtoFactory,
-    DockerConfig,
   ],
   exports: [
     DockerEngineService,

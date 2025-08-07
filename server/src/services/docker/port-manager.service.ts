@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { DockerConfig } from '../../libs/config/docker.config';
+import { AppConfig } from '../../libs/config/app.config';
 import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factory';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 
@@ -10,7 +10,7 @@ export class PortManagerService implements OnModuleInit {
   private readonly logger = new Logger(PortManagerService.name);
 
   constructor(
-    private readonly config: DockerConfig,
+    private readonly config: AppConfig,
     private readonly portPairFactory: PortPairDtoFactory,
   ) {
     this.initializePortPool();
@@ -68,7 +68,7 @@ export class PortManagerService implements OnModuleInit {
   }
 
   private initializePortPool(): void {
-    for (let port = this.config.startPort; port <= this.config.endPort; port++) {
+    for (let port = this.config.docker.startPort; port <= this.config.docker.endPort; port++) {
       this.portPool.push(port);
     }
     this.logger.log(`Initialized port pool with ${this.portPool.length} ports`);

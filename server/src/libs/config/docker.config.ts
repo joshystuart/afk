@@ -8,7 +8,7 @@ export class DockerConfig {
 
   @IsString()
   @IsOptional()
-  public readonly imageName: string = 'afk-container:latest';
+  public readonly imageName: string = 'afk:latest';
 
   @IsNumber()
   @Type(() => Number)

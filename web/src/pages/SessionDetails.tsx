@@ -1,56 +1,42 @@
 import React from 'react';
 import {
-    Alert,
     Box,
     Button,
-    Card,
-    CardContent,
     Chip,
     IconButton,
-    Paper,
     Skeleton,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableRow,
-    Tooltip,
     Typography,
 } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
-    Delete as DeleteIcon,
-    OpenInNew as OpenInNewIcon,
     PlayArrow as PlayIcon,
     Refresh as RefreshIcon,
     RestartAlt as RestartIcon,
-    Stop as StopIcon,
     Terminal as TerminalIcon,
+    Fullscreen as FullscreenIcon,
+    FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
-import {Link, useNavigate, useParams} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import {useSession} from '../hooks/useSession';
 import {useWebSocket} from '../hooks/useWebSocket';
 import {SessionStatus} from '../api/types';
-import {ROUTES, SESSION_STATUS_COLORS, SESSION_STATUS_LABELS, TERMINAL_MODE_LABELS} from '../utils/constants';
+import {ROUTES} from '../utils/constants';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [fullscreenTerminal, setFullscreenTerminal] = React.useState<'claude' | 'manual' | null>(null);
   
   const {
     isLoading,
-    error,
     startSession,
     stopSession,
     restartSession,
-    deleteSession,
     getSession,
-    clearError,
     isStarting,
     isStopping,
     isRestarting,
-    isDeleting,
   } = useSession();
 
   // Get session data
@@ -68,339 +54,488 @@ const SessionDetails: React.FC = () => {
     };
   }, [id, subscribeToSession, unsubscribeFromSession]);
 
-  const handleDelete = async () => {
-    if (id && window.confirm('Are you sure you want to delete this session?')) {
-      await deleteSession(id);
-      navigate(ROUTES.DASHBOARD);
-    }
-  };
 
-  const getStatusChip = (status: SessionStatus) => (
-    <Chip
-      label={SESSION_STATUS_LABELS[status]}
-      sx={{
-        backgroundColor: SESSION_STATUS_COLORS[status],
-        color: 'white',
-        fontWeight: 'medium',
-      }}
-    />
-  );
 
   if (isLoading || sessionQuery?.isLoading) {
     return (
-      <Box>
-        <Skeleton variant="text" height={60} sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" height={400} />
+      <Box sx={{ 
+        height: '100vh', 
+        backgroundColor: '#1e1e1e',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Skeleton variant="text" width={300} height={40} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
       </Box>
     );
   }
 
   if (!sessionQuery?.data && !sessionQuery?.isLoading) {
     return (
-      <Box>
+      <Box sx={{ 
+        height: '100vh', 
+        backgroundColor: '#1e1e1e',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2
+      }}>
+        <Typography variant="h5">Session not found</Typography>
         <Button
           component={Link}
           to={ROUTES.DASHBOARD}
-          startIcon={<ArrowBackIcon />}
-          sx={{ mb: 2 }}
+          variant="contained"
+          sx={{ backgroundColor: '#3b82f6' }}
         >
           Back to Dashboard
         </Button>
-        <Alert severity="error">
-          Session not found or failed to load.
-        </Alert>
       </Box>
     );
   }
 
   if (!sessionQuery?.data) {
     return (
-      <Box>
-        <Skeleton variant="text" height={60} sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" height={400} />
+      <Box sx={{ 
+        height: '100vh', 
+        backgroundColor: '#1e1e1e',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Skeleton variant="text" width={300} height={40} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
       </Box>
     );
   }
 
   const session = sessionQuery.data;
   const canStart = session.status === SessionStatus.STOPPED;
-  const canStop = session.status === SessionStatus.RUNNING;
-  const canRestart = session.status === SessionStatus.RUNNING;
-  const canDelete = (
-    session.status === SessionStatus.STOPPED || 
-    session.status === SessionStatus.ERROR
-  );
 
-  return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <Button
-          component={Link}
-          to={ROUTES.DASHBOARD}
-          startIcon={<ArrowBackIcon />}
-          sx={{ mr: 2 }}
-        >
-          Back to Dashboard
-        </Button>
-        <Typography variant="h4" component="h1" sx={{ flexGrow: 1 }}>
-          Session Details
-        </Typography>
-        <Tooltip title="Refresh">
-          <IconButton onClick={() => sessionQuery?.refetch()}>
-            <RefreshIcon />
-          </IconButton>
-        </Tooltip>
+  // If session is not running, show the start interface
+  if (session.status !== SessionStatus.RUNNING || !session.terminalUrls) {
+    return (
+      <Box sx={{ 
+        height: '100vh', 
+        backgroundColor: '#1e1e1e',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Header */}
+        <Box sx={{
+          backgroundColor: '#2d2d2d',
+          borderBottom: '1px solid #404040',
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              component={Link}
+              to={ROUTES.DASHBOARD}
+              startIcon={<ArrowBackIcon />}
+              sx={{ color: '#a1a1aa', textTransform: 'none' }}
+            >
+              Dashboard
+            </Button>
+            <Typography variant="h6" sx={{ color: 'white', fontFamily: 'monospace' }}>
+              {session.name || session.id.slice(0, 12)}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip
+              label={session.status}
+              sx={{
+                backgroundColor: session.status === SessionStatus.ERROR ? '#ef4444' : '#6b7280',
+                color: 'white',
+                textTransform: 'uppercase',
+                fontSize: '0.75rem'
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* Main Content */}
+        <Box sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 4,
+          color: 'white'
+        }}>
+          <TerminalIcon sx={{ fontSize: 80, color: '#404040' }} />
+          <Typography variant="h4" sx={{ textAlign: 'center' }}>
+            Session {session.status.toLowerCase()}
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#a1a1aa', textAlign: 'center', mb: 2 }}>
+            {canStart ? 'Start the session to access terminals' : 'Session is not ready'}
+          </Typography>
+          
+          {canStart && (
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<PlayIcon />}
+              onClick={() => startSession(session.id)}
+              disabled={isStarting}
+              sx={{
+                backgroundColor: '#10b981',
+                '&:hover': { backgroundColor: '#059669' },
+                textTransform: 'none',
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem'
+              }}
+            >
+              {isStarting ? 'Starting Session...' : 'Start Session'}
+            </Button>
+          )}
+        </Box>
       </Box>
+    );
+  }
 
-      {error && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={clearError}
-        >
-          {error}
-        </Alert>
-      )}
+  // Main terminal interface (like dash.png)
+  return (
+    <>
+      <Box sx={{
+        height: '100vh', 
+        backgroundColor: '#1e1e1e',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Top Header Bar */}
+        <Box sx={{
+          backgroundColor: '#2d2d2d',
+          borderBottom: '1px solid #404040',
+          px: 3,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          minHeight: 60
+        }}>
+          {/* Left side - Navigation */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              component={Link}
+              to={ROUTES.DASHBOARD}
+              startIcon={<ArrowBackIcon />}
+              sx={{ 
+                color: '#a1a1aa',
+                textTransform: 'none',
+                '&:hover': { color: 'white' }
+              }}
+            >
+              Dashboard
+            </Button>
+            <Typography variant="h6" sx={{ color: 'white', fontFamily: 'monospace' }}>
+              {session.name || session.id.slice(0, 12)}
+            </Typography>
+            <Chip
+              label="RUNNING"
+              sx={{
+                backgroundColor: '#10b981',
+                color: 'white',
+                textTransform: 'uppercase',
+                fontSize: '0.7rem',
+                height: 24,
+                animation: 'pulse 2s infinite'
+              }}
+            />
+            <Typography variant="body2" sx={{ color: '#a1a1aa', fontFamily: 'monospace' }}>
+              {session.repoUrl ? session.repoUrl.split('/').pop()?.replace('.git', '') : ''}
+            </Typography>
+          </Box>
 
-      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
-        <Box sx={{ flex: { lg: 1 } }}>
-          <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h6">
-                Session Information
-              </Typography>
-              {getStatusChip(session.status)}
-            </Box>
+          {/* Right side - Actions */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => stopSession(session.id)}
+              disabled={isStopping}
+              sx={{
+                backgroundColor: '#f59e0b',
+                '&:hover': { backgroundColor: '#d97706' },
+                textTransform: 'none',
+                minWidth: 80
+              }}
+            >
+              {isStopping ? 'Stopping...' : 'Stop'}
+            </Button>
+            
+            <IconButton
+              size="small"
+              onClick={() => restartSession(session.id)}
+              disabled={isRestarting}
+              sx={{ color: '#a1a1aa' }}
+              title="Restart"
+            >
+              <RestartIcon />
+            </IconButton>
 
-            <TableContainer>
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Session Name
-                    </TableCell>
-                    <TableCell>{session.name}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Session ID
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontFamily="monospace">
-                        {session.id}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Repository
-                    </TableCell>
-                    <TableCell>{session.repoUrl || 'No repository'}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Branch
-                    </TableCell>
-                    <TableCell>{session.branch}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Terminal Mode
-                    </TableCell>
-                    <TableCell>{TERMINAL_MODE_LABELS[session.terminalMode]}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Claude Port
-                    </TableCell>
-                    <TableCell>
-                      {session.ports?.claude || 'Not assigned'}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Manual Port
-                    </TableCell>
-                    <TableCell>
-                      {session.ports?.manual || 'Not assigned'}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Created
-                    </TableCell>
-                    <TableCell>{new Date(session.createdAt).toLocaleString()}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Last Updated
-                    </TableCell>
-                    <TableCell>{new Date(session.updatedAt).toLocaleString()}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+            <IconButton
+              size="small"
+              onClick={() => sessionQuery?.refetch()}
+              sx={{ color: '#a1a1aa' }}
+              title="Refresh"
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+        </Box>
 
-          {session.terminalUrls && session.status === SessionStatus.RUNNING && (
-            <Paper sx={{ p: 2, mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Terminal Access
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<TerminalIcon />}
-                  endIcon={<OpenInNewIcon />}
-                  href={session.terminalUrls.claude}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Claude Terminal
-                </Button>
-                {session.terminalMode === 'DUAL' && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<TerminalIcon />}
-                    endIcon={<OpenInNewIcon />}
-                    href={session.terminalUrls.manual}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Manual Terminal
-                  </Button>
-                )}
-              </Box>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Live Terminals
-                </Typography>
-                
-                {session.terminalMode === 'DUAL' ? (
-                  <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Claude Terminal
-                      </Typography>
-                      <Box
-                        component="iframe"
-                        src={session.terminalUrls.claude}
-                        sx={{
-                          width: '100%',
-                          height: '600px',
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          backgroundColor: 'background.paper',
-                        }}
-                        title="Claude Terminal"
-                      />
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Manual Terminal
-                      </Typography>
-                      <Box
-                        component="iframe"
-                        src={session.terminalUrls.manual}
-                        sx={{
-                          width: '100%',
-                          height: '600px',
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          backgroundColor: 'background.paper',
-                        }}
-                        title="Manual Terminal"
-                      />
-                    </Box>
-                  </Box>
-                ) : (
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Claude Terminal
-                    </Typography>
-                    <Box
-                      component="iframe"
-                      src={session.terminalUrls.claude}
-                      sx={{
-                        width: '100%',
-                        height: '700px',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        backgroundColor: 'background.paper',
-                      }}
-                      title="Claude Terminal"
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Paper>
+        {/* Terminal Access Buttons */}
+        <Box sx={{
+          backgroundColor: '#2d2d2d',
+          borderBottom: '1px solid #404040',
+          px: 3,
+          py: 2,
+          display: 'flex',
+          gap: 2
+        }}>
+          <Button
+            variant="contained"
+            startIcon={<TerminalIcon />}
+            href={session.terminalUrls.claude}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{
+              backgroundColor: '#3b82f6',
+              '&:hover': { backgroundColor: '#2563eb' },
+              textTransform: 'none',
+              fontWeight: 600
+            }}
+          >
+            Open Claude Terminal
+          </Button>
+          {session.terminalMode === 'DUAL' && (
+            <Button
+              variant="outlined"
+              startIcon={<TerminalIcon />}
+              href={session.terminalUrls.manual}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{
+                borderColor: '#6b7280',
+                color: '#a1a1aa',
+                '&:hover': { 
+                  borderColor: '#9ca3af',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                },
+                textTransform: 'none'
+              }}
+            >
+              Open Manual Terminal
+            </Button>
           )}
         </Box>
 
-        <Box sx={{ flex: { lg: 2 } }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Actions
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {canStart && (
-                  <Button
-                    variant="contained"
-                    startIcon={<PlayIcon />}
-                    onClick={() => startSession(session.id)}
-                    disabled={isStarting}
-                    color="success"
+        {/* Terminal Panels */}
+        <Box sx={{ 
+          flex: 1, 
+          display: 'flex', 
+          minHeight: 0
+        }}>
+          {session.terminalMode === 'DUAL' ? (
+            <>
+              {/* Claude Terminal */}
+              <Box sx={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column',
+                borderRight: '1px solid #404040'
+              }}>
+                <Box sx={{
+                  backgroundColor: '#2d2d2d',
+                  p: 2,
+                  borderBottom: '1px solid #404040',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TerminalIcon fontSize="small" sx={{ color: '#3b82f6' }} />
+                    <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+                      Claude Terminal
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setIsFullscreen(true);
+                      setFullscreenTerminal('claude');
+                    }}
+                    sx={{ color: '#a1a1aa' }}
                   >
-                    {isStarting ? 'Starting...' : 'Start Session'}
-                  </Button>
-                )}
-                
-                {canStop && (
-                  <Button
-                    variant="contained"
-                    startIcon={<StopIcon />}
-                    onClick={() => stopSession(session.id)}
-                    disabled={isStopping}
-                    color="warning"
-                  >
-                    {isStopping ? 'Stopping...' : 'Stop Session'}
-                  </Button>
-                )}
-                
-                {canRestart && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<RestartIcon />}
-                    onClick={() => restartSession(session.id)}
-                    disabled={isRestarting}
-                    color="info"
-                  >
-                    {isRestarting ? 'Restarting...' : 'Restart Session'}
-                  </Button>
-                )}
-                
-                {canDelete && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<DeleteIcon />}
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    color="error"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete Session'}
-                  </Button>
-                )}
+                    <FullscreenIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+                <Box
+                  component="iframe"
+                  src={session.terminalUrls.claude}
+                  sx={{
+                    flex: 1,
+                    border: 'none',
+                    backgroundColor: '#000'
+                  }}
+                  title="Claude Terminal"
+                />
               </Box>
-            </CardContent>
-          </Card>
+
+              {/* Manual Terminal */}
+              <Box sx={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column'
+              }}>
+                <Box sx={{
+                  backgroundColor: '#2d2d2d',
+                  p: 2,
+                  borderBottom: '1px solid #404040',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TerminalIcon fontSize="small" sx={{ color: '#6b7280' }} />
+                    <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+                      Manual Terminal
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setIsFullscreen(true);
+                      setFullscreenTerminal('manual');
+                    }}
+                    sx={{ color: '#a1a1aa' }}
+                  >
+                    <FullscreenIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+                <Box
+                  component="iframe"
+                  src={session.terminalUrls.manual}
+                  sx={{
+                    flex: 1,
+                    border: 'none',
+                    backgroundColor: '#000'
+                  }}
+                  title="Manual Terminal"
+                />
+              </Box>
+            </>
+          ) : (
+            /* Single Terminal */
+            <Box sx={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column'
+            }}>
+              <Box sx={{
+                backgroundColor: '#2d2d2d',
+                p: 2,
+                borderBottom: '1px solid #404040',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TerminalIcon fontSize="small" sx={{ color: '#3b82f6' }} />
+                  <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+                    Claude Terminal
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setIsFullscreen(true);
+                    setFullscreenTerminal('claude');
+                  }}
+                  sx={{ color: '#a1a1aa' }}
+                >
+                  <FullscreenIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <Box
+                component="iframe"
+                src={session.terminalUrls.claude}
+                sx={{
+                  flex: 1,
+                  border: 'none',
+                  backgroundColor: '#000'
+                }}
+                title="Claude Terminal"
+              />
+            </Box>
+          )}
         </Box>
       </Box>
-    </Box>
+
+      {/* Fullscreen Terminal Modal */}
+      {isFullscreen && fullscreenTerminal && session.terminalUrls && (
+        <Box sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: '#000',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Fullscreen Header */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            p: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <Typography sx={{ 
+              color: 'white', 
+              fontFamily: 'monospace',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}>
+              <TerminalIcon fontSize="small" />
+              {fullscreenTerminal === 'claude' ? 'Claude Terminal' : 'Manual Terminal'} - {session.name || session.id.slice(0, 12)}
+            </Typography>
+            <IconButton
+              onClick={() => {
+                setIsFullscreen(false);
+                setFullscreenTerminal(null);
+              }}
+              sx={{ color: 'white' }}
+            >
+              <FullscreenExitIcon />
+            </IconButton>
+          </Box>
+
+          {/* Fullscreen Terminal */}
+          <Box
+            component="iframe"
+            src={fullscreenTerminal === 'claude' ? session.terminalUrls.claude : session.terminalUrls.manual}
+            sx={{
+              width: '100%',
+              flex: 1,
+              border: 'none',
+              backgroundColor: '#000'
+            }}
+            title={`${fullscreenTerminal === 'claude' ? 'Claude' : 'Manual'} Terminal Fullscreen`}
+          />
+        </Box>
+      )}
+    </>
   );
 };
 

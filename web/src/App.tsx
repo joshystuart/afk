@@ -13,17 +13,47 @@ import CreateSession from './pages/CreateSession';
 import Login from './pages/Login';
 
 // Layout
-import Layout from './components/layout/Layout';
+import Layout from './components/Layout';
 
 // Create theme
 const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
     primary: {
-      main: '#1976d2',
+      main: '#3b82f6',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#10b981',
+    },
+    background: {
+      default: '#1a1a1a',
+      paper: '#2d2d2d',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#a1a1aa',
+    },
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          scrollbarColor: '#404040 #1a1a1a',
+          '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
+            width: '8px',
+            height: '8px',
+          },
+          '&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb': {
+            borderRadius: '4px',
+            backgroundColor: '#404040',
+            minHeight: 24,
+          },
+          '&::-webkit-scrollbar-track, & *::-webkit-scrollbar-track': {
+            borderRadius: '4px',
+            backgroundColor: '#1a1a1a',
+          },
+        },
+      },
     },
   },
 });
@@ -58,18 +88,34 @@ const AppContent = () => {
     <Router>
       <Routes>
         <Route path={ROUTES.LOGIN} element={<Login />} />
+        <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+        {/* Routes with Layout */}
         <Route
-          path="/*"
+          path={ROUTES.DASHBOARD}
           element={
             <ProtectedRoute>
               <Layout>
-                <Routes>
-                  <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-                  <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
-                  <Route path={ROUTES.CREATE_SESSION} element={<CreateSession />} />
-                  <Route path={ROUTES.SESSION_DETAILS} element={<SessionDetails />} />
-                </Routes>
+                <Dashboard />
               </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.CREATE_SESSION}
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <CreateSession />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        {/* Routes without Layout (full screen) */}
+        <Route
+          path={ROUTES.SESSION_DETAILS}
+          element={
+            <ProtectedRoute>
+              <SessionDetails />
             </ProtectedRoute>
           }
         />

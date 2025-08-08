@@ -6,6 +6,8 @@ import {
     IconButton,
     Skeleton,
     Typography,
+    Container,
+    Grid,
 } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
@@ -115,21 +117,20 @@ const SessionDetails: React.FC = () => {
   // If session is not running, show the start interface
   if (session.status !== SessionStatus.RUNNING || !session.terminalUrls) {
     return (
-      <Box sx={{ 
+      <Grid container direction="column" sx={{ 
         height: '100vh', 
-        backgroundColor: '#1e1e1e',
-        display: 'flex',
-        flexDirection: 'column'
+        backgroundColor: '#1e1e1e'
       }}>
         {/* Header */}
-        <Box sx={{
-          backgroundColor: '#2d2d2d',
-          borderBottom: '1px solid #404040',
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+        <Grid item xs={12}>
+          <Box sx={{
+            backgroundColor: '#2d2d2d',
+            borderBottom: '1px solid #404040',
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
               component={Link}
@@ -154,71 +155,75 @@ const SessionDetails: React.FC = () => {
               }}
             />
           </Box>
-        </Box>
+          </Box>
+        </Grid>
 
         {/* Main Content */}
-        <Box sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 4,
-          color: 'white'
-        }}>
-          <TerminalIcon sx={{ fontSize: 80, color: '#404040' }} />
-          <Typography variant="h4" sx={{ textAlign: 'center' }}>
-            Session {session.status.toLowerCase()}
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#a1a1aa', textAlign: 'center', mb: 2 }}>
-            {canStart ? 'Start the session to access terminals' : 'Session is not ready'}
-          </Typography>
-          
-          {canStart && (
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<PlayIcon />}
-              onClick={() => startSession(session.id)}
-              disabled={isStarting}
-              sx={{
-                backgroundColor: '#10b981',
-                '&:hover': { backgroundColor: '#059669' },
-                textTransform: 'none',
-                px: 4,
-                py: 1.5,
-                fontSize: '1.1rem'
-              }}
-            >
-              {isStarting ? 'Starting Session...' : 'Start Session'}
-            </Button>
-          )}
-        </Box>
-      </Box>
+        <Grid item xs sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Container maxWidth="sm">
+            <Grid container direction="column" alignItems="center" spacing={4} sx={{ color: 'white' }}>
+              <Grid item>
+                <TerminalIcon sx={{ fontSize: 80, color: '#404040' }} />
+              </Grid>
+              <Grid item>
+                <Typography variant="h4" sx={{ textAlign: 'center' }}>
+                  Session {session.status.toLowerCase()}
+                </Typography>
+              </Grid>
+              <Grid item>
+                <Typography variant="body1" sx={{ color: '#a1a1aa', textAlign: 'center' }}>
+                  {canStart ? 'Start the session to access terminals' : 'Session is not ready'}
+                </Typography>
+              </Grid>
+              
+              {canStart && (
+                <Grid item>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<PlayIcon />}
+                    onClick={() => startSession(session.id)}
+                    disabled={isStarting}
+                    sx={{
+                      backgroundColor: '#10b981',
+                      '&:hover': { backgroundColor: '#059669' },
+                      textTransform: 'none',
+                      px: 4,
+                      py: 1.5,
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    {isStarting ? 'Starting Session...' : 'Start Session'}
+                  </Button>
+                </Grid>
+              )}
+            </Grid>
+          </Container>
+        </Grid>
+      </Grid>
     );
   }
 
   // Main terminal interface (like dash.png)
   return (
     <>
-      <Box sx={{
+      <Grid container direction="column" sx={{
         height: '100vh', 
         backgroundColor: '#1e1e1e',
-        display: 'flex',
-        flexDirection: 'column',
         overflow: 'hidden'
       }}>
         {/* Top Header Bar */}
-        <Box sx={{
-          backgroundColor: '#2d2d2d',
-          borderBottom: '1px solid #404040',
-          px: 3,
-          py: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          minHeight: 60
-        }}>
+        <Grid item xs={12}>
+          <Box sx={{
+            backgroundColor: '#2d2d2d',
+            borderBottom: '1px solid #404040',
+            px: 3,
+            py: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: 60
+          }}>
           {/* Left side - Navigation */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
@@ -288,17 +293,19 @@ const SessionDetails: React.FC = () => {
               <RefreshIcon />
             </IconButton>
           </Box>
-        </Box>
+          </Box>
+        </Grid>
 
         {/* Terminal Access Buttons */}
-        <Box sx={{
-          backgroundColor: '#2d2d2d',
-          borderBottom: '1px solid #404040',
-          px: 3,
-          py: 2,
-          display: 'flex',
-          gap: 2
-        }}>
+        <Grid item xs={12}>
+          <Box sx={{
+            backgroundColor: '#2d2d2d',
+            borderBottom: '1px solid #404040',
+            px: 3,
+            py: 2,
+            display: 'flex',
+            gap: 2
+          }}>
           <Button
             variant="contained"
             startIcon={<TerminalIcon />}
@@ -334,23 +341,22 @@ const SessionDetails: React.FC = () => {
               Open Manual Terminal
             </Button>
           )}
-        </Box>
+          </Box>
+        </Grid>
 
         {/* Terminal Panels */}
-        <Box sx={{ 
-          flex: 1, 
-          display: 'flex', 
-          minHeight: 0
-        }}>
-          {session.terminalMode === 'DUAL' ? (
-            <>
-              {/* Claude Terminal */}
-              <Box sx={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                borderRight: '1px solid #404040'
-              }}>
+        <Grid item xs sx={{ minHeight: 0 }}>
+          <Grid container sx={{ height: '100%' }}>
+            {session.terminalMode === 'DUAL' ? (
+              <>
+                {/* Claude Terminal */}
+                <Grid item xs={12} md={6} sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  borderRight: { md: '1px solid #404040' },
+                  borderBottom: { xs: '1px solid #404040', md: 'none' },
+                  height: { xs: '50vh', md: '100%' }
+                }}>
                 <Box sx={{
                   backgroundColor: '#2d2d2d',
                   p: 2,
@@ -385,15 +391,15 @@ const SessionDetails: React.FC = () => {
                     backgroundColor: '#000'
                   }}
                   title="Claude Terminal"
-                />
-              </Box>
+                  />
+                </Grid>
 
-              {/* Manual Terminal */}
-              <Box sx={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column'
-              }}>
+                {/* Manual Terminal */}
+                <Grid item xs={12} md={6} sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  height: { xs: '50vh', md: '100%' }
+                }}>
                 <Box sx={{
                   backgroundColor: '#2d2d2d',
                   p: 2,
@@ -428,16 +434,16 @@ const SessionDetails: React.FC = () => {
                     backgroundColor: '#000'
                   }}
                   title="Manual Terminal"
-                />
-              </Box>
-            </>
-          ) : (
-            /* Single Terminal */
-            <Box sx={{ 
-              flex: 1, 
-              display: 'flex', 
-              flexDirection: 'column'
-            }}>
+                  />
+                </Grid>
+              </>
+            ) : (
+              /* Single Terminal */
+              <Grid item xs={12} sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                height: '100%'
+              }}>
               <Box sx={{
                 backgroundColor: '#2d2d2d',
                 p: 2,
@@ -472,11 +478,12 @@ const SessionDetails: React.FC = () => {
                   backgroundColor: '#000'
                 }}
                 title="Claude Terminal"
-              />
-            </Box>
-          )}
-        </Box>
-      </Box>
+                />
+              </Grid>
+            )}
+          </Grid>
+        </Grid>
+      </Grid>
 
       {/* Fullscreen Terminal Modal */}
       {isFullscreen && fullscreenTerminal && session.terminalUrls && (

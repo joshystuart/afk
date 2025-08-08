@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, Grid } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { Dashboard as DashboardIcon, Add as AddIcon } from '@mui/icons-material';
 import { ROUTES } from '../utils/constants';
@@ -12,14 +12,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#1a1a1a' }}>
+    <Grid container sx={{ height: '100vh', backgroundColor: '#1a1a1a' }}>
       {/* Sidebar Navigation */}
-      <Box sx={{
-        width: '240px',
+      <Grid item xs={12} sm={3} md={2} lg={2} xl={2} sx={{
         backgroundColor: '#2d2d2d',
         borderRight: '1px solid #404040',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        minWidth: '240px'
       }}>
         {/* Logo/Brand */}
         <Box sx={{ p: 3, borderBottom: '1px solid #404040' }}>
@@ -77,13 +77,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Create Session
           </Button>
         </Box>
-      </Box>
+      </Grid>
 
       {/* Main Content Area */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Grid item xs={12} sm={9} md={10} lg={10} xl={10} sx={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {children}
-      </Box>
-    </Box>
+      </Grid>
+    </Grid>
   );
 };
 

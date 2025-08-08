@@ -162,9 +162,9 @@ const SessionDetails: React.FC = () => {
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-        <Box sx={{ flex: { md: 2 } }}>
-          <Paper sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
+        <Box sx={{ flex: { lg: 1 } }}>
+          <Paper sx={{ p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6">
                 Session Information
@@ -243,7 +243,7 @@ const SessionDetails: React.FC = () => {
           </Paper>
 
           {session.terminalUrls && session.status === SessionStatus.RUNNING && (
-            <Paper sx={{ p: 3, mt: 3 }}>
+            <Paper sx={{ p: 2, mt: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Terminal Access
               </Typography>
@@ -288,7 +288,7 @@ const SessionDetails: React.FC = () => {
                         src={session.terminalUrls.claude}
                         sx={{
                           width: '100%',
-                          height: '400px',
+                          height: '600px',
                           border: '1px solid',
                           borderColor: 'divider',
                           borderRadius: 1,
@@ -306,7 +306,7 @@ const SessionDetails: React.FC = () => {
                         src={session.terminalUrls.manual}
                         sx={{
                           width: '100%',
-                          height: '400px',
+                          height: '600px',
                           border: '1px solid',
                           borderColor: 'divider',
                           borderRadius: 1,
@@ -326,7 +326,7 @@ const SessionDetails: React.FC = () => {
                       src={session.terminalUrls.claude}
                       sx={{
                         width: '100%',
-                        height: '500px',
+                        height: '700px',
                         border: '1px solid',
                         borderColor: 'divider',
                         borderRadius: 1,
@@ -341,7 +341,7 @@ const SessionDetails: React.FC = () => {
           )}
         </Box>
 
-        <Box sx={{ flex: { md: 1 } }}>
+        <Box sx={{ flex: { lg: 2 } }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

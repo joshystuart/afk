@@ -73,7 +73,7 @@ const Dashboard: React.FC = () => {
     );
 
     return (
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box sx={{ display: 'flex', gap: 0.5 }}>
         <IconButton
           size="small"
           onClick={() => handleViewSession(session.id)}
@@ -144,7 +144,7 @@ const Dashboard: React.FC = () => {
         <Typography variant="h4" component="h1">
           Development Sessions
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}

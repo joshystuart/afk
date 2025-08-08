@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi } from '../api/sessions.api';
 import { useSessionStore } from '../stores/session.store';
 import type { CreateSessionRequest } from '../api/types';
@@ -14,6 +14,8 @@ export const useSession = () => {
     setSessions,
     setError,
   } = useSessionStore();
+
+  const queryClient = useQueryClient();
 
   // Query to list all sessions
   const {
@@ -32,8 +34,8 @@ export const useSession = () => {
     }
   }, [sessionsData, setSessions]);
 
-  // Query to get a specific session
-  const getSessionQuery = (sessionId: string) => 
+  // Function to create session query (for external use)
+  const useSessionQuery = (sessionId: string) => 
     useQuery({
       queryKey: ['session', sessionId],
       queryFn: () => sessionsApi.getSession(sessionId),
@@ -43,26 +45,44 @@ export const useSession = () => {
   // Create session mutation
   const createSessionMutation = useMutation({
     mutationFn: (request: CreateSessionRequest) => sessionsApi.createSession(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
   });
 
   // Start session mutation
   const startSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionsApi.startSession(sessionId),
+    onSuccess: (_, sessionId) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    },
   });
 
   // Stop session mutation
   const stopSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionsApi.stopSession(sessionId),
+    onSuccess: (_, sessionId) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    },
   });
 
   // Restart session mutation
   const restartSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionsApi.restartSession(sessionId),
+    onSuccess: (_, sessionId) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    },
   });
 
   // Delete session mutation
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionsApi.deleteSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
   });
 
   const isLoading = storeLoading || queryLoading;
@@ -81,7 +101,7 @@ export const useSession = () => {
     restartSession: restartSessionMutation.mutateAsync,
     deleteSession: deleteSessionMutation.mutateAsync,
     refetchSessions,
-    getSession: getSessionQuery,
+    getSession: useSessionQuery,
     setCurrentSession,
     clearError: () => setError(null),
     

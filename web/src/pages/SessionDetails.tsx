@@ -1,38 +1,38 @@
 import React from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Chip,
-  Alert,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableRow,
-  IconButton,
-  Tooltip,
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    Grid,
+    IconButton,
+    Paper,
+    Skeleton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+    Tooltip,
+    Typography,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
-  RestartAlt as RestartIcon,
-  Delete as DeleteIcon,
-  OpenInNew as OpenInNewIcon,
-  Terminal as TerminalIcon,
-  Refresh as RefreshIcon,
+    ArrowBack as ArrowBackIcon,
+    Delete as DeleteIcon,
+    OpenInNew as OpenInNewIcon,
+    PlayArrow as PlayIcon,
+    Refresh as RefreshIcon,
+    RestartAlt as RestartIcon,
+    Stop as StopIcon,
+    Terminal as TerminalIcon,
 } from '@mui/icons-material';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useSession } from '../hooks/useSession';
-import { useWebSocket } from '../hooks/useWebSocket';
-import { SessionStatus } from '../api/types';
-import { ROUTES, SESSION_STATUS_COLORS, SESSION_STATUS_LABELS, TERMINAL_MODE_LABELS } from '../utils/constants';
+import {Link, useNavigate, useParams} from 'react-router-dom';
+import {useSession} from '../hooks/useSession';
+import {useWebSocket} from '../hooks/useWebSocket';
+import {SessionStatus} from '../api/types';
+import {ROUTES, SESSION_STATUS_COLORS, SESSION_STATUS_LABELS, TERMINAL_MODE_LABELS} from '../utils/constants';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -60,8 +60,7 @@ const SessionDetails: React.FC = () => {
   const sessionQuery = id ? getSession(id) : null;
 
   React.useEffect(() => {
-    if (id && sessionQuery?.data) {
-      setCurrentSession(sessionQuery.data);
+    if (id) {
       subscribeToSession(id);
     }
 
@@ -70,7 +69,7 @@ const SessionDetails: React.FC = () => {
         unsubscribeFromSession(id);
       }
     };
-  }, [id, sessionQuery?.data, setCurrentSession, subscribeToSession, unsubscribeFromSession]);
+  }, [id, subscribeToSession, unsubscribeFromSession]);
 
   const handleDelete = async () => {
     if (id && window.confirm('Are you sure you want to delete this session?')) {
@@ -99,7 +98,7 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  if (!currentSession && !sessionQuery?.isLoading) {
+  if (!sessionQuery?.data && !sessionQuery?.isLoading) {
     return (
       <Box>
         <Button
@@ -117,7 +116,7 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  if (!currentSession) {
+  if (!sessionQuery?.data) {
     return (
       <Box>
         <Skeleton variant="text" height={60} sx={{ mb: 2 }} />
@@ -126,7 +125,7 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  const session = currentSession;
+  const session = sessionQuery.data;
   const canStart = session.status === SessionStatus.STOPPED;
   const canStop = session.status === SessionStatus.RUNNING;
   const canRestart = session.status === SessionStatus.RUNNING;
@@ -167,7 +166,7 @@ const SessionDetails: React.FC = () => {
       )}
 
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6">
@@ -251,7 +250,7 @@ const SessionDetails: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Terminal Access
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                 <Button
                   variant="contained"
                   startIcon={<TerminalIcon />}
@@ -275,11 +274,81 @@ const SessionDetails: React.FC = () => {
                   </Button>
                 )}
               </Box>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Live Terminals
+                </Typography>
+                
+                {session.terminalMode === 'DUAL' ? (
+                  <Grid container spacing={2}>
+                    <Grid xs={12} md={6}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                          Claude Terminal
+                        </Typography>
+                        <Box
+                          component="iframe"
+                          src={session.terminalUrls.claude}
+                          sx={{
+                            width: '100%',
+                            height: '400px',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            backgroundColor: 'background.paper',
+                          }}
+                          title="Claude Terminal"
+                        />
+                      </Box>
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                          Manual Terminal
+                        </Typography>
+                        <Box
+                          component="iframe"
+                          src={session.terminalUrls.manual}
+                          sx={{
+                            width: '100%',
+                            height: '400px',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            backgroundColor: 'background.paper',
+                          }}
+                          title="Manual Terminal"
+                        />
+                      </Box>
+                    </Grid>
+                  </Grid>
+                ) : (
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      Claude Terminal
+                    </Typography>
+                    <Box
+                      component="iframe"
+                      src={session.terminalUrls.claude}
+                      sx={{
+                        width: '100%',
+                        height: '500px',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        backgroundColor: 'background.paper',
+                      }}
+                      title="Claude Terminal"
+                    />
+                  </Box>
+                )}
+              </Box>
             </Paper>
           )}
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid xs={12} md={4}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

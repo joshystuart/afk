@@ -27,13 +27,8 @@ export const useSession = () => {
 
   // Update store when query data changes
   useEffect(() => {
-    if (sessionsData) {
-      // Handle both wrapped and unwrapped responses
-      if (Array.isArray(sessionsData)) {
-        setSessions(sessionsData);
-      } else if (sessionsData.sessions) {
-        setSessions(sessionsData.sessions);
-      }
+    if (sessionsData && Array.isArray(sessionsData)) {
+      setSessions(sessionsData);
     }
   }, [sessionsData, setSessions]);
 

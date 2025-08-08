@@ -13,16 +13,44 @@ export const sessionsApi = {
     return response as unknown as CreateSessionResponse;
   },
 
-  // List all sessions with pagination
-  listSessions: async (page = 1, limit = 10): Promise<ListSessionsResponse> => {
+  // List all sessions with pagination  
+  listSessions: async (page = 1, limit = 10): Promise<Session[]> => {
     const response = await apiClient.get(`/sessions?page=${page}&limit=${limit}`);
-    return response as unknown as ListSessionsResponse;
+    // The API client already unwraps to just the array of sessions
+    const sessions = Array.isArray(response) ? response : [];
+    
+    // Transform each session to match frontend format
+    return sessions.map((sessionData: any) => ({
+      id: sessionData.id?.value || sessionData.id,
+      name: sessionData.name,
+      status: sessionData.status,
+      repoUrl: sessionData.config?.repoUrl || sessionData.repoUrl,
+      branch: sessionData.config?.branch || sessionData.branch || 'main',
+      terminalMode: sessionData.config?.terminalMode || sessionData.terminalMode,
+      ports: sessionData.ports,
+      createdAt: sessionData.createdAt,
+      updatedAt: sessionData.updatedAt,
+    })) as Session[];
   },
 
   // Get a specific session by ID
   getSession: async (sessionId: string): Promise<Session> => {
     const response = await apiClient.get(`/sessions/${sessionId}`);
-    return response as unknown as Session;
+    // Handle nested response structure where session data is in response.session
+    const sessionData = (response as any)?.session || response;
+    
+    // Transform the backend session structure to frontend format
+    return {
+      id: sessionData.id?.value || sessionData.id,
+      name: sessionData.name,
+      status: sessionData.status,
+      repoUrl: sessionData.config?.repoUrl || sessionData.repoUrl,
+      branch: sessionData.config?.branch || sessionData.branch || 'main',
+      terminalMode: sessionData.config?.terminalMode || sessionData.terminalMode,
+      ports: sessionData.ports,
+      createdAt: sessionData.createdAt,
+      updatedAt: sessionData.updatedAt,
+    } as Session;
   },
 
   // Start a session

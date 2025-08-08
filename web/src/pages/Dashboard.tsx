@@ -176,7 +176,7 @@ const Dashboard: React.FC = () => {
       )}
 
       <Grid container spacing={3}>
-        <Grid size={12}>
+        <Grid xs={12}>
           <Paper>
             <TableContainer>
               <Table>

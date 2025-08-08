@@ -8,25 +8,19 @@ export const ROUTES = {
 } as const;
 
 export const SESSION_STATUS_COLORS = {
-  pending: '#FFA726',
-  creating_container: '#42A5F5',
-  starting_container: '#66BB6A',
-  running: '#4CAF50',
-  stopping: '#FF7043',
-  stopped: '#9E9E9E',
-  failed: '#F44336',
-  deleting: '#FF5722',
+  INITIALIZING: '#FFA726',
+  STARTING: '#66BB6A',
+  RUNNING: '#4CAF50',
+  STOPPED: '#9E9E9E',
+  ERROR: '#F44336',
 } as const;
 
 export const SESSION_STATUS_LABELS = {
-  pending: 'Pending',
-  creating_container: 'Creating Container',
-  starting_container: 'Starting Container',
-  running: 'Running',
-  stopping: 'Stopping',
-  stopped: 'Stopped',
-  failed: 'Failed',
-  deleting: 'Deleting',
+  INITIALIZING: 'Initializing',
+  STARTING: 'Starting',
+  RUNNING: 'Running',
+  STOPPED: 'Stopped',
+  ERROR: 'Error',
 } as const;
 
 export const TERMINAL_MODE_LABELS = {

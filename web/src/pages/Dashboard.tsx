@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
     const canRestart = session.status === SessionStatus.RUNNING;
     const canDelete = (
       session.status === SessionStatus.STOPPED || 
-      session.status === SessionStatus.FAILED
+      session.status === SessionStatus.ERROR
     );
 
     return (
@@ -182,9 +182,9 @@ const Dashboard: React.FC = () => {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Session ID</TableCell>
+                    <TableCell>Session Name</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Image</TableCell>
+                    <TableCell>Repository</TableCell>
                     <TableCell>Mode</TableCell>
                     <TableCell>Created</TableCell>
                     <TableCell>Actions</TableCell>
@@ -204,7 +204,7 @@ const Dashboard: React.FC = () => {
                       <TableRow key={session.id}>
                         <TableCell>
                           <Typography variant="body2" fontFamily="monospace">
-                            {session.id.slice(0, 8)}
+                            {session.name || session.id.slice(0, 8)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -212,12 +212,12 @@ const Dashboard: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2">
-                            {session.config.image}
+                            {session.repoUrl ? session.repoUrl.split('/').pop()?.replace('.git', '') : 'No repo'}
                           </Typography>
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2">
-                            {TERMINAL_MODE_LABELS[session.config.mode]}
+                            {TERMINAL_MODE_LABELS[session.terminalMode]}
                           </Typography>
                         </TableCell>
                         <TableCell>

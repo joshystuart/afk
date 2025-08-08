@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { sessionsApi } from '../api/sessions.api';
 import { useSessionStore } from '../stores/session.store';
 import type { CreateSessionRequest } from '../api/types';
+import { useEffect } from 'react';
 
 export const useSession = () => {
   const {
@@ -10,17 +11,31 @@ export const useSession = () => {
     isLoading: storeLoading,
     error,
     setCurrentSession,
+    setSessions,
     setError,
   } = useSessionStore();
 
   // Query to list all sessions
   const {
+    data: sessionsData,
     isLoading: queryLoading,
     refetch: refetchSessions,
   } = useQuery({
     queryKey: ['sessions'],
     queryFn: () => sessionsApi.listSessions(),
   });
+
+  // Update store when query data changes
+  useEffect(() => {
+    if (sessionsData) {
+      // Handle both wrapped and unwrapped responses
+      if (Array.isArray(sessionsData)) {
+        setSessions(sessionsData);
+      } else if (sessionsData.sessions) {
+        setSessions(sessionsData.sessions);
+      }
+    }
+  }, [sessionsData, setSessions]);
 
   // Query to get a specific session
   const getSessionQuery = (sessionId: string) => 

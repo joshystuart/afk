@@ -1,12 +1,9 @@
 export const SessionStatus = {
-  PENDING: 'pending',
-  CREATING_CONTAINER: 'creating_container',
-  STARTING_CONTAINER: 'starting_container',
-  RUNNING: 'running',
-  STOPPING: 'stopping',
-  STOPPED: 'stopped',
-  FAILED: 'failed',
-  DELETING: 'deleting',
+  INITIALIZING: 'INITIALIZING',
+  STARTING: 'STARTING',
+  RUNNING: 'RUNNING',
+  STOPPED: 'STOPPED',
+  ERROR: 'ERROR',
 } as const;
 
 export type SessionStatus = typeof SessionStatus[keyof typeof SessionStatus];
@@ -31,12 +28,19 @@ export interface SessionConfigDto {
 
 export interface Session {
   id: string;
+  name: string;
   status: SessionStatus;
-  config: SessionConfigDto;
-  containerId?: string;
-  sshPort?: PortPair;
-  httpPort?: PortPair;
-  terminalUrl?: string;
+  repoUrl?: string;
+  branch: string;
+  terminalMode: TerminalMode;
+  ports?: {
+    claude: number;
+    manual: number;
+  };
+  terminalUrls?: {
+    claude: string;
+    manual: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

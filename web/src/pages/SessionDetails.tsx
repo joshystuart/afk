@@ -132,7 +132,7 @@ const SessionDetails: React.FC = () => {
   const canRestart = session.status === SessionStatus.RUNNING;
   const canDelete = (
     session.status === SessionStatus.STOPPED || 
-    session.status === SessionStatus.FAILED
+    session.status === SessionStatus.ERROR
   );
 
   return (
@@ -181,6 +181,12 @@ const SessionDetails: React.FC = () => {
                 <TableBody>
                   <TableRow>
                     <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
+                      Session Name
+                    </TableCell>
+                    <TableCell>{session.name}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
                       Session ID
                     </TableCell>
                     <TableCell>
@@ -191,54 +197,36 @@ const SessionDetails: React.FC = () => {
                   </TableRow>
                   <TableRow>
                     <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Docker Image
+                      Repository
                     </TableCell>
-                    <TableCell>{session.config.image}</TableCell>
+                    <TableCell>{session.repoUrl || 'No repository'}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
+                      Branch
+                    </TableCell>
+                    <TableCell>{session.branch}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
                       Terminal Mode
                     </TableCell>
-                    <TableCell>{TERMINAL_MODE_LABELS[session.config.mode]}</TableCell>
+                    <TableCell>{TERMINAL_MODE_LABELS[session.terminalMode]}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Workspace Path
+                      Claude Port
                     </TableCell>
                     <TableCell>
-                      {session.config.workspacePath || 'Default (/workspace)'}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      Container ID
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontFamily="monospace">
-                        {session.containerId || 'Not assigned'}
-                      </Typography>
+                      {session.ports?.claude || 'Not assigned'}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      SSH Port
+                      Manual Port
                     </TableCell>
                     <TableCell>
-                      {session.sshPort 
-                        ? `${session.sshPort.host} → ${session.sshPort.container}`
-                        : 'Not assigned'
-                      }
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                      HTTP Port
-                    </TableCell>
-                    <TableCell>
-                      {session.httpPort 
-                        ? `${session.httpPort.host} → ${session.httpPort.container}`
-                        : 'Not assigned'
-                      }
+                      {session.ports?.manual || 'Not assigned'}
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -258,21 +246,35 @@ const SessionDetails: React.FC = () => {
             </TableContainer>
           </Paper>
 
-          {session.terminalUrl && session.status === SessionStatus.RUNNING && (
+          {session.terminalUrls && session.status === SessionStatus.RUNNING && (
             <Paper sx={{ p: 3, mt: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Terminal Access
               </Typography>
-              <Button
-                variant="contained"
-                startIcon={<TerminalIcon />}
-                endIcon={<OpenInNewIcon />}
-                href={session.terminalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open Terminal
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<TerminalIcon />}
+                  endIcon={<OpenInNewIcon />}
+                  href={session.terminalUrls.claude}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Claude Terminal
+                </Button>
+                {session.terminalMode === 'DUAL' && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<TerminalIcon />}
+                    endIcon={<OpenInNewIcon />}
+                    href={session.terminalUrls.manual}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Manual Terminal
+                  </Button>
+                )}
+              </Box>
             </Paper>
           )}
         </Grid>

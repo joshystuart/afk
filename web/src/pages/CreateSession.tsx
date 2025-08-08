@@ -13,6 +13,7 @@ import {
   Card,
   CardContent,
   Grid,
+  Divider,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -25,7 +26,11 @@ interface CreateSessionForm {
   name: string;
   repoUrl?: string;
   branch?: string;
+  gitUserName?: string;
+  gitUserEmail?: string;
+  sshPrivateKey?: string;
   terminalMode: TerminalMode;
+  claudeToken?: string;
 }
 
 const CreateSession: React.FC = () => {
@@ -41,7 +46,11 @@ const CreateSession: React.FC = () => {
       name: '',
       repoUrl: '',
       branch: 'main',
+      gitUserName: '',
+      gitUserEmail: '',
+      sshPrivateKey: '',
       terminalMode: TerminalMode.DUAL,
+      claudeToken: '',
     },
   });
 
@@ -52,7 +61,11 @@ const CreateSession: React.FC = () => {
         name: data.name,
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
+        gitUserName: data.gitUserName || undefined,
+        gitUserEmail: data.gitUserEmail || undefined,
+        sshPrivateKey: data.sshPrivateKey || undefined,
         terminalMode: data.terminalMode,
+        claudeToken: data.claudeToken || undefined,
       };
       
       await createSession(request);
@@ -152,6 +165,64 @@ const CreateSession: React.FC = () => {
                 )}
               />
 
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                Git Configuration
+              </Typography>
+
+              <Controller
+                name="gitUserName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Git User Name (Optional)"
+                    margin="normal"
+                    helperText="Name to use for git commits"
+                    error={!!errors.gitUserName}
+                  />
+                )}
+              />
+
+              <Controller
+                name="gitUserEmail"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Git User Email (Optional)"
+                    margin="normal"
+                    helperText="Email to use for git commits"
+                    error={!!errors.gitUserEmail}
+                  />
+                )}
+              />
+
+              <Controller
+                name="sshPrivateKey"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label="SSH Private Key (Optional)"
+                    margin="normal"
+                    helperText="SSH private key for accessing private repositories"
+                    error={!!errors.sshPrivateKey}
+                    type="password"
+                  />
+                )}
+              />
+
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="h6" gutterBottom>
+                Terminal & Authentication
+              </Typography>
+
               <Controller
                 name="terminalMode"
                 control={control}
@@ -172,6 +243,22 @@ const CreateSession: React.FC = () => {
                       </Typography>
                     )}
                   </FormControl>
+                )}
+              />
+
+              <Controller
+                name="claudeToken"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Claude Token (Optional)"
+                    margin="normal"
+                    helperText="OAuth token for Claude Code access"
+                    error={!!errors.claudeToken}
+                    type="password"
+                  />
                 )}
               />
 

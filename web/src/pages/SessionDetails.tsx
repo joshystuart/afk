@@ -6,7 +6,6 @@ import {
     Card,
     CardContent,
     Chip,
-    Grid,
     IconButton,
     Paper,
     Skeleton,
@@ -40,7 +39,6 @@ const SessionDetails: React.FC = () => {
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
   
   const {
-    currentSession,
     isLoading,
     error,
     startSession,
@@ -48,7 +46,6 @@ const SessionDetails: React.FC = () => {
     restartSession,
     deleteSession,
     getSession,
-    setCurrentSession,
     clearError,
     isStarting,
     isStopping,
@@ -165,8 +162,8 @@ const SessionDetails: React.FC = () => {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        <Grid xs={12} md={8}>
+      <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+        <Box sx={{ flex: { md: 2 } }}>
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6">
@@ -281,48 +278,44 @@ const SessionDetails: React.FC = () => {
                 </Typography>
                 
                 {session.terminalMode === 'DUAL' ? (
-                  <Grid container spacing={2}>
-                    <Grid xs={12} md={6}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                          Claude Terminal
-                        </Typography>
-                        <Box
-                          component="iframe"
-                          src={session.terminalUrls.claude}
-                          sx={{
-                            width: '100%',
-                            height: '400px',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            backgroundColor: 'background.paper',
-                          }}
-                          title="Claude Terminal"
-                        />
-                      </Box>
-                    </Grid>
-                    <Grid xs={12} md={6}>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                          Manual Terminal
-                        </Typography>
-                        <Box
-                          component="iframe"
-                          src={session.terminalUrls.manual}
-                          sx={{
-                            width: '100%',
-                            height: '400px',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 1,
-                            backgroundColor: 'background.paper',
-                          }}
-                          title="Manual Terminal"
-                        />
-                      </Box>
-                    </Grid>
-                  </Grid>
+                  <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Claude Terminal
+                      </Typography>
+                      <Box
+                        component="iframe"
+                        src={session.terminalUrls.claude}
+                        sx={{
+                          width: '100%',
+                          height: '400px',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'background.paper',
+                        }}
+                        title="Claude Terminal"
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Manual Terminal
+                      </Typography>
+                      <Box
+                        component="iframe"
+                        src={session.terminalUrls.manual}
+                        sx={{
+                          width: '100%',
+                          height: '400px',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          backgroundColor: 'background.paper',
+                        }}
+                        title="Manual Terminal"
+                      />
+                    </Box>
+                  </Box>
                 ) : (
                   <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -346,9 +339,9 @@ const SessionDetails: React.FC = () => {
               </Box>
             </Paper>
           )}
-        </Grid>
+        </Box>
 
-        <Grid xs={12} md={4}>
+        <Box sx={{ flex: { md: 1 } }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -405,8 +398,8 @@ const SessionDetails: React.FC = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

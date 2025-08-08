@@ -4,6 +4,7 @@ import { CreateSessionInteractor } from './create-session.interactor';
 import { ResponseService, ApiResponse as ApiResponseType } from '../../../libs/response/response.service';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { CreateSessionResponseDto } from './create-session-response.dto';
+import { AppConfig } from '../../../libs/config/app.config';
 
 @ApiTags('Sessions')
 @Controller('sessions')
@@ -11,6 +12,7 @@ export class CreateSessionController {
   constructor(
     private readonly createSessionInteractor: CreateSessionInteractor,
     private readonly responseService: ResponseService,
+    private readonly appConfig: AppConfig,
   ) {}
 
   @Post()
@@ -26,7 +28,7 @@ export class CreateSessionController {
     try {
       const session = await this.createSessionInteractor.execute(request);
 
-      const response = CreateSessionResponseDto.fromDomain(session);
+      const response = CreateSessionResponseDto.fromDomain(session, this.appConfig.baseUrl);
       return this.responseService.success(response, 201);
     } catch (error) {
       throw new BadRequestException(error.message);

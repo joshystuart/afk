@@ -79,8 +79,25 @@ docker stop afk-terminal-1
 docker rm afk-terminal-1
 ```
 
+## Features
+
+### Terminal Access
+The web interface provides integrated terminal access directly in the browser:
+
+- **Embedded Terminals**: View Claude and manual terminals directly in the session details page via iframes
+- **External Access**: Open terminals in new windows for full-screen usage
+- **Responsive Layout**: Terminals display side-by-side on desktop, stacked on mobile
+- **Base URL Configuration**: Customize the base URL for terminal access using the `BASE_URL` environment variable
+
+### Session Management
+- Create and manage containerized sessions
+- Real-time session status updates via WebSocket
+- Start, stop, restart, and delete sessions
+- Session lifecycle management with automatic cleanup
+
 ## Environment Variables
 
+### Container Runtime
 - `CLAUDE_CODE_OAUTH_TOKEN`: OAuth token for Claude Code authentication
 - `REPO_URL`: Git repository URL (SSH format)
 - `REPO_BRANCH`: Git branch to checkout (default: main)
@@ -89,3 +106,10 @@ docker rm afk-terminal-1
 - `GIT_USER_EMAIL`: Git user email for commits
 - `GIT_SSH_HOST`: SSH host for Git operations (optional)
 - `TERMINAL_MODE`: Terminal mode (debug, dual, or normal)
+
+### Server Configuration
+- `BASE_URL`: Base URL for terminal access (default: `http://localhost`)
+  - Used to construct terminal URLs in the web interface
+  - Example: `http://localhost`, `https://your-domain.com`
+- `PORT`: Server port (default: 3001)
+- `NODE_ENV`: Node environment (development, production)

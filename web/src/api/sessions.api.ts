@@ -3,7 +3,6 @@ import type {
   Session,
   CreateSessionRequest,
   CreateSessionResponse,
-  ListSessionsResponse,
 } from './types';
 
 export const sessionsApi = {
@@ -21,13 +20,14 @@ export const sessionsApi = {
     
     // Transform each session to match frontend format
     return sessions.map((sessionData: any) => ({
-      id: sessionData.id?.value || sessionData.id,
+      id: sessionData.id,
       name: sessionData.name,
       status: sessionData.status,
-      repoUrl: sessionData.config?.repoUrl || sessionData.repoUrl,
-      branch: sessionData.config?.branch || sessionData.branch || 'main',
-      terminalMode: sessionData.config?.terminalMode || sessionData.terminalMode,
+      repoUrl: sessionData.repoUrl,
+      branch: sessionData.branch || 'main',
+      terminalMode: sessionData.terminalMode,
       ports: sessionData.ports,
+      terminalUrls: sessionData.terminalUrls,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -36,18 +36,19 @@ export const sessionsApi = {
   // Get a specific session by ID
   getSession: async (sessionId: string): Promise<Session> => {
     const response = await apiClient.get(`/sessions/${sessionId}`);
-    // Handle nested response structure where session data is in response.session
-    const sessionData = (response as any)?.session || response;
+    // The response now should be properly formatted from the backend
+    const sessionData = response as any;
     
     // Transform the backend session structure to frontend format
     return {
-      id: sessionData.id?.value || sessionData.id,
+      id: sessionData.id,
       name: sessionData.name,
       status: sessionData.status,
-      repoUrl: sessionData.config?.repoUrl || sessionData.repoUrl,
-      branch: sessionData.config?.branch || sessionData.branch || 'main',
-      terminalMode: sessionData.config?.terminalMode || sessionData.terminalMode,
+      repoUrl: sessionData.repoUrl,
+      branch: sessionData.branch || 'main',
+      terminalMode: sessionData.terminalMode,
       ports: sessionData.ports,
+      terminalUrls: sessionData.terminalUrls,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;

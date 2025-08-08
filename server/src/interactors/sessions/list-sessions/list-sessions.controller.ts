@@ -5,6 +5,7 @@ import { ResponseService, ApiResponse as ApiResponseType } from '../../../libs/r
 import { SessionStatus } from '../../../domain/sessions/session-status.enum';
 import { CreateSessionResponseDto } from '../create-session/create-session-response.dto';
 import { ListSessionsRequest } from './list-sessions-request.dto';
+import { AppConfig } from '../../../libs/config/app.config';
 
 @ApiTags('Sessions')
 @Controller('sessions')
@@ -12,6 +13,7 @@ export class ListSessionsController {
   constructor(
     private readonly listSessionsInteractor: ListSessionsInteractor,
     private readonly responseService: ResponseService,
+    private readonly appConfig: AppConfig,
   ) {}
 
   @Get()
@@ -26,7 +28,7 @@ export class ListSessionsController {
     
     const sessions = await this.listSessionsInteractor.execute(request);
 
-    const response = sessions.map(session => CreateSessionResponseDto.fromDomain(session));
+    const response = sessions.map(session => CreateSessionResponseDto.fromDomain(session, this.appConfig.baseUrl));
     return this.responseService.success(response);
   }
 }

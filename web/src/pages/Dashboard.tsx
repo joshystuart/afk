@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  Grid,
   Paper,
   Table,
   TableBody,
@@ -175,8 +174,8 @@ const Dashboard: React.FC = () => {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        <Grid xs={12}>
+      <Box>
+        <Box>
           <Paper>
             <TableContainer>
               <Table>
@@ -235,8 +234,8 @@ const Dashboard: React.FC = () => {
               </Table>
             </TableContainer>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

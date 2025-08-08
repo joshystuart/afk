@@ -14,6 +14,10 @@ export class AppConfig {
   @IsOptional()
   public readonly nodeEnv: string = 'development';
 
+  @IsString()
+  @IsOptional()
+  public readonly baseUrl: string = 'http://localhost';
+
   @ValidateNested()
   @Type(() => DockerConfig)
   @IsOptional()

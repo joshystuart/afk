@@ -16,6 +16,7 @@ import { HealthModule } from './health/health.module';
       load: dotenvLoader({
         separator: '_',
       }),
+      isGlobal: true,
     }),
     SessionsModule,
     GatewaysModule,

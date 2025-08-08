@@ -8,6 +8,12 @@ export class DockerEngineService {
   private readonly logger = new Logger(DockerEngineService.name);
 
   constructor(private readonly config: AppConfig) {
+    this.logger.log('Config received in DockerEngineService', { 
+      configExists: !!config,
+      dockerExists: !!config?.docker,
+      config: config 
+    });
+    
     // Use DOCKER_HOST if set, otherwise fall back to config socketPath
     const dockerOptions: any = {};
     
@@ -19,7 +25,7 @@ export class DockerEngineService {
         dockerOptions.host = process.env.DOCKER_HOST;
       }
     } else {
-      dockerOptions.socketPath = config.docker.socketPath;
+      dockerOptions.socketPath = config?.docker?.socketPath || '/var/run/docker.sock';
     }
 
     this.docker = new Dockerode(dockerOptions);
@@ -28,13 +34,20 @@ export class DockerEngineService {
 
   async createContainer(options: ContainerCreateOptions): Promise<Dockerode.Container> {
     this.logger.log('Creating container', { options });
+    this.logger.log('Config at container creation', { 
+      configExists: !!this.config,
+      dockerExists: !!this.config?.docker,
+      imageName: this.config?.docker?.imageName 
+    });
     
     try {
       // Verify Docker connectivity first
       await this.ping();
       
+      const imageName = this.config?.docker?.imageName || 'afk:latest';
+      
       const container = await this.docker.createContainer({
-        Image: this.config.docker.imageName,
+        Image: imageName,
         Env: this.buildEnvironment(options),
         ExposedPorts: this.buildExposedPorts(options.ports),
         HostConfig: {

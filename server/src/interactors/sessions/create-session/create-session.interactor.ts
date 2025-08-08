@@ -61,11 +61,14 @@ export class CreateSessionInteractor {
             // Update session with container info
             session.assignContainer(container.id, ports);
 
+            // Save session immediately after container assignment (in STARTING state)
+            await this.sessionRepository.save(session);
+
             // Wait for container to be ready
             await this.waitForContainerReady(container.id);
             session.markAsRunning();
 
-            // Save session
+            // Update session status to running
             await this.sessionRepository.save(session);
 
             this.logger.log('Session created successfully', {

@@ -149,9 +149,9 @@ configure_git_identity() {
     log_info "Git identity configured: $GIT_USER_NAME <$GIT_USER_EMAIL>"
 }
 
-# Start ttyd with simple claude command (no tmux)
+# Start ttyd with simple claude command using persistent screen session
 start_claude_simple() {
-    log_step "Starting Claude Code directly via ttyd (no tmux)"
+    log_step "Starting Claude Code in persistent screen session"
     
     # Ensure working directory exists
     if [ ! -d "$WORKING_DIR" ]; then
@@ -162,20 +162,29 @@ start_claude_simple() {
     # Change to working directory
     cd "$WORKING_DIR"
     
-    log_info "Starting ttyd on port $CLAUDE_PORT (simple mode)"
+    log_info "Starting persistent Claude session in screen"
     log_info "Working directory: $(pwd)"
     log_info "Access the terminal at: http://localhost:$CLAUDE_PORT"
     
-    # Start ttyd with claude directly - same as the original working command
+    # Start claude in a detached screen session if it doesn't exist
+    if ! screen -list | grep -q "claude-session"; then
+        log_info "Creating new screen session 'claude-session' with Claude"
+        screen -dmS claude-session claude
+        sleep 2
+    else
+        log_info "Screen session 'claude-session' already exists"
+    fi
+    
+    # Start ttyd that attaches to the existing screen session
     exec ttyd \
         --port "$CLAUDE_PORT" \
         --writable \
-        claude
+        screen -x claude-session
 }
 
-# Dual TTY approach: Start two separate ttyd instances
+# Dual TTY approach: Start two separate persistent screen sessions
 start_claude_dual_tty() {
-    log_step "Starting dual TTY sessions - Claude and Manual"
+    log_step "Starting dual persistent screen sessions - Claude and Manual"
     
     # Ensure working directory exists
     if [ ! -d "$WORKING_DIR" ]; then
@@ -186,38 +195,66 @@ start_claude_dual_tty() {
     # Change to working directory
     cd "$WORKING_DIR"
     
-    log_info "Starting dual TTY sessions:"
+    log_info "Starting dual persistent sessions:"
     log_info "  Claude session: http://localhost:$CLAUDE_PORT"
     log_info "  Manual session: http://localhost:$MANUAL_PORT"
     log_info "Working directory: $(pwd)"
     
-    # Start manual bash session in background
+    # Start manual bash session in screen if it doesn't exist
+    if ! screen -list | grep -q "manual-session"; then
+        log_info "Creating new screen session 'manual-session' with bash"
+        screen -dmS manual-session bash
+        sleep 1
+    else
+        log_info "Screen session 'manual-session' already exists"
+    fi
+    
+    # Start ttyd for manual session in background
     ttyd \
         --port "$MANUAL_PORT" \
         --writable \
         -t rendererType=canvas \
-        bash &
+        screen -x manual-session &
 
     local manual_pid=$!
-    log_info "Manual session started (PID: $manual_pid) on port $MANUAL_PORT"
+    log_info "Manual ttyd session started (PID: $manual_pid) on port $MANUAL_PORT"
 
     # Wait a moment for the first session to start
     sleep 2
     
-    # Start Claude session in foreground (this will block)
-    log_info "Starting Claude session on port $CLAUDE_PORT"
+    # Start claude in screen session if it doesn't exist
+    if ! screen -list | grep -q "claude-session"; then
+        log_info "Creating new screen session 'claude-session' with Claude"
+        screen -dmS claude-session claude
+        sleep 2
+    else
+        log_info "Screen session 'claude-session' already exists"
+    fi
     
-    # Use same approach as simple mode - just call claude directly
+    # Start Claude ttyd session in foreground (this will block)
+    log_info "Starting Claude ttyd session on port $CLAUDE_PORT"
+    
     exec ttyd \
         --port "$CLAUDE_PORT" \
         --writable \
         -t rendererType=canvas \
-        claude
+        screen -x claude-session
 }
 
 # Cleanup function
 cleanup() {
     log_info "Shutting down AFK terminal"
+    
+    # Clean up screen sessions
+    if screen -list | grep -q "claude-session"; then
+        log_info "Terminating claude-session screen session"
+        screen -S claude-session -X quit 2>/dev/null || true
+    fi
+    
+    if screen -list | grep -q "manual-session"; then
+        log_info "Terminating manual-session screen session"
+        screen -S manual-session -X quit 2>/dev/null || true
+    fi
     
     # SSH cleanup - source the setup script to access cleanup function
     if [ "$SSH_SETUP_DONE" = true ] && [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then

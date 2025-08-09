@@ -41,3 +41,4 @@ storybook-static
 
 .serena
 docker/workspace/*
+*.sqlite

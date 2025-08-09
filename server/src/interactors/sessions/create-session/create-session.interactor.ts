@@ -52,7 +52,7 @@ export class CreateSessionInteractor {
 
       // Create container
       const container = await this.dockerEngine.createContainer({
-        sessionId: session.id.toString(),
+        sessionId: session.id,
         sessionName: session.name,
         repoUrl: sessionConfig.repoUrl || undefined,
         branch: sessionConfig.branch,

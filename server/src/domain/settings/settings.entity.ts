@@ -1,11 +1,40 @@
+import { Entity, Column, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('settings')
 export class Settings {
+  @PrimaryColumn('varchar', { length: 10, default: 'default' })
+  id: string = 'default'; // Single settings record
+
+  @Column('text', { nullable: true })
+  sshPrivateKey?: string;
+
+  @Column('varchar', { length: 255, nullable: true })
+  claudeToken?: string;
+
+  @Column('varchar', { length: 255, nullable: true })
+  gitUserName?: string;
+
+  @Column('varchar', { length: 255, nullable: true })
+  gitUserEmail?: string;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
   constructor(
-    public sshPrivateKey?: string,
-    public claudeToken?: string,
-    public gitUserName?: string,
-    public gitUserEmail?: string,
-    public updatedAt: Date = new Date(),
-  ) {}
+    sshPrivateKey?: string,
+    claudeToken?: string,
+    gitUserName?: string,
+    gitUserEmail?: string,
+    updatedAt?: Date,
+  ) {
+    this.sshPrivateKey = sshPrivateKey;
+    this.claudeToken = claudeToken;
+    this.gitUserName = gitUserName;
+    this.gitUserEmail = gitUserEmail;
+    if (updatedAt) {
+      this.updatedAt = updatedAt;
+    }
+  }
 
   updateSshPrivateKey(sshPrivateKey: string | undefined): void {
     this.sshPrivateKey = sshPrivateKey;

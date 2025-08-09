@@ -11,8 +11,9 @@ export class SessionFactory {
   constructor(private readonly sessionIdFactory: SessionIdDtoFactory) {}
 
   create(name: string, config: SessionConfigDto): Session {
+    const sessionId = this.sessionIdFactory.generate();
     return new Session(
-      this.sessionIdFactory.generate(),
+      sessionId,
       name,
       config,
       SessionStatus.INITIALIZING,
@@ -36,7 +37,7 @@ export class SessionFactory {
     lastAccessedAt?: Date;
   }): Session {
     return new Session(
-      this.sessionIdFactory.fromString(data.id),
+      data.id,
       data.name,
       data.config,
       data.status,

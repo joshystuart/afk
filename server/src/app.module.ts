@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypedConfigModule, dotenvLoader } from 'nest-typed-config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ResponseService } from './libs/response/response.service';
@@ -9,6 +10,7 @@ import { SessionsModule } from './interactors/sessions/sessions.module';
 import { SettingsModule } from './interactors/settings/settings.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
+import { getDatabaseConfig } from './database/database.config';
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { HealthModule } from './health/health.module';
       }),
       isGlobal: true,
     }),
+    TypeOrmModule.forRoot(getDatabaseConfig()),
     SessionsModule,
     SettingsModule,
     GatewaysModule,

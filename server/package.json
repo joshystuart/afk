@@ -26,7 +26,9 @@
     "@nestjs/platform-socket.io": "^11.1.5",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.5",
+    "@types/sqlite3": "^3.1.11",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dockerode": "^4.0.7",
@@ -35,6 +37,8 @@
     "pino": "^9.7.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.25",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

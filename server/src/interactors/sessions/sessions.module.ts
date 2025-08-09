@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreateSessionInteractor } from './create-session/create-session.interactor';
 import { ListSessionsInteractor } from './list-sessions/list-sessions.interactor';
 import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
@@ -11,9 +12,16 @@ import { DomainModule } from '../../domain/domain.module';
 import { SettingsModule } from '../settings/settings.module';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
+import { Session } from '../../domain/sessions/session.entity';
 
 @Module({
-  imports: [DockerModule, RepositoriesModule, DomainModule, SettingsModule],
+  imports: [
+    TypeOrmModule.forFeature([Session]),
+    DockerModule, 
+    RepositoriesModule, 
+    DomainModule, 
+    SettingsModule
+  ],
   controllers: [
     CreateSessionController,
     ListSessionsController,

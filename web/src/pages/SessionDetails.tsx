@@ -387,7 +387,7 @@ const SessionDetails: React.FC = () => {
                     sx={{
                       flex: 1,
                       border: 'none',
-                      bgcolor: '#000',
+                      bgcolor: '#1e293b',
                       width: '100%',
                     }}
                     title="Claude Terminal"
@@ -441,7 +441,7 @@ const SessionDetails: React.FC = () => {
                     sx={{
                       flex: 1,
                       border: 'none',
-                      bgcolor: '#000',
+                      bgcolor: '#1e293b',
                       width: '100%',
                     }}
                     title="Manual Terminal"
@@ -523,7 +523,7 @@ const SessionDetails: React.FC = () => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            bgcolor: '#000',
+            bgcolor: '#1e293b',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
@@ -565,7 +565,7 @@ const SessionDetails: React.FC = () => {
               width: '100%',
               flex: 1,
               border: 'none',
-              bgcolor: '#000',
+              bgcolor: '#1e293b',
             }}
             title={`${fullscreenTerminal === 'claude' ? 'Claude' : 'Manual'} Terminal Fullscreen`}
           />

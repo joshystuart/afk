@@ -66,8 +66,15 @@ export class SessionLifecycleInteractor {
           containerId: session.containerId 
         });
         await this.recreateContainer(session);
+        
+        // Transition through proper states: stopped -> starting -> running
+        session.start();
+        await this.sessionRepository.save(session);
         session.markAsRunning();
         await this.sessionRepository.save(session);
+        
+        // Start health check in background
+        this.performBackgroundHealthCheck(session);
         return;
       }
 
@@ -79,23 +86,33 @@ export class SessionLifecycleInteractor {
         });
         await this.dockerEngine.removeContainer(session.containerId);
         await this.recreateContainer(session);
+        
+        // Transition through proper states: stopped -> starting -> running
+        session.start();
+        await this.sessionRepository.save(session);
         session.markAsRunning();
         await this.sessionRepository.save(session);
+        
+        // Start health check in background
+        this.performBackgroundHealthCheck(session);
         return;
       }
 
       // Try to start the existing container
       await this.dockerEngine.startContainer(session.containerId);
+      
+      // First mark as starting, then as running
       session.start();
       await this.sessionRepository.save(session);
-
-      // Wait for container to be fully started and health check to pass
-      await this.waitForContainerHealth(session);
-
+      
+      // Optimistically mark as running immediately
       session.markAsRunning();
       await this.sessionRepository.save(session);
-
-      this.logger.log('Session started', { sessionId: sessionId.toString() });
+      
+      this.logger.log('Session started (optimistically)', { sessionId: sessionId.toString() });
+      
+      // Start health check in background with longer timeout
+      this.performBackgroundHealthCheck(session);
     } catch (error) {
       session.markAsError();
       await this.sessionRepository.save(session);
@@ -161,6 +178,51 @@ export class SessionLifecycleInteractor {
     }
     
     throw new Error(`Container failed health check after ${maxAttempts} attempts`);
+  }
+
+  private async performBackgroundHealthCheck(session: any): Promise<void> {
+    // Run health check in background without blocking
+    (async () => {
+      const maxAttempts = 30; // 60 seconds total (30 * 2 seconds)
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        try {
+          const health = await this.checkTerminalHealth(new SessionIdDto(session.id));
+          if (health.allReady) {
+            this.logger.log('Background health check passed', { 
+              sessionId: session.id,
+              attempts: attempts + 1
+            });
+            return;
+          }
+        } catch (error) {
+          this.logger.debug('Background health check attempt failed', { 
+            sessionId: session.id, 
+            attempt: attempts + 1,
+            error: error.message 
+          });
+        }
+        
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      }
+      
+      // If we get here, health check failed after all attempts
+      this.logger.error('Background health check failed after all attempts', {
+        sessionId: session.id,
+        maxAttempts
+      });
+      
+      // Mark session as error
+      session.markAsError();
+      await this.sessionRepository.save(session);
+    })().catch(error => {
+      this.logger.error('Background health check error', { 
+        sessionId: session.id,
+        error: error.message 
+      });
+    });
   }
 
   async deleteSession(sessionId: SessionIdDto): Promise<void> {

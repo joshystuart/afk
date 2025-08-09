@@ -307,7 +307,7 @@ const Dashboard: React.FC = () => {
                         )}
 
                         {/* Delete Button */}
-                        {session.status === SessionStatus.STOPPED && (
+                        {(session.status === SessionStatus.STOPPED || session.status === SessionStatus.ERROR) && (
                           <AnimateButton>
                             <IconButton
                               size="small"

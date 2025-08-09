@@ -198,11 +198,8 @@ export class DockerEngineService {
   }
 
   private buildEnvironment(options: ContainerCreateOptions): string[] {
-    // Convert HTTPS URLs to SSH format when SSH key is provided
-    let repoUrl = options.repoUrl || '';
-    if (options.sshPrivateKey && repoUrl) {
-      repoUrl = this.convertToSshUrl(repoUrl);
-    }
+    // Don't convert URLs - let the container scripts handle URL format
+    const repoUrl = options.repoUrl || '';
 
     const env = [
       `REPO_URL=${repoUrl}`,

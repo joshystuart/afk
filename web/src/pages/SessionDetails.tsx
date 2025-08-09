@@ -144,6 +144,7 @@ const SessionDetails: React.FC = () => {
   }
 
   const canStart = session && session.status === SessionStatus.STOPPED;
+  const canDelete = session && (session.status === SessionStatus.STOPPED || session.status === SessionStatus.ERROR);
 
   // If session is not running, show the start interface
   if (!session || session.status !== SessionStatus.RUNNING || !session.terminalUrls) {
@@ -198,12 +199,14 @@ const SessionDetails: React.FC = () => {
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
               {canStart 
                 ? 'Your development environment is ready. Click the button below to start the session and access your terminals.'
+                : session?.status === SessionStatus.ERROR
+                ? 'Session encountered an error. You can delete this session and create a new one.'
                 : 'Session is not ready yet. Please wait or try refreshing.'
               }
             </Typography>
             
-            {canStart && (
-              <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={2} alignItems="center">
+              {canStart && (
                 <AnimateButton>
                   <Button
                     variant="contained"
@@ -217,7 +220,9 @@ const SessionDetails: React.FC = () => {
                     {isStarting ? 'Starting Session...' : 'Start Session'}
                   </Button>
                 </AnimateButton>
-                
+              )}
+              
+              {canDelete && (
                 <AnimateButton>
                   <Button
                     variant="outlined"
@@ -231,8 +236,8 @@ const SessionDetails: React.FC = () => {
                     {isDeleting ? 'Deleting Session...' : 'Delete Session'}
                   </Button>
                 </AnimateButton>
-              </Stack>
-            )}
+              )}
+            </Stack>
           </Box>
         </MainCard>
       </Box>

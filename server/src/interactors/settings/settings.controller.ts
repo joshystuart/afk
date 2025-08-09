@@ -4,7 +4,10 @@ import { GetSettingsInteractor } from './get-settings/get-settings.interactor';
 import { UpdateSettingsInteractor } from './update-settings/update-settings.interactor';
 import { UpdateSettingsRequest } from './update-settings/update-settings-request.dto';
 import { GetSettingsResponseDto } from './get-settings/get-settings-response.dto';
-import { ResponseService, ApiResponse as ApiResponseType } from '../../libs/response/response.service';
+import {
+  ResponseService,
+  ApiResponse as ApiResponseType,
+} from '../../libs/response/response.service';
 import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
 
 @ApiTags('Settings')
@@ -17,19 +20,20 @@ export class SettingsController {
   ) {}
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get application settings',
-    description: 'Retrieves global settings including SSH private key and Claude token'
+    description:
+      'Retrieves global settings including SSH private key and Claude token',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Settings retrieved successfully',
-    type: GetSettingsResponseDto
+    type: GetSettingsResponseDto,
   })
   @ApiResponse({
     status: 500,
     description: 'Internal server error',
-    type: ApiErrorResponseDto
+    type: ApiErrorResponseDto,
   })
   async getSettings(): Promise<ApiResponseType<GetSettingsResponseDto>> {
     const settings = await this.getSettingsInteractor.execute();
@@ -40,18 +44,19 @@ export class SettingsController {
   @Put()
   @ApiOperation({
     summary: 'Update application settings',
-    description: 'Updates global settings including SSH private key and Claude token'
+    description:
+      'Updates global settings including SSH private key and Claude token',
   })
   @ApiBody({ type: UpdateSettingsRequest })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Settings updated successfully',
-    type: GetSettingsResponseDto
+    type: GetSettingsResponseDto,
   })
   @ApiResponse({
     status: 400,
     description: 'Bad Request - Validation error',
-    type: ApiErrorResponseDto
+    type: ApiErrorResponseDto,
   })
   async updateSettings(
     @Body() request: UpdateSettingsRequest,

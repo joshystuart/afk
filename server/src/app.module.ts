@@ -25,10 +25,6 @@ import { HealthModule } from './health/health.module';
     HealthModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    ResponseService,
-    HttpExceptionFilter,
-  ],
+  providers: [AppService, ResponseService, HttpExceptionFilter],
 })
 export class AppModule {}

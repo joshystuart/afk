@@ -25,7 +25,9 @@ export interface SessionUpdate {
     credentials: true,
   },
 })
-export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class SessionGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 
@@ -37,7 +39,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   ) {}
 
   async handleConnection(client: Socket) {
-    this.logger.log('Client connected', { 
+    this.logger.log('Client connected', {
       clientId: client.id,
     });
   }
@@ -59,7 +61,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       );
 
       client.join(`session:${data.sessionId}`);
-      
+
       return {
         event: 'subscription.success',
         data: { sessionId: data.sessionId },
@@ -77,9 +79,12 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    await this.sessionSubscriptionService.unsubscribe(client.id, data.sessionId);
+    await this.sessionSubscriptionService.unsubscribe(
+      client.id,
+      data.sessionId,
+    );
     client.leave(`session:${data.sessionId}`);
-    
+
     return {
       event: 'unsubscription.success',
       data: { sessionId: data.sessionId },
@@ -88,7 +93,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   @SubscribeMessage('subscribe.logs')
   async handleLogSubscription(
-    @MessageBody() data: { sessionId: string, containerId: string },
+    @MessageBody() data: { sessionId: string; containerId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
@@ -120,15 +125,13 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   @SubscribeMessage('unsubscribe.logs')
-  async handleLogUnsubscription(
-    @ConnectedSocket() client: Socket,
-  ) {
+  async handleLogUnsubscription(@ConnectedSocket() client: Socket) {
     const stream = (client as any).logStream;
     if (stream) {
       stream.destroy();
       delete (client as any).logStream;
     }
-    
+
     return {
       event: 'logs.unsubscribed',
       data: {},

@@ -1,4 +1,9 @@
-import { IsNumber, IsString, ValidateNested, IsOptional } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { DockerConfig } from './docker.config';
 import { SessionConfig } from './session.config';

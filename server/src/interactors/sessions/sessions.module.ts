@@ -13,12 +13,7 @@ import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
 
 @Module({
-  imports: [
-    DockerModule,
-    RepositoriesModule,
-    DomainModule,
-    SettingsModule,
-  ],
+  imports: [DockerModule, RepositoriesModule, DomainModule, SettingsModule],
   controllers: [
     CreateSessionController,
     ListSessionsController,

@@ -5,10 +5,7 @@ import { DockerHealthIndicator } from './docker-health.indicator';
 import { DockerModule } from '../services/docker/docker.module';
 
 @Module({
-  imports: [
-    TerminusModule,
-    DockerModule,
-  ],
+  imports: [TerminusModule, DockerModule],
   controllers: [HealthController],
   providers: [DockerHealthIndicator],
 })

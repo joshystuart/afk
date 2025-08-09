@@ -37,7 +37,11 @@ export class ResponseService {
     };
   }
 
-  error(message: string, code?: string, statusCode: number = 400): ApiErrorResponse {
+  error(
+    message: string,
+    code?: string,
+    statusCode: number = 400,
+  ): ApiErrorResponse {
     return {
       success: false,
       error: {

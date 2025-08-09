@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -21,6 +21,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { TerminalMode, type CreateSessionRequest } from '../api/types';
 import { ROUTES, TERMINAL_MODE_LABELS } from '../utils/constants';
+import { useSettingsStore } from '../stores/settings.store';
 
 interface CreateSessionForm {
   name: string;
@@ -34,6 +35,15 @@ interface CreateSessionForm {
 const CreateSession: React.FC = () => {
   const navigate = useNavigate();
   const { createSession, isCreating, createError, clearError } = useSession();
+  const { settings, fetchSettings } = useSettingsStore();
+
+  // Fetch settings on component mount
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  // Check if required settings are missing
+  const missingSettings = !settings?.sshPrivateKey || !settings?.claudeToken;
 
   const {
     control,
@@ -93,6 +103,27 @@ const CreateSession: React.FC = () => {
           onClose={clearError}
         >
           {createError.message || 'Failed to create session. Please try again.'}
+        </Alert>
+      )}
+
+      {missingSettings && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 3 }}
+        >
+          <Typography variant="body2">
+            Please configure your SSH Private Key and Claude Token in{' '}
+            <Button
+              component={Link}
+              to={ROUTES.SETTINGS}
+              variant="text"
+              size="small"
+              sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
+            >
+              Settings
+            </Button>
+            {' '}before creating a session.
+          </Typography>
         </Alert>
       )}
 
@@ -237,7 +268,7 @@ const CreateSession: React.FC = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={isCreating}
+                  disabled={isCreating || missingSettings}
                   sx={{ minWidth: 120 }}
                 >
                   {isCreating ? 'Creating...' : 'Create Session'}

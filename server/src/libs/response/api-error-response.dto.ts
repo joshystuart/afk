@@ -8,8 +8,8 @@ export class ApiErrorResponseDto {
     example: {
       message: 'Validation failed',
       code: 'VALIDATION_ERROR',
-      timestamp: '2025-08-08T23:44:09.179Z'
-    }
+      timestamp: '2025-08-08T23:44:09.179Z',
+    },
   })
   error: {
     message: string | string[];

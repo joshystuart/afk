@@ -26,7 +26,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const errorResponse = exception.getResponse();
-      
+
       if (typeof errorResponse === 'string') {
         message = errorResponse;
       } else if (typeof errorResponse === 'object') {
@@ -35,7 +35,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       message = exception.message;
-      
+
       // Log full error for non-HTTP exceptions
       this.logger.error('Unhandled exception', {
         error: exception,

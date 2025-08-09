@@ -22,7 +22,7 @@ export class PortManagerService implements OnModuleInit {
 
   async allocatePortPair(): Promise<PortPairDto> {
     const claudePort = await this.allocatePort();
-    
+
     try {
       const manualPort = await this.allocatePort();
       return this.portPairFactory.create(claudePort, manualPort);
@@ -48,7 +48,7 @@ export class PortManagerService implements OnModuleInit {
 
   private async allocatePort(): Promise<number> {
     const availablePorts = this.portPool.filter(
-      port => !this.allocatedPorts.has(port)
+      (port) => !this.allocatedPorts.has(port),
     );
 
     if (availablePorts.length === 0) {
@@ -57,18 +57,28 @@ export class PortManagerService implements OnModuleInit {
 
     const port = availablePorts[0];
     this.allocatedPorts.add(port);
-    
-    this.logger.debug('Port allocated', { port, allocated: this.allocatedPorts.size });
+
+    this.logger.debug('Port allocated', {
+      port,
+      allocated: this.allocatedPorts.size,
+    });
     return port;
   }
 
   private releasePort(port: number): void {
     this.allocatedPorts.delete(port);
-    this.logger.debug('Port released', { port, allocated: this.allocatedPorts.size });
+    this.logger.debug('Port released', {
+      port,
+      allocated: this.allocatedPorts.size,
+    });
   }
 
   private initializePortPool(): void {
-    for (let port = this.config.docker.startPort; port <= this.config.docker.endPort; port++) {
+    for (
+      let port = this.config.docker.startPort;
+      port <= this.config.docker.endPort;
+      port++
+    ) {
       this.portPool.push(port);
     }
     this.logger.log(`Initialized port pool with ${this.portPool.length} ports`);

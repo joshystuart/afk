@@ -20,7 +20,10 @@ export class CreateSessionResponseDto {
   createdAt!: string;
   updatedAt!: string;
 
-  static fromDomain(session: Session, baseUrl?: string): CreateSessionResponseDto {
+  static fromDomain(
+    session: Session,
+    baseUrl?: string,
+  ): CreateSessionResponseDto {
     const dto = new CreateSessionResponseDto();
     dto.id = session.id.toString();
     dto.name = session.name;

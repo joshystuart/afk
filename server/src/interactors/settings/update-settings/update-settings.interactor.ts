@@ -6,11 +6,14 @@ import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 
 @Injectable()
 export class UpdateSettingsInteractor {
-  constructor(@Inject(SETTINGS_REPOSITORY) private readonly settingsRepository: SettingsRepository) {}
+  constructor(
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
   async execute(request: UpdateSettingsRequest): Promise<Settings> {
     const currentSettings = await this.settingsRepository.get();
-    
+
     currentSettings.update({
       sshPrivateKey: request.sshPrivateKey,
       claudeToken: request.claudeToken,

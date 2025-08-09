@@ -40,6 +40,14 @@ export class Session {
     this.updatedAt = new Date();
   }
 
+  start(): void {
+    if (this.status !== SessionStatus.STOPPED) {
+      throw new Error('Can only start from stopped state');
+    }
+    this.status = SessionStatus.STARTING;
+    this.updatedAt = new Date();
+  }
+
   markAsError(): void {
     this.status = SessionStatus.ERROR;
     this.updatedAt = new Date();
@@ -57,7 +65,7 @@ export class Session {
     if (!this.ports || this.status !== SessionStatus.RUNNING) {
       return null;
     }
-    
+
     return {
       claude: `${baseUrl}:${this.ports.claudePort}`,
       manual: `${baseUrl}:${this.ports.manualPort}`,

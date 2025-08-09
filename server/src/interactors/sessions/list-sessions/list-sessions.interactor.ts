@@ -7,9 +7,7 @@ import { ListSessionsRequest } from './list-sessions-request.dto';
 export class ListSessionsInteractor {
   private readonly logger = new Logger(ListSessionsInteractor.name);
 
-  constructor(
-    private readonly sessionRepository: SessionRepository,
-  ) {}
+  constructor(private readonly sessionRepository: SessionRepository) {}
 
   async execute(request: ListSessionsRequest): Promise<Session[]> {
     this.logger.log('Listing sessions', { filters: request });
@@ -20,7 +18,7 @@ export class ListSessionsInteractor {
     });
 
     this.logger.log(`Found ${sessions.length} sessions`);
-    
+
     return sessions;
   }
 }

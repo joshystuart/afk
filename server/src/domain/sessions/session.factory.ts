@@ -8,9 +8,7 @@ import { PortPairDto } from '../containers/port-pair.dto';
 
 @Injectable()
 export class SessionFactory {
-  constructor(
-    private readonly sessionIdFactory: SessionIdDtoFactory,
-  ) {}
+  constructor(private readonly sessionIdFactory: SessionIdDtoFactory) {}
 
   create(name: string, config: SessionConfigDto): Session {
     return new Session(

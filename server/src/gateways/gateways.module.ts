@@ -6,18 +6,8 @@ import { RepositoriesModule } from '../services/repositories/repositories.module
 import { DomainModule } from '../domain/domain.module';
 
 @Module({
-  imports: [
-    DockerModule,
-    RepositoriesModule,
-    DomainModule,
-  ],
-  providers: [
-    SessionGateway,
-    SessionSubscriptionService,
-  ],
-  exports: [
-    SessionGateway,
-    SessionSubscriptionService,
-  ],
+  imports: [DockerModule, RepositoriesModule, DomainModule],
+  providers: [SessionGateway, SessionSubscriptionService],
+  exports: [SessionGateway, SessionSubscriptionService],
 })
 export class GatewaysModule {}

@@ -5,14 +5,7 @@ import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factor
 import { DockerConfig } from '../../libs/config/docker.config';
 
 @Module({
-  providers: [
-    DockerEngineService,
-    PortManagerService,
-    PortPairDtoFactory,
-  ],
-  exports: [
-    DockerEngineService,
-    PortManagerService,
-  ],
+  providers: [DockerEngineService, PortManagerService, PortPairDtoFactory],
+  exports: [DockerEngineService, PortManagerService],
 })
 export class DockerModule {}

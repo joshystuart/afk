@@ -4,7 +4,10 @@ import { ApiProperty } from '@nestjs/swagger';
 export class UpdateSettingsRequest {
   @IsOptional()
   @IsString()
-  @ApiProperty({ required: false, description: 'SSH private key for git operations' })
+  @ApiProperty({
+    required: false,
+    description: 'SSH private key for git operations',
+  })
   sshPrivateKey?: string;
 
   @IsOptional()

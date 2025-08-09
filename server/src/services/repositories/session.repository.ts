@@ -25,7 +25,7 @@ export class SessionRepository {
 
     if (filters) {
       if (filters.status) {
-        sessions = sessions.filter(s => s.status === filters.status);
+        sessions = sessions.filter((s) => s.status === filters.status);
       }
       // Note: userId filtering would need to be implemented when user system is added
     }
@@ -48,17 +48,18 @@ export class SessionRepository {
 
   async findByContainerId(containerId: string): Promise<Session | null> {
     const sessions = Array.from(this.sessions.values());
-    return sessions.find(s => s.containerId === containerId) || null;
+    return sessions.find((s) => s.containerId === containerId) || null;
   }
 
   async findExpiredSessions(timeoutMinutes: number): Promise<Session[]> {
     const cutoffTime = new Date(Date.now() - timeoutMinutes * 60 * 1000);
     const sessions = Array.from(this.sessions.values());
-    
-    return sessions.filter(s => 
-      s.status === SessionStatus.RUNNING && 
-      s.lastAccessedAt && 
-      s.lastAccessedAt < cutoffTime
+
+    return sessions.filter(
+      (s) =>
+        s.status === SessionStatus.RUNNING &&
+        s.lastAccessedAt &&
+        s.lastAccessedAt < cutoffTime,
     );
   }
 }

@@ -5,7 +5,10 @@ import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 
 @Injectable()
 export class GetSettingsInteractor {
-  constructor(@Inject(SETTINGS_REPOSITORY) private readonly settingsRepository: SettingsRepository) {}
+  constructor(
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
   async execute(): Promise<Settings> {
     return await this.settingsRepository.get();

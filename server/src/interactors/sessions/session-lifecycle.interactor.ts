@@ -17,7 +17,7 @@ export class SessionLifecycleInteractor {
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (!session) {
       throw new Error('Session not found');
     }
@@ -30,7 +30,7 @@ export class SessionLifecycleInteractor {
       await this.dockerEngine.stopContainer(session.containerId!);
       session.stop();
       await this.sessionRepository.save(session);
-      
+
       this.logger.log('Session stopped', { sessionId: sessionId.toString() });
     } catch (error) {
       this.logger.error('Failed to stop session', error);
@@ -38,9 +38,42 @@ export class SessionLifecycleInteractor {
     }
   }
 
+  async startSession(sessionId: SessionIdDto): Promise<void> {
+    const session = await this.sessionRepository.findById(sessionId);
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    if (session.status !== SessionStatus.STOPPED) {
+      throw new Error('Session is not stopped');
+    }
+
+    if (!session.containerId) {
+      throw new Error('Session has no associated container');
+    }
+
+    try {
+      await this.dockerEngine.startContainer(session.containerId);
+      session.start();
+      await this.sessionRepository.save(session);
+
+      // Mark as running after container start
+      session.markAsRunning();
+      await this.sessionRepository.save(session);
+
+      this.logger.log('Session started', { sessionId: sessionId.toString() });
+    } catch (error) {
+      session.markAsError();
+      await this.sessionRepository.save(session);
+      this.logger.error('Failed to start session', error);
+      throw error;
+    }
+  }
+
   async deleteSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (!session) {
       throw new Error('Session not found');
     }
@@ -62,7 +95,7 @@ export class SessionLifecycleInteractor {
 
       // Delete from repository
       await this.sessionRepository.delete(sessionId);
-      
+
       this.logger.log('Session deleted', { sessionId: sessionId.toString() });
     } catch (error) {
       this.logger.error('Failed to delete session', error);
@@ -72,7 +105,7 @@ export class SessionLifecycleInteractor {
 
   async restartSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (!session) {
       throw new Error('Session not found');
     }
@@ -89,7 +122,9 @@ export class SessionLifecycleInteractor {
 
       // Start container - we'll add a startContainer method to DockerEngineService
       // For now, create a new container if restart is needed
-      throw new Error('Container restart not yet implemented - delete and recreate session instead');
+      throw new Error(
+        'Container restart not yet implemented - delete and recreate session instead',
+      );
 
       this.logger.log('Session restarted', { sessionId: sessionId.toString() });
     } catch (error) {
@@ -102,7 +137,7 @@ export class SessionLifecycleInteractor {
 
   async getSessionInfo(sessionId: SessionIdDto): Promise<any> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (!session) {
       throw new Error('Session not found');
     }
@@ -115,7 +150,9 @@ export class SessionLifecycleInteractor {
     }
 
     try {
-      const containerInfo = await this.dockerEngine.getContainerInfo(session.containerId);
+      const containerInfo = await this.dockerEngine.getContainerInfo(
+        session.containerId,
+      );
       return {
         session,
         container: containerInfo,

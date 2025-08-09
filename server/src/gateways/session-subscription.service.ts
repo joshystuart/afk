@@ -13,10 +13,7 @@ export class SessionSubscriptionService {
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}
 
-  async subscribe(
-    clientId: string,
-    sessionId: string,
-  ): Promise<void> {
+  async subscribe(clientId: string, sessionId: string): Promise<void> {
     // Verify session exists
     const session = await this.sessionRepository.findById(
       this.sessionIdFactory.fromString(sessionId),
@@ -45,14 +42,17 @@ export class SessionSubscriptionService {
     this.subscriptions.get(sessionId)?.delete(clientId);
     this.clientSessions.get(clientId)?.delete(sessionId);
 
-    this.logger.debug('Client unsubscribed from session', { clientId, sessionId });
+    this.logger.debug('Client unsubscribed from session', {
+      clientId,
+      sessionId,
+    });
   }
 
   async unsubscribeAll(clientId: string): Promise<void> {
     const sessions = this.clientSessions.get(clientId);
-    
+
     if (sessions) {
-      sessions.forEach(sessionId => {
+      sessions.forEach((sessionId) => {
         this.subscriptions.get(sessionId)?.delete(clientId);
       });
       this.clientSessions.delete(clientId);

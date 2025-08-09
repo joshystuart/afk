@@ -4,7 +4,8 @@ import { Type } from 'class-transformer';
 export class DockerConfig {
   @IsString()
   @IsOptional()
-  public readonly socketPath: string = process.env.DOCKER_HOST?.replace('unix://', '') || '/var/run/docker.sock';
+  public readonly socketPath: string =
+    process.env.DOCKER_HOST?.replace('unix://', '') || '/var/run/docker.sock';
 
   @IsString()
   @IsOptional()

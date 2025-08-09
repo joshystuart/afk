@@ -45,7 +45,8 @@ ARG USERNAME=node
 RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts
 COPY .claude.json /home/node/.claude.json
 COPY scripts/ /home/node/scripts/
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts && \
+COPY scripts/.screenrc /home/node/.screenrc
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc && \
     chmod 700 /home/node/.ssh && \
     chmod +x /home/node/scripts/*.sh
 

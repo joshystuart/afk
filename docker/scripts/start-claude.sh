@@ -169,17 +169,20 @@ start_claude_simple() {
     # Start claude in a detached screen session if it doesn't exist
     if ! screen -list | grep -q "claude-session"; then
         log_info "Creating new screen session 'claude-session' with Claude"
-        screen -dmS claude-session claude
+        # Configure screen with better terminal settings using screenrc
+        screen -c /home/node/.screenrc -dmS claude-session bash -c "export TERM=xterm-256color; claude"
         sleep 2
     else
         log_info "Screen session 'claude-session' already exists"
     fi
     
-    # Start ttyd that attaches to the existing screen session
+    # Start ttyd that attaches to the existing screen session with optimized settings
     exec ttyd \
         --port "$CLAUDE_PORT" \
         --writable \
-        screen -x claude-session
+        --interface 0.0.0.0 \
+        --terminal-type xterm-256color \
+        bash -c "export TERM=xterm-256color; screen -x claude-session"
 }
 
 # Dual TTY approach: Start two separate persistent screen sessions
@@ -203,18 +206,20 @@ start_claude_dual_tty() {
     # Start manual bash session in screen if it doesn't exist
     if ! screen -list | grep -q "manual-session"; then
         log_info "Creating new screen session 'manual-session' with bash"
-        screen -dmS manual-session bash
+        # Configure screen with better terminal settings using screenrc
+        screen -c /home/node/.screenrc -dmS manual-session bash -c "export TERM=xterm-256color; exec bash"
         sleep 1
     else
         log_info "Screen session 'manual-session' already exists"
     fi
     
-    # Start ttyd for manual session in background
+    # Start ttyd for manual session in background with optimized settings
     ttyd \
         --port "$MANUAL_PORT" \
         --writable \
-        -t rendererType=canvas \
-        screen -x manual-session &
+        --interface 0.0.0.0 \
+        --terminal-type xterm-256color \
+        bash -c "export TERM=xterm-256color; screen -x manual-session" &
 
     local manual_pid=$!
     log_info "Manual ttyd session started (PID: $manual_pid) on port $MANUAL_PORT"
@@ -225,7 +230,8 @@ start_claude_dual_tty() {
     # Start claude in screen session if it doesn't exist
     if ! screen -list | grep -q "claude-session"; then
         log_info "Creating new screen session 'claude-session' with Claude"
-        screen -dmS claude-session claude
+        # Configure screen with better terminal settings using screenrc
+        screen -c /home/node/.screenrc -dmS claude-session bash -c "export TERM=xterm-256color; claude"
         sleep 2
     else
         log_info "Screen session 'claude-session' already exists"
@@ -237,8 +243,9 @@ start_claude_dual_tty() {
     exec ttyd \
         --port "$CLAUDE_PORT" \
         --writable \
-        -t rendererType=canvas \
-        screen -x claude-session
+        --interface 0.0.0.0 \
+        --terminal-type xterm-256color \
+        bash -c "export TERM=xterm-256color; screen -x claude-session"
 }
 
 # Cleanup function

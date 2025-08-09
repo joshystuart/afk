@@ -1,0 +1,35 @@
+# Screen configuration for better terminal display
+startup_message off
+defscrollback 10000
+vbell off
+altscreen on
+term screen-256color
+
+# Status line configuration
+hardstatus alwayslastline
+hardstatus string '%{= kG}[ %{G}%H %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %m-%d %{W} %c %{g}]'
+
+# Better mouse support
+mousetrack on
+
+# Fix backspace and delete keys
+bindkey -k kb stuff "\177"
+bindkey -k kD stuff "\004"
+
+# Better scrolling
+termcapinfo xterm* ti@:te@
+
+# Window numbering starts at 1
+bind c screen 1
+bind ^c screen 1
+bind 0 select 10
+screen 1
+
+# Disable visual bell
+vbell off
+
+# Set window title format
+shelltitle "$ |bash"
+
+# Automatic window renaming
+autodetach on

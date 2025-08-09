@@ -1,35 +1,68 @@
-# Screen configuration for better terminal display
+# Screen configuration optimized for transparent Claude terminal display
 startup_message off
-defscrollback 10000
 vbell off
 altscreen on
-term screen-256color
+term xterm-256color
 
-# Status line configuration
-hardstatus alwayslastline
-hardstatus string '%{= kG}[ %{G}%H %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %m-%d %{W} %c %{g}]'
+# COMPLETELY DISABLE all screen UI elements
+hardstatus off
+caption never
+msgwait 0
+msgminwait 0
+silencewait 0
 
-# Better mouse support
+# Disable all decorations and borders
+rendition so ""
+sorendition ""
+
+# Mouse support
 mousetrack on
 
-# Fix backspace and delete keys
+# Key fixes
 bindkey -k kb stuff "\177"
 bindkey -k kD stuff "\004"
 
-# Better scrolling
+# Make screen completely transparent to terminal operations
 termcapinfo xterm* ti@:te@
+termcapinfo xterm-256color ti@:te@
+termcapinfo * hs@
 
-# Window numbering starts at 1
-bind c screen 1
-bind ^c screen 1
-bind 0 select 10
-screen 1
+# DISABLE scrollback completely - let ttyd/browser handle scrolling
+defscrollback 0
+termcapinfo * sc@:dc@
 
-# Disable visual bell
+# Remove window title and status
+shelltitle ""
+windowlist string ""
+
+# Disable all visual feedback
 vbell off
+bell_msg ""
+activity ""
+silence ""
 
-# Set window title format
-shelltitle "$ |bash"
-
-# Automatic window renaming
+# Auto-detach but no notifications
 autodetach on
+zombie ""
+
+# Disable problematic key bindings
+bind ^\ 
+bind \\\\ 
+bind ^h
+bind h
+bind ^?
+bind ?
+bind S
+bind X
+bind Q
+bind ^S
+bind ^Q
+
+# Optimize for single window usage
+defutf8 on
+defbce on
+defflow off
+
+# Prevent screen from drawing anything extra
+defmonitor off
+startup_message off

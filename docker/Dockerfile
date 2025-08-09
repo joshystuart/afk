@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   jq \
   curl \
   screen \
+  tmux \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd from GitHub releases
@@ -46,7 +47,8 @@ RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig
 COPY .claude.json /home/node/.claude.json
 COPY scripts/ /home/node/scripts/
 COPY scripts/.screenrc /home/node/.screenrc
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc && \
+COPY scripts/.tmux.conf /home/node/.tmux.conf
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc /home/node/.tmux.conf && \
     chmod 700 /home/node/.ssh && \
     chmod +x /home/node/scripts/*.sh
 

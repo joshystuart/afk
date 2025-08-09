@@ -162,32 +162,32 @@ start_claude_simple() {
     # Change to working directory
     cd "$WORKING_DIR"
     
-    log_info "Starting persistent Claude session in screen"
+    log_info "Starting persistent Claude session in tmux"
     log_info "Working directory: $(pwd)"
     log_info "Access the terminal at: http://localhost:$CLAUDE_PORT"
     
-    # Start claude in a detached screen session if it doesn't exist
-    if ! screen -list | grep -q "claude-session"; then
-        log_info "Creating new screen session 'claude-session' with Claude"
-        # Configure screen with better terminal settings using screenrc
-        screen -c /home/node/.screenrc -dmS claude-session bash -c "export TERM=xterm-256color; claude"
+    # Start claude in a detached tmux session if it doesn't exist
+    if ! tmux has-session -t claude-session 2>/dev/null; then
+        log_info "Creating new tmux session 'claude-session' with Claude"
+        # Configure tmux with better terminal settings
+        tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
         sleep 2
     else
-        log_info "Screen session 'claude-session' already exists"
+        log_info "Tmux session 'claude-session' already exists"
     fi
     
-    # Start ttyd that attaches to the existing screen session with optimized settings
+    # Start ttyd that attaches to the existing tmux session with optimized settings
     exec ttyd \
         --port "$CLAUDE_PORT" \
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
-        bash -c "export TERM=xterm-256color; screen -x claude-session"
+        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t claude-session"
 }
 
 # Dual TTY approach: Start two separate persistent screen sessions
 start_claude_dual_tty() {
-    log_step "Starting dual persistent screen sessions - Claude and Manual"
+    log_step "Starting dual persistent tmux sessions - Claude and Manual"
     
     # Ensure working directory exists
     if [ ! -d "$WORKING_DIR" ]; then
@@ -203,14 +203,14 @@ start_claude_dual_tty() {
     log_info "  Manual session: http://localhost:$MANUAL_PORT"
     log_info "Working directory: $(pwd)"
     
-    # Start manual bash session in screen if it doesn't exist
-    if ! screen -list | grep -q "manual-session"; then
-        log_info "Creating new screen session 'manual-session' with bash"
-        # Configure screen with better terminal settings using screenrc
-        screen -c /home/node/.screenrc -dmS manual-session bash -c "export TERM=xterm-256color; exec bash"
+    # Start manual bash session in tmux if it doesn't exist
+    if ! tmux has-session -t manual-session 2>/dev/null; then
+        log_info "Creating new tmux session 'manual-session' with bash"
+        # Configure tmux with better terminal settings
+        tmux -f /home/node/.tmux.conf new-session -d -s manual-session -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
         sleep 1
     else
-        log_info "Screen session 'manual-session' already exists"
+        log_info "Tmux session 'manual-session' already exists"
     fi
     
     # Start ttyd for manual session in background with optimized settings
@@ -219,7 +219,7 @@ start_claude_dual_tty() {
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
-        bash -c "export TERM=xterm-256color; screen -x manual-session" &
+        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t manual-session" &
 
     local manual_pid=$!
     log_info "Manual ttyd session started (PID: $manual_pid) on port $MANUAL_PORT"
@@ -227,14 +227,14 @@ start_claude_dual_tty() {
     # Wait a moment for the first session to start
     sleep 2
     
-    # Start claude in screen session if it doesn't exist
-    if ! screen -list | grep -q "claude-session"; then
-        log_info "Creating new screen session 'claude-session' with Claude"
-        # Configure screen with better terminal settings using screenrc
-        screen -c /home/node/.screenrc -dmS claude-session bash -c "export TERM=xterm-256color; claude"
+    # Start claude in tmux session if it doesn't exist
+    if ! tmux has-session -t claude-session 2>/dev/null; then
+        log_info "Creating new tmux session 'claude-session' with Claude"
+        # Configure tmux with better terminal settings
+        tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
         sleep 2
     else
-        log_info "Screen session 'claude-session' already exists"
+        log_info "Tmux session 'claude-session' already exists"
     fi
     
     # Start Claude ttyd session in foreground (this will block)
@@ -245,22 +245,22 @@ start_claude_dual_tty() {
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
-        bash -c "export TERM=xterm-256color; screen -x claude-session"
+        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t claude-session"
 }
 
 # Cleanup function
 cleanup() {
     log_info "Shutting down AFK terminal"
     
-    # Clean up screen sessions
-    if screen -list | grep -q "claude-session"; then
-        log_info "Terminating claude-session screen session"
-        screen -S claude-session -X quit 2>/dev/null || true
+    # Clean up tmux sessions
+    if tmux has-session -t claude-session 2>/dev/null; then
+        log_info "Terminating claude-session tmux session"
+        tmux kill-session -t claude-session 2>/dev/null || true
     fi
     
-    if screen -list | grep -q "manual-session"; then
-        log_info "Terminating manual-session screen session"
-        screen -S manual-session -X quit 2>/dev/null || true
+    if tmux has-session -t manual-session 2>/dev/null; then
+        log_info "Terminating manual-session tmux session"
+        tmux kill-session -t manual-session 2>/dev/null || true
     fi
     
     # SSH cleanup - source the setup script to access cleanup function

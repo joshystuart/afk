@@ -5,7 +5,12 @@ import { ListSessionsInteractor } from './list-sessions/list-sessions.interactor
 import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
 import { CreateSessionController } from './create-session/create-session.controller';
 import { ListSessionsController } from './list-sessions/list-sessions.controller';
-import { SessionLifecycleController } from './session-lifecycle.controller';
+import { GetSessionController } from './get-session.controller';
+import { CheckSessionHealthController } from './check-session-health.controller';
+import { StartSessionController } from './start-session.controller';
+import { StopSessionController } from './stop-session.controller';
+import { RestartSessionController } from './restart-session.controller';
+import { DeleteSessionController } from './delete-session.controller';
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
@@ -25,7 +30,12 @@ import { Session } from '../../domain/sessions/session.entity';
   controllers: [
     CreateSessionController,
     ListSessionsController,
-    SessionLifecycleController,
+    GetSessionController,
+    CheckSessionHealthController,
+    StartSessionController,
+    StopSessionController,
+    RestartSessionController,
+    DeleteSessionController,
   ],
   providers: [
     CreateSessionInteractor,

@@ -3,9 +3,9 @@
 ## Tasks
 
 - [ ] Remove base64 encoding for pem key
+- [ ] Mobile friendly
 - [ ] Alert before deleting or stopping a container
 - [ ] Create branch for the feature
-- [ ] Simple checking / raise PR
 - [ ] Simple checking / raise PR
 
 ## Manual Testing

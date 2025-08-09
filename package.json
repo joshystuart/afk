@@ -1,0 +1,30 @@
+{
+  "name": "afk",
+  "version": "0.1.0",
+  "description": "AFK - Away From Keyboard - Remote terminal access service",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
+    "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
+    "server:dev": "cd server && npm run start:dev",
+    "server:start": "cd server && npm run start",
+    "server:build": "cd server && npm run build",
+    "web:dev": "cd web && npm run dev",
+    "web:start": "cd web && npm run preview",
+    "web:build": "cd web && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../web && npm install",
+    "lint": "cd server && npm run lint && cd ../web && npm run lint",
+    "test": "cd server && npm run test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "keywords": [
+    "terminal",
+    "docker",
+    "remote-access",
+    "claude-code"
+  ],
+  "author": "",
+  "license": "MIT",
+  "private": true
+}

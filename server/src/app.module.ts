@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypedConfigModule, dotenvLoader } from 'nest-typed-config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ResponseService } from './libs/response/response.service';
 import { HttpExceptionFilter } from './libs/common/filters/http-exception.filter';
 import { AppConfig } from './libs/config/app.config';
@@ -27,7 +25,7 @@ import { getDatabaseConfig } from './database/database.config';
     GatewaysModule,
     HealthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, ResponseService, HttpExceptionFilter],
+  controllers: [],
+  providers: [ResponseService, HttpExceptionFilter],
 })
 export class AppModule {}

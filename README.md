@@ -1,115 +1,151 @@
-# afk
-AFK - Remote Terminal Access
+# AFK - Away From Keyboard
 
-## Overview
+AFK is a remote terminal access service that enables running Claude Code in Docker containers with web-based terminal access. The project provides containerized development environments with dual terminal sessions (Claude + manual access), automatic git integration, and a modern web interface for session management.
 
-AFK (Away From Keyboard) is a remote terminal access service that enables running Claude Code in Docker containers with web-based terminal access. The project provides dual terminal sessions (Claude + manual access), automatic git integration, and containerized development environments.
+## 🚀 Quick Start
 
-## Quick Start
+### Prerequisites
 
-### Build the Docker image
-```shell
-docker build -t afk . --no-cache
+- Node.js 18+ 
+- npm or yarn
+- Docker (for container management)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/joshystuart/afk.git
+cd afk
 ```
 
-### Run with Docker Compose
-
-#### Debug mode
-```shell
-TERMINAL_MODE=debug \
-SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
-REPO_URL=git@github.com:your-org/your-repo.git \
-CLAUDE_CODE_OAUTH_TOKEN=your-token \
-GIT_USER_NAME="Your Name" \
-GIT_USER_EMAIL="your.email@example.com" \
-docker-compose up --force-recreate
+2. Install dependencies:
+```bash
+npm run install:all
 ```
 
-#### Dual terminal mode
-```shell
-TERMINAL_MODE=dual \
-SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
-REPO_URL=git@github.com:your-org/your-repo.git \
-CLAUDE_CODE_OAUTH_TOKEN=your-token \
-GIT_USER_NAME="Your Name" \
-GIT_USER_EMAIL="your.email@example.com" \
-docker-compose up --force-recreate
+3. Configure environment variables:
+```bash
+cp server/.env.example server/.env
+# Edit server/.env with your configuration
 ```
 
-#### Normal mode
-```shell
-SSH_PRIVATE_KEY=$(cat ~/.ssh/id_ed25519 | base64 -w 0) \
-REPO_URL=git@github.com:your-org/your-repo.git \
-CLAUDE_CODE_OAUTH_TOKEN=your-token \
-GIT_USER_NAME="Your Name" \
-GIT_USER_EMAIL="your.email@example.com" \
-docker-compose up
+4. Start the application:
+```bash
+# Development mode (both server and web client with hot reload)
+npm run dev
+
+# Production mode
+npm run start
 ```
 
-### Run with Docker directly
+The web interface will be available at `http://localhost:5173` (development) or `http://localhost:4173` (production).
+The server API will be available at `http://localhost:3001`.
 
-```shell
-docker run -d \
-  --name afk-terminal-1 \
-  -p 7681:7681 \
-  --privileged \
-  --restart unless-stopped \
-  -e CLAUDE_CODE_OAUTH_TOKEN="${CLAUDE_CODE_OAUTH_TOKEN}" \
-  -e REPO_URL="${REPO_URL}" \
-  -e REPO_BRANCH="${REPO_BRANCH:-main}" \
-  -e SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519 | base64 -w 0)" \
-  -e GIT_USER_NAME="${GIT_USER_NAME}" \
-  -e GIT_USER_EMAIL="${GIT_USER_EMAIL}" \
-  -e GIT_SSH_HOST="${GIT_SSH_HOST}" \
-  -v "$(pwd)/workspace:/workspace" \
-  -v "/var/run/docker.sock:/var/run/docker.sock" \
-  afk:latest
+## 📁 Project Structure
+
+```
+afk/
+├── server/         # NestJS backend API
+├── web/            # React frontend application
+├── docker/         # Docker image
+├── docs/           # Project documentation
+└── package.json    # Root package with scripts
 ```
 
-### Container Management
+## 🛠 Development
 
-View logs:
-```shell
-docker logs -f afk-terminal-1
+### Available Scripts
+
+From the root directory:
+
+- `npm run dev` - Start both server and web client in development mode
+- `npm run start` - Start both applications in production mode
+- `npm run install:all` - Install dependencies for all packages
+- `npm run lint` - Run linting on both server and web
+- `npm run test` - Run server tests
+
+### Server Scripts
+
+```bash
+cd server
+npm run start:dev    # Development with hot reload
+npm run start        # Production mode
+npm run build        # Build for production
+npm run test         # Run tests
+npm run lint         # Run ESLint
 ```
 
-Stop and remove:
-```shell
-docker stop afk-terminal-1
-docker rm afk-terminal-1
+### Web Client Scripts
+
+```bash
+cd web
+npm run dev          # Development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
 ```
 
-## Features
+## ⚙️ Configuration
 
-### Terminal Access
-The web interface provides integrated terminal access directly in the browser:
+### Server Configuration
 
-- **Embedded Terminals**: View Claude and manual terminals directly in the session details page via iframes
-- **External Access**: Open terminals in new windows for full-screen usage
-- **Responsive Layout**: Terminals display side-by-side on desktop, stacked on mobile
-- **Base URL Configuration**: Customize the base URL for terminal access using the `BASE_URL` environment variable
+Configure the server by editing `server/.env`:
+
+```bash
+# Application Configuration
+PORT=3001
+NODE_ENV=development
+
+# Docker Configuration (optional - defaults provided)
+# DOCKER_IMAGE_NAME=afk:latest
+# DOCKER_START_PORT=7681
+# DOCKER_END_PORT=7780
+```
+
+All other settings use sensible defaults. See `server/src/libs/config/` for available configuration options.
+
+## 🏗 Architecture
+
+- **Backend**: NestJS with TypeScript, SQLite database, WebSocket support
+- **Frontend**: React with TypeScript, Material-UI, React Query
+- **Container Management**: Docker integration for session containers
+- **Real-time Updates**: WebSocket connections for session status
+
+## 📋 Features
 
 ### Session Management
-- Create and manage containerized sessions
+- Create and manage containerized development sessions
 - Real-time session status updates via WebSocket
 - Start, stop, restart, and delete sessions
 - Session lifecycle management with automatic cleanup
 
-## Environment Variables
+### Terminal Access
+- Embedded terminal access in the browser
+- Support for multiple terminal modes (debug, dual, normal)
+- External terminal access in new windows
+- Responsive design for desktop and mobile
 
-### Container Runtime
-- `CLAUDE_CODE_OAUTH_TOKEN`: OAuth token for Claude Code authentication
-- `REPO_URL`: Git repository URL (SSH format)
-- `REPO_BRANCH`: Git branch to checkout (default: main)
-- `SSH_PRIVATE_KEY`: Base64-encoded SSH private key for Git authentication
-- `GIT_USER_NAME`: Git user name for commits
-- `GIT_USER_EMAIL`: Git user email for commits
-- `GIT_SSH_HOST`: SSH host for Git operations (optional)
-- `TERMINAL_MODE`: Terminal mode (debug, dual, or normal)
+### Web Interface
+- Modern React-based dashboard
+- Real-time session monitoring
+- Session creation and configuration
+- Settings management
 
-### Server Configuration
-- `BASE_URL`: Base URL for terminal access (default: `http://localhost`)
-  - Used to construct terminal URLs in the web interface
-  - Example: `http://localhost`, `https://your-domain.com`
-- `PORT`: Server port (default: 3001)
-- `NODE_ENV`: Node environment (development, production)
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes and test them
+4. Run linting: `npm run lint`
+5. Run tests: `npm run test`
+6. Commit your changes: `git commit -am 'Add my feature'`
+7. Push to the branch: `git push origin feature/my-feature`
+8. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🐛 Issues
+
+If you encounter any issues or have feature requests, please create an issue on GitHub.

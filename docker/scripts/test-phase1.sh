@@ -236,7 +236,7 @@ test_startup_script_help() {
     return 0
 }
 
-# Test 8: Verify tmux is available in container context
+# Test 8: Verify required dependencies are available
 test_dependencies() {
     log_test "Checking required dependencies"
     

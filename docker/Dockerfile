@@ -27,7 +27,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   aggregate \
   jq \
   curl \
-  tmux \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd from GitHub releases

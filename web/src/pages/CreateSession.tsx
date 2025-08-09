@@ -28,9 +28,7 @@ interface CreateSessionForm {
   branch?: string;
   gitUserName?: string;
   gitUserEmail?: string;
-  sshPrivateKey?: string;
   terminalMode: TerminalMode;
-  claudeToken?: string;
 }
 
 const CreateSession: React.FC = () => {
@@ -48,9 +46,7 @@ const CreateSession: React.FC = () => {
       branch: 'main',
       gitUserName: '',
       gitUserEmail: '',
-      sshPrivateKey: '',
       terminalMode: TerminalMode.DUAL,
-      claudeToken: '',
     },
   });
 
@@ -63,9 +59,7 @@ const CreateSession: React.FC = () => {
         branch: data.branch || undefined,
         gitUserName: data.gitUserName || undefined,
         gitUserEmail: data.gitUserEmail || undefined,
-        sshPrivateKey: data.sshPrivateKey || undefined,
         terminalMode: data.terminalMode,
-        claudeToken: data.claudeToken || undefined,
       };
       
       await createSession(request);
@@ -77,7 +71,7 @@ const CreateSession: React.FC = () => {
   };
 
   return (
-    <Box>
+  <Box sx={{ p: 3, width: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <Button
           component={Link}
@@ -200,27 +194,18 @@ const CreateSession: React.FC = () => {
                 )}
               />
 
-              <Controller
-                name="sshPrivateKey"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="SSH Private Key (Optional)"
-                    margin="normal"
-                    helperText="SSH private key for accessing private repositories"
-                    error={!!errors.sshPrivateKey}
-                    type="password"
-                  />
-                )}
-              />
+
 
               <Divider sx={{ my: 3 }} />
               <Typography variant="h6" gutterBottom>
-                Terminal & Authentication
+                Terminal Configuration
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                SSH keys and Claude tokens are now managed in{' '}
+                <Link to={ROUTES.SETTINGS} style={{ textDecoration: 'none' }}>
+                  Settings
+                </Link>
+                {' '}and will be automatically used for all sessions.
               </Typography>
 
               <Controller
@@ -246,21 +231,7 @@ const CreateSession: React.FC = () => {
                 )}
               />
 
-              <Controller
-                name="claudeToken"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Claude Token (Optional)"
-                    margin="normal"
-                    helperText="OAuth token for Claude Code access"
-                    error={!!errors.claudeToken}
-                    type="password"
-                  />
-                )}
-              />
+
 
               <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
                 <Button

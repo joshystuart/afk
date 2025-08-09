@@ -10,6 +10,7 @@ import { ROUTES } from './utils/constants';
 import Dashboard from './pages/Dashboard';
 import SessionDetails from './pages/SessionDetails';
 import CreateSession from './pages/CreateSession';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 
 // Layout
@@ -66,6 +67,16 @@ const AppContent = () => {
             <ProtectedRoute>
               <Layout>
                 <CreateSession />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.SETTINGS}
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
               </Layout>
             </ProtectedRoute>
           }

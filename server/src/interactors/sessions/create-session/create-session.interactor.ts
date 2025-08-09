@@ -1,4 +1,4 @@
-import {Injectable, Logger} from '@nestjs/common';
+import {Injectable, Logger, Inject} from '@nestjs/common';
 import {DockerEngineService} from '../../../services/docker/docker-engine.service';
 import {PortManagerService} from '../../../services/docker/port-manager.service';
 import {SessionRepository} from '../../../services/repositories/session.repository';
@@ -7,6 +7,8 @@ import {SessionConfigDtoFactory} from '../../../domain/sessions/session-config-d
 import {SessionConfig} from '../../../libs/config/session.config';
 import {CreateSessionRequest} from './create-session-request.dto';
 import {Session} from '../../../domain/sessions/session.entity';
+import { SettingsRepository } from '../../../domain/settings/settings.repository';
+import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 
 @Injectable()
 export class CreateSessionInteractor {
@@ -19,22 +21,26 @@ export class CreateSessionInteractor {
         private readonly sessionFactory: SessionFactory,
         private readonly sessionConfigFactory: SessionConfigDtoFactory,
         private readonly sessionConfig: SessionConfig,
+        @Inject(SETTINGS_REPOSITORY) private readonly settingsRepository: SettingsRepository,
     ) {
     }
 
     async execute(request: CreateSessionRequest): Promise<Session> {
         this.logger.log('Creating new session', {sessionName: request.name});
 
+        // Get global settings
+        const settings = await this.settingsRepository.get();
+
         // Validate request
         await this.validateRequest(request);
 
-        // Create domain entity
+        // Create domain entity using global settings as defaults
         const sessionConfig = this.sessionConfigFactory.create({
             repoUrl: request.repoUrl,
             branch: request.branch,
-            gitUserName: request.gitUserName,
-            gitUserEmail: request.gitUserEmail,
-            hasSSHKey: !!request.sshPrivateKey,
+            gitUserName: request.gitUserName || settings.gitUserName,
+            gitUserEmail: request.gitUserEmail || settings.gitUserEmail,
+            hasSSHKey: !!settings.sshPrivateKey,
             terminalMode: request.terminalMode,
         });
 
@@ -52,10 +58,10 @@ export class CreateSessionInteractor {
                 branch: sessionConfig.branch,
                 gitUserName: sessionConfig.gitUserName,
                 gitUserEmail: sessionConfig.gitUserEmail,
-                sshPrivateKey: request.sshPrivateKey,
+                sshPrivateKey: settings.sshPrivateKey,
                 terminalMode: sessionConfig.terminalMode.toString(),
                 ports,
-                claudeToken: request.claudeToken,
+                claudeToken: settings.claudeToken,
             });
 
             // Update session with container info
@@ -111,10 +117,7 @@ export class CreateSessionInteractor {
             throw new Error('Invalid repository URL format');
         }
 
-        // Validate SSH key format
-        if (request.sshPrivateKey && !this.isValidSSHKey(request.sshPrivateKey)) {
-            throw new Error('Invalid SSH private key format');
-        }
+        // SSH key validation is now handled at the settings level
     }
 
     private async waitForContainerReady(

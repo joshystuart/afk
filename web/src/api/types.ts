@@ -51,9 +51,7 @@ export interface CreateSessionRequest {
   branch?: string;
   gitUserName?: string;
   gitUserEmail?: string;
-  sshPrivateKey?: string;
   terminalMode?: TerminalMode;
-  claudeToken?: string;
 }
 
 export interface CreateSessionResponse {
@@ -71,6 +69,21 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   statusCode: number;
+}
+
+export interface Settings {
+  sshPrivateKey?: string;
+  claudeToken?: string;
+  gitUserName?: string;
+  gitUserEmail?: string;
+  updatedAt: string;
+}
+
+export interface UpdateSettingsRequest {
+  sshPrivateKey?: string;
+  claudeToken?: string;
+  gitUserName?: string;
+  gitUserEmail?: string;
 }
 
 export interface ApiError {

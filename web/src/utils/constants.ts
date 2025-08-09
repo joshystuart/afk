@@ -4,6 +4,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   CREATE_SESSION: '/sessions/create',
   SESSION_DETAILS: '/sessions/:id',
+  SETTINGS: '/settings',
   getSessionDetails: (id: string) => `/sessions/${id}`,
 } as const;
 

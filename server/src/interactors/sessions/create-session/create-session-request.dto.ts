@@ -25,16 +25,8 @@ export class CreateSessionRequest {
   gitUserEmail?: string;
 
   @IsOptional()
-  @IsString()
-  sshPrivateKey?: string;
-
-  @IsOptional()
   @IsEnum(TerminalMode)
   terminalMode?: TerminalMode;
-
-  @IsOptional()
-  @IsString()
-  claudeToken?: string;
 
   // This would be populated from authentication context
   @Allow()

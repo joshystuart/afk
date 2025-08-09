@@ -21,6 +21,7 @@ import {
   Add as AddIcon,
   ChevronLeft as ChevronLeftIcon,
   Terminal as TerminalIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
@@ -65,6 +66,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       type: 'item',
       url: ROUTES.CREATE_SESSION,
       icon: AddIcon,
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      type: 'item',
+      url: ROUTES.SETTINGS,
+      icon: SettingsIcon,
     },
   ];
 

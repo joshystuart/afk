@@ -6,6 +6,7 @@ import { ResponseService } from './libs/response/response.service';
 import { HttpExceptionFilter } from './libs/common/filters/http-exception.filter';
 import { AppConfig } from './libs/config/app.config';
 import { SessionsModule } from './interactors/sessions/sessions.module';
+import { SettingsModule } from './interactors/settings/settings.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
 
@@ -19,6 +20,7 @@ import { HealthModule } from './health/health.module';
       isGlobal: true,
     }),
     SessionsModule,
+    SettingsModule,
     GatewaysModule,
     HealthModule,
   ],

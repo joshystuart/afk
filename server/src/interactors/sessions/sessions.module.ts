@@ -8,6 +8,7 @@ import { SessionLifecycleController } from './session-lifecycle.controller';
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
+import { SettingsModule } from '../settings/settings.module';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
 
@@ -16,6 +17,7 @@ import { ResponseService } from '../../libs/response/response.service';
     DockerModule,
     RepositoriesModule,
     DomainModule,
+    SettingsModule,
   ],
   controllers: [
     CreateSessionController,

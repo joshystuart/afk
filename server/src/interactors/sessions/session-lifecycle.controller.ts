@@ -67,6 +67,42 @@ export class SessionLifecycleController {
     }
   }
 
+  @Get(':id/health')
+  @ApiOperation({ summary: 'Check if session terminals are ready' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Terminal health status',
+    schema: {
+      type: 'object',
+      properties: {
+        claudeTerminalReady: { type: 'boolean' },
+        manualTerminalReady: { type: 'boolean' },
+        allReady: { type: 'boolean' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Session not found',
+    type: ApiErrorResponseDto,
+  })
+  async checkSessionHealth(
+    @Param('id') id: string,
+  ): Promise<ApiResponseType<{ claudeTerminalReady: boolean; manualTerminalReady: boolean; allReady: boolean }>> {
+    try {
+      const sessionId = this.sessionIdFactory.fromString(id);
+      const healthStatus = await this.sessionLifecycleInteractor.checkTerminalHealth(sessionId);
+
+      return this.responseService.success(healthStatus);
+    } catch (error) {
+      if (error.message === 'Session not found') {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(error.message);
+    }
+  }
+
   @Post(':id/stop')
   @ApiOperation({ summary: 'Stop session' })
   @ApiParam({ name: 'id', description: 'Session ID' })

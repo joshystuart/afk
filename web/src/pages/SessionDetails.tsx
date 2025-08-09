@@ -25,6 +25,7 @@ import {
 import { Link, useParams } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useSessionHealth } from '../hooks/useSessionHealth';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 
@@ -32,6 +33,7 @@ import { ROUTES } from '../utils/constants';
 import MainCard from '../components/ui-component/cards/MainCard';
 import SubCard from '../components/ui-component/cards/SubCard';
 import AnimateButton from '../components/ui-component/extended/AnimateButton';
+import TerminalLoading from '../components/TerminalLoading';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +55,11 @@ const SessionDetails: React.FC = () => {
 
   // Get session data
   const sessionQuery = id ? getSession(id) : null;
+  const session = sessionQuery?.data;
+  
+  // Health check for terminals
+  const shouldCheckHealth = session?.status === SessionStatus.RUNNING && session.terminalUrls;
+  const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
 
   React.useEffect(() => {
     if (id) {
@@ -120,11 +127,10 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  const session = sessionQuery.data;
-  const canStart = session.status === SessionStatus.STOPPED;
+  const canStart = session && session.status === SessionStatus.STOPPED;
 
   // If session is not running, show the start interface
-  if (session.status !== SessionStatus.RUNNING || !session.terminalUrls) {
+  if (!session || session.status !== SessionStatus.RUNNING || !session.terminalUrls) {
     return (
       <Box sx={{ p: 3, width: '100%' }}>
         {/* Breadcrumbs */}
@@ -374,17 +380,26 @@ const SessionDetails: React.FC = () => {
                 }
                 content={false}
               >
-                <Box
-                  component="iframe"
-                  src={session.terminalUrls.claude}
-                  sx={{
-                    flex: 1,
-                    border: 'none',
-                    bgcolor: '#000',
-                    width: '100%',
-                  }}
-                  title="Claude Terminal"
-                />
+                {healthCheck.claudeTerminalReady ? (
+                  <Box
+                    component="iframe"
+                    src={session.terminalUrls.claude}
+                    sx={{
+                      flex: 1,
+                      border: 'none',
+                      bgcolor: '#000',
+                      width: '100%',
+                    }}
+                    title="Claude Terminal"
+                  />
+                ) : (
+                  <TerminalLoading
+                    title="Claude Terminal"
+                    message={healthCheck.isLoading ? "Starting Claude terminal..." : "Waiting for container..."}
+                    isError={!!healthCheck.error}
+                    onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                  />
+                )}
               </SubCard>
 
               {/* Manual Terminal */}
@@ -419,17 +434,26 @@ const SessionDetails: React.FC = () => {
                 }
                 content={false}
               >
-                <Box
-                  component="iframe"
-                  src={session.terminalUrls.manual}
-                  sx={{
-                    flex: 1,
-                    border: 'none',
-                    bgcolor: '#000',
-                    width: '100%',
-                  }}
-                  title="Manual Terminal"
-                />
+                {healthCheck.manualTerminalReady ? (
+                  <Box
+                    component="iframe"
+                    src={session.terminalUrls.manual}
+                    sx={{
+                      flex: 1,
+                      border: 'none',
+                      bgcolor: '#000',
+                      width: '100%',
+                    }}
+                    title="Manual Terminal"
+                  />
+                ) : (
+                  <TerminalLoading
+                    title="Manual Terminal"
+                    message={healthCheck.isLoading ? "Starting manual terminal..." : "Waiting for container..."}
+                    isError={!!healthCheck.error}
+                    onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                  />
+                )}
               </SubCard>
             </>
           ) : (
@@ -465,17 +489,26 @@ const SessionDetails: React.FC = () => {
               }
               content={false}
             >
-              <Box
-                component="iframe"
-                src={session.terminalUrls.claude}
-                sx={{
-                  flex: 1,
-                  border: 'none',
-                  bgcolor: '#000',
-                  width: '100%',
-                }}
-                title="Claude Terminal"
-              />
+              {healthCheck.claudeTerminalReady ? (
+                <Box
+                  component="iframe"
+                  src={session.terminalUrls.claude}
+                  sx={{
+                    flex: 1,
+                    border: 'none',
+                    bgcolor: '#000',
+                    width: '100%',
+                  }}
+                  title="Claude Terminal"
+                />
+              ) : (
+                <TerminalLoading
+                  title="Claude Terminal"
+                  message={healthCheck.isLoading ? "Starting Claude terminal..." : "Waiting for container..."}
+                  isError={!!healthCheck.error}
+                  onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                />
+              )}
             </SubCard>
           )}
         </Box>

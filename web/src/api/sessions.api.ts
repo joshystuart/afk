@@ -79,4 +79,18 @@ export const sessionsApi = {
     const response = await apiClient.get(`/sessions/${sessionId}/logs`);
     return (response as unknown as { logs: string[] }).logs;
   },
+
+  // Check terminal health
+  checkSessionHealth: async (sessionId: string): Promise<{
+    claudeTerminalReady: boolean;
+    manualTerminalReady: boolean;
+    allReady: boolean;
+  }> => {
+    const response = await apiClient.get(`/sessions/${sessionId}/health`);
+    return response as {
+      claudeTerminalReady: boolean;
+      manualTerminalReady: boolean;
+      allReady: boolean;
+    };
+  },
 };

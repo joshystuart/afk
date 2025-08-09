@@ -4,6 +4,7 @@ import { SessionRepository } from '../../services/repositories/session.repositor
 import { PortManagerService } from '../../services/docker/port-manager.service';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import * as http from 'http';
 
 @Injectable()
 export class SessionLifecycleInteractor {
@@ -165,5 +166,65 @@ export class SessionLifecycleInteractor {
         error: error.message,
       };
     }
+  }
+
+  async checkTerminalHealth(sessionId: SessionIdDto): Promise<{
+    claudeTerminalReady: boolean;
+    manualTerminalReady: boolean;
+    allReady: boolean;
+  }> {
+    const session = await this.sessionRepository.findById(sessionId);
+
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    if (session.status !== SessionStatus.RUNNING || !session.ports) {
+      return {
+        claudeTerminalReady: false,
+        manualTerminalReady: false,
+        allReady: false,
+      };
+    }
+
+    const claudeReady = await this.checkTerminalEndpoint(session.ports.claudePort);
+    const manualReady = session.config.terminalMode === 'DUAL' 
+      ? await this.checkTerminalEndpoint(session.ports.manualPort)
+      : true; // Manual terminal not needed in simple mode
+
+    return {
+      claudeTerminalReady: claudeReady,
+      manualTerminalReady: manualReady,
+      allReady: claudeReady && manualReady,
+    };
+  }
+
+  private async checkTerminalEndpoint(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const options = {
+        hostname: 'localhost',
+        port: port,
+        path: '/',
+        method: 'GET',
+        timeout: 2000,
+      };
+
+      const req = http.request(options, (res) => {
+        // If we get any HTTP response, the terminal is ready
+        resolve(res.statusCode === 200 || res.statusCode === 404);
+      });
+
+      req.on('error', () => {
+        resolve(false);
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        resolve(false);
+      });
+
+      req.setTimeout(2000);
+      req.end();
+    });
   }
 }

@@ -173,8 +173,6 @@ start_claude_simple() {
         claude
 }
 
-
-
 # Dual TTY approach: Start two separate ttyd instances
 start_claude_dual_tty() {
     log_step "Starting dual TTY sessions - Claude and Manual"
@@ -197,6 +195,7 @@ start_claude_dual_tty() {
     ttyd \
         --port "$MANUAL_PORT" \
         --writable \
+        -t rendererType=canvas \
         bash &
 
     local manual_pid=$!
@@ -212,6 +211,7 @@ start_claude_dual_tty() {
     exec ttyd \
         --port "$CLAUDE_PORT" \
         --writable \
+        -t rendererType=canvas \
         claude
 }
 

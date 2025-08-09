@@ -59,7 +59,7 @@ export class CreateSessionInteractor {
         gitUserName: sessionConfig.gitUserName,
         gitUserEmail: sessionConfig.gitUserEmail,
         sshPrivateKey: settings.sshPrivateKey,
-        terminalMode: sessionConfig.terminalMode.toString(),
+        terminalMode: sessionConfig.terminalMode.toString().toLowerCase(),
         ports,
         claudeToken: settings.claudeToken,
       });

@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsEmail, IsEnum, MinLength, MaxLength, IsUrl, Allow } from 'class-validator';
+import { IsString, IsOptional, IsEmail, MinLength, MaxLength, Allow, IsEnum } from 'class-validator';
 import { TerminalMode } from '../../../domain/sessions/terminal-mode.enum';
+import { IsGitUrl } from '../../../libs/validators/git-url.validator';
 
 export class CreateSessionRequest {
   @IsString()
@@ -8,7 +9,7 @@ export class CreateSessionRequest {
   name!: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsGitUrl()
   repoUrl?: string;
 
   @IsOptional()

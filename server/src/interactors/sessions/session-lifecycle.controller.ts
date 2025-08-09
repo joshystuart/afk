@@ -1,9 +1,10 @@
-import { Controller, Delete, Post, Get, Param, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
 import { ResponseService, ApiResponse as ApiResponseType } from '../../libs/response/response.service';
 import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
 import { CreateSessionResponseDto } from './create-session/create-session-response.dto';
+import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
 import { AppConfig } from '../../libs/config/app.config';
 
 @ApiTags('Sessions')
@@ -19,8 +20,21 @@ export class SessionLifecycleController {
   @Get(':id')
   @ApiOperation({ summary: 'Get session details' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  @ApiResponse({ status: 200, description: 'Session details retrieved' })
-  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Session details retrieved',
+    type: CreateSessionResponseDto
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Session not found',
+    type: ApiErrorResponseDto
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid session ID',
+    type: ApiErrorResponseDto
+  })
   async getSession(@Param('id') id: string): Promise<ApiResponseType<CreateSessionResponseDto>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
@@ -39,8 +53,20 @@ export class SessionLifecycleController {
   @Post(':id/stop')
   @ApiOperation({ summary: 'Stop session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  @ApiResponse({ status: 200, description: 'Session stopped successfully' })
-  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Session stopped successfully'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Session not found',
+    type: ApiErrorResponseDto
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid session ID or operation failed',
+    type: ApiErrorResponseDto
+  })
   async stopSession(@Param('id') id: string): Promise<ApiResponseType<{ message: string }>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
@@ -58,8 +84,20 @@ export class SessionLifecycleController {
   @Post(':id/restart')
   @ApiOperation({ summary: 'Restart session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  @ApiResponse({ status: 200, description: 'Session restarted successfully' })
-  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Session restarted successfully'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Session not found',
+    type: ApiErrorResponseDto
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid session ID or operation failed',
+    type: ApiErrorResponseDto
+  })
   async restartSession(@Param('id') id: string): Promise<ApiResponseType<{ message: string }>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
@@ -77,8 +115,20 @@ export class SessionLifecycleController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete session' })
   @ApiParam({ name: 'id', description: 'Session ID' })
-  @ApiResponse({ status: 200, description: 'Session deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Session deleted successfully'
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Session not found',
+    type: ApiErrorResponseDto
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid session ID or operation failed',
+    type: ApiErrorResponseDto
+  })
   async deleteSession(@Param('id') id: string): Promise<ApiResponseType<{ message: string }>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);

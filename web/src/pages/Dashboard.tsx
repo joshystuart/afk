@@ -6,21 +6,35 @@ import {
   IconButton,
   Alert,
   Skeleton,
-  Grid,
-  Container,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
+  PlayArrow as PlayIcon,
+  Stop as StopIcon,
   Refresh as RefreshIcon,
   RestartAlt as RestartIcon,
   Terminal as TerminalIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 
+// Berry Components
+import MainCard from '../components/ui-component/cards/MainCard';
+import AnimateButton from '../components/ui-component/extended/AnimateButton';
+
 const Dashboard: React.FC = () => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const {
     sessions,
@@ -42,10 +56,10 @@ const Dashboard: React.FC = () => {
 
   const getStatusColor = (status: SessionStatus) => {
     switch (status) {
-      case SessionStatus.RUNNING: return '#10b981';
-      case SessionStatus.STOPPED: return '#6b7280';
-      case SessionStatus.ERROR: return '#ef4444';
-      default: return '#6b7280';
+      case SessionStatus.RUNNING: return theme.palette.success.main;
+      case SessionStatus.STOPPED: return theme.palette.grey[500];
+      case SessionStatus.ERROR: return theme.palette.error.main;
+      default: return theme.palette.grey[500];
     }
   };
 
@@ -60,332 +74,279 @@ const Dashboard: React.FC = () => {
 
   if (isLoading && sessions.length === 0) {
     return (
-      <Grid container direction="column" sx={{ flex: 1, backgroundColor: '#1a1a1a' }}>
-        {/* Header */}
-        <Grid item xs={12}>
-          <Box sx={{ 
-            backgroundColor: '#3b82f6', 
-            color: 'white', 
-            p: 3,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <Typography variant="h4" sx={{ fontWeight: 600 }}>
-              Remote Development Sessions
-            </Typography>
-            <Typography variant="body1">
-              Welcome, Developer
-            </Typography>
+      <Box sx={{ p: 3, width: '100%' }}>
+        <MainCard
+          title="Remote Development Sessions"
+          secondary={
+            <AnimateButton>
+              <Button
+                component={Link}
+                to={ROUTES.CREATE_SESSION}
+                variant="contained"
+                startIcon={<AddIcon />}
+                disabled
+              >
+                Create Session
+              </Button>
+            </AnimateButton>
+          }
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rectangular" height={60} />
+            <Skeleton variant="rectangular" height={60} />
+            <Skeleton variant="rectangular" height={60} />
           </Box>
-        </Grid>
-
-        {/* Loading Content */}
-        <Grid item xs sx={{ flex: 1 }}>
-          <Container maxWidth={false} sx={{ p: 3 }}>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item>
-                <Skeleton variant="rectangular" width={200} height={40} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
-              </Grid>
-              <Grid item>
-                <Skeleton variant="rectangular" width={120} height={40} sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
-              </Grid>
-            </Grid>
-            <Skeleton variant="rectangular" height="60vh" sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)' }} />
-          </Container>
-        </Grid>
-      </Grid>
+        </MainCard>
+      </Box>
     );
   }
 
   return (
-    <Grid container direction="column" sx={{ flex: 1, backgroundColor: '#1a1a1a' }}>
-      {/* Header */}
-      <Grid item xs={12}>
-        <Box sx={{ 
-          backgroundColor: '#3b82f6', 
-          color: 'white', 
-          p: 3,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            Remote Development Sessions
-          </Typography>
+    <Box sx={{ p: 3, width: '100%' }}>
+      {/* Header Card */}
+      <MainCard
+        title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body1">
-              Welcome, Developer
-            </Typography>
-            <Button
-              variant="outlined"
-              sx={{ 
-                color: 'white', 
-                borderColor: 'white',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
-              }}
-            >
-              LOGOUT
-            </Button>
+            <TerminalIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h3">Remote Development Sessions</Typography>
           </Box>
-        </Box>
-      </Grid>
+        }
+        secondary={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <AnimateButton>
+              <IconButton onClick={() => refetchSessions()} size="small">
+                <RefreshIcon />
+              </IconButton>
+            </AnimateButton>
+            <AnimateButton>
+              <Button
+                component={Link}
+                to={ROUTES.CREATE_SESSION}
+                variant="contained"
+                startIcon={<AddIcon />}
+                sx={{ minWidth: 140 }}
+              >
+                Create Session
+              </Button>
+            </AnimateButton>
+          </Box>
+        }
+        sx={{ mb: 3 }}
+      >
+        {/* Error Alert */}
+        {error && (
+          <Alert 
+            severity="error" 
+            onClose={clearError}
+            sx={{ mb: 2 }}
+          >
+            {error}
+          </Alert>
+        )}
 
-      {/* Main Content */}
-      <Grid item xs sx={{ flex: 1, overflow: 'auto', backgroundColor: '#2d2d2d' }}>
-        <Container maxWidth={false}>
-          {error && (
-            <Alert
-              severity="error"
-              sx={{ 
-                m: 3, 
-                backgroundColor: 'rgba(239, 68, 68, 0.1)', 
-                color: '#fca5a5',
-                border: '1px solid rgba(239, 68, 68, 0.3)'
-              }}
-              onClose={clearError}
-            >
-              {error}
-            </Alert>
-          )}
+        {/* Empty State */}
+        {sessions.length === 0 ? (
+          <Box 
+            sx={{ 
+              textAlign: 'center', 
+              py: 8,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 3
+            }}
+          >
+            <TerminalIcon sx={{ fontSize: 80, color: 'text.secondary' }} />
+            <Box>
+              <Typography variant="h4" sx={{ mb: 1 }}>
+                No sessions yet
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Create your first development session to get started
+              </Typography>
+            </Box>
+            <AnimateButton>
+              <Button
+                component={Link}
+                to={ROUTES.CREATE_SESSION}
+                variant="contained"
+                size="large"
+                startIcon={<AddIcon />}
+                sx={{ px: 4 }}
+              >
+                Create Your First Session
+              </Button>
+            </AnimateButton>
+          </Box>
+        ) : (
+          /* Sessions Table */
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>Session</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Repository</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Terminal Access</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sessions.map((session) => (
+                  <TableRow 
+                    key={session.id}
+                    sx={{
+                      '&:hover': {
+                        bgcolor: 'rgba(255, 255, 255, 0.02)'
+                      }
+                    }}
+                  >
+                    {/* Session Name */}
+                    <TableCell>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontFamily: 'monospace', mb: 0.5 }}>
+                          {session.name || session.id.slice(0, 12)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {session.id}
+                        </Typography>
+                      </Box>
+                    </TableCell>
 
-          {sessions.length === 0 ? (
-            <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: '60vh' }}>
-              <Grid item xs={12} sm={8} md={6} lg={4}>
-                <Grid container direction="column" alignItems="center" spacing={2}>
-                  <Grid item>
-                    <Typography variant="h5" sx={{ mb: 2, color: '#a1a1aa', textAlign: 'center' }}>
-                      No sessions yet
-                    </Typography>
-                  </Grid>
-                  <Grid item>
-                    <Typography variant="body1" sx={{ mb: 4, color: '#a1a1aa', textAlign: 'center' }}>
-                      Create your first development session to get started
-                    </Typography>
-                  </Grid>
-                  <Grid item>
-                    <Button
-                      component={Link}
-                      to={ROUTES.CREATE_SESSION}
-                      variant="contained"
-                      size="large"
-                      startIcon={<AddIcon />}
-                      sx={{
-                        backgroundColor: '#3b82f6',
-                        '&:hover': { backgroundColor: '#2563eb' },
-                        textTransform: 'none',
-                        px: 4
-                      }}
-                    >
-                      Create New Session
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Grid>
-          ) : (
-            <Container maxWidth={false} sx={{ p: 3 }}>
-              {/* Sessions Table */}
-              <Grid container>
-                <Grid item xs={12}>
-                  <Box sx={{ 
-                    backgroundColor: '#1a1a1a', 
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    border: '1px solid #404040'
-                  }}>
-                    {sessions.map((session, index) => (
-                      <Grid container key={session.id} sx={{
-                        p: 3,
-                        borderBottom: index < sessions.length - 1 ? '1px solid #404040' : 'none',
-                        alignItems: 'center',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 0.02)'
+                    {/* Repository */}
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                        {session.repoUrl ? 
+                          session.repoUrl.split('/').pop()?.replace('.git', '') : 
+                          'No repository'
                         }
-                      }}>
-                        {/* Session Info */}
-                        <Grid item xs={12} md={8} lg={9}>
-                          <Grid container spacing={4} alignItems="center">
-                            {/* Name and Status */}
-                            <Grid item xs={12} sm={6} md={4}>
-                              <Typography variant="h6" sx={{ 
-                                color: 'white',
-                                fontFamily: 'monospace',
-                                mb: 0.5
-                              }}>
-                                {session.name || session.id.slice(0, 12)}
-                              </Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: getStatusColor(session.status),
-                                  animation: session.status === SessionStatus.RUNNING ? 'pulse 2s infinite' : 'none'
-                                }} />
-                                <Typography variant="caption" sx={{ 
-                                  color: getStatusColor(session.status),
-                                  fontWeight: 600,
-                                  letterSpacing: '0.5px'
-                                }}>
-                                  {getStatusText(session.status)}
-                                </Typography>
-                              </Box>
-                            </Grid>
+                      </Typography>
+                    </TableCell>
 
-                            {/* Repository */}
-                            <Grid item xs={12} sm={6} md={4}>
-                              <Typography variant="body2" sx={{ color: '#a1a1aa', mb: 0.5 }}>
-                                Repository
-                              </Typography>
-                              <Typography variant="body1" sx={{ color: 'white', fontFamily: 'monospace' }}>
-                                {session.repoUrl ? session.repoUrl.split('/').pop()?.replace('.git', '') : 'No repository'}
-                              </Typography>
-                            </Grid>
+                    {/* Status */}
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        label={getStatusText(session.status)}
+                        sx={{
+                          bgcolor: getStatusColor(session.status),
+                          color: 'white',
+                          fontWeight: 600,
+                          minWidth: 80,
+                          ...(session.status === SessionStatus.RUNNING && {
+                            animation: 'pulse 2s infinite'
+                          })
+                        }}
+                      />
+                    </TableCell>
 
-                            {/* Terminal Access */}
-                            {session.status === SessionStatus.RUNNING && session.terminalUrls && (
-                              <Grid item xs={12} md={4}>
-                                <Grid container spacing={1}>
-                                  <Grid item>
-                                    <Button
-                                      variant="contained"
-                                      size="small"
-                                      startIcon={<TerminalIcon />}
-                                      href={session.terminalUrls.claude}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      sx={{
-                                        backgroundColor: '#3b82f6',
-                                        '&:hover': { backgroundColor: '#2563eb' },
-                                        textTransform: 'none',
-                                        fontWeight: 600
-                                      }}
-                                    >
-                                      Open Claude Terminal
-                                    </Button>
-                                  </Grid>
-                                  {session.terminalMode === 'DUAL' && (
-                                    <Grid item>
-                                      <Button
-                                        variant="outlined"
-                                        size="small"
-                                        startIcon={<TerminalIcon />}
-                                        href={session.terminalUrls.manual}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        sx={{
-                                          borderColor: '#6b7280',
-                                          color: '#a1a1aa',
-                                          '&:hover': { 
-                                            borderColor: '#9ca3af',
-                                            backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                                          },
-                                          textTransform: 'none'
-                                        }}
-                                      >
-                                        Open Manual Terminal
-                                      </Button>
-                                    </Grid>
-                                  )}
-                                </Grid>
-                              </Grid>
-                            )}
-                          </Grid>
-                        </Grid>
+                    {/* Terminal Access */}
+                    <TableCell>
+                      {session.status === SessionStatus.RUNNING && session.terminalUrls ? (
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<TerminalIcon />}
+                            href={session.terminalUrls.claude}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            Claude
+                          </Button>
+                          {session.terminalMode === 'DUAL' && (
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<TerminalIcon />}
+                              href={session.terminalUrls.manual}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Manual
+                            </Button>
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          Not available
+                        </Typography>
+                      )}
+                    </TableCell>
 
-                        {/* Actions */}
-                        <Grid item xs={12} md={4} lg={3}>
-                          <Grid container spacing={1} justifyContent="flex-end" alignItems="center">
-                            {session.status === SessionStatus.STOPPED && (
-                              <Grid item>
-                                <Button
-                                  variant="contained"
-                                  size="small"
-                                  onClick={() => startSession(session.id)}
-                                  disabled={isStarting}
-                                  sx={{
-                                    backgroundColor: '#10b981',
-                                    '&:hover': { backgroundColor: '#059669' },
-                                    minWidth: 80,
-                                    textTransform: 'none'
-                                  }}
-                                >
-                                  {isStarting ? 'Starting...' : 'Start'}
-                                </Button>
-                              </Grid>
-                            )}
+                    {/* Actions */}
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                        {/* Start Button */}
+                        {session.status === SessionStatus.STOPPED && (
+                          <AnimateButton>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<PlayIcon />}
+                              onClick={() => startSession(session.id)}
+                              disabled={isStarting}
+                              color="success"
+                              sx={{ minWidth: 80 }}
+                            >
+                              {isStarting ? 'Starting...' : 'Start'}
+                            </Button>
+                          </AnimateButton>
+                        )}
 
-                            {session.status === SessionStatus.RUNNING && (
-                              <Grid>
-                                <Button
-                                  variant="contained"
-                                  size="small"
-                                  onClick={() => stopSession(session.id)}
-                                  disabled={isStopping}
-                                  sx={{
-                                    backgroundColor: '#f59e0b',
-                                    '&:hover': { backgroundColor: '#d97706' },
-                                    minWidth: 80,
-                                    textTransform: 'none'
-                                  }}
-                                >
-                                  {isStopping ? 'Stopping...' : 'Stop'}
-                                </Button>
-                              </Grid>
-                            )}
+                        {/* Stop Button */}
+                        {session.status === SessionStatus.RUNNING && (
+                          <AnimateButton>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<StopIcon />}
+                              onClick={() => stopSession(session.id)}
+                              disabled={isStopping}
+                              color="warning"
+                              sx={{ minWidth: 80 }}
+                            >
+                              {isStopping ? 'Stopping...' : 'Stop'}
+                            </Button>
+                          </AnimateButton>
+                        )}
 
-                            {session.status === SessionStatus.RUNNING && (
-                              <Grid>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => restartSession(session.id)}
-                                  disabled={isRestarting}
-                                  sx={{ color: '#a1a1aa' }}
-                                  title="Restart"
-                                >
-                                  <RestartIcon />
-                                </IconButton>
-                              </Grid>
-                            )}
+                        {/* Restart Button */}
+                        {session.status === SessionStatus.RUNNING && (
+                          <AnimateButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => restartSession(session.id)}
+                              disabled={isRestarting}
+                              title="Restart"
+                            >
+                              <RestartIcon />
+                            </IconButton>
+                          </AnimateButton>
+                        )}
 
-                            <Grid>
-                              <IconButton
-                                size="small"
-                                onClick={() => refetchSessions()}
-                                sx={{ color: '#a1a1aa' }}
-                                title="Refresh"
-                              >
-                                <RefreshIcon />
-                              </IconButton>
-                            </Grid>
-
-                            <Grid>
-                              <Button
-                                variant="text"
-                                size="small"
-                                onClick={() => handleViewSession(session.id)}
-                                sx={{
-                                  color: '#60a5fa',
-                                  '&:hover': { backgroundColor: 'rgba(96, 165, 250, 0.1)' },
-                                  textTransform: 'none'
-                                }}
-                              >
-                                View Details
-                              </Button>
-                            </Grid>
-                          </Grid>
-                        </Grid>
-                      </Grid>
-                    ))}
-                  </Box>
-                </Grid>
-              </Grid>
-            </Container>
-          )}
-        </Container>
-      </Grid>
-    </Grid>
+                        {/* View Details Button */}
+                        <AnimateButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleViewSession(session.id)}
+                            title="View Details"
+                            color="primary"
+                          >
+                            <ViewIcon />
+                          </IconButton>
+                        </AnimateButton>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </MainCard>
+    </Box>
   );
 };
 

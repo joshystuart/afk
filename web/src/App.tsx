@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useAuth } from './hooks/useAuth';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -15,48 +15,8 @@ import Login from './pages/Login';
 // Layout
 import Layout from './components/Layout';
 
-// Create theme
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#3b82f6',
-    },
-    secondary: {
-      main: '#10b981',
-    },
-    background: {
-      default: '#1a1a1a',
-      paper: '#2d2d2d',
-    },
-    text: {
-      primary: '#ffffff',
-      secondary: '#a1a1aa',
-    },
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          scrollbarColor: '#404040 #1a1a1a',
-          '&::-webkit-scrollbar, & *::-webkit-scrollbar': {
-            width: '8px',
-            height: '8px',
-          },
-          '&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb': {
-            borderRadius: '4px',
-            backgroundColor: '#404040',
-            minHeight: 24,
-          },
-          '&::-webkit-scrollbar-track, & *::-webkit-scrollbar-track': {
-            borderRadius: '4px',
-            backgroundColor: '#1a1a1a',
-          },
-        },
-      },
-    },
-  },
-});
+// Berry Theme
+import { berryTheme } from './themes/berry';
 
 // Create query client
 const queryClient = new QueryClient({
@@ -127,7 +87,7 @@ const AppContent = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={berryTheme}>
         <CssBaseline />
         <AppContent />
       </ThemeProvider>

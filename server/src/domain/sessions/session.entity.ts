@@ -1,8 +1,24 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, ValueTransformer } from 'typeorm';
 import { SessionIdDto } from './session-id.dto';
 import { SessionStatus } from './session-status.enum';
 import { SessionConfigDto } from './session-config.dto';
 import { PortPairDto } from '../containers/port-pair.dto';
+
+// Transformer to convert between PortPairDto and JSON
+const portPairTransformer: ValueTransformer = {
+  to: (value: PortPairDto | null) => {
+    return value ? value.toJSON() : null;
+  },
+  from: (value: any) => {
+    if (!value) return null;
+    if (value instanceof PortPairDto) return value;
+    // If it's a plain object from the database, convert it to PortPairDto
+    if (typeof value === 'object' && value.claude !== undefined && value.manual !== undefined) {
+      return new PortPairDto(value.claude, value.manual);
+    }
+    return value;
+  }
+};
 
 @Entity('sessions')
 export class Session {
@@ -25,7 +41,7 @@ export class Session {
   @Column('varchar', { length: 255, nullable: true })
   containerId: string | null;
 
-  @Column('json', { nullable: true })
+  @Column('json', { nullable: true, transformer: portPairTransformer })
   ports: PortPairDto | null;
 
   @CreateDateColumn()

@@ -21,8 +21,9 @@ import {
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
   NavigateNext as NavigateNextIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
@@ -38,6 +39,7 @@ import TerminalLoading from '../components/TerminalLoading';
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const theme = useTheme();
+  const navigate = useNavigate();
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [fullscreenTerminal, setFullscreenTerminal] = React.useState<'claude' | 'manual' | null>(null);
@@ -47,10 +49,12 @@ const SessionDetails: React.FC = () => {
     startSession,
     stopSession,
     restartSession,
+    deleteSession,
     getSession,
     isStarting,
     isStopping,
     isRestarting,
+    isDeleting,
   } = useSession();
 
   // Get session data
@@ -58,8 +62,20 @@ const SessionDetails: React.FC = () => {
   const session = sessionQuery?.data;
   
   // Health check for terminals
-  const shouldCheckHealth = session?.status === SessionStatus.RUNNING && session.terminalUrls;
+  const shouldCheckHealth = session?.status === SessionStatus.RUNNING && !!session?.terminalUrls;
   const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
+
+  // Handle session deletion with navigation
+  const handleDeleteSession = async () => {
+    if (!session) return;
+    
+    try {
+      await deleteSession(session.id);
+      navigate(ROUTES.DASHBOARD);
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+  };
 
   React.useEffect(() => {
     if (id) {
@@ -149,7 +165,7 @@ const SessionDetails: React.FC = () => {
             Dashboard
           </Button>
           <Typography color="text.primary" sx={{ fontFamily: 'monospace' }}>
-            {session.name || session.id.slice(0, 12)}
+            {session?.name || session?.id.slice(0, 12)}
           </Typography>
         </Breadcrumbs>
 
@@ -159,15 +175,15 @@ const SessionDetails: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <TerminalIcon sx={{ color: 'primary.main' }} />
               <Typography variant="h3" sx={{ fontFamily: 'monospace' }}>
-                {session.name || session.id.slice(0, 12)}
+                {session?.name || session?.id.slice(0, 12)}
               </Typography>
             </Box>
           }
           secondary={
             <Chip
-              label={session.status}
+              label={session?.status}
               sx={{
-                bgcolor: session.status === SessionStatus.ERROR ? 'error.main' : 'grey.500',
+                bgcolor: session?.status === SessionStatus.ERROR ? 'error.main' : 'grey.500',
                 color: 'white',
                 fontWeight: 600,
               }}
@@ -177,7 +193,7 @@ const SessionDetails: React.FC = () => {
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <TerminalIcon sx={{ fontSize: 120, color: 'text.secondary', mb: 3 }} />
             <Typography variant="h4" sx={{ mb: 2 }}>
-              Session {session.status.toLowerCase()}
+              Session {session?.status.toLowerCase()}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
               {canStart 
@@ -187,19 +203,35 @@ const SessionDetails: React.FC = () => {
             </Typography>
             
             {canStart && (
-              <AnimateButton>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<PlayIcon />}
-                  onClick={() => startSession(session.id)}
-                  disabled={isStarting}
-                  color="success"
-                  sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
-                >
-                  {isStarting ? 'Starting Session...' : 'Start Session'}
-                </Button>
-              </AnimateButton>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <AnimateButton>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<PlayIcon />}
+                    onClick={() => startSession(session!.id)}
+                    disabled={isStarting}
+                    color="success"
+                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
+                  >
+                    {isStarting ? 'Starting Session...' : 'Start Session'}
+                  </Button>
+                </AnimateButton>
+                
+                <AnimateButton>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDeleteSession}
+                    disabled={isDeleting}
+                    color="error"
+                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
+                  >
+                    {isDeleting ? 'Deleting Session...' : 'Delete Session'}
+                  </Button>
+                </AnimateButton>
+              </Stack>
             )}
           </Box>
         </MainCard>

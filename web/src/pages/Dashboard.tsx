@@ -23,6 +23,7 @@ import {
   RestartAlt as RestartIcon,
   Terminal as TerminalIcon,
   Visibility as ViewIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
@@ -43,15 +44,25 @@ const Dashboard: React.FC = () => {
     startSession,
     stopSession,
     restartSession,
+    deleteSession,
     refetchSessions,
     clearError,
     isStarting,
     isStopping,
     isRestarting,
+    isDeleting,
   } = useSession();
 
   const handleViewSession = (sessionId: string) => {
     navigate(ROUTES.getSessionDetails(sessionId));
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await deleteSession(sessionId);
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
   };
 
   const getStatusColor = (status: SessionStatus) => {
@@ -292,6 +303,21 @@ const Dashboard: React.FC = () => {
                             >
                               {isStarting ? 'Starting...' : 'Start'}
                             </Button>
+                          </AnimateButton>
+                        )}
+
+                        {/* Delete Button */}
+                        {session.status === SessionStatus.STOPPED && (
+                          <AnimateButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteSession(session.id)}
+                              disabled={isDeleting}
+                              title="Delete Session"
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
                           </AnimateButton>
                         )}
 

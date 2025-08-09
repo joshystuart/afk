@@ -55,11 +55,43 @@ export class SessionLifecycleInteractor {
     }
 
     try {
+      // Check if container exists and its current state
+      let containerInfo;
+      try {
+        containerInfo = await this.dockerEngine.getContainerInfo(session.containerId);
+      } catch (error) {
+        // Container doesn't exist or is corrupted, recreate it
+        this.logger.warn('Container not found or corrupted, recreating', { 
+          sessionId: sessionId.toString(),
+          containerId: session.containerId 
+        });
+        await this.recreateContainer(session);
+        session.markAsRunning();
+        await this.sessionRepository.save(session);
+        return;
+      }
+
+      // If container exists but is in an inconsistent state, recreate it
+      if (containerInfo.state !== 'running' && containerInfo.state !== 'exited') {
+        this.logger.warn('Container in inconsistent state, recreating', { 
+          sessionId: sessionId.toString(),
+          containerState: containerInfo.state 
+        });
+        await this.dockerEngine.removeContainer(session.containerId);
+        await this.recreateContainer(session);
+        session.markAsRunning();
+        await this.sessionRepository.save(session);
+        return;
+      }
+
+      // Try to start the existing container
       await this.dockerEngine.startContainer(session.containerId);
       session.start();
       await this.sessionRepository.save(session);
 
-      // Mark as running after container start
+      // Wait for container to be fully started and health check to pass
+      await this.waitForContainerHealth(session);
+
       session.markAsRunning();
       await this.sessionRepository.save(session);
 
@@ -70,6 +102,65 @@ export class SessionLifecycleInteractor {
       this.logger.error('Failed to start session', error);
       throw error;
     }
+  }
+
+  private async recreateContainer(session: any): Promise<void> {
+    // Remove old container if it exists
+    if (session.containerId) {
+      try {
+        await this.dockerEngine.removeContainer(session.containerId);
+      } catch (error) {
+        this.logger.warn('Failed to remove old container, continuing', { error: error.message });
+      }
+    }
+
+    // Create new container with same configuration
+    const container = await this.dockerEngine.createContainer({
+      sessionId: session.id,
+      sessionName: session.name,
+      repoUrl: session.config.repoUrl,
+      branch: session.config.branch,
+      gitUserName: session.config.gitUserName,
+      gitUserEmail: session.config.gitUserEmail,
+      terminalMode: session.config.terminalMode,
+      sshPrivateKey: session.config.sshPrivateKey,
+      claudeToken: session.config.claudeToken,
+      ports: session.ports,
+    });
+
+    // Update session with new container ID
+    session.containerId = container.id;
+    await this.sessionRepository.save(session);
+
+    this.logger.log('Container recreated successfully', { 
+      sessionId: session.id,
+      newContainerId: container.id 
+    });
+  }
+
+  private async waitForContainerHealth(session: any, maxAttempts: number = 15): Promise<void> {
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const health = await this.checkTerminalHealth(new SessionIdDto(session.id));
+        if (health.allReady) {
+          this.logger.log('Container health check passed', { sessionId: session.id });
+          return;
+        }
+      } catch (error) {
+        this.logger.debug('Health check attempt failed', { 
+          sessionId: session.id, 
+          attempt: attempts + 1,
+          error: error.message 
+        });
+      }
+      
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+    }
+    
+    throw new Error(`Container failed health check after ${maxAttempts} attempts`);
   }
 
   async deleteSession(sessionId: SessionIdDto): Promise<void> {

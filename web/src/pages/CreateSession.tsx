@@ -27,8 +27,6 @@ interface CreateSessionForm {
   name: string;
   repoUrl?: string;
   branch?: string;
-  gitUserName?: string;
-  gitUserEmail?: string;
   terminalMode: TerminalMode;
 }
 
@@ -54,8 +52,6 @@ const CreateSession: React.FC = () => {
       name: '',
       repoUrl: '',
       branch: 'main',
-      gitUserName: '',
-      gitUserEmail: '',
       terminalMode: TerminalMode.DUAL,
     },
   });
@@ -67,8 +63,6 @@ const CreateSession: React.FC = () => {
         name: data.name,
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
-        gitUserName: data.gitUserName || undefined,
-        gitUserEmail: data.gitUserEmail || undefined,
         terminalMode: data.terminalMode,
       };
       
@@ -189,43 +183,6 @@ const CreateSession: React.FC = () => {
                   />
                 )}
               />
-
-              <Divider sx={{ my: 3 }} />
-              <Typography variant="h6" gutterBottom>
-                Git Configuration
-              </Typography>
-
-              <Controller
-                name="gitUserName"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Git User Name (Optional)"
-                    margin="normal"
-                    helperText="Name to use for git commits"
-                    error={!!errors.gitUserName}
-                  />
-                )}
-              />
-
-              <Controller
-                name="gitUserEmail"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Git User Email (Optional)"
-                    margin="normal"
-                    helperText="Email to use for git commits"
-                    error={!!errors.gitUserEmail}
-                  />
-                )}
-              />
-
-
 
               <Divider sx={{ my: 3 }} />
               <Typography variant="h6" gutterBottom>

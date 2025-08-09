@@ -98,6 +98,36 @@ clone_repository() {
     # Create target directory if it doesn't exist
     mkdir -p "$(dirname "$target_dir")"
     
+    # Handle existing directory
+    if [ -d "$target_dir" ]; then
+        log_warning "Target directory already exists: $target_dir"
+        
+        # Check if it's already a git repository with the same remote
+        if [ -d "$target_dir/.git" ]; then
+            cd "$target_dir"
+            local existing_remote=$(git remote get-url origin 2>/dev/null || echo "")
+            
+            if [ "$existing_remote" = "$url" ]; then
+                log_info "Directory is already the correct git repository"
+                log_info "Pulling latest changes instead of cloning"
+                if git pull --rebase 2>&1; then
+                    log_info "Repository updated successfully"
+                    return 0
+                else
+                    log_warning "Git pull failed, will remove and reclone"
+                fi
+            else
+                log_warning "Directory contains a different repository, will remove and reclone"
+            fi
+        else
+            log_warning "Directory exists but is not a git repository, will remove and reclone"
+        fi
+        
+        # Remove existing directory and reclone
+        log_info "Removing existing directory: $target_dir"
+        rm -rf "$target_dir"
+    fi
+    
     # Clone with retries
     while [ $retry_count -lt $max_retries ]; do
         if git clone "$url" "$target_dir" 2>&1; then

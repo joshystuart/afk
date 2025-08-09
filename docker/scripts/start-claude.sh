@@ -166,14 +166,25 @@ start_claude_simple() {
     log_info "Working directory: $(pwd)"
     log_info "Access the terminal at: http://localhost:$CLAUDE_PORT"
     
-    # Start claude in a detached tmux session if it doesn't exist
-    if ! tmux has-session -t claude-session 2>/dev/null; then
-        log_info "Creating new tmux session 'claude-session' with Claude"
-        # Configure tmux with better terminal settings
-        tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
-        sleep 2
-    else
-        log_info "Tmux session 'claude-session' already exists"
+    # Force cleanup any existing sessions and start fresh
+    log_info "Cleaning up any existing tmux sessions"
+    if tmux has-session -t claude-session 2>/dev/null; then
+        log_info "Killing existing claude-session"
+        tmux kill-session -t claude-session 2>/dev/null || true
+    fi
+    
+    # Always create a new tmux session for better reliability
+    log_info "Creating new tmux session 'claude-session' with Claude"
+    # Configure tmux with better terminal settings
+    tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
+    
+    # Wait for Claude to initialize properly
+    sleep 3
+    
+    # Verify the session is actually working
+    if ! tmux list-sessions | grep -q "claude-session"; then
+        log_error "Failed to create claude-session"
+        return 1
     fi
     
     # Start ttyd that attaches to the existing tmux session with themed client options
@@ -211,14 +222,22 @@ start_claude_dual_tty() {
     log_info "  Manual session: http://localhost:$MANUAL_PORT"
     log_info "Working directory: $(pwd)"
     
-    # Start manual bash session in tmux if it doesn't exist
-    if ! tmux has-session -t manual-session 2>/dev/null; then
-        log_info "Creating new tmux session 'manual-session' with bash"
-        # Configure tmux with better terminal settings
-        tmux -f /home/node/.tmux.conf new-session -d -s manual-session -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
-        sleep 1
-    else
-        log_info "Tmux session 'manual-session' already exists"
+    # Force cleanup any existing manual session and start fresh
+    if tmux has-session -t manual-session 2>/dev/null; then
+        log_info "Killing existing manual-session"
+        tmux kill-session -t manual-session 2>/dev/null || true
+    fi
+    
+    # Always create a new manual tmux session
+    log_info "Creating new tmux session 'manual-session' with bash"
+    # Configure tmux with better terminal settings
+    tmux -f /home/node/.tmux.conf new-session -d -s manual-session -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
+    sleep 1
+    
+    # Verify the manual session is working
+    if ! tmux list-sessions | grep -q "manual-session"; then
+        log_error "Failed to create manual-session"
+        return 1
     fi
     
     # Start ttyd for manual session in background with themed client options
@@ -242,14 +261,24 @@ start_claude_dual_tty() {
     # Wait a moment for the first session to start
     sleep 2
     
-    # Start claude in tmux session if it doesn't exist
-    if ! tmux has-session -t claude-session 2>/dev/null; then
-        log_info "Creating new tmux session 'claude-session' with Claude"
-        # Configure tmux with better terminal settings
-        tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
-        sleep 2
-    else
-        log_info "Tmux session 'claude-session' already exists"
+    # Force cleanup any existing claude session and start fresh
+    if tmux has-session -t claude-session 2>/dev/null; then
+        log_info "Killing existing claude-session"
+        tmux kill-session -t claude-session 2>/dev/null || true
+    fi
+    
+    # Always create a new claude tmux session
+    log_info "Creating new tmux session 'claude-session' with Claude"
+    # Configure tmux with better terminal settings
+    tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
+    
+    # Wait for Claude to initialize properly
+    sleep 3
+    
+    # Verify the claude session is working
+    if ! tmux list-sessions | grep -q "claude-session"; then
+        log_error "Failed to create claude-session"
+        return 1
     fi
     
     # Start Claude ttyd session in foreground (this will block)
@@ -297,25 +326,58 @@ cleanup() {
 # Register cleanup trap
 trap cleanup EXIT INT TERM
 
-# Health check function
+# Enhanced health check function
 health_check() {
     local max_attempts=30
     local attempt=1
     
-    log_info "Performing health check..."
+    log_info "Performing comprehensive health check..."
     
     while [ $attempt -le $max_attempts ]; do
+        local ttyd_ok=false
+        local tmux_ok=false
+        
+        # Check if ttyd is responding
         if curl -s "http://localhost:$CLAUDE_PORT" >/dev/null 2>&1; then
-            log_info "Health check passed - ttyd is responding"
+            ttyd_ok=true
+        fi
+        
+        # Check if tmux sessions are healthy
+        if tmux list-sessions 2>/dev/null | grep -q "claude-session" && tmux list-panes -t claude-session >/dev/null 2>&1; then
+            # Verify Claude is actually running in the session
+            if tmux capture-pane -t claude-session -p | grep -q "Claude Code" || tmux list-panes -t claude-session -F "#{pane_current_command}" | grep -q "claude\|node"; then
+                tmux_ok=true
+            fi
+        fi
+        
+        # Check dual mode manual session if needed
+        local manual_ok=true
+        if [ "${TERMINAL_MODE:-simple}" = "dual" ]; then
+            manual_ok=false
+            if tmux list-sessions 2>/dev/null | grep -q "manual-session" && tmux list-panes -t manual-session >/dev/null 2>&1; then
+                if curl -s "http://localhost:$MANUAL_PORT" >/dev/null 2>&1; then
+                    manual_ok=true
+                fi
+            fi
+        fi
+        
+        if [ "$ttyd_ok" = true ] && [ "$tmux_ok" = true ] && [ "$manual_ok" = true ]; then
+            log_info "Health check passed - all services are healthy"
+            log_info "  - ttyd responding: ✓"
+            log_info "  - tmux sessions healthy: ✓"
+            if [ "${TERMINAL_MODE:-simple}" = "dual" ]; then
+                log_info "  - manual session healthy: ✓"
+            fi
             return 0
         fi
         
-        log_info "Health check attempt $attempt/$max_attempts failed, retrying in 2 seconds..."
+        log_info "Health check attempt $attempt/$max_attempts - ttyd: $ttyd_ok, tmux: $tmux_ok, manual: $manual_ok"
         sleep 2
         attempt=$((attempt + 1))
     done
     
     log_error "Health check failed after $max_attempts attempts"
+    log_error "Final status - ttyd: $ttyd_ok, tmux: $tmux_ok, manual: $manual_ok"
     return 1
 }
 
@@ -341,9 +403,42 @@ print_banner() {
     echo
 }
 
+# Cleanup any leftover processes from previous runs
+startup_cleanup() {
+    log_step "Performing startup cleanup for container restart"
+    
+    # Kill any orphaned tmux sessions
+    if command -v tmux >/dev/null 2>&1; then
+        log_info "Cleaning up any orphaned tmux sessions"
+        tmux kill-server 2>/dev/null || true
+        
+        # Wait a moment for cleanup to complete
+        sleep 1
+    fi
+    
+    # Kill any orphaned ttyd processes
+    if pgrep ttyd >/dev/null 2>&1; then
+        log_info "Cleaning up orphaned ttyd processes"
+        pkill -f ttyd || true
+        sleep 1
+    fi
+    
+    # Kill any orphaned Claude processes
+    if pgrep -f "claude" >/dev/null 2>&1; then
+        log_info "Cleaning up orphaned Claude processes"
+        pkill -f "claude" || true
+        sleep 1
+    fi
+    
+    log_info "Startup cleanup completed"
+}
+
 # Main execution
 main() {
     print_banner
+    
+    # Step 0: Clean up any leftover processes from previous container runs
+    startup_cleanup
     
     # Step 1: Setup SSH if needed
     if ! setup_ssh; then

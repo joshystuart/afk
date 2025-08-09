@@ -4,7 +4,7 @@ import { Settings } from '../domain/settings/settings.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'sqlite',
-  database: 'afk.sqlite',
+  database: process.env.DB_DATABASE || 'afk.sqlite',
   entities: [Session, Settings],
   synchronize: true, // Only for development - use migrations in production
   logging: process.env.NODE_ENV === 'development',

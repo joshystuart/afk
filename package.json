@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "description": "AFK - Away From Keyboard - Remote terminal access service",
   "scripts": {
+    "build": "npm run docker:build && npm run server:build && npm run web:build",
     "dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
     "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
+    "docker:build": "cd docker && npm run build",
     "server:dev": "cd server && npm run start:dev",
     "server:start": "cd server && npm run start",
     "server:build": "cd server && npm run build",
@@ -24,7 +26,7 @@
     "remote-access",
     "claude-code"
   ],
-  "author": "",
+  "author": "joshstuartx+afk@gmail.com",
   "license": "MIT",
   "private": true
 }

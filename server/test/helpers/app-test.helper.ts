@@ -1,20 +1,11 @@
-import {Test, TestingModule} from '@nestjs/testing';
-import {INestApplication} from '@nestjs/common';
-import {TypeOrmModule} from '@nestjs/typeorm';
-import {DataSource} from 'typeorm';
-import {ApplicationFactory} from '../../src/libs/app-factory/application.factory';
-import {Session} from '../../src/domain/sessions/session.entity';
-import {Settings} from '../../src/domain/settings/settings.entity';
-import {DockerEngineService} from '../../src/services/docker/docker-engine.service';
-import {PortManagerService} from '../../src/services/docker/port-manager.service';
-import {AppConfig} from '../../src/libs/config/app.config';
-import {dotenvLoader, TypedConfigModule} from 'nest-typed-config';
-import {ResponseService} from '../../src/libs/response/response.service';
-import {HttpExceptionFilter} from '../../src/libs/common/filters/http-exception.filter';
-import {SessionsModule} from '../../src/interactors/sessions/sessions.module';
-import {SettingsModule} from '../../src/interactors/settings/settings.module';
-import {GatewaysModule} from '../../src/gateways/gateways.module';
-import {HealthModule} from '../../src/health/health.module';
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { AppModule } from '../../src/app.module';
+import { ApplicationFactory } from '../../src/libs/app-factory/application.factory';
+import { DockerEngineService } from '../../src/services/docker/docker-engine.service';
+import { PortManagerService } from '../../src/services/docker/port-manager.service';
+import { AppConfig } from '../../src/libs/config/app.config';
 
 /**
  * Helper class for E2E tests to set up the application with real dependencies
@@ -22,7 +13,6 @@ import {HealthModule} from '../../src/health/health.module';
 export class AppTestHelper {
   private app: INestApplication | null = null;
   private moduleFixture: TestingModule | null = null;
-  private dataSource: DataSource | null = null;
 
   /**
    * Initializes the application for E2E testing with an in-memory SQLite database
@@ -32,44 +22,19 @@ export class AppTestHelper {
       return this.app;
     }
 
-    // Create test data source with in-memory database
-    this.dataSource = new DataSource({
-      type: 'sqlite',
-      database: ':memory:',
-      entities: [Session, Settings],
-      synchronize: true,
-      dropSchema: true,
-      logging: false,
-    });
+    // Set environment variables for testing
+    process.env.NODE_ENV = 'test';
+    process.env.DATABASE_TYPE = 'sqlite';
+    
+    // Use a unique in-memory database for each test helper instance
+    const testDbName = `:memory:?cache=shared&mode=memory&_busy_timeout=30000`;
+    process.env.DB_DATABASE = testDbName;
 
-    await this.dataSource.initialize();
-
-    // Create a testing module with test-specific configuration
+    // Create a testing module using the actual AppModule
     this.moduleFixture = await Test.createTestingModule({
-      imports: [
-        TypedConfigModule.forRoot({
-          schema: AppConfig,
-          load: dotenvLoader({
-            separator: '_',
-          }),
-          isGlobal: true,
-        }),
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          entities: [Session, Settings],
-          synchronize: true,
-          dropSchema: false,
-          logging: false,
-        }),
-        SessionsModule,
-        SettingsModule,
-        GatewaysModule,
-        HealthModule,
-      ],
-      providers: [ResponseService, HttpExceptionFilter],
+      imports: [AppModule],
     })
-      // Mock Docker service for E2E tests
+      // Mock Docker service for E2E tests (external dependency)
       .overrideProvider(DockerEngineService)
       .useValue({
         createContainer: jest.fn().mockResolvedValue({
@@ -97,7 +62,7 @@ export class AppTestHelper {
         createNetwork: jest.fn().mockResolvedValue({ id: 'test-network-id' }),
         removeNetwork: jest.fn().mockResolvedValue(undefined),
       })
-      // Mock Port Manager service
+      // Mock Port Manager service (external dependency)
       .overrideProvider(PortManagerService)
       .useValue({
         allocatePort: jest.fn().mockResolvedValue(8080),
@@ -105,7 +70,7 @@ export class AppTestHelper {
         isPortAvailable: jest.fn().mockResolvedValue(true),
         getRandomPort: jest.fn().mockReturnValue(8080),
       })
-      // Override AppConfig for testing
+      // Override AppConfig for testing (but keep most settings the same)
       .overrideProvider(AppConfig)
       .useValue({
         port: 3001,
@@ -122,8 +87,8 @@ export class AppTestHelper {
 
     this.app = this.moduleFixture.createNestApplication();
 
-    // Configure the application with the same setup as production
-    ApplicationFactory.configure(this.app);
+    // Use the same application configuration as production, but optimized for testing
+    ApplicationFactory.configureForTesting(this.app);
 
     await this.app.init();
 
@@ -161,17 +126,26 @@ export class AppTestHelper {
     try {
       // Get the DataSource from the module
       const dataSource = this.moduleFixture.get(DataSource);
-      const entities = dataSource.entityMetadatas;
-
-      // Clear all tables
-      for (const entity of entities) {
-        const repository = dataSource.getRepository(entity.name);
-        await repository.clear();
-      }
+      
+      // For in-memory SQLite, we can just drop and recreate the schema
+      await dataSource.dropDatabase();
+      await dataSource.synchronize();
     } catch (error) {
-      // If there's an error clearing the database, it might be because
-      // the tables don't exist yet, which is fine for the first test
-      console.log('Note: Could not clear database, might be first test run');
+      // If there's an error clearing the database, try the fallback approach
+      console.log('Using fallback database clear approach:', error.message);
+      
+      try {
+        const dataSource = this.moduleFixture.get(DataSource);
+        const entities = dataSource.entityMetadatas;
+
+        // Clear all tables
+        for (const entity of entities) {
+          const repository = dataSource.getRepository(entity.name);
+          await repository.clear();
+        }
+      } catch (fallbackError) {
+        console.log('Note: Could not clear database, might be first test run');
+      }
     }
   }
 
@@ -179,11 +153,6 @@ export class AppTestHelper {
    * Closes the application and cleans up resources
    */
   async closeApp(): Promise<void> {
-    if (this.dataSource) {
-      await this.dataSource.destroy();
-      this.dataSource = null;
-    }
-
     if (this.app) {
       await this.app.close();
       this.app = null;

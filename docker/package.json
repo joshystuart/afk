@@ -1,0 +1,11 @@
+{
+  "name": "afk-docker",
+  "version": "0.1.0",
+  "description": "AFK - Away From Keyboard - Docker image",
+  "scripts": {
+    "build": "docker build -t afk-docker ."
+  },
+  "author": "joshstuartx+afk@gmail.com",
+  "license": "MIT",
+  "private": true
+}

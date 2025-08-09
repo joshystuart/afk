@@ -87,7 +87,7 @@ export const sessionsApi = {
     allReady: boolean;
   }> => {
     const response = await apiClient.get(`/sessions/${sessionId}/health`);
-    return response.data as {
+    return response as unknown as {
       claudeTerminalReady: boolean;
       manualTerminalReady: boolean;
       allReady: boolean;

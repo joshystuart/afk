@@ -1,9 +1,11 @@
 # Remote Claude Code Service - Implementation Plan
 
 ## Project Overview
+
 Build a remote Claude Code service that launches Docker containers with dual terminal sessions (Claude + manual access), automatic git integration, and web-based terminal access.
 
 ## Technology Stack
+
 - **Backend**: NestJS (TypeScript)
 - **Terminal Emulator**: Wetty (for SSL support)
 - **Container Runtime**: Docker
@@ -15,6 +17,7 @@ Build a remote Claude Code service that launches Docker containers with dual ter
 ## Phase 0: MVP - Proof of Concept
 
 ### Objective
+
 Create a minimal working prototype to validate the core concept: running Claude Code in a Docker container with web-based terminal access.
 
 ### Terminal Emulator Options
@@ -22,21 +25,25 @@ Create a minimal working prototype to validate the core concept: running Claude 
 Since Wetty is having connection issues, here are alternative approaches:
 
 #### Option 1: ttyd (Recommended for MVP)
+
 - **Pros**: Simple, lightweight, no SSH required, works directly with shell
 - **Cons**: No built-in SSL (but we can add it with nginx)
 - **Docker Image**: `tsl0922/ttyd:latest`
 
 #### Option 2: code-server (VS Code in browser)
+
 - **Pros**: Full IDE experience, built-in terminal, familiar interface
 - **Cons**: Heavier resource usage, more complex than needed
 - **Docker Image**: `codercom/code-server:latest`
 
 #### Option 3: Gotty/GoTTY
+
 - **Pros**: Very lightweight, simple configuration
 - **Cons**: Original project abandoned (but forks exist)
 - **Docker Image**: `gotty/gotty:latest`
 
 #### Option 4: xterm.js + custom Node.js server
+
 - **Pros**: Maximum control, can customize everything
 - **Cons**: More development work required
 - **Implementation**: Build our own simple terminal server
@@ -44,6 +51,7 @@ Since Wetty is having connection issues, here are alternative approaches:
 ### MVP Implementation with ttyd (Recommended)
 
 ### Success Criteria
+
 - Successfully run Claude Code in a containerized environment
 - Access Claude Code session via web browser
 - Ability to run multiple terminal sessions (Claude + manual access)
@@ -53,13 +61,14 @@ Since Wetty is having connection issues, here are alternative approaches:
 ### Steps
 
 1. **Create Dockerfile with ttyd**
+
    ```dockerfile
    # Dockerfile.docker
    FROM ubuntu:22.04
-   
+
    # Avoid prompts from apt
    ENV DEBIAN_FRONTEND=noninteractive
-   
+
    # Install basic tools and ttyd
    RUN apt-get update && apt-get install -y \
        curl \
@@ -75,50 +84,51 @@ Since Wetty is having connection issues, here are alternative approaches:
        sudo \
        ca-certificates \
        && rm -rf /var/lib/apt/lists/*
-   
+
    # Install ttyd
    RUN wget https://github.com/tsl0922/ttyd/releases/download/1.7.4/ttyd.x86_64 -O /usr/local/bin/ttyd && \
        chmod +x /usr/local/bin/ttyd
-   
+
    # Install Claude Code CLI (adjust based on actual installation method)
    RUN curl -fsSL https://claude.ai/install.sh | sh || \
        echo "Claude Code installation needs to be configured"
-   
+
    # Create developer user
    RUN useradd -m -s /bin/bash developer && \
        echo "developer:developer" | chpasswd && \
        usermod -aG sudo developer && \
        echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-   
+
    # Create working directory
    RUN mkdir -p /workspace && chown developer:developer /workspace
-   
+
    # Switch to developer user
    USER developer
    WORKDIR /workspace
-   
+
    # Set up bashrc for better experience
    RUN echo 'export PS1="\[\033[01;32m\]\u@claude-code\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> ~/.bashrc && \
        echo 'alias ll="ls -la"' >> ~/.bashrc
-   
+
    EXPOSE 7681
-   
+
    # Start ttyd with tmux as the default shell
    CMD ["ttyd", "-p", "7681", "-W", "-d", "5", "tmux", "new", "-s", "main"]
    ```
 
 2. **Create Docker Compose for MVP**
+
    ```yaml
    # docker-compose.docker.yml
    version: '3.8'
-   
+
    services:
      claude-ttyd:
        build:
          context: .
          dockerfile: Dockerfile.docker
        ports:
-         - "7681:7681"  # ttyd web interface
+         - '7681:7681' # ttyd web interface
        volumes:
          - ./workspace:/workspace
        environment:
@@ -142,38 +152,38 @@ Since Wetty is having connection issues, here are alternative approaches:
    const pty = require('node-pty');
    const app = express();
    expressWs(app);
-   
+
    app.use(express.static('public'));
-   
+
    const terminals = {};
-   
+
    app.ws('/terminals/:id', (ws, req) => {
      const id = req.params.id;
-     
+
      if (!terminals[id]) {
        terminals[id] = pty.spawn('bash', [], {
          name: 'xterm-color',
          cols: 80,
          rows: 30,
          cwd: '/workspace',
-         env: process.env
+         env: process.env,
        });
-       
+
        terminals[id].on('data', (data) => {
          ws.send(data);
        });
      }
-     
+
      ws.on('message', (msg) => {
        terminals[id].write(msg);
      });
-     
+
      ws.on('close', () => {
        terminals[id].kill();
        delete terminals[id];
      });
    });
-   
+
    app.listen(3000, () => {
      console.log('Terminal server running on :3000');
    });
@@ -182,84 +192,94 @@ Since Wetty is having connection issues, here are alternative approaches:
    ```dockerfile
    # Dockerfile.custom
    FROM node:18
-   
+
    WORKDIR /app
-   
+
    # Install system dependencies
    RUN apt-get update && apt-get install -y \
        git tmux vim build-essential python3 sudo
-   
+
    # Install node dependencies
    COPY package.json .
    RUN npm install express express-ws node-pty
-   
+
    # Install Claude Code
    RUN curl -fsSL https://claude.ai/install.sh | sh || echo "Configure Claude Code"
-   
+
    # Create user
    RUN useradd -m developer && \
        usermod -aG sudo developer && \
        echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-   
+
    COPY server.js .
    COPY public ./public
-   
+
    USER developer
    CMD ["node", "server.js"]
    ```
 
 4. **Create Test Interface**
+
    ```html
    <!-- public/index.html -->
    <!DOCTYPE html>
    <html>
-   <head>
-     <title>Claude Code Remote</title>
-     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
-     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
-     <style>
-       body { margin: 0; background: #1e1e1e; }
-       #terminal { height: 100vh; }
-     </style>
-   </head>
-   <body>
-     <div id="terminal"></div>
-     <script>
-       const term = new Terminal();
-       const fitAddon = new FitAddon.FitAddon();
-       term.loadAddon(fitAddon);
-       term.open(document.getElementById('terminal'));
-       fitAddon.fit();
-       
-       const ws = new WebSocket(`ws://localhost:3000/terminals/main`);
-       ws.onopen = () => console.log('Connected');
-       ws.onmessage = (e) => term.write(e.data);
-       term.onData((data) => ws.send(data));
-       
-       window.addEventListener('resize', () => fitAddon.fit());
-     </script>
-   </body>
+     <head>
+       <title>Claude Code Remote</title>
+       <link
+         rel="stylesheet"
+         href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+       />
+       <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+       <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+       <style>
+         body {
+           margin: 0;
+           background: #1e1e1e;
+         }
+         #terminal {
+           height: 100vh;
+         }
+       </style>
+     </head>
+     <body>
+       <div id="terminal"></div>
+       <script>
+         const term = new Terminal();
+         const fitAddon = new FitAddon.FitAddon();
+         term.loadAddon(fitAddon);
+         term.open(document.getElementById('terminal'));
+         fitAddon.fit();
+
+         const ws = new WebSocket(`ws://localhost:3000/terminals/main`);
+         ws.onopen = () => console.log('Connected');
+         ws.onmessage = (e) => term.write(e.data);
+         term.onData((data) => ws.send(data));
+
+         window.addEventListener('resize', () => fitAddon.fit());
+       </script>
+     </body>
    </html>
    ```
 
 5. **Run and Test MVP**
+
    ```bash
    # Using ttyd approach:
    docker-compose -f docker-compose.docker.yml up --build
-   
+
    # Open browser to http://localhost:7681
    # No login required with ttyd!
-   
+
    # In the terminal:
    # 1. You'll be in tmux automatically
    # 2. Create new windows with Ctrl+B, C
    # 3. Switch between windows with Ctrl+B, 0-9
    # 4. Split panes with Ctrl+B, % (vertical) or Ctrl+B, " (horizontal)
-   
+
    # Test Claude Code
    claude-code --version
-   
+
    # Create test project
    cd /workspace
    git init test-project
@@ -272,6 +292,7 @@ Since Wetty is having connection issues, here are alternative approaches:
    If ttyd doesn't work, try these in order:
 
    a) **Gotty** (fork maintained by sorenisanerd):
+
    ```dockerfile
    RUN wget https://github.com/sorenisanerd/gotty/releases/download/v1.5.0/gotty_v1.5.0_linux_amd64.tar.gz && \
        tar -xzf gotty_v1.5.0_linux_amd64.tar.gz && \
@@ -279,17 +300,20 @@ Since Wetty is having connection issues, here are alternative approaches:
    ```
 
    b) **webssh2**:
+
    ```dockerfile
    RUN npm install -g webssh2
    # Requires SSH server setup
    ```
 
    c) **Shell In A Box**:
+
    ```dockerfile
    RUN apt-get install -y shellinabox
    ```
 
 ### MVP Deliverables
+
 1. Working Docker container with Claude Code + web terminal
 2. Browser-accessible terminal (no SSH complexity)
 3. Verified tmux-based session management
@@ -297,12 +321,14 @@ Since Wetty is having connection issues, here are alternative approaches:
 5. Performance baseline
 
 ### Decision Points After MVP
+
 - Which terminal emulator works best?
 - Is performance acceptable?
 - Do we need custom authentication?
 - What additional features are needed?
 
 ### Time Estimate
+
 - Setup: 1-2 hours
 - Testing alternatives if needed: 1-2 hours
 - Validation: 1 hour
@@ -311,6 +337,7 @@ Since Wetty is having connection issues, here are alternative approaches:
 ## Phase 1: Core Infrastructure & Docker Container Setup
 
 ### Objective
+
 Create the Docker container environment with Claude Code, development tools, and Wetty terminal emulator.
 
 ### Steps
@@ -350,11 +377,13 @@ Create the Docker container environment with Claude Code, development tools, and
 ## Phase 2: NestJS Session Manager
 
 ### Objective
+
 Build the core session management service that handles container lifecycle, user management, and API endpoints.
 
 ### Steps
 
 1. **Initialize NestJS Project**
+
    ```bash
    nest new claude-code-remote
    npm install @nestjs/config @nestjs/typeorm typeorm pg
@@ -371,6 +400,7 @@ Build the core session management service that handles container lifecycle, user
    - `WebSocketModule`: Real-time updates
 
 3. **Implement Container Service**
+
    ```typescript
    // container.service.ts
    interface ContainerConfig {
@@ -384,12 +414,14 @@ Build the core session management service that handles container lifecycle, user
      };
    }
    ```
+
    - Container creation with resource limits
    - Container monitoring and health checks
    - Container cleanup on timeout
    - Network isolation per user
 
 4. **Implement Session Service**
+
    ```typescript
    // session.service.ts
    interface Session {
@@ -406,6 +438,7 @@ Build the core session management service that handles container lifecycle, user
      };
    }
    ```
+
    - Session creation and tracking
    - Session timeout management
    - Activity monitoring
@@ -428,6 +461,7 @@ Build the core session management service that handles container lifecycle, user
 ## Phase 3: Security & Authentication Layer
 
 ### Objective
+
 Implement robust security measures for container isolation, user authentication, and secure terminal access.
 
 ### Steps
@@ -466,11 +500,13 @@ Implement robust security measures for container isolation, user authentication,
 ## Phase 4: Frontend Web Interface
 
 ### Objective
+
 Create a React-based frontend for managing sessions and accessing terminals.
 
 ### Steps
 
 1. **Initialize React Project**
+
    ```bash
    npx create-react-app frontend --template typescript
    npm install xterm xterm-addon-fit xterm-addon-web-links
@@ -508,11 +544,13 @@ Create a React-based frontend for managing sessions and accessing terminals.
 ## Phase 5: Auto-commit System
 
 ### Objective
+
 Implement intelligent auto-commit functionality with meaningful commit messages.
 
 ### Steps
 
 1. **Create File Watcher Service**
+
    ```typescript
    // watcher.service.ts
    interface FileChange {
@@ -522,6 +560,7 @@ Implement intelligent auto-commit functionality with meaningful commit messages.
      size: number;
    }
    ```
+
    - Watch for file changes using chokidar
    - Ignore patterns (.git, node_modules, etc.)
    - Batch changes intelligently
@@ -554,11 +593,13 @@ Implement intelligent auto-commit functionality with meaningful commit messages.
 ## Phase 6: Integration & Orchestration
 
 ### Objective
+
 Integrate all components into a cohesive system with proper orchestration.
 
 ### Steps
 
 1. **Create Docker Compose Setup**
+
    ```yaml
    # docker-compose.yml
    services:
@@ -599,6 +640,7 @@ Integrate all components into a cohesive system with proper orchestration.
 ## Phase 7: Testing & Deployment
 
 ### Objective
+
 Comprehensive testing and production deployment setup.
 
 ### Steps
@@ -636,6 +678,7 @@ Comprehensive testing and production deployment setup.
 ## Phase 8: Advanced Features (Optional)
 
 ### Objective
+
 Add advanced features for better usability and management.
 
 ### Steps
@@ -673,18 +716,21 @@ Add advanced features for better usability and management.
 ## Implementation Notes
 
 ### Security Considerations
+
 - Always run containers with minimal privileges
 - Implement resource quotas per user
 - Regular security audits
 - Keep all dependencies updated
 
 ### Performance Optimization
+
 - Use container image caching
 - Implement connection pooling
 - Optimize database queries
 - Use CDN for static assets
 
 ### Scalability Planning
+
 - Design for horizontal scaling
 - Use message queues for async operations
 - Implement caching strategies

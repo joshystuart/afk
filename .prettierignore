@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+**/dist/
+**/build/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+
+# Docker
+docker/workspace/
+
+# Database
+*.sqlite
+*.db
+
+# Cache
+.cache/
+.turbo/
+
+# Package manager
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

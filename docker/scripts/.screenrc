@@ -1,0 +1,68 @@
+# Screen configuration optimized for transparent Claude terminal display
+startup_message off
+vbell off
+altscreen on
+term xterm-256color
+
+# COMPLETELY DISABLE all screen UI elements
+hardstatus off
+caption never
+msgwait 0
+msgminwait 0
+silencewait 0
+
+# Disable all decorations and borders
+rendition so ""
+sorendition ""
+
+# Mouse support
+mousetrack on
+
+# Key fixes
+bindkey -k kb stuff "\177"
+bindkey -k kD stuff "\004"
+
+# Make screen completely transparent to terminal operations
+termcapinfo xterm* ti@:te@
+termcapinfo xterm-256color ti@:te@
+termcapinfo * hs@
+
+# DISABLE scrollback completely - let ttyd/browser handle scrolling
+defscrollback 0
+termcapinfo * sc@:dc@
+
+# Remove window title and status
+shelltitle ""
+windowlist string ""
+
+# Disable all visual feedback
+vbell off
+bell_msg ""
+activity ""
+silence ""
+
+# Auto-detach but no notifications
+autodetach on
+zombie ""
+
+# Disable problematic key bindings
+bind ^\ 
+bind \\\\ 
+bind ^h
+bind h
+bind ^?
+bind ?
+bind S
+bind X
+bind Q
+bind ^S
+bind ^Q
+
+# Optimize for single window usage
+defutf8 on
+defbce on
+defflow off
+
+# Prevent screen from drawing anything extra
+defmonitor off
+startup_message off

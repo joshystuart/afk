@@ -1,0 +1,170 @@
+import React from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Alert,
+} from '@mui/material';
+import { Terminal as TerminalIcon } from '@mui/icons-material';
+import { useForm, Controller } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, type LoginCredentials } from '../hooks/useAuth';
+import { ROUTES } from '../utils/constants';
+
+const Login: React.FC = () => {
+  const [error, setError] = React.useState<string | null>(null);
+  const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginCredentials>({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: LoginCredentials) => {
+    try {
+      setError(null);
+      await login(data);
+      navigate(ROUTES.DASHBOARD);
+    } catch (err) {
+      setError('Invalid credentials. Please try again.');
+    }
+  };
+
+  return (
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Card sx={{ width: '100%', maxWidth: 400 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3,
+                justifyContent: 'center',
+              }}
+            >
+              <TerminalIcon
+                sx={{ fontSize: 40, mr: 2, color: 'primary.main' }}
+              />
+              <Typography variant="h4" component="h1" color="primary">
+                AFK Server
+              </Typography>
+            </Box>
+
+            <Typography variant="h6" align="center" gutterBottom>
+              Sign in to your account
+            </Typography>
+
+            <Typography
+              variant="body2"
+              align="center"
+              color="textSecondary"
+              sx={{ mb: 3 }}
+            >
+              Access your remote development sessions
+            </Typography>
+
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            <Box
+              component="form"
+              onSubmit={handleSubmit(onSubmit)}
+              sx={{ mt: 2 }}
+            >
+              <Controller
+                name="email"
+                control={control}
+                rules={{
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: 'Invalid email address',
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Email"
+                    type="email"
+                    margin="normal"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    disabled={isLoading}
+                  />
+                )}
+              />
+
+              <Controller
+                name="password"
+                control={control}
+                rules={{
+                  required: 'Password is required',
+                  minLength: {
+                    value: 6,
+                    message: 'Password must be at least 6 characters',
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Password"
+                    type="password"
+                    margin="normal"
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                    disabled={isLoading}
+                  />
+                )}
+              />
+
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3, mb: 2 }}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </Box>
+
+            <Typography
+              variant="body2"
+              align="center"
+              color="textSecondary"
+              sx={{ mt: 2 }}
+            >
+              Demo credentials: any email/password combination
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+    </Container>
+  );
+};
+
+export default Login;

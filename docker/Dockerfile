@@ -3,10 +3,10 @@ FROM node:20
 ARG CLAUDE_CODE_VERSION=latest
 
 # Copy certificate bundle
-COPY osg_curl_ca_bundle.pem /etc/ssl/certs/osg_curl_ca_bundle.pem
-
-ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/osg_curl_ca_bundle.pem
-ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
+#COPY osg_curl_ca_bundle.pem /etc/ssl/certs/osg_curl_ca_bundle.pem
+#
+#ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/osg_curl_ca_bundle.pem
+#ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
 
 # Install basic development tools and iptables/ipset
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   aggregate \
   jq \
   curl \
+  screen \
   tmux \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -45,7 +46,9 @@ ARG USERNAME=node
 RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts
 COPY .claude.json /home/node/.claude.json
 COPY scripts/ /home/node/scripts/
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts && \
+COPY scripts/.screenrc /home/node/.screenrc
+COPY scripts/.tmux.conf /home/node/.tmux.conf
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc /home/node/.tmux.conf && \
     chmod 700 /home/node/.ssh && \
     chmod +x /home/node/scripts/*.sh
 
@@ -60,9 +63,6 @@ ENV PATH=$PATH:/usr/local/share/npm-global/bin
 
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
-
-# Expose ttyd ports
-EXPOSE 7681 7682
 
 CMD ["/home/node/scripts/start-claude.sh"]
 

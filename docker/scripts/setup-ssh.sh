@@ -39,23 +39,23 @@ setup_ssh_directory() {
     log_info "SSH directory permissions set to 700"
 }
 
-# Decode and install SSH private key
+# Install SSH private key
 install_ssh_key() {
-    local encoded_key="$1"
+    local ssh_key="$1"
     local key_file="$HOME/.ssh/id_rsa"
     
-    if [ -z "$encoded_key" ]; then
+    if [ -z "$ssh_key" ]; then
         log_error "No SSH key provided"
         return 1
     fi
     
     log_info "Installing SSH private key"
     
-    # Decode the base64 encoded key
-    if echo "$encoded_key" | base64 -d > "$key_file" 2>/dev/null; then
-        log_info "SSH key decoded successfully"
+    # Write the plain text key directly to file
+    if echo "$ssh_key" > "$key_file" 2>/dev/null; then
+        log_info "SSH key installed successfully"
     else
-        log_error "Failed to decode SSH key. Ensure it's properly base64 encoded"
+        log_error "Failed to install SSH key"
         return 1
     fi
     

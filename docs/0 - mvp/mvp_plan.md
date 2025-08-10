@@ -7,13 +7,16 @@ This MVP focuses on implementing a minimal viable product using ttyd as the term
 ## Objectives
 
 ### Primary Goal
+
 Create a proof-of-concept that validates the core technical feasibility:
+
 - Run Claude Code in a Docker container
 - Provide web-based terminal access via ttyd
 - Support multiple terminal sessions using tmux
 - Verify git operations work correctly in the containerized environment
 
 ### Success Criteria
+
 - [ ] Successfully build and run Docker container with ttyd + Claude Code
 - [ ] Access container terminal via web browser (no SSH complexity)
 - [ ] Create and manage multiple terminal sessions using tmux
@@ -25,12 +28,14 @@ Create a proof-of-concept that validates the core technical feasibility:
 ## Technical Architecture
 
 ### Stack Selection
+
 - **Terminal Emulator**: ttyd (lightweight, no SSH required)
 - **Session Management**: tmux (built-in terminal multiplexing)
 - **Container**: Docker with Ubuntu 22.04 base
 - **Terminal Interface**: Web browser (direct ttyd connection)
 
 ### Why ttyd?
+
 - **Pros**: Simple setup, lightweight, works directly with shell, no authentication complexity
 - **Cons**: No built-in SSL (acceptable for MVP), basic features only
 - **Alternative**: Ready fallback options documented if ttyd fails
@@ -40,6 +45,7 @@ Create a proof-of-concept that validates the core technical feasibility:
 ### Phase 1: Container Setup (2 hours)
 
 #### 1.1 Create Dockerfile
+
 **File**: `Dockerfile.mvp`
 
 ```dockerfile
@@ -102,6 +108,7 @@ CMD ["ttyd", "-p", "7681", "-W", "-d", "5", "tmux", "new", "-s", "main"]
 **Deliverable**: Working Dockerfile that builds without errors
 
 #### 1.2 Create Docker Compose Configuration
+
 **File**: `docker-compose.mvp.yml`
 
 ```yaml
@@ -113,7 +120,7 @@ services:
       context: .
       dockerfile: Dockerfile.mvp
     ports:
-      - "7681:7681"  # ttyd web interface
+      - '7681:7681' # ttyd web interface
     volumes:
       - ./workspace:/workspace:rw
       - ./git-config:/home/developer/.gitconfig:ro
@@ -132,7 +139,7 @@ services:
           cpus: '0.5'
     # Health check
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7681"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:7681']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -142,6 +149,7 @@ services:
 **Deliverable**: Docker Compose file that successfully starts the service
 
 #### 1.3 Create Supporting Configuration
+
 **File**: `git-config`
 
 ```ini
@@ -163,6 +171,7 @@ services:
 ### Phase 2: Testing & Validation (1 hour)
 
 #### 2.1 Build and Launch Test
+
 ```bash
 # Build the container
 docker-compose -f docker-compose.mvp.yml build
@@ -180,6 +189,7 @@ docker-compose -f docker-compose.mvp.yml logs
 **Success Criteria**: Container starts without errors and ttyd is accessible
 
 #### 2.2 Web Terminal Access Test
+
 1. Open browser to `http://localhost:7681`
 2. Verify terminal interface loads
 3. Confirm you're in tmux session (should show tmux status bar)
@@ -194,6 +204,7 @@ docker-compose -f docker-compose.mvp.yml logs
 **Success Criteria**: Full interactive terminal access via web browser
 
 #### 2.3 Tmux Session Management Test
+
 ```bash
 # Create new tmux window
 Ctrl+B, c
@@ -216,6 +227,7 @@ tmux list-sessions
 **Success Criteria**: Multiple terminal sessions work correctly
 
 #### 2.4 Claude Code Integration Test
+
 ```bash
 # Check Claude Code installation
 claude-code --version
@@ -236,6 +248,7 @@ claude-code help
 **Success Criteria**: Claude Code executes without errors (or clear documentation of what needs to be configured)
 
 #### 2.5 Git Operations Test
+
 ```bash
 # Initialize repository
 git init
@@ -261,6 +274,7 @@ ssh-keygen -t ed25519 -C "test@afk-container" -f ~/.ssh/id_ed25519 -N ""
 ### Phase 3: Performance & Documentation (1 hour)
 
 #### 3.1 Performance Baseline
+
 **File**: `scripts/performance-test.sh`
 
 ```bash
@@ -301,9 +315,11 @@ echo "=== Test Complete ==="
 **Deliverable**: Performance baseline report
 
 #### 3.2 Issue Documentation
+
 **File**: `docs/0 - mvp/mvp-results.md`
 
 Document findings including:
+
 - What worked as expected
 - Issues encountered and solutions
 - Performance observations
@@ -315,7 +331,9 @@ Document findings including:
 If ttyd fails, implement the custom Node.js solution described in the original plan.
 
 #### 4.1 Custom Terminal Server
+
 **File**: `server/package.json`
+
 ```json
 {
   "name": "afk-terminal-server",
@@ -330,6 +348,7 @@ If ttyd fails, implement the custom Node.js solution described in the original p
 ```
 
 **File**: `server/server.js`
+
 ```javascript
 const express = require('express');
 const expressWs = require('express-ws');
@@ -348,35 +367,35 @@ const terminals = {};
 app.ws('/terminals/:id', (ws, req) => {
   const id = req.params.id;
   console.log(`New terminal connection: ${id}`);
-  
+
   if (!terminals[id]) {
     terminals[id] = pty.spawn('tmux', ['new', '-s', id], {
       name: 'xterm-color',
       cols: 80,
       rows: 30,
       cwd: '/workspace',
-      env: process.env
+      env: process.env,
     });
-    
+
     terminals[id].on('data', (data) => {
       if (ws.readyState === ws.OPEN) {
         ws.send(data);
       }
     });
-    
+
     terminals[id].on('exit', () => {
       console.log(`Terminal ${id} exited`);
       delete terminals[id];
       ws.close();
     });
   }
-  
+
   ws.on('message', (msg) => {
     if (terminals[id]) {
       terminals[id].write(msg);
     }
   });
-  
+
   ws.on('close', () => {
     console.log(`Terminal ${id} connection closed`);
     if (terminals[id]) {
@@ -393,88 +412,92 @@ app.listen(PORT, () => {
 ```
 
 **File**: `server/public/index.html`
+
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>AFK Terminal</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            background: #1e1e1e; 
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        }
-        #terminal { 
-            height: 100vh; 
-            padding: 10px;
-        }
-        .status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
-            color: #0f0;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
+      body {
+        margin: 0;
+        background: #1e1e1e;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      }
+      #terminal {
+        height: 100vh;
+        padding: 10px;
+      }
+      .status {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #0f0;
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="status" id="status">Connecting...</div>
     <div id="terminal"></div>
     <script>
-        const term = new Terminal({
-            cursorBlink: true,
-            fontSize: 14,
-            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace'
-        });
-        const fitAddon = new FitAddon.FitAddon();
-        term.loadAddon(fitAddon);
-        term.open(document.getElementById('terminal'));
+      const term = new Terminal({
+        cursorBlink: true,
+        fontSize: 14,
+        fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+      });
+      const fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(document.getElementById('terminal'));
+      fitAddon.fit();
+
+      const status = document.getElementById('status');
+      const ws = new WebSocket(`ws://localhost:3000/terminals/main`);
+
+      ws.onopen = () => {
+        console.log('Connected to terminal');
+        status.textContent = 'Connected';
+        status.style.background = 'rgba(0,128,0,0.8)';
+      };
+
+      ws.onmessage = (e) => term.write(e.data);
+
+      ws.onclose = () => {
+        console.log('Disconnected from terminal');
+        status.textContent = 'Disconnected';
+        status.style.background = 'rgba(128,0,0,0.8)';
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        status.textContent = 'Error';
+        status.style.background = 'rgba(128,0,0,0.8)';
+      };
+
+      term.onData((data) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(data);
+        }
+      });
+
+      // Handle terminal resize
+      window.addEventListener('resize', () => {
         fitAddon.fit();
-        
-        const status = document.getElementById('status');
-        const ws = new WebSocket(`ws://localhost:3000/terminals/main`);
-        
-        ws.onopen = () => {
-            console.log('Connected to terminal');
-            status.textContent = 'Connected';
-            status.style.background = 'rgba(0,128,0,0.8)';
-        };
-        
-        ws.onmessage = (e) => term.write(e.data);
-        
-        ws.onclose = () => {
-            console.log('Disconnected from terminal');
-            status.textContent = 'Disconnected';
-            status.style.background = 'rgba(128,0,0,0.8)';
-        };
-        
-        ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            status.textContent = 'Error';
-            status.style.background = 'rgba(128,0,0,0.8)';
-        };
-        
-        term.onData((data) => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(data);
-            }
-        });
-        
-        // Handle terminal resize
-        window.addEventListener('resize', () => {
-            fitAddon.fit();
-        });
-        
-        // Focus terminal on page load
-        term.focus();
+      });
+
+      // Focus terminal on page load
+      term.focus();
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -482,15 +505,16 @@ app.listen(PORT, () => {
 
 ### Primary Risks & Mitigation Strategies
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| ttyd connection issues | High | Medium | Fallback to custom Node.js server |
-| Claude Code installation fails | High | Medium | Document manual installation steps |
-| Container resource issues | Medium | Low | Set conservative resource limits |
-| Web terminal performance poor | Medium | Low | Test with different browsers, optimize settings |
-| Git operations fail | High | Low | Test thoroughly, provide clear error messages |
+| Risk                           | Impact | Probability | Mitigation                                      |
+| ------------------------------ | ------ | ----------- | ----------------------------------------------- |
+| ttyd connection issues         | High   | Medium      | Fallback to custom Node.js server               |
+| Claude Code installation fails | High   | Medium      | Document manual installation steps              |
+| Container resource issues      | Medium | Low         | Set conservative resource limits                |
+| Web terminal performance poor  | Medium | Low         | Test with different browsers, optimize settings |
+| Git operations fail            | High   | Low         | Test thoroughly, provide clear error messages   |
 
 ### Fallback Options (in order of preference)
+
 1. **ttyd** (primary choice) - Simple and lightweight
 2. **Custom Node.js + xterm.js** - Full control over implementation
 3. **Gotty fork** - Similar to ttyd with active maintenance
@@ -499,12 +523,14 @@ app.listen(PORT, () => {
 ## Timeline & Milestones
 
 ### Week 1: Development (Total: 6 hours)
+
 - **Day 1-2**: Container setup and configuration (2 hours)
 - **Day 3**: Testing and validation (1 hour)
 - **Day 4**: Performance analysis and documentation (1 hour)
 - **Day 5**: Fallback implementation if needed (2 hours)
 
 ### Success Gates
+
 - [ ] **Gate 1**: Container builds successfully
 - [ ] **Gate 2**: Terminal accessible via web browser
 - [ ] **Gate 3**: Claude Code executes in container
@@ -514,6 +540,7 @@ app.listen(PORT, () => {
 ## Deliverables
 
 ### Technical Deliverables
+
 1. **Dockerfile.mvp** - Complete container definition
 2. **docker-compose.mvp.yml** - Service orchestration
 3. **Configuration files** - Git config, shell setup
@@ -521,6 +548,7 @@ app.listen(PORT, () => {
 5. **Test procedures** - Validation checklist
 
 ### Documentation Deliverables
+
 1. **Setup instructions** - Step-by-step deployment guide
 2. **Issue log** - Problems encountered and solutions
 3. **Performance report** - Baseline metrics and observations
@@ -529,6 +557,7 @@ app.listen(PORT, () => {
 ## Acceptance Criteria
 
 ### Must Have
+
 - [ ] Container starts without errors
 - [ ] Web terminal accessible at `http://localhost:7681`
 - [ ] Can execute basic shell commands
@@ -536,12 +565,14 @@ app.listen(PORT, () => {
 - [ ] Git operations complete successfully
 
 ### Should Have
+
 - [ ] Claude Code CLI accessible and functional
 - [ ] Performance meets basic usability standards
 - [ ] Clear documentation of any issues
 - [ ] Fallback solution documented/implemented
 
 ### Nice to Have
+
 - [ ] SSL/TLS configuration (even if self-signed)
 - [ ] Custom terminal themes
 - [ ] Automated testing scripts
@@ -560,11 +591,13 @@ Based on MVP results, the following decisions will be made:
 ## Getting Started
 
 ### Prerequisites
+
 - Docker and Docker Compose installed
 - Port 7681 available
 - Basic understanding of tmux commands
 
 ### Quick Start Commands
+
 ```bash
 # Clone/navigate to project
 cd /path/to/afk
@@ -582,6 +615,7 @@ claude-code --version  # May need configuration
 ```
 
 ### Troubleshooting
+
 - Check container logs: `docker-compose -f docker-compose.mvp.yml logs`
 - Restart service: `docker-compose -f docker-compose.mvp.yml restart`
 - Clean rebuild: `docker-compose -f docker-compose.mvp.yml down && docker-compose -f docker-compose.mvp.yml up --build`

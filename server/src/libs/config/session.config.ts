@@ -1,19 +1,16 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SessionConfig {
   @IsNumber()
   @Type(() => Number)
-  @IsOptional()
-  public readonly maxSessionsPerUser: number = 10;
+  public readonly maxSessionsPerUser!: number;
 
   @IsNumber()
   @Type(() => Number)
-  @IsOptional()
-  public readonly sessionTimeoutMinutes: number = 60;
+  public readonly sessionTimeoutMinutes!: number;
 
   @IsNumber()
   @Type(() => Number)
-  @IsOptional()
-  public readonly cleanupIntervalMinutes: number = 10;
+  public readonly healthCheckIntervalSeconds!: number;
 }

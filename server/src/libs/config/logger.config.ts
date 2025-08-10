@@ -1,13 +1,11 @@
-import { IsString, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class LoggerConfig {
   @IsString()
-  @IsOptional()
-  public readonly level: string = 'info';
+  public readonly level!: string;
 
   @IsBoolean()
   @Type(() => Boolean)
-  @IsOptional()
-  public readonly pretty: boolean = true;
+  public readonly prettyPrint!: boolean;
 }

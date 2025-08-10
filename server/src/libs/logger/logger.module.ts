@@ -9,38 +9,24 @@ export class LoggerModule {
     return {
       module: LoggerModule,
       imports: [
-        PinoLoggerModule.forRootAsync({
-          useFactory: (config: LoggerConfig) => ({
-            pinoHttp: {
-              level: config.level,
-              transport: config.pretty
-                ? {
-                    target: 'pino-pretty',
-                    options: {
-                      colorize: true,
-                      singleLine: true,
-                    },
-                  }
-                : undefined,
-              serializers: {
-                req: (req: any) => ({
-                  method: req.method,
-                  url: req.url,
-                  query: req.query,
-                  params: req.params,
-                }),
-                res: (res: any) => ({
-                  statusCode: res.statusCode,
-                }),
+          PinoLoggerModule.forRootAsync({
+              useFactory: (loggerConfig: LoggerConfig) => {
+                  const transport = loggerConfig.prettyPrint
+                      ? {
+                          target: 'pino-pretty',
+                      }
+                      : undefined;
+
+                  return {
+                      forRoutes: ['/none'],
+                      pinoHttp: {
+                          transport,
+                          level: loggerConfig.level,
+                      },
+                  };
               },
-              customProps: (req: any) => ({
-                context: 'HTTP',
-                userId: req.user?.id,
-              }),
-            },
+              inject: [LoggerConfig],
           }),
-          inject: [LoggerConfig],
-        }),
       ],
       exports: [PinoLoggerModule],
     };

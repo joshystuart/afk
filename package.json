@@ -4,8 +4,8 @@
   "description": "AFK - Away From Keyboard - Remote terminal access service",
   "scripts": {
     "build": "npm run docker:build && npm run server:build && npm run web:build",
-    "dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
     "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
+    "start:dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
     "docker:build": "cd docker && npm run build",
     "docker:rebuild": "cd docker && npm run rebuild",
     "docker:build:force": "cd docker && npm run build:force",

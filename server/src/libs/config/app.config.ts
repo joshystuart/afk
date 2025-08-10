@@ -1,9 +1,4 @@
-import {
-  IsNumber,
-  IsString,
-  ValidateNested,
-  IsOptional,
-} from 'class-validator';
+import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { DockerConfig } from './docker.config';
 import { SessionConfig } from './session.config';
@@ -12,29 +7,23 @@ import { LoggerConfig } from './logger.config';
 export class AppConfig {
   @IsNumber()
   @Type(() => Number)
-  @IsOptional()
-  public readonly port: number = 3001;
+  public readonly port!: number;
 
   @IsString()
-  @IsOptional()
-  public readonly nodeEnv: string = 'development';
+  public readonly nodeEnv!: string;
 
   @IsString()
-  @IsOptional()
-  public readonly baseUrl: string = 'http://localhost';
+  public readonly baseUrl!: string;
 
   @ValidateNested()
   @Type(() => DockerConfig)
-  @IsOptional()
-  public readonly docker: DockerConfig = new DockerConfig();
+  public readonly docker!: DockerConfig;
 
   @ValidateNested()
   @Type(() => SessionConfig)
-  @IsOptional()
-  public readonly session: SessionConfig = new SessionConfig();
+  public readonly session!: SessionConfig;
 
   @ValidateNested()
   @Type(() => LoggerConfig)
-  @IsOptional()
-  public readonly logger: LoggerConfig = new LoggerConfig();
+  public readonly logger!: LoggerConfig;
 }

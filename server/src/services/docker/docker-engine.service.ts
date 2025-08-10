@@ -1,25 +1,22 @@
-import { Logger } from '@nestjs/common';
+import {Injectable, Logger} from '@nestjs/common';
 import * as Dockerode from 'dockerode';
-import { AppConfig } from '../../libs/config/app.config';
-import {
-  ContainerCreateOptions,
-  ContainerInfo,
-  ContainerStats,
-} from '../../domain/containers/container.entity';
+import {DockerOptions} from 'dockerode';
+import {ContainerCreateOptions, ContainerInfo, ContainerStats,} from '../../domain/containers/container.entity';
+import {DockerConfig} from '../../libs/config/docker.config';
 
+@Injectable()
 export class DockerEngineService {
   private docker: Dockerode;
   private readonly logger = new Logger(DockerEngineService.name);
 
-  constructor(private readonly config: AppConfig) {
+  constructor(private readonly config: DockerConfig) {
     this.logger.log('Config received in DockerEngineService', {
-      configExists: !!config,
-      dockerExists: !!config?.docker,
-      config: config,
+      config,
     });
 
-    const dockerOptions: any = {};
-    dockerOptions.socketPath = config?.docker?.socketPath;
+    const dockerOptions: DockerOptions = {};
+    // dockerOptions.socketPath = config.socketPath;
+    dockerOptions.host = config.socketPath;
 
     this.docker = new Dockerode(dockerOptions);
     this.logger.log('Docker client initialized', { options: dockerOptions });
@@ -30,16 +27,14 @@ export class DockerEngineService {
   ): Promise<Dockerode.Container> {
     this.logger.log('Creating container', { options });
     this.logger.log('Config at container creation', {
-      configExists: !!this.config,
-      dockerExists: !!this.config?.docker,
-      imageName: this.config?.docker?.imageName,
+      config: this.config,
     });
 
     try {
       // Verify Docker connectivity first
       await this.ping();
 
-      const imageName = this.config?.docker?.imageName || 'afk:latest';
+      const imageName = this.config.imageName;
 
       const container = await this.docker.createContainer({
         Image: imageName,

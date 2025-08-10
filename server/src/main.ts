@@ -5,7 +5,7 @@ import { ApplicationFactory } from './libs/app-factory/application.factory';
 import { AppConfig } from './libs/config/app.config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule.forRoot());
 
   // Configure application with global pipes, filters, and interceptors
   ApplicationFactory.configure(app);

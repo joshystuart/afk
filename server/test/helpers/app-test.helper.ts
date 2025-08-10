@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { join } from 'path';
 import { AppModule } from '../../src/app.module';
 import { ApplicationFactory } from '../../src/libs/app-factory/application.factory';
 import { DockerEngineService } from '../../src/services/docker/docker-engine.service';
@@ -30,9 +31,16 @@ export class AppTestHelper {
     const testDbName = `:memory:?cache=shared&mode=memory&_busy_timeout=30000`;
     process.env.DB_DATABASE = testDbName;
 
-    // Create a testing module using the actual AppModule
+    // Create a testing module using the actual AppModule with test config
+    const testConfigPath =
+      process.env.NODE_ENV === 'test'
+        ? join(__dirname, '../../src/config')
+        : undefined;
+    const moduleMetadata = AppModule.forRoot({ configPath: testConfigPath });
     this.moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: moduleMetadata.imports,
+      controllers: moduleMetadata.controllers,
+      providers: moduleMetadata.providers,
     })
       // Mock Docker service for E2E tests (external dependency)
       .overrideProvider(DockerEngineService)
@@ -81,12 +89,6 @@ export class AppTestHelper {
       .useValue({
         port: 3001,
         nodeEnv: 'test',
-        dockerHost: 'unix:///var/run/docker.sock',
-        defaultTerminalImage: 'afk-terminal:latest',
-        defaultSshPort: 22,
-        defaultHttpPort: 7681,
-        defaultTerminalHost: 'localhost',
-        defaultTerminalScheme: 'http',
         defaultWorkingDirectory: '/workspace',
       })
       .compile();

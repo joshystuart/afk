@@ -1,30 +1,18 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class DockerConfig {
   @IsString()
-  @IsOptional()
-  public readonly socketPath: string =
-    process.platform === 'win32'
-      ? '//./pipe/docker_engine'
-      : '/var/run/docker.sock';
+  public readonly socketPath!: string;
 
   @IsString()
-  @IsOptional()
-  public readonly imageName: string = 'afk:latest';
+  public readonly imageName!: string;
 
   @IsNumber()
   @Type(() => Number)
-  @IsOptional()
-  public readonly startPort: number = 7681;
+  public readonly startPort!: number;
 
   @IsNumber()
   @Type(() => Number)
-  @IsOptional()
-  public readonly endPort: number = 7780;
-
-  @IsNumber()
-  @Type(() => Number)
-  @IsOptional()
-  public readonly maxContainers: number = 50;
+  public readonly endPort!: number;
 }

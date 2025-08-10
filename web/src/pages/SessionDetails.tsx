@@ -10,6 +10,9 @@ import {
   Breadcrumbs,
   Stack,
   Divider,
+  useMediaQuery,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -40,11 +43,13 @@ const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const theme = useTheme();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [fullscreenTerminal, setFullscreenTerminal] = React.useState<
     'claude' | 'manual' | null
   >(null);
+  const [activeTab, setActiveTab] = React.useState(0);
 
   const {
     isLoading,
@@ -280,7 +285,7 @@ const SessionDetails: React.FC = () => {
           sx={{
             bgcolor: 'background.paper',
             borderBottom: `1px solid ${theme.palette.divider}`,
-            px: 3,
+            px: isMobile ? 2 : 3,
             py: 2,
             display: 'flex',
             alignItems: 'center',
@@ -290,7 +295,15 @@ const SessionDetails: React.FC = () => {
           }}
         >
           {/* Left: Navigation & Session Info */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? 1 : 3,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
             <AnimateButton>
               <Button
                 component={Link}
@@ -298,27 +311,50 @@ const SessionDetails: React.FC = () => {
                 startIcon={<ArrowBackIcon />}
                 variant="text"
                 sx={{ color: 'text.secondary' }}
+                size={isMobile ? 'small' : 'medium'}
               >
-                Dashboard
+                {isMobile ? '' : 'Dashboard'}
               </Button>
             </AnimateButton>
 
-            <Divider orientation="vertical" flexItem />
+            {!isMobile && <Divider orientation="vertical" flexItem />}
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <TerminalIcon sx={{ color: 'primary.main', fontSize: 28 }} />
-              <Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <TerminalIcon
+                sx={{ color: 'primary.main', fontSize: isMobile ? 24 : 28 }}
+              />
+              <Box sx={{ minWidth: 0, flex: 1 }}>
                 <Typography
-                  variant="h5"
-                  sx={{ fontFamily: 'monospace', fontWeight: 700 }}
+                  variant={isMobile ? 'h6' : 'h5'}
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   {session.name || session.id.slice(0, 12)}
                 </Typography>
-                {session.repoUrl && (
+                {session.repoUrl && !isMobile && (
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ fontFamily: 'monospace' }}
+                    sx={{
+                      fontFamily: 'monospace',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'block',
+                    }}
                   >
                     {session.repoUrl.split('/').pop()?.replace('.git', '')}
                   </Typography>
@@ -328,29 +364,52 @@ const SessionDetails: React.FC = () => {
 
             <Chip
               label="RUNNING"
+              size={isMobile ? 'small' : 'medium'}
               sx={{
                 bgcolor: 'success.main',
                 color: 'white',
                 fontWeight: 600,
                 animation: 'pulse 2s infinite',
+                flexShrink: 0,
               }}
             />
           </Box>
 
           {/* Right: Actions */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AnimateButton>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<StopIcon />}
-                onClick={() => stopSession(session.id)}
-                disabled={isStopping}
-                color="warning"
-              >
-                {isStopping ? 'Stopping...' : 'Stop'}
-              </Button>
-            </AnimateButton>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: isMobile ? 0.5 : 1,
+              flexShrink: 0,
+            }}
+          >
+            {!isMobile ? (
+              <AnimateButton>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<StopIcon />}
+                  onClick={() => stopSession(session.id)}
+                  disabled={isStopping}
+                  color="warning"
+                >
+                  {isStopping ? 'Stopping...' : 'Stop'}
+                </Button>
+              </AnimateButton>
+            ) : (
+              <AnimateButton>
+                <IconButton
+                  size="small"
+                  onClick={() => stopSession(session.id)}
+                  disabled={isStopping}
+                  title={isStopping ? 'Stopping...' : 'Stop Session'}
+                  color="warning"
+                >
+                  <StopIcon />
+                </IconButton>
+              </AnimateButton>
+            )}
 
             <AnimateButton>
               <IconButton
@@ -375,49 +434,258 @@ const SessionDetails: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Terminal Access Bar */}
-        <Box
-          sx={{
-            bgcolor: 'background.paper',
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            px: 3,
-            py: 2,
-            display: 'flex',
-            gap: 2,
-          }}
-        >
-          <AnimateButton>
-            <Button
-              variant="contained"
-              startIcon={<TerminalIcon />}
-              href={session.terminalUrls.claude}
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{ fontWeight: 600 }}
-            >
-              Open Claude Terminal
-            </Button>
-          </AnimateButton>
-
-          {session.terminalMode === 'DUAL' && (
+        {/* Terminal Access Bar - Hide on mobile when tabs are available */}
+        {!(session.terminalMode === 'DUAL' && isMobile) && (
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              px: isMobile ? 2 : 3,
+              py: 2,
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
             <AnimateButton>
               <Button
-                variant="outlined"
+                variant="contained"
+                size={isMobile ? 'small' : 'medium'}
                 startIcon={<TerminalIcon />}
-                href={session.terminalUrls.manual}
+                href={session.terminalUrls.claude}
                 target="_blank"
                 rel="noopener noreferrer"
+                sx={{ fontWeight: 600 }}
               >
-                Open Manual Terminal
+                {isMobile ? 'Claude' : 'Open Claude Terminal'}
               </Button>
             </AnimateButton>
-          )}
-        </Box>
+
+            {session.terminalMode === 'DUAL' && (
+              <AnimateButton>
+                <Button
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                  startIcon={<TerminalIcon />}
+                  href={session.terminalUrls.manual}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {isMobile ? 'Manual' : 'Open Manual Terminal'}
+                </Button>
+              </AnimateButton>
+            )}
+          </Box>
+        )}
 
         {/* Terminal Panels */}
-        <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
-          {session.terminalMode === 'DUAL' ? (
+        <Box
+          sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
+          {session.terminalMode === 'DUAL' && isMobile ? (
+            /* Mobile Tabbed Terminals */
             <>
+              {/* Tab Navigation */}
+              <Box
+                sx={{
+                  bgcolor: 'background.paper',
+                  borderBottom: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                <Tabs
+                  value={activeTab}
+                  onChange={(_, newValue) => setActiveTab(newValue)}
+                  variant="fullWidth"
+                  sx={{ minHeight: 48 }}
+                >
+                  <Tab
+                    label={
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <TerminalIcon fontSize="small" />
+                        Claude
+                      </Box>
+                    }
+                    sx={{ minHeight: 48 }}
+                  />
+                  <Tab
+                    label={
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <TerminalIcon fontSize="small" />
+                        Manual
+                      </Box>
+                    }
+                    sx={{ minHeight: 48 }}
+                  />
+                </Tabs>
+              </Box>
+
+              {/* Tab Content */}
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {activeTab === 0 ? (
+                  /* Claude Terminal Tab */
+                  <SubCard
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 0,
+                      height: '100%',
+                    }}
+                    title={
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                        }}
+                      >
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <TerminalIcon
+                            fontSize="small"
+                            sx={{ color: 'primary.main' }}
+                          />
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            Claude Terminal
+                          </Typography>
+                        </Box>
+                        <AnimateButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setIsFullscreen(true);
+                              setFullscreenTerminal('claude');
+                            }}
+                          >
+                            <FullscreenIcon fontSize="small" />
+                          </IconButton>
+                        </AnimateButton>
+                      </Box>
+                    }
+                    content={false}
+                  >
+                    {healthCheck.claudeTerminalReady ? (
+                      <Box
+                        component="iframe"
+                        src={session.terminalUrls.claude}
+                        sx={{
+                          flex: 1,
+                          border: 'none',
+                          bgcolor: '#1e293b',
+                          width: '100%',
+                        }}
+                        title="Claude Terminal"
+                      />
+                    ) : (
+                      <TerminalLoading
+                        title="Claude Terminal"
+                        message={
+                          healthCheck.isLoading
+                            ? 'Starting Claude terminal...'
+                            : 'Waiting for container...'
+                        }
+                        isError={!!healthCheck.error}
+                        onRetry={
+                          healthCheck.error ? healthCheck.refetch : undefined
+                        }
+                      />
+                    )}
+                  </SubCard>
+                ) : (
+                  /* Manual Terminal Tab */
+                  <SubCard
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 0,
+                      height: '100%',
+                    }}
+                    title={
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                        }}
+                      >
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <TerminalIcon
+                            fontSize="small"
+                            sx={{ color: 'grey.500' }}
+                          />
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            Manual Terminal
+                          </Typography>
+                        </Box>
+                        <AnimateButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setIsFullscreen(true);
+                              setFullscreenTerminal('manual');
+                            }}
+                          >
+                            <FullscreenIcon fontSize="small" />
+                          </IconButton>
+                        </AnimateButton>
+                      </Box>
+                    }
+                    content={false}
+                  >
+                    {healthCheck.manualTerminalReady ? (
+                      <Box
+                        component="iframe"
+                        src={session.terminalUrls.manual}
+                        sx={{
+                          flex: 1,
+                          border: 'none',
+                          bgcolor: '#1e293b',
+                          width: '100%',
+                        }}
+                        title="Manual Terminal"
+                      />
+                    ) : (
+                      <TerminalLoading
+                        title="Manual Terminal"
+                        message={
+                          healthCheck.isLoading
+                            ? 'Starting manual terminal...'
+                            : 'Waiting for container...'
+                        }
+                        isError={!!healthCheck.error}
+                        onRetry={
+                          healthCheck.error ? healthCheck.refetch : undefined
+                        }
+                      />
+                    )}
+                  </SubCard>
+                )}
+              </Box>
+            </>
+          ) : session.terminalMode === 'DUAL' ? (
+            /* Desktop Side-by-Side Terminals */
+            <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
               {/* Claude Terminal */}
               <SubCard
                 sx={{
@@ -558,7 +826,7 @@ const SessionDetails: React.FC = () => {
                   />
                 )}
               </SubCard>
-            </>
+            </Box>
           ) : (
             /* Single Terminal */
             <SubCard

@@ -36,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const location = useLocation();
   const matchDownLG = useMediaQuery(theme.breakpoints.down('lg'));
-  
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [open, setOpen] = useState(!matchDownLG);
 
@@ -77,7 +77,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const drawer = (
-    <Box sx={{ height: '100%', bgcolor: 'background.paper', borderRight: `1px solid ${theme.palette.divider}` }}>
+    <Box
+      sx={{
+        height: '100%',
+        bgcolor: 'background.paper',
+        borderRight: `1px solid ${theme.palette.divider}`,
+      }}
+    >
       {/* Logo */}
       <Box
         sx={{
@@ -92,13 +98,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {open && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TerminalIcon sx={{ color: 'primary.main', fontSize: 28 }} />
-            <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: 'text.primary', fontWeight: 700 }}
+            >
               AFK Server
             </Typography>
           </Box>
         )}
         {!matchDownLG && (
-          <IconButton onClick={open ? handleDrawerClose : handleDrawerOpen} size="small">
+          <IconButton
+            onClick={open ? handleDrawerClose : handleDrawerOpen}
+            size="small"
+          >
             {open ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
         )}
@@ -121,9 +133,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   px: 2,
                   py: 1,
                   color: isSelected ? 'primary.main' : 'text.secondary',
-                  bgcolor: isSelected ? 'rgba(33, 150, 243, 0.08)' : 'transparent',
+                  bgcolor: isSelected
+                    ? 'rgba(33, 150, 243, 0.08)'
+                    : 'transparent',
                   '&:hover': {
-                    bgcolor: isSelected ? 'rgba(33, 150, 243, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                    bgcolor: isSelected
+                      ? 'rgba(33, 150, 243, 0.12)'
+                      : 'rgba(255, 255, 255, 0.04)',
                     color: isSelected ? 'primary.main' : 'text.primary',
                   },
                 }}
@@ -156,7 +172,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <Box sx={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
       <CssBaseline />
-      
+
       {/* Mobile App Bar */}
       {matchDownLG && (
         <AppBar
@@ -180,7 +196,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </IconButton>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
               <TerminalIcon sx={{ color: 'primary.main' }} />
-              <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{ fontWeight: 700 }}
+              >
                 AFK Server
               </Typography>
             </Box>

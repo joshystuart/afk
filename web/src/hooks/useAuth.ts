@@ -17,26 +17,29 @@ export const useAuth = () => {
     setLoading,
   } = useAuthStore();
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    setLoading(true);
-    try {
-      // For now, simulate authentication since we don't have auth endpoints yet
-      // In a real implementation, this would make an API call
-      const mockUser = {
-        id: '1',
-        name: 'Developer',
-        email: credentials.email,
-      };
-      const mockToken = 'mock-jwt-token';
-      
-      loginStore(mockToken, mockUser);
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [loginStore, setLoading]);
+  const login = useCallback(
+    async (credentials: LoginCredentials) => {
+      setLoading(true);
+      try {
+        // For now, simulate authentication since we don't have auth endpoints yet
+        // In a real implementation, this would make an API call
+        const mockUser = {
+          id: '1',
+          name: 'Developer',
+          email: credentials.email,
+        };
+        const mockToken = 'mock-jwt-token';
+
+        loginStore(mockToken, mockUser);
+      } catch (error) {
+        console.error('Login failed:', error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loginStore, setLoading],
+  );
 
   const logout = useCallback(async () => {
     setLoading(true);

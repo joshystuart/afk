@@ -46,10 +46,17 @@ export class CheckSessionHealthController {
   })
   async checkSessionHealth(
     @Param(SessionRouteParams.ITEM_ID) id: string,
-  ): Promise<ApiResponseType<{ claudeTerminalReady: boolean; manualTerminalReady: boolean; allReady: boolean }>> {
+  ): Promise<
+    ApiResponseType<{
+      claudeTerminalReady: boolean;
+      manualTerminalReady: boolean;
+      allReady: boolean;
+    }>
+  > {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
-      const healthStatus = await this.sessionLifecycleInteractor.checkTerminalHealth(sessionId);
+      const healthStatus =
+        await this.sessionLifecycleInteractor.checkTerminalHealth(sessionId);
 
       return this.responseService.success(healthStatus);
     } catch (error) {

@@ -22,8 +22,8 @@ export class SessionRepository {
   }
 
   async findById(id: SessionIdDto): Promise<Session | null> {
-    return await this.repository.findOne({ 
-      where: { id: id.toString() } 
+    return await this.repository.findOne({
+      where: { id: id.toString() },
     });
   }
 
@@ -32,7 +32,9 @@ export class SessionRepository {
 
     if (filters) {
       if (filters.status) {
-        queryBuilder.where('session.status = :status', { status: filters.status });
+        queryBuilder.where('session.status = :status', {
+          status: filters.status,
+        });
       }
       // Note: userId filtering would need to be implemented when user system is added
     }
@@ -45,8 +47,8 @@ export class SessionRepository {
   }
 
   async exists(id: SessionIdDto): Promise<boolean> {
-    const count = await this.repository.count({ 
-      where: { id: id.toString() } 
+    const count = await this.repository.count({
+      where: { id: id.toString() },
     });
     return count > 0;
   }
@@ -56,7 +58,9 @@ export class SessionRepository {
 
     if (filters) {
       if (filters.status) {
-        queryBuilder.where('session.status = :status', { status: filters.status });
+        queryBuilder.where('session.status = :status', {
+          status: filters.status,
+        });
       }
     }
 
@@ -64,14 +68,14 @@ export class SessionRepository {
   }
 
   async findByContainerId(containerId: string): Promise<Session | null> {
-    return await this.repository.findOne({ 
-      where: { containerId } 
+    return await this.repository.findOne({
+      where: { containerId },
     });
   }
 
   async findExpiredSessions(timeoutMinutes: number): Promise<Session[]> {
     const cutoffTime = new Date(Date.now() - timeoutMinutes * 60 * 1000);
-    
+
     return await this.repository
       .createQueryBuilder('session')
       .where('session.status = :status', { status: SessionStatus.RUNNING })

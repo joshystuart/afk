@@ -35,7 +35,7 @@ export const useSession = () => {
   }, [sessionsData, setSessions]);
 
   // Function to create session query (for external use)
-  const useSessionQuery = (sessionId: string) => 
+  const useSessionQuery = (sessionId: string) =>
     useQuery({
       queryKey: ['session', sessionId],
       queryFn: () => sessionsApi.getSession(sessionId),
@@ -44,7 +44,8 @@ export const useSession = () => {
 
   // Create session mutation
   const createSessionMutation = useMutation({
-    mutationFn: (request: CreateSessionRequest) => sessionsApi.createSession(request),
+    mutationFn: (request: CreateSessionRequest) =>
+      sessionsApi.createSession(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
     },
@@ -93,7 +94,7 @@ export const useSession = () => {
     currentSession,
     isLoading,
     error,
-    
+
     // Actions
     createSession: createSessionMutation.mutateAsync,
     startSession: startSessionMutation.mutateAsync,
@@ -104,14 +105,14 @@ export const useSession = () => {
     getSession: useSessionQuery,
     setCurrentSession,
     clearError: () => setError(null),
-    
+
     // Mutation states
     isCreating: createSessionMutation.isPending,
     isStarting: startSessionMutation.isPending,
     isStopping: stopSessionMutation.isPending,
     isRestarting: restartSessionMutation.isPending,
     isDeleting: deleteSessionMutation.isPending,
-    
+
     // Mutation errors
     createError: createSessionMutation.error,
     startError: startSessionMutation.error,

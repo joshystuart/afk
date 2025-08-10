@@ -53,18 +53,32 @@ const Login: React.FC = () => {
       >
         <Card sx={{ width: '100%', maxWidth: 400 }}>
           <CardContent sx={{ p: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'center' }}>
-              <TerminalIcon sx={{ fontSize: 40, mr: 2, color: 'primary.main' }} />
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mb: 3,
+                justifyContent: 'center',
+              }}
+            >
+              <TerminalIcon
+                sx={{ fontSize: 40, mr: 2, color: 'primary.main' }}
+              />
               <Typography variant="h4" component="h1" color="primary">
                 AFK Server
               </Typography>
             </Box>
-            
+
             <Typography variant="h6" align="center" gutterBottom>
               Sign in to your account
             </Typography>
-            
-            <Typography variant="body2" align="center" color="textSecondary" sx={{ mb: 3 }}>
+
+            <Typography
+              variant="body2"
+              align="center"
+              color="textSecondary"
+              sx={{ mb: 3 }}
+            >
               Access your remote development sessions
             </Typography>
 
@@ -74,7 +88,11 @@ const Login: React.FC = () => {
               </Alert>
             )}
 
-            <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 2 }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit(onSubmit)}
+              sx={{ mt: 2 }}
+            >
               <Controller
                 name="email"
                 control={control}
@@ -134,7 +152,12 @@ const Login: React.FC = () => {
               </Button>
             </Box>
 
-            <Typography variant="body2" align="center" color="textSecondary" sx={{ mt: 2 }}>
+            <Typography
+              variant="body2"
+              align="center"
+              color="textSecondary"
+              sx={{ mt: 2 }}
+            >
               Demo credentials: any email/password combination
             </Typography>
           </CardContent>

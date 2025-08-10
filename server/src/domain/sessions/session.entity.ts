@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, ValueTransformer } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ValueTransformer,
+} from 'typeorm';
 import { SessionIdDto } from './session-id.dto';
 import { SessionStatus } from './session-status.enum';
 import { SessionConfigDto } from './session-config.dto';
@@ -13,11 +20,15 @@ const portPairTransformer: ValueTransformer = {
     if (!value) return null;
     if (value instanceof PortPairDto) return value;
     // If it's a plain object from the database, convert it to PortPairDto
-    if (typeof value === 'object' && value.claude !== undefined && value.manual !== undefined) {
+    if (
+      typeof value === 'object' &&
+      value.claude !== undefined &&
+      value.manual !== undefined
+    ) {
       return new PortPairDto(value.claude, value.manual);
     }
     return value;
-  }
+  },
 };
 
 @Entity('sessions')

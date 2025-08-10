@@ -42,8 +42,10 @@ const SessionDetails: React.FC = () => {
   const navigate = useNavigate();
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
   const [isFullscreen, setIsFullscreen] = React.useState(false);
-  const [fullscreenTerminal, setFullscreenTerminal] = React.useState<'claude' | 'manual' | null>(null);
-  
+  const [fullscreenTerminal, setFullscreenTerminal] = React.useState<
+    'claude' | 'manual' | null
+  >(null);
+
   const {
     isLoading,
     startSession,
@@ -60,15 +62,16 @@ const SessionDetails: React.FC = () => {
   // Get session data
   const sessionQuery = id ? getSession(id) : null;
   const session = sessionQuery?.data;
-  
+
   // Health check for terminals
-  const shouldCheckHealth = session?.status === SessionStatus.RUNNING && !!session?.terminalUrls;
+  const shouldCheckHealth =
+    session?.status === SessionStatus.RUNNING && !!session?.terminalUrls;
   const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
 
   // Handle session deletion with navigation
   const handleDeleteSession = async () => {
     if (!session) return;
-    
+
     try {
       await deleteSession(session.id);
       navigate(ROUTES.DASHBOARD);
@@ -107,7 +110,9 @@ const SessionDetails: React.FC = () => {
       <Box sx={{ p: 3, width: '100%' }}>
         <MainCard>
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <TerminalIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <TerminalIcon
+              sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }}
+            />
             <Typography variant="h4" sx={{ mb: 2 }}>
               Session not found
             </Typography>
@@ -144,15 +149,22 @@ const SessionDetails: React.FC = () => {
   }
 
   const canStart = session && session.status === SessionStatus.STOPPED;
-  const canDelete = session && (session.status === SessionStatus.STOPPED || session.status === SessionStatus.ERROR);
+  const canDelete =
+    session &&
+    (session.status === SessionStatus.STOPPED ||
+      session.status === SessionStatus.ERROR);
 
   // If session is not running, show the start interface
-  if (!session || session.status !== SessionStatus.RUNNING || !session.terminalUrls) {
+  if (
+    !session ||
+    session.status !== SessionStatus.RUNNING ||
+    !session.terminalUrls
+  ) {
     return (
       <Box sx={{ p: 3, width: '100%' }}>
         {/* Breadcrumbs */}
-        <Breadcrumbs 
-          separator={<NavigateNextIcon fontSize="small" />} 
+        <Breadcrumbs
+          separator={<NavigateNextIcon fontSize="small" />}
           sx={{ mb: 3 }}
         >
           <Button
@@ -184,7 +196,10 @@ const SessionDetails: React.FC = () => {
             <Chip
               label={session?.status}
               sx={{
-                bgcolor: session?.status === SessionStatus.ERROR ? 'error.main' : 'grey.500',
+                bgcolor:
+                  session?.status === SessionStatus.ERROR
+                    ? 'error.main'
+                    : 'grey.500',
                 color: 'white',
                 fontWeight: 600,
               }}
@@ -192,19 +207,24 @@ const SessionDetails: React.FC = () => {
           }
         >
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <TerminalIcon sx={{ fontSize: 120, color: 'text.secondary', mb: 3 }} />
+            <TerminalIcon
+              sx={{ fontSize: 120, color: 'text.secondary', mb: 3 }}
+            />
             <Typography variant="h4" sx={{ mb: 2 }}>
               Session {session?.status.toLowerCase()}
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
-              {canStart 
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}
+            >
+              {canStart
                 ? 'Your development environment is ready. Click the button below to start the session and access your terminals.'
                 : session?.status === SessionStatus.ERROR
-                ? 'Session encountered an error. You can delete this session and create a new one.'
-                : 'Session is not ready yet. Please wait or try refreshing.'
-              }
+                  ? 'Session encountered an error. You can delete this session and create a new one.'
+                  : 'Session is not ready yet. Please wait or try refreshing.'}
             </Typography>
-            
+
             <Stack direction="row" spacing={2} alignItems="center">
               {canStart && (
                 <AnimateButton>
@@ -221,7 +241,7 @@ const SessionDetails: React.FC = () => {
                   </Button>
                 </AnimateButton>
               )}
-              
+
               {canDelete && (
                 <AnimateButton>
                   <Button
@@ -247,7 +267,14 @@ const SessionDetails: React.FC = () => {
   // Main terminal interface (full-width layout)
   return (
     <>
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: 'background.default',
+        }}
+      >
         {/* Header Bar */}
         <Box
           sx={{
@@ -275,17 +302,24 @@ const SessionDetails: React.FC = () => {
                 Dashboard
               </Button>
             </AnimateButton>
-            
+
             <Divider orientation="vertical" flexItem />
-            
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <TerminalIcon sx={{ color: 'primary.main', fontSize: 28 }} />
               <Box>
-                <Typography variant="h5" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontFamily: 'monospace', fontWeight: 700 }}
+                >
                   {session.name || session.id.slice(0, 12)}
                 </Typography>
                 {session.repoUrl && (
-                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace' }}
+                  >
                     {session.repoUrl.split('/').pop()?.replace('.git', '')}
                   </Typography>
                 )}
@@ -317,7 +351,7 @@ const SessionDetails: React.FC = () => {
                 {isStopping ? 'Stopping...' : 'Stop'}
               </Button>
             </AnimateButton>
-            
+
             <AnimateButton>
               <IconButton
                 size="small"
@@ -364,7 +398,7 @@ const SessionDetails: React.FC = () => {
               Open Claude Terminal
             </Button>
           </AnimateButton>
-          
+
           {session.terminalMode === 'DUAL' && (
             <AnimateButton>
               <Button
@@ -395,9 +429,19 @@ const SessionDetails: React.FC = () => {
                   height: '100%',
                 }}
                 title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                    }}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TerminalIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                      <TerminalIcon
+                        fontSize="small"
+                        sx={{ color: 'primary.main' }}
+                      />
                       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                         Claude Terminal
                       </Typography>
@@ -432,9 +476,15 @@ const SessionDetails: React.FC = () => {
                 ) : (
                   <TerminalLoading
                     title="Claude Terminal"
-                    message={healthCheck.isLoading ? "Starting Claude terminal..." : "Waiting for container..."}
+                    message={
+                      healthCheck.isLoading
+                        ? 'Starting Claude terminal...'
+                        : 'Waiting for container...'
+                    }
                     isError={!!healthCheck.error}
-                    onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                    onRetry={
+                      healthCheck.error ? healthCheck.refetch : undefined
+                    }
                   />
                 )}
               </SubCard>
@@ -449,9 +499,19 @@ const SessionDetails: React.FC = () => {
                   height: '100%',
                 }}
                 title={
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                    }}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TerminalIcon fontSize="small" sx={{ color: 'grey.500' }} />
+                      <TerminalIcon
+                        fontSize="small"
+                        sx={{ color: 'grey.500' }}
+                      />
                       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                         Manual Terminal
                       </Typography>
@@ -486,9 +546,15 @@ const SessionDetails: React.FC = () => {
                 ) : (
                   <TerminalLoading
                     title="Manual Terminal"
-                    message={healthCheck.isLoading ? "Starting manual terminal..." : "Waiting for container..."}
+                    message={
+                      healthCheck.isLoading
+                        ? 'Starting manual terminal...'
+                        : 'Waiting for container...'
+                    }
                     isError={!!healthCheck.error}
-                    onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                    onRetry={
+                      healthCheck.error ? healthCheck.refetch : undefined
+                    }
                   />
                 )}
               </SubCard>
@@ -504,9 +570,19 @@ const SessionDetails: React.FC = () => {
                 height: '100%',
               }}
               title={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TerminalIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                    <TerminalIcon
+                      fontSize="small"
+                      sx={{ color: 'primary.main' }}
+                    />
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       Claude Terminal
                     </Typography>
@@ -541,7 +617,11 @@ const SessionDetails: React.FC = () => {
               ) : (
                 <TerminalLoading
                   title="Claude Terminal"
-                  message={healthCheck.isLoading ? "Starting Claude terminal..." : "Waiting for container..."}
+                  message={
+                    healthCheck.isLoading
+                      ? 'Starting Claude terminal...'
+                      : 'Waiting for container...'
+                  }
                   isError={!!healthCheck.error}
                   onRetry={healthCheck.error ? healthCheck.refetch : undefined}
                 />
@@ -577,9 +657,20 @@ const SessionDetails: React.FC = () => {
               borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             }}
           >
-            <Typography sx={{ color: 'white', fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              sx={{
+                color: 'white',
+                fontFamily: 'monospace',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
               <TerminalIcon fontSize="small" />
-              {fullscreenTerminal === 'claude' ? 'Claude Terminal' : 'Manual Terminal'} - {session.name || session.id.slice(0, 12)}
+              {fullscreenTerminal === 'claude'
+                ? 'Claude Terminal'
+                : 'Manual Terminal'}{' '}
+              - {session.name || session.id.slice(0, 12)}
             </Typography>
             <AnimateButton>
               <IconButton
@@ -597,7 +688,11 @@ const SessionDetails: React.FC = () => {
           {/* Fullscreen Terminal */}
           <Box
             component="iframe"
-            src={fullscreenTerminal === 'claude' ? session.terminalUrls.claude : session.terminalUrls.manual}
+            src={
+              fullscreenTerminal === 'claude'
+                ? session.terminalUrls.claude
+                : session.terminalUrls.manual
+            }
             sx={{
               width: '100%',
               flex: 1,

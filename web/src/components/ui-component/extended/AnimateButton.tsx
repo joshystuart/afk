@@ -11,7 +11,17 @@ interface AnimateButtonProps {
 }
 
 const AnimateButton = forwardRef<HTMLDivElement, AnimateButtonProps>(
-  ({ children, type = 'scale', direction = 'right', offset = 10, scale = { hover: 1, tap: 0.9 }, ...others }, ref) => {
+  (
+    {
+      children,
+      type = 'scale',
+      direction = 'right',
+      offset = 10,
+      scale = { hover: 1, tap: 0.9 },
+      ...others
+    },
+    ref,
+  ) => {
     let offset1: number;
     let offset2: number;
     switch (direction) {
@@ -32,7 +42,8 @@ const AnimateButton = forwardRef<HTMLDivElement, AnimateButtonProps>(
     const [y, cycleY] = useCycle(offset1, offset2);
 
     const hoverScale = typeof scale === 'number' ? scale : scale?.hover || 1;
-    const tapScale = typeof scale === 'number' ? scale * 0.9 : scale?.tap || 0.9;
+    const tapScale =
+      typeof scale === 'number' ? scale * 0.9 : scale?.tap || 0.9;
 
     switch (type) {
       case 'rotate':
@@ -44,7 +55,7 @@ const AnimateButton = forwardRef<HTMLDivElement, AnimateButtonProps>(
               repeat: Infinity,
               repeatType: 'loop',
               duration: 2,
-              repeatDelay: 0
+              repeatDelay: 0,
             }}
             {...others}
           >
@@ -90,7 +101,7 @@ const AnimateButton = forwardRef<HTMLDivElement, AnimateButtonProps>(
           </motion.div>
         );
     }
-  }
+  },
 );
 
 AnimateButton.displayName = 'AnimateButton';

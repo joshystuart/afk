@@ -15,10 +15,13 @@
     "web:build": "cd web && npm run build",
     "install:all": "npm install && cd server && npm install && cd ../web && npm install",
     "lint": "cd server && npm run lint && cd ../web && npm run lint",
-    "test": "cd server && npm run test"
+    "test": "cd server && npm run test",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\" --ignore-path .prettierignore"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "prettier": "^3.6.2"
   },
   "keywords": [
     "terminal",

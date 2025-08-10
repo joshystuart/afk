@@ -15,7 +15,7 @@ const colors = {
     900: '#0d47a1',
     dark: '#1565c0',
     main: '#2196f3',
-    light: '#64b5f6'
+    light: '#64b5f6',
   },
   secondary: {
     50: '#f3e5f5',
@@ -30,7 +30,7 @@ const colors = {
     900: '#4a148c',
     dark: '#7b1fa2',
     main: '#9c27b0',
-    light: '#ba68c8'
+    light: '#ba68c8',
   },
   error: {
     50: '#ffebee',
@@ -42,7 +42,7 @@ const colors = {
     600: '#e53935',
     700: '#d32f2f',
     800: '#c62828',
-    900: '#b71c1c'
+    900: '#b71c1c',
   },
   warning: {
     50: '#fff8e1',
@@ -54,7 +54,7 @@ const colors = {
     600: '#ffb300',
     700: '#ffa000',
     800: '#ff8f00',
-    900: '#ff6f00'
+    900: '#ff6f00',
   },
   success: {
     50: '#e8f5e8',
@@ -66,7 +66,7 @@ const colors = {
     600: '#43a047',
     700: '#388e3c',
     800: '#2e7d32',
-    900: '#1b5e20'
+    900: '#1b5e20',
   },
   grey: {
     50: '#fafafa',
@@ -78,7 +78,7 @@ const colors = {
     600: '#757575',
     700: '#616161',
     800: '#424242',
-    900: '#212121'
+    900: '#212121',
   },
   dark: {
     50: '#e3e5e8',
@@ -90,8 +90,8 @@ const colors = {
     600: '#15213d',
     700: '#111b34',
     800: '#0e152c',
-    900: '#080c1e'
-  }
+    900: '#080c1e',
+  },
 };
 
 // Berry theme configuration
@@ -102,101 +102,101 @@ export const berryTheme = createTheme({
       main: colors.primary.main,
       light: colors.primary.light,
       dark: colors.primary.dark,
-      contrastText: '#fff'
+      contrastText: '#fff',
     },
     secondary: {
       main: colors.secondary.main,
       light: colors.secondary.light,
       dark: colors.secondary.dark,
-      contrastText: '#fff'
+      contrastText: '#fff',
     },
     error: {
       main: colors.error[500],
       light: colors.error[300],
-      dark: colors.error[700]
+      dark: colors.error[700],
     },
     warning: {
       main: colors.warning[500],
       light: colors.warning[300],
-      dark: colors.warning[700]
+      dark: colors.warning[700],
     },
     success: {
       main: colors.success[500],
       light: colors.success[300],
-      dark: colors.success[700]
+      dark: colors.success[700],
     },
     grey: colors.grey,
     background: {
       default: '#0a0e1a',
-      paper: '#111936'
+      paper: '#111936',
     },
     text: {
       primary: '#ffffff',
       secondary: '#8492c4',
-      disabled: '#616161'
+      disabled: '#616161',
     },
-    divider: '#1e2139'
+    divider: '#1e2139',
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontSize: '2.125rem',
       fontWeight: 700,
-      lineHeight: 1.2
+      lineHeight: 1.2,
     },
     h2: {
       fontSize: '1.5rem',
       fontWeight: 700,
-      lineHeight: 1.27
+      lineHeight: 1.27,
     },
     h3: {
       fontSize: '1.25rem',
       fontWeight: 600,
-      lineHeight: 1.33
+      lineHeight: 1.33,
     },
     h4: {
       fontSize: '1rem',
       fontWeight: 600,
-      lineHeight: 1.4
+      lineHeight: 1.4,
     },
     h5: {
       fontSize: '0.875rem',
       fontWeight: 600,
-      lineHeight: 1.5
+      lineHeight: 1.5,
     },
     h6: {
       fontSize: '0.75rem',
       fontWeight: 600,
-      lineHeight: 1.57
+      lineHeight: 1.57,
     },
     body1: {
       fontSize: '0.875rem',
       fontWeight: 400,
-      lineHeight: 1.5
+      lineHeight: 1.5,
     },
     body2: {
       fontSize: '0.75rem',
       fontWeight: 400,
-      lineHeight: 1.66
+      lineHeight: 1.66,
     },
     button: {
       fontWeight: 600,
-      textTransform: 'none' as const
-    }
+      textTransform: 'none' as const,
+    },
   },
   shape: {
-    borderRadius: 12
+    borderRadius: 12,
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         '*': {
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
         },
         html: {
           width: '100%',
           height: '100%',
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
         },
         body: {
           width: '100%',
@@ -204,21 +204,21 @@ export const berryTheme = createTheme({
           scrollbarColor: '#1e2139 #0a0e1a',
           '&::-webkit-scrollbar': {
             width: 6,
-            height: 6
+            height: 6,
           },
           '&::-webkit-scrollbar-thumb': {
             backgroundColor: '#1e2139',
-            borderRadius: 6
+            borderRadius: 6,
           },
           '&::-webkit-scrollbar-track': {
-            backgroundColor: '#0a0e1a'
-          }
+            backgroundColor: '#0a0e1a',
+          },
         },
         '#root': {
           width: '100%',
-          height: '100%'
-        }
-      }
+          height: '100%',
+        },
+      },
     },
     MuiButton: {
       styleOverrides: {
@@ -228,37 +228,37 @@ export const berryTheme = createTheme({
           textTransform: 'none',
           boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 4px 8px rgba(33, 150, 243, 0.24)'
-          }
-        }
-      }
+            boxShadow: '0 4px 8px rgba(33, 150, 243, 0.24)',
+          },
+        },
+      },
     },
     MuiPaper: {
       defaultProps: {
-        elevation: 0
+        elevation: 0,
       },
       styleOverrides: {
         root: {
           borderRadius: 12,
-          border: '1px solid #1e2139'
-        }
-      }
+          border: '1px solid #1e2139',
+        },
+      },
     },
     MuiCard: {
       styleOverrides: {
         root: {
           borderRadius: 12,
           border: '1px solid #1e2139',
-          boxShadow: '0 2px 14px 0 rgba(32, 40, 45, 0.08)'
-        }
-      }
+          boxShadow: '0 2px 14px 0 rgba(32, 40, 45, 0.08)',
+        },
+      },
     },
     MuiCardContent: {
       styleOverrides: {
         root: {
-          padding: 24
-        }
-      }
-    }
-  }
+          padding: 24,
+        },
+      },
+    },
+  },
 } as ThemeOptions);

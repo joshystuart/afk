@@ -65,7 +65,7 @@ const CreateSession: React.FC = () => {
         branch: data.branch || undefined,
         terminalMode: data.terminalMode,
       };
-      
+
       await createSession(request);
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
@@ -75,7 +75,7 @@ const CreateSession: React.FC = () => {
   };
 
   return (
-  <Box sx={{ p: 3, width: '100%' }}>
+    <Box sx={{ p: 3, width: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <Button
           component={Link}
@@ -91,20 +91,13 @@ const CreateSession: React.FC = () => {
       </Box>
 
       {createError && (
-        <Alert
-          severity="error"
-          sx={{ mb: 3 }}
-          onClose={clearError}
-        >
+        <Alert severity="error" sx={{ mb: 3 }} onClose={clearError}>
           {createError.message || 'Failed to create session. Please try again.'}
         </Alert>
       )}
 
       {missingSettings && (
-        <Alert
-          severity="warning"
-          sx={{ mb: 3 }}
-        >
+        <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="body2">
             Please configure your SSH Private Key and Claude Token in{' '}
             <Button
@@ -115,8 +108,8 @@ const CreateSession: React.FC = () => {
               sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
             >
               Settings
-            </Button>
-            {' '}before creating a session.
+            </Button>{' '}
+            before creating a session.
           </Typography>
         </Alert>
       )}
@@ -132,10 +125,16 @@ const CreateSession: React.FC = () => {
               <Controller
                 name="name"
                 control={control}
-                rules={{ 
+                rules={{
                   required: 'Session name is required',
-                  minLength: { value: 3, message: 'Name must be at least 3 characters' },
-                  maxLength: { value: 50, message: 'Name must be at most 50 characters' }
+                  minLength: {
+                    value: 3,
+                    message: 'Name must be at least 3 characters',
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: 'Name must be at most 50 characters',
+                  },
                 }}
                 render={({ field }) => (
                   <TextField
@@ -192,8 +191,8 @@ const CreateSession: React.FC = () => {
                 SSH keys and Claude tokens are now managed in{' '}
                 <Link to={ROUTES.SETTINGS} style={{ textDecoration: 'none' }}>
                   Settings
-                </Link>
-                {' '}and will be automatically used for all sessions.
+                </Link>{' '}
+                and will be automatically used for all sessions.
               </Typography>
 
               <Controller
@@ -201,25 +200,33 @@ const CreateSession: React.FC = () => {
                 control={control}
                 rules={{ required: 'Terminal mode is required' }}
                 render={({ field }) => (
-                  <FormControl fullWidth margin="normal" error={!!errors.terminalMode}>
+                  <FormControl
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.terminalMode}
+                  >
                     <InputLabel>Terminal Mode</InputLabel>
                     <Select {...field} label="Terminal Mode">
-                      {Object.entries(TERMINAL_MODE_LABELS).map(([value, label]) => (
-                        <MenuItem key={value} value={value}>
-                          {label}
-                        </MenuItem>
-                      ))}
+                      {Object.entries(TERMINAL_MODE_LABELS).map(
+                        ([value, label]) => (
+                          <MenuItem key={value} value={value}>
+                            {label}
+                          </MenuItem>
+                        ),
+                      )}
                     </Select>
                     {errors.terminalMode && (
-                      <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
+                      <Typography
+                        variant="body2"
+                        color="error"
+                        sx={{ mt: 0.5 }}
+                      >
                         {errors.terminalMode.message}
                       </Typography>
                     )}
                   </FormControl>
                 )}
               />
-
-
 
               <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
                 <Button

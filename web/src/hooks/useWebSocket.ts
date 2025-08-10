@@ -45,9 +45,12 @@ export const useWebSocket = () => {
     });
 
     // Session status updates
-    socket.on('session.status', (data: { sessionId: string; status: SessionStatus }) => {
-      handleSessionStatusChange(data.sessionId, data.status);
-    });
+    socket.on(
+      'session.status',
+      (data: { sessionId: string; status: SessionStatus }) => {
+        handleSessionStatusChange(data.sessionId, data.status);
+      },
+    );
 
     // Session logs
     socket.on('session.logs', (data: { sessionId: string; logs: string[] }) => {

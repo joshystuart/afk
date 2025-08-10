@@ -24,7 +24,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
       isLoading: false,
-      
+
       login: (token: string, user: User) => {
         set({
           token,
@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         });
       },
-      
+
       logout: () => {
         set({
           token: null,
@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         });
       },
-      
+
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
       },
@@ -54,8 +54,8 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // Helper function to get auth token (used by API client)

@@ -25,7 +25,7 @@ export class AppTestHelper {
     // Set environment variables for testing
     process.env.NODE_ENV = 'test';
     process.env.DATABASE_TYPE = 'sqlite';
-    
+
     // Use a unique in-memory database for each test helper instance
     const testDbName = `:memory:?cache=shared&mode=memory&_busy_timeout=30000`;
     process.env.DB_DATABASE = testDbName;
@@ -108,7 +108,7 @@ export class AppTestHelper {
     if (!this.app) {
       throw new Error('App not initialized yet');
     }
-    return this.app.get(DockerEngineService) as jest.Mocked<DockerEngineService>;
+    return this.app.get(DockerEngineService);
   }
 
   /**
@@ -118,7 +118,7 @@ export class AppTestHelper {
     if (!this.app) {
       throw new Error('App not initialized yet');
     }
-    return this.app.get(PortManagerService) as jest.Mocked<PortManagerService>;
+    return this.app.get(PortManagerService);
   }
 
   /**
@@ -132,14 +132,14 @@ export class AppTestHelper {
     try {
       // Get the DataSource from the module
       const dataSource = this.moduleFixture.get(DataSource);
-      
+
       // For in-memory SQLite, we can just drop and recreate the schema
       await dataSource.dropDatabase();
       await dataSource.synchronize();
     } catch (error) {
       // If there's an error clearing the database, try the fallback approach
       console.log('Using fallback database clear approach:', error.message);
-      
+
       try {
         const dataSource = this.moduleFixture.get(DataSource);
         const entities = dataSource.entityMetadatas;

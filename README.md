@@ -6,30 +6,34 @@ AFK is a remote terminal access service that enables running Claude Code in Dock
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Docker (for container management)
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/joshystuart/afk.git
 cd afk
 ```
 
 2. Install dependencies:
+
 ```bash
 npm run install:all
 ```
 
 3. Configure environment variables:
+
 ```bash
 cp server/.env.example server/.env
 # Edit server/.env with your configuration
 ```
 
 4. Start the application:
+
 ```bash
 # Development mode (both server and web client with hot reload)
 npm run dev
@@ -114,18 +118,21 @@ All other settings use sensible defaults. See `server/src/libs/config/` for avai
 ## 📋 Features
 
 ### Session Management
+
 - Create and manage containerized development sessions
 - Real-time session status updates via WebSocket
 - Start, stop, restart, and delete sessions
 - Session lifecycle management with automatic cleanup
 
 ### Terminal Access
+
 - Embedded terminal access in the browser
 - Support for multiple terminal modes (debug, dual, normal)
 - External terminal access in new windows
 - Responsive design for desktop and mobile
 
 ### Web Interface
+
 - Modern React-based dashboard
 - Real-time session monitoring
 - Session creation and configuration

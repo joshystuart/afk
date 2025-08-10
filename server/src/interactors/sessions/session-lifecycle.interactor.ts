@@ -58,41 +58,46 @@ export class SessionLifecycleInteractor {
       // Check if container exists and its current state
       let containerInfo;
       try {
-        containerInfo = await this.dockerEngine.getContainerInfo(session.containerId);
+        containerInfo = await this.dockerEngine.getContainerInfo(
+          session.containerId,
+        );
       } catch (error) {
         // Container doesn't exist or is corrupted, recreate it
-        this.logger.warn('Container not found or corrupted, recreating', { 
+        this.logger.warn('Container not found or corrupted, recreating', {
           sessionId: sessionId.toString(),
-          containerId: session.containerId 
+          containerId: session.containerId,
         });
         await this.recreateContainer(session);
-        
+
         // Transition through proper states: stopped -> starting -> running
         session.start();
         await this.sessionRepository.save(session);
         session.markAsRunning();
         await this.sessionRepository.save(session);
-        
+
         // Start health check in background
         this.performBackgroundHealthCheck(session);
         return;
       }
 
       // If container exists but is in an inconsistent state, recreate it
-      if (containerInfo.state !== 'running' && containerInfo.state !== 'exited') {
-        this.logger.warn('Container in inconsistent state, recreating', { 
+      if (
+        containerInfo.state !== 'running' &&
+        containerInfo.state !== 'exited'
+      ) {
+        this.logger.warn('Container in inconsistent state, recreating', {
           sessionId: sessionId.toString(),
-          containerState: containerInfo.state 
+          containerState: containerInfo.state,
         });
         await this.dockerEngine.removeContainer(session.containerId);
         await this.recreateContainer(session);
-        
+
         // Transition through proper states: stopped -> starting -> running
         session.start();
         await this.sessionRepository.save(session);
         session.markAsRunning();
         await this.sessionRepository.save(session);
-        
+
         // Start health check in background
         this.performBackgroundHealthCheck(session);
         return;
@@ -100,17 +105,19 @@ export class SessionLifecycleInteractor {
 
       // Try to start the existing container
       await this.dockerEngine.startContainer(session.containerId);
-      
+
       // First mark as starting, then as running
       session.start();
       await this.sessionRepository.save(session);
-      
+
       // Optimistically mark as running immediately
       session.markAsRunning();
       await this.sessionRepository.save(session);
-      
-      this.logger.log('Session started (optimistically)', { sessionId: sessionId.toString() });
-      
+
+      this.logger.log('Session started (optimistically)', {
+        sessionId: sessionId.toString(),
+      });
+
       // Start health check in background with longer timeout
       this.performBackgroundHealthCheck(session);
     } catch (error) {
@@ -127,7 +134,9 @@ export class SessionLifecycleInteractor {
       try {
         await this.dockerEngine.removeContainer(session.containerId);
       } catch (error) {
-        this.logger.warn('Failed to remove old container, continuing', { error: error.message });
+        this.logger.warn('Failed to remove old container, continuing', {
+          error: error.message,
+        });
       }
     }
 
@@ -149,35 +158,44 @@ export class SessionLifecycleInteractor {
     session.containerId = container.id;
     await this.sessionRepository.save(session);
 
-    this.logger.log('Container recreated successfully', { 
+    this.logger.log('Container recreated successfully', {
       sessionId: session.id,
-      newContainerId: container.id 
+      newContainerId: container.id,
     });
   }
 
-  private async waitForContainerHealth(session: any, maxAttempts: number = 15): Promise<void> {
+  private async waitForContainerHealth(
+    session: any,
+    maxAttempts: number = 15,
+  ): Promise<void> {
     let attempts = 0;
-    
+
     while (attempts < maxAttempts) {
       try {
-        const health = await this.checkTerminalHealth(new SessionIdDto(session.id));
+        const health = await this.checkTerminalHealth(
+          new SessionIdDto(session.id),
+        );
         if (health.allReady) {
-          this.logger.log('Container health check passed', { sessionId: session.id });
+          this.logger.log('Container health check passed', {
+            sessionId: session.id,
+          });
           return;
         }
       } catch (error) {
-        this.logger.debug('Health check attempt failed', { 
-          sessionId: session.id, 
+        this.logger.debug('Health check attempt failed', {
+          sessionId: session.id,
           attempt: attempts + 1,
-          error: error.message 
+          error: error.message,
         });
       }
-      
+
       attempts++;
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
     }
-    
-    throw new Error(`Container failed health check after ${maxAttempts} attempts`);
+
+    throw new Error(
+      `Container failed health check after ${maxAttempts} attempts`,
+    );
   }
 
   private async performBackgroundHealthCheck(session: any): Promise<void> {
@@ -185,42 +203,44 @@ export class SessionLifecycleInteractor {
     (async () => {
       const maxAttempts = 30; // 60 seconds total (30 * 2 seconds)
       let attempts = 0;
-      
+
       while (attempts < maxAttempts) {
         try {
-          const health = await this.checkTerminalHealth(new SessionIdDto(session.id));
+          const health = await this.checkTerminalHealth(
+            new SessionIdDto(session.id),
+          );
           if (health.allReady) {
-            this.logger.log('Background health check passed', { 
+            this.logger.log('Background health check passed', {
               sessionId: session.id,
-              attempts: attempts + 1
+              attempts: attempts + 1,
             });
             return;
           }
         } catch (error) {
-          this.logger.debug('Background health check attempt failed', { 
-            sessionId: session.id, 
+          this.logger.debug('Background health check attempt failed', {
+            sessionId: session.id,
             attempt: attempts + 1,
-            error: error.message 
+            error: error.message,
           });
         }
-        
+
         attempts++;
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
       }
-      
+
       // If we get here, health check failed after all attempts
       this.logger.error('Background health check failed after all attempts', {
         sessionId: session.id,
-        maxAttempts
+        maxAttempts,
       });
-      
+
       // Mark session as error
       session.markAsError();
       await this.sessionRepository.save(session);
-    })().catch(error => {
-      this.logger.error('Background health check error', { 
+    })().catch((error) => {
+      this.logger.error('Background health check error', {
         sessionId: session.id,
-        error: error.message 
+        error: error.message,
       });
     });
   }
@@ -256,8 +276,6 @@ export class SessionLifecycleInteractor {
       throw error;
     }
   }
-
-
 
   async getSessionInfo(sessionId: SessionIdDto): Promise<any> {
     const session = await this.sessionRepository.findById(sessionId);
@@ -310,10 +328,13 @@ export class SessionLifecycleInteractor {
       };
     }
 
-    const claudeReady = await this.checkTerminalEndpoint(session.ports.claudePort);
-    const manualReady = session.config.terminalMode === 'DUAL' 
-      ? await this.checkTerminalEndpoint(session.ports.manualPort)
-      : true; // Manual terminal not needed in simple mode
+    const claudeReady = await this.checkTerminalEndpoint(
+      session.ports.claudePort,
+    );
+    const manualReady =
+      session.config.terminalMode === 'DUAL'
+        ? await this.checkTerminalEndpoint(session.ports.manualPort)
+        : true; // Manual terminal not needed in simple mode
 
     return {
       claudeTerminalReady: claudeReady,

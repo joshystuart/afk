@@ -1,9 +1,11 @@
 # Phase 2: Server and Web Interface - Implementation Plan
 
 ## Overview
+
 Phase 2 builds upon the git-integrated Docker containers from Phase 1 to create a comprehensive web-based management system. This phase introduces a NestJS server using enterprise-grade patterns (EBI architecture) that manages Docker containers via the Docker API and provides a React-based web interface for session management.
 
 ## Objectives
+
 - Build a NestJS server using EBI (Entity-Boundary-Interactor) pattern
 - Implement typed configuration and domain-driven design
 - Create REST API endpoints with standardized responses
@@ -14,6 +16,7 @@ Phase 2 builds upon the git-integrated Docker containers from Phase 1 to create 
 - Ensure enterprise-grade error handling and monitoring
 
 ## Prerequisites
+
 - Completed Phase 1 with working git-integrated containers
 - Docker API accessible from host system
 - Node.js 18+ and npm/yarn installed
@@ -73,12 +76,15 @@ Phase 2 builds upon the git-integrated Docker containers from Phase 1 to create 
 ## Implementation Tasks
 
 ### Task 1: Initialize NestJS Server with EBI Architecture
+
 **Description:** Create a new NestJS application with enterprise-grade architecture using EBI pattern and typed configuration.
 
 **Steps:**
+
 1. Create `server` directory in project root
 2. Initialize NestJS project with CLI
 3. Install required dependencies:
+
    ```json
    {
      "dependencies": {
@@ -105,10 +111,12 @@ Phase 2 builds upon the git-integrated Docker containers from Phase 1 to create 
      }
    }
    ```
+
 4. Configure TypeScript with strict mode
 5. Set up EBI-based project structure
 
 **Directory Structure:**
+
 ```
 server/
 ├── src/
@@ -187,30 +195,34 @@ server/
 ```
 
 **Application Factory Implementation:**
+
 ```typescript
 // src/libs/app-factory/application.factory.ts
 export class ApplicationFactory {
   static configure(app: INestApplication): INestApplication {
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
 
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalInterceptors(new ResponseInterceptor());
     app.enableCors();
     app.setGlobalPrefix('api');
-    
+
     return app;
   }
 }
 ```
 
 **Success Criteria:**
+
 - NestJS server starts with typed configuration
 - EBI architecture is properly implemented
 - Logging infrastructure works
@@ -219,9 +231,11 @@ export class ApplicationFactory {
 **Estimated Time:** 6-8 hours
 
 ### Task 2: Implement Typed Configuration System
+
 **Description:** Create a comprehensive typed configuration system using nest-typed-config.
 
 **Configuration Classes:**
+
 ```typescript
 // src/libs/config/app.config.ts
 export class AppConfig {
@@ -277,6 +291,7 @@ export class SessionConfig {
 ```
 
 **Module Setup:**
+
 ```typescript
 // src/app.module.ts
 @Module({
@@ -300,6 +315,7 @@ export class AppModule {}
 ```
 
 **Success Criteria:**
+
 - Configuration loads from environment and yaml files
 - Type validation works at startup
 - Configuration is injectable throughout app
@@ -307,9 +323,11 @@ export class AppModule {}
 **Estimated Time:** 4-5 hours
 
 ### Task 3: Implement Domain Models with DDD
+
 **Description:** Create domain entities and value objects following Domain-Driven Design principles.
 
 **Domain Entities:**
+
 ```typescript
 // src/domain/sessions/session.entity.ts
 export class Session {
@@ -357,9 +375,7 @@ export class Session {
 // src/domain/sessions/session.factory.ts
 @Injectable()
 export class SessionFactory {
-  constructor(
-    private readonly sessionIdFactory: SessionIdDtoFactory,
-  ) {}
+  constructor(private readonly sessionIdFactory: SessionIdDtoFactory) {}
 
   create(name: string, config: SessionConfigDto): Session {
     return new Session(
@@ -417,7 +433,8 @@ export class SessionIdDto {
   }
 
   private isValidUuid(value: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(value);
   }
 }
@@ -509,6 +526,7 @@ export class PortPairDtoFactory {
 ```
 
 **Success Criteria:**
+
 - Domain models encapsulate business rules
 - DTOs ensure data integrity and type safety
 - Entities have clear lifecycle methods
@@ -518,9 +536,11 @@ export class PortPairDtoFactory {
 **Estimated Time:** 5-6 hours
 
 ### Task 4: Implement Service Layer with Separation of Concerns
+
 **Description:** Create service layer with proper separation between Docker operations, port management, and repositories.
 
 **Docker Engine Service:**
+
 ```typescript
 // src/services/docker/docker-engine.service.ts
 @Injectable()
@@ -538,7 +558,7 @@ export class DockerEngineService {
 
   async createContainer(options: ContainerCreateOptions): Promise<Container> {
     this.logger.log('Creating container', { options });
-    
+
     try {
       const container = await this.docker.createContainer({
         Image: this.config.imageName,
@@ -570,7 +590,8 @@ export class DockerEngineService {
       const container = this.docker.getContainer(containerId);
       await container.stop({ t: 10 });
     } catch (error) {
-      if (error.statusCode !== 304) { // Not modified (already stopped)
+      if (error.statusCode !== 304) {
+        // Not modified (already stopped)
         throw error;
       }
     }
@@ -584,7 +605,7 @@ export class DockerEngineService {
   async getContainerInfo(containerId: string): Promise<ContainerInfo> {
     const container = this.docker.getContainer(containerId);
     const info = await container.inspect();
-    
+
     return {
       id: info.Id,
       name: info.Name,
@@ -609,7 +630,7 @@ export class DockerEngineService {
   async getContainerStats(containerId: string): Promise<ContainerStats> {
     const container = this.docker.getContainer(containerId);
     const stream = await container.stats({ stream: false });
-    
+
     return {
       cpu: this.calculateCpuPercent(stream),
       memory: this.calculateMemoryUsage(stream),
@@ -661,6 +682,7 @@ export class DockerEngineService {
 ```
 
 **Port Manager Service:**
+
 ```typescript
 // src/services/docker/port-manager.service.ts
 @Injectable()
@@ -682,7 +704,7 @@ export class PortManagerService {
 
   async allocatePortPair(): Promise<PortPairDto> {
     const claudePort = await this.allocatePort();
-    
+
     try {
       const manualPort = await this.allocatePort();
       return this.portPairFactory.create(claudePort, manualPort);
@@ -700,7 +722,7 @@ export class PortManagerService {
 
   private async allocatePort(): Promise<number> {
     const availablePorts = this.portPool.filter(
-      port => !this.allocatedPorts.has(port)
+      (port) => !this.allocatedPorts.has(port),
     );
 
     if (availablePorts.length === 0) {
@@ -709,18 +731,28 @@ export class PortManagerService {
 
     const port = availablePorts[0];
     this.allocatedPorts.add(port);
-    
-    this.logger.debug('Port allocated', { port, allocated: this.allocatedPorts.size });
+
+    this.logger.debug('Port allocated', {
+      port,
+      allocated: this.allocatedPorts.size,
+    });
     return port;
   }
 
   private releasePort(port: number): void {
     this.allocatedPorts.delete(port);
-    this.logger.debug('Port released', { port, allocated: this.allocatedPorts.size });
+    this.logger.debug('Port released', {
+      port,
+      allocated: this.allocatedPorts.size,
+    });
   }
 
   private initializePortPool(): void {
-    for (let port = this.config.startPort; port <= this.config.endPort; port++) {
+    for (
+      let port = this.config.startPort;
+      port <= this.config.endPort;
+      port++
+    ) {
       this.portPool.push(port);
     }
   }
@@ -729,10 +761,10 @@ export class PortManagerService {
     // Sync allocated ports with running containers on startup
     const dockerService = new DockerEngineService(this.config, this.logger);
     const containers = await dockerService.listAFKContainers();
-    
-    containers.forEach(container => {
+
+    containers.forEach((container) => {
       if (container.ports) {
-        Object.values(container.ports).forEach(port => {
+        Object.values(container.ports).forEach((port) => {
           if (typeof port === 'number') {
             this.allocatedPorts.add(port);
           }
@@ -744,6 +776,7 @@ export class PortManagerService {
 ```
 
 **Session Repository:**
+
 ```typescript
 // src/services/repositories/session.repository.ts
 @Injectable()
@@ -763,10 +796,10 @@ export class SessionRepository {
 
     if (filters) {
       if (filters.status) {
-        sessions = sessions.filter(s => s.status === filters.status);
+        sessions = sessions.filter((s) => s.status === filters.status);
       }
       if (filters.userId) {
-        sessions = sessions.filter(s => s.userId === filters.userId);
+        sessions = sessions.filter((s) => s.userId === filters.userId);
       }
     }
 
@@ -784,6 +817,7 @@ export class SessionRepository {
 ```
 
 **Success Criteria:**
+
 - Services follow single responsibility principle
 - Docker operations are abstracted properly
 - Port management prevents conflicts
@@ -792,9 +826,11 @@ export class SessionRepository {
 **Estimated Time:** 8-10 hours
 
 ### Task 5: Implement Interactors with Business Logic
+
 **Description:** Create interactors that orchestrate business operations using EBI pattern.
 
 **Create Session Interactor:**
+
 ```typescript
 // src/interactors/sessions/create-session/create-session.interactor.ts
 @Injectable()
@@ -829,7 +865,7 @@ export class CreateSessionInteractor {
     try {
       // Allocate ports
       const ports = await this.portManager.allocatePortPair();
-      
+
       // Create container
       const container = await this.dockerEngine.createContainer({
         sessionId: session.id.toString(),
@@ -846,7 +882,7 @@ export class CreateSessionInteractor {
 
       // Update session with container info
       session.assignContainer(container.id, ports);
-      
+
       // Wait for container to be ready
       await this.waitForContainerReady(container.id);
       session.markAsRunning();
@@ -854,8 +890,8 @@ export class CreateSessionInteractor {
       // Save session
       await this.sessionRepository.save(session);
 
-      this.logger.log('Session created successfully', { 
-        sessionId: session.id.toString() 
+      this.logger.log('Session created successfully', {
+        sessionId: session.id.toString(),
       });
 
       return session;
@@ -865,9 +901,11 @@ export class CreateSessionInteractor {
         await this.portManager.releasePortPair(session.ports);
       }
       if (session.containerId) {
-        await this.dockerEngine.removeContainer(session.containerId).catch(() => {});
+        await this.dockerEngine
+          .removeContainer(session.containerId)
+          .catch(() => {});
       }
-      
+
       this.logger.error('Failed to create session', error);
       throw new Error(`Session creation failed: ${error.message}`);
     }
@@ -900,25 +938,21 @@ export class CreateSessionInteractor {
   ): Promise<void> {
     for (let i = 0; i < maxAttempts; i++) {
       const info = await this.dockerEngine.getContainerInfo(containerId);
-      
+
       if (info.state === 'running') {
         // Additional health check can be added here
         return;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     throw new Error('Container failed to start within timeout');
   }
 
   private isValidRepoUrl(url: string): boolean {
-    const patterns = [
-      /^https?:\/\/.+$/,
-      /^git@.+:.+\.git$/,
-      /^ssh:\/\/.+$/,
-    ];
-    return patterns.some(pattern => pattern.test(url));
+    const patterns = [/^https?:\/\/.+$/, /^git@.+:.+\.git$/, /^ssh:\/\/.+$/];
+    return patterns.some((pattern) => pattern.test(url));
   }
 
   private isValidSSHKey(key: string): boolean {
@@ -928,6 +962,7 @@ export class CreateSessionInteractor {
 ```
 
 **Session Lifecycle Interactor:**
+
 ```typescript
 // src/interactors/sessions/session-lifecycle.interactor.ts
 @Injectable()
@@ -941,7 +976,7 @@ export class SessionLifecycleInteractor {
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (!session) {
       throw new Error('Session not found');
     }
@@ -954,7 +989,7 @@ export class SessionLifecycleInteractor {
       await this.dockerEngine.stopContainer(session.containerId!);
       session.stop();
       await this.sessionRepository.save(session);
-      
+
       this.logger.log('Session stopped', { sessionId: sessionId.toString() });
     } catch (error) {
       this.logger.error('Failed to stop session', error);
@@ -964,7 +999,7 @@ export class SessionLifecycleInteractor {
 
   async deleteSession(sessionId: SessionIdDto): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (!session) {
       throw new Error('Session not found');
     }
@@ -986,7 +1021,7 @@ export class SessionLifecycleInteractor {
 
       // Delete from repository
       await this.sessionRepository.delete(sessionId);
-      
+
       this.logger.log('Session deleted', { sessionId: sessionId.toString() });
     } catch (error) {
       this.logger.error('Failed to delete session', error);
@@ -996,7 +1031,7 @@ export class SessionLifecycleInteractor {
 
   async restartSession(sessionId: SessionIdDto): Promise<void> {
     await this.stopSession(sessionId);
-    
+
     const session = await this.sessionRepository.findById(sessionId);
     if (!session || !session.containerId) {
       throw new Error('Session not found or invalid state');
@@ -1010,6 +1045,7 @@ export class SessionLifecycleInteractor {
 ```
 
 **Success Criteria:**
+
 - Interactors encapsulate business logic
 - Proper error handling and cleanup
 - Clear separation from infrastructure concerns
@@ -1017,9 +1053,11 @@ export class SessionLifecycleInteractor {
 **Estimated Time:** 8-10 hours
 
 ### Task 6: Build REST API Controllers with EBI Pattern
+
 **Description:** Create controllers as boundary layer with standardized responses.
 
 **Session Controllers:**
+
 ```typescript
 // src/interactors/sessions/create-session/create-session.controller.ts
 @ApiTags('Sessions')
@@ -1033,7 +1071,8 @@ export class CreateSessionController {
   @Post()
   @ApiOperation({
     summary: 'Create new session',
-    description: 'Creates a new containerized session with optional git integration',
+    description:
+      'Creates a new containerized session with optional git integration',
   })
   @ApiResponse({ status: 201, type: CreateSessionResponseDto })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -1109,7 +1148,7 @@ export class CreateSessionRequestDto {
   @IsString()
   sshPrivateKey?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Terminal mode',
     enum: TerminalMode,
     default: TerminalMode.SIMPLE,
@@ -1126,6 +1165,7 @@ export class CreateSessionRequestDto {
 ```
 
 **Response Service:**
+
 ```typescript
 // src/libs/response/response.service.ts
 @Injectable()
@@ -1139,7 +1179,11 @@ export class ResponseService {
     };
   }
 
-  error(message: string, code?: string, statusCode: number = 400): ApiErrorResponse {
+  error(
+    message: string,
+    code?: string,
+    statusCode: number = 400,
+  ): ApiErrorResponse {
     return {
       success: false,
       error: {
@@ -1173,6 +1217,7 @@ export class ResponseService {
 ```
 
 **Success Criteria:**
+
 - Controllers handle only HTTP concerns
 - DTOs validate all inputs
 - Responses are standardized
@@ -1181,9 +1226,11 @@ export class ResponseService {
 **Estimated Time:** 6-8 hours
 
 ### Task 7: Implement WebSocket Gateway for Real-time Updates
+
 **Description:** Create WebSocket gateway for real-time session updates and log streaming.
 
 **Session Gateway:**
+
 ```typescript
 // src/gateways/session.gateway.ts
 @WebSocketGateway({
@@ -1193,7 +1240,9 @@ export class ResponseService {
     credentials: true,
   },
 })
-export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class SessionGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   constructor(
     private readonly sessionSubscriptionService: SessionSubscriptionService,
     private readonly dockerEngine: DockerEngineService,
@@ -1204,7 +1253,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
   server: Server;
 
   async handleConnection(client: Socket) {
-    this.logger.log('Client connected', { 
+    this.logger.log('Client connected', {
       clientId: client.id,
     });
   }
@@ -1226,7 +1275,7 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       );
 
       client.join(`session:${data.sessionId}`);
-      
+
       return {
         event: 'subscription.success',
         data: { sessionId: data.sessionId },
@@ -1244,13 +1293,16 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    await this.sessionSubscriptionService.unsubscribe(client.id, data.sessionId);
+    await this.sessionSubscriptionService.unsubscribe(
+      client.id,
+      data.sessionId,
+    );
     client.leave(`session:${data.sessionId}`);
   }
 
   @SubscribeMessage('subscribe.logs')
   async handleLogSubscription(
-    @MessageBody() data: { sessionId: string, containerId: string },
+    @MessageBody() data: { sessionId: string; containerId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
@@ -1297,12 +1349,11 @@ export class SessionGateway implements OnGatewayConnection, OnGatewayDisconnect 
       timestamp: new Date().toISOString(),
     });
   }
-
-
 }
 ```
 
 **Session Subscription Service:**
+
 ```typescript
 // src/gateways/session-subscription.service.ts
 @Injectable()
@@ -1316,10 +1367,7 @@ export class SessionSubscriptionService {
     private readonly logger: Logger,
   ) {}
 
-  async subscribe(
-    clientId: string,
-    sessionId: string,
-  ): Promise<void> {
+  async subscribe(clientId: string, sessionId: string): Promise<void> {
     // Verify session exists
     const session = await this.sessionRepository.findById(
       this.sessionIdFactory.fromString(sessionId),
@@ -1351,20 +1399,19 @@ export class SessionSubscriptionService {
 
   async unsubscribeAll(clientId: string): Promise<void> {
     const sessions = this.clientSessions.get(clientId);
-    
+
     if (sessions) {
-      sessions.forEach(sessionId => {
+      sessions.forEach((sessionId) => {
         this.subscriptions.get(sessionId)?.delete(clientId);
       });
       this.clientSessions.delete(clientId);
     }
   }
-
-
 }
 ```
 
 **Success Criteria:**
+
 - WebSocket connections work properly
 - Real-time updates work for subscribed sessions
 - Log streaming functions properly
@@ -1373,9 +1420,11 @@ export class SessionSubscriptionService {
 **Estimated Time:** 8-10 hours
 
 ### Task 8: Add Comprehensive Error Handling and Monitoring
+
 **Description:** Implement global error handling, structured logging, and monitoring.
 
 **Global Exception Filter:**
+
 ```typescript
 // src/libs/common/filters/http-exception.filter.ts
 @Catch()
@@ -1397,7 +1446,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const errorResponse = exception.getResponse();
-      
+
       if (typeof errorResponse === 'string') {
         message = errorResponse;
       } else if (typeof errorResponse === 'object') {
@@ -1406,7 +1455,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       message = exception.message;
-      
+
       // Log full error for non-HTTP exceptions
       this.logger.error('Unhandled exception', {
         error: exception,
@@ -1427,6 +1476,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 ```
 
 **Structured Logging with Pino:**
+
 ```typescript
 // src/libs/logger/logger.module.ts
 @Global()
@@ -1477,6 +1527,7 @@ export class LoggerModule {
 ```
 
 **Health Check Implementation:**
+
 ```typescript
 // src/health/health.controller.ts
 @Controller('health')
@@ -1494,16 +1545,15 @@ export class HealthController {
     return this.health.check([
       () => this.dockerHealth.isHealthy('docker'),
       () => this.memoryHealth.checkHeap('memory_heap', 150 * 1024 * 1024),
-      () => this.diskHealth.checkStorage('storage', { path: '/', threshold: 0.9 }),
+      () =>
+        this.diskHealth.checkStorage('storage', { path: '/', threshold: 0.9 }),
     ]);
   }
 
   @Get('ready')
   @HealthCheck()
   readiness() {
-    return this.health.check([
-      () => this.dockerHealth.isHealthy('docker'),
-    ]);
+    return this.health.check([() => this.dockerHealth.isHealthy('docker')]);
   }
 
   @Get('live')
@@ -1515,9 +1565,7 @@ export class HealthController {
 // src/health/docker-health.indicator.ts
 @Injectable()
 export class DockerHealthIndicator extends HealthIndicator {
-  constructor(
-    private readonly dockerEngine: DockerEngineService,
-  ) {
+  constructor(private readonly dockerEngine: DockerEngineService) {
     super();
   }
 
@@ -1526,7 +1574,7 @@ export class DockerHealthIndicator extends HealthIndicator {
       await this.dockerEngine.ping();
       return this.getStatus(key, true, { message: 'Docker is accessible' });
     } catch (error) {
-      return this.getStatus(key, false, { 
+      return this.getStatus(key, false, {
         message: 'Docker is not accessible',
         error: error.message,
       });
@@ -1536,6 +1584,7 @@ export class DockerHealthIndicator extends HealthIndicator {
 ```
 
 **Success Criteria:**
+
 - All errors are handled gracefully
 - Structured logging provides useful debugging info
 - Health checks accurately report system status
@@ -1544,9 +1593,11 @@ export class DockerHealthIndicator extends HealthIndicator {
 **Estimated Time:** 6-8 hours
 
 ### Task 10: Initialize React Web Interface
+
 **Description:** Create a React application with TypeScript and modern tooling.
 
 **Steps:**
+
 1. Create `web` directory and initialize React app
 2. Install dependencies:
    ```json
@@ -1596,12 +1647,14 @@ export class DockerHealthIndicator extends HealthIndicator {
    ```
 
 **API Client Setup:**
+
 ```typescript
 // src/api/client.ts
 import axios from 'axios';
 import { getAuthToken } from '../stores/auth.store';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -1631,6 +1684,7 @@ apiClient.interceptors.response.use(
 ```
 
 **Success Criteria:**
+
 - React app builds and runs
 - API client communicates with backend
 - Routing structure is set up
@@ -1639,9 +1693,11 @@ apiClient.interceptors.response.use(
 **Estimated Time:** 4-5 hours
 
 ### Task 11: Implement Session Dashboard and Management UI
+
 **Description:** Create the main dashboard and session management components.
 
 **Dashboard Implementation:**
+
 ```typescript
 // src/pages/Dashboard.tsx
 export const Dashboard: React.FC = () => {
@@ -1691,6 +1747,7 @@ export const Dashboard: React.FC = () => {
 ```
 
 **Session Creation Form:**
+
 ```typescript
 // src/pages/CreateSession.tsx
 export const CreateSession: React.FC = () => {
@@ -1744,6 +1801,7 @@ export const CreateSession: React.FC = () => {
 ```
 
 **Success Criteria:**
+
 - Dashboard displays all sessions
 - Real-time updates work via WebSocket
 - Session creation form validates inputs
@@ -1752,9 +1810,11 @@ export const CreateSession: React.FC = () => {
 **Estimated Time:** 10-12 hours
 
 ### Task 12: Create Docker Compose for Full Stack
+
 **Description:** Create unified Docker Compose configuration for development and production.
 
 **Docker Compose Configuration:**
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -1766,7 +1826,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -1779,7 +1839,7 @@ services:
     networks:
       - afk-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -1793,7 +1853,7 @@ services:
         - REACT_APP_API_URL=http://localhost:3001/api
         - REACT_APP_WS_URL=ws://localhost:3001
     ports:
-      - "3000:80"
+      - '3000:80'
     depends_on:
       - server
     networks:
@@ -1803,8 +1863,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl:/etc/nginx/ssl
@@ -1818,7 +1878,7 @@ services:
   redis:
     image: redis:alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     networks:
@@ -1834,6 +1894,7 @@ volumes:
 ```
 
 **Server Dockerfile:**
+
 ```dockerfile
 # server/Dockerfile
 FROM node:18-alpine AS builder
@@ -1861,6 +1922,7 @@ CMD ["node", "dist/main.js"]
 ```
 
 **Success Criteria:**
+
 - Full stack runs with single docker-compose command
 - Services communicate correctly
 - Configuration is externalized
@@ -1871,6 +1933,7 @@ CMD ["node", "dist/main.js"]
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 // Example unit test for interactor
 describe('CreateSessionInteractor', () => {
@@ -1889,7 +1952,7 @@ describe('CreateSessionInteractor', () => {
     sessionFactory = createMock<SessionFactory>();
     sessionConfigFactory = createMock<SessionConfigDtoFactory>();
     portPairFactory = createMock<PortPairDtoFactory>();
-    
+
     interactor = new CreateSessionInteractor(
       dockerEngine,
       portManager,
@@ -1905,7 +1968,7 @@ describe('CreateSessionInteractor', () => {
     const mockSession = createMockSession();
     const mockConfig = createMockSessionConfig();
     const ports = portPairFactory.create(7681, 7682);
-    
+
     sessionConfigFactory.create.mockReturnValue(mockConfig);
     sessionFactory.create.mockReturnValue(mockSession);
     portManager.allocatePortPair.mockResolvedValue(ports);
@@ -1915,11 +1978,16 @@ describe('CreateSessionInteractor', () => {
     const result = await interactor.execute(request);
 
     expect(result).toBeDefined();
-    expect(sessionConfigFactory.create).toHaveBeenCalledWith(expect.objectContaining({
-      repoUrl: request.repoUrl,
-      branch: request.branch,
-    }));
-    expect(sessionFactory.create).toHaveBeenCalledWith(request.name, mockConfig);
+    expect(sessionConfigFactory.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoUrl: request.repoUrl,
+        branch: request.branch,
+      }),
+    );
+    expect(sessionFactory.create).toHaveBeenCalledWith(
+      request.name,
+      mockConfig,
+    );
     expect(portManager.allocatePortPair).toHaveBeenCalled();
     expect(dockerEngine.createContainer).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1934,25 +2002,27 @@ describe('CreateSessionInteractor', () => {
     const mockSession = createMockSession();
     const mockConfig = createMockSessionConfig();
     const ports = portPairFactory.create(7681, 7682);
-    
+
     sessionConfigFactory.create.mockReturnValue(mockConfig);
     sessionFactory.create.mockReturnValue(mockSession);
     portManager.allocatePortPair.mockResolvedValue(ports);
     dockerEngine.createContainer.mockRejectedValue(new Error('Docker error'));
 
     await expect(interactor.execute(request)).rejects.toThrow();
-    
+
     expect(portManager.releasePortPair).toHaveBeenCalledWith(ports);
   });
 });
 ```
 
 ### Integration Tests
+
 - End-to-end session creation flow
 - WebSocket connection and message flow
 - Container lifecycle management
 
 ### E2E Tests
+
 - Create session with git repository
 - Access terminal interfaces
 - Real-time status updates
@@ -2021,6 +2091,7 @@ describe('CreateSessionInteractor', () => {
    - Use security headers
 
 ## Timeline Estimate
+
 - Total estimated time: 90-120 hours
 - Suggested timeline: 4-5 weeks with full-time effort
 - Can be parallelized with 2-3 developers:
@@ -2029,6 +2100,7 @@ describe('CreateSessionInteractor', () => {
   - Integration & Testing: 20-30 hours
 
 ## Deliverables
+
 1. NestJS server with EBI architecture
 2. React web interface with real-time updates
 3. Docker Compose configuration
@@ -2038,7 +2110,9 @@ describe('CreateSessionInteractor', () => {
 7. Developer setup guide
 
 ## Next Steps
+
 After Phase 2 completion, the system will be ready for Phase 3 (Production Infrastructure) which will focus on:
+
 - AWS deployment using CDK TypeScript
 - Kubernetes orchestration (EKS)
 - Database persistence (RDS/DynamoDB)

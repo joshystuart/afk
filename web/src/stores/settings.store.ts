@@ -6,7 +6,7 @@ interface SettingsState {
   settings: Settings | null;
   loading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchSettings: () => Promise<void>;
   updateSettings: (settings: UpdateSettingsRequest) => Promise<void>;
@@ -24,9 +24,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       const settings = await settingsApi.getSettings();
       set({ settings, loading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to fetch settings', 
-        loading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch settings',
+        loading: false,
       });
     }
   },
@@ -37,12 +38,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       const settings = await settingsApi.updateSettings(settingsUpdate);
       set({ settings, loading: false });
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to update settings', 
-        loading: false 
+      set({
+        error:
+          error instanceof Error ? error.message : 'Failed to update settings',
+        loading: false,
       });
     }
   },
 
-  clearError: () => set({ error: null })
+  clearError: () => set({ error: null }),
 }));

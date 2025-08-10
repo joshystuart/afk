@@ -67,19 +67,27 @@ const Dashboard: React.FC = () => {
 
   const getStatusColor = (status: SessionStatus) => {
     switch (status) {
-      case SessionStatus.RUNNING: return theme.palette.success.main;
-      case SessionStatus.STOPPED: return theme.palette.grey[500];
-      case SessionStatus.ERROR: return theme.palette.error.main;
-      default: return theme.palette.grey[500];
+      case SessionStatus.RUNNING:
+        return theme.palette.success.main;
+      case SessionStatus.STOPPED:
+        return theme.palette.grey[500];
+      case SessionStatus.ERROR:
+        return theme.palette.error.main;
+      default:
+        return theme.palette.grey[500];
     }
   };
 
   const getStatusText = (status: SessionStatus) => {
     switch (status) {
-      case SessionStatus.RUNNING: return 'RUNNING';
-      case SessionStatus.STOPPED: return 'STOPPED';
-      case SessionStatus.ERROR: return 'ERROR';
-      default: return 'UNKNOWN';
+      case SessionStatus.RUNNING:
+        return 'RUNNING';
+      case SessionStatus.STOPPED:
+        return 'STOPPED';
+      case SessionStatus.ERROR:
+        return 'ERROR';
+      default:
+        return 'UNKNOWN';
     }
   };
 
@@ -146,25 +154,21 @@ const Dashboard: React.FC = () => {
       >
         {/* Error Alert */}
         {error && (
-          <Alert 
-            severity="error" 
-            onClose={clearError}
-            sx={{ mb: 2 }}
-          >
+          <Alert severity="error" onClose={clearError} sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
         {/* Empty State */}
         {sessions.length === 0 ? (
-          <Box 
-            sx={{ 
-              textAlign: 'center', 
+          <Box
+            sx={{
+              textAlign: 'center',
               py: 8,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 3
+              gap: 3,
             }}
           >
             <TerminalIcon sx={{ fontSize: 80, color: 'text.secondary' }} />
@@ -198,24 +202,31 @@ const Dashboard: React.FC = () => {
                   <TableCell sx={{ fontWeight: 600 }}>Session</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Repository</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Terminal Access</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600 }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>
+                    Terminal Access
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>
+                    Actions
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {sessions.map((session) => (
-                  <TableRow 
+                  <TableRow
                     key={session.id}
                     sx={{
                       '&:hover': {
-                        bgcolor: 'rgba(255, 255, 255, 0.02)'
-                      }
+                        bgcolor: 'rgba(255, 255, 255, 0.02)',
+                      },
                     }}
                   >
                     {/* Session Name */}
                     <TableCell>
                       <Box>
-                        <Typography variant="h6" sx={{ fontFamily: 'monospace', mb: 0.5 }}>
+                        <Typography
+                          variant="h6"
+                          sx={{ fontFamily: 'monospace', mb: 0.5 }}
+                        >
                           {session.name || session.id.slice(0, 12)}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -226,11 +237,16 @@ const Dashboard: React.FC = () => {
 
                     {/* Repository */}
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {session.repoUrl ? 
-                          session.repoUrl.split('/').pop()?.replace('.git', '') : 
-                          'No repository'
-                        }
+                      <Typography
+                        variant="body2"
+                        sx={{ fontFamily: 'monospace' }}
+                      >
+                        {session.repoUrl
+                          ? session.repoUrl
+                              .split('/')
+                              .pop()
+                              ?.replace('.git', '')
+                          : 'No repository'}
                       </Typography>
                     </TableCell>
 
@@ -245,15 +261,16 @@ const Dashboard: React.FC = () => {
                           fontWeight: 600,
                           minWidth: 80,
                           ...(session.status === SessionStatus.RUNNING && {
-                            animation: 'pulse 2s infinite'
-                          })
+                            animation: 'pulse 2s infinite',
+                          }),
                         }}
                       />
                     </TableCell>
 
                     {/* Terminal Access */}
                     <TableCell>
-                      {session.status === SessionStatus.RUNNING && session.terminalUrls ? (
+                      {session.status === SessionStatus.RUNNING &&
+                      session.terminalUrls ? (
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                           <Button
                             variant="contained"
@@ -288,7 +305,13 @@ const Dashboard: React.FC = () => {
 
                     {/* Actions */}
                     <TableCell align="right">
-                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: 0.5,
+                          justifyContent: 'flex-end',
+                        }}
+                      >
                         {/* Start Button */}
                         {session.status === SessionStatus.STOPPED && (
                           <AnimateButton>
@@ -307,7 +330,8 @@ const Dashboard: React.FC = () => {
                         )}
 
                         {/* Delete Button */}
-                        {(session.status === SessionStatus.STOPPED || session.status === SessionStatus.ERROR) && (
+                        {(session.status === SessionStatus.STOPPED ||
+                          session.status === SessionStatus.ERROR) && (
                           <AnimateButton>
                             <IconButton
                               size="small"

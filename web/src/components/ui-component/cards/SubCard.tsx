@@ -1,5 +1,11 @@
 import React, { forwardRef } from 'react';
-import { Card, CardContent, CardHeader, Divider, useTheme } from '@mui/material';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  useTheme,
+} from '@mui/material';
 
 interface SubCardProps {
   children: React.ReactNode;
@@ -15,7 +21,7 @@ interface SubCardProps {
 
 const headerSX = {
   p: 2,
-  '& .MuiCardHeader-action': { m: '0px auto', alignSelf: 'center' }
+  '& .MuiCardHeader-action': { m: '0px auto', alignSelf: 'center' },
 };
 
 const SubCard = forwardRef<HTMLDivElement, SubCardProps>(
@@ -31,7 +37,7 @@ const SubCard = forwardRef<HTMLDivElement, SubCardProps>(
       title,
       ...others
     },
-    ref
+    ref,
   ) => {
     const theme = useTheme();
 
@@ -45,9 +51,9 @@ const SubCard = forwardRef<HTMLDivElement, SubCardProps>(
           borderRadius: 1,
           borderColor: theme.palette.divider,
           ':hover': {
-            boxShadow: theme.shadows[1]
+            boxShadow: theme.shadows[1],
           },
-          ...sx
+          ...sx,
         }}
       >
         {/* card header and action */}
@@ -61,7 +67,10 @@ const SubCard = forwardRef<HTMLDivElement, SubCardProps>(
         )}
         {darkTitle && title && (
           <CardHeader
-            sx={{ ...headerSX, '& .MuiCardHeader-title': { color: theme.palette.primary.main } }}
+            sx={{
+              ...headerSX,
+              '& .MuiCardHeader-title': { color: theme.palette.primary.main },
+            }}
             titleTypographyProps={{ variant: 'h5' }}
             title={title}
             action={secondary}
@@ -76,7 +85,7 @@ const SubCard = forwardRef<HTMLDivElement, SubCardProps>(
         {!content && children}
       </Card>
     );
-  }
+  },
 );
 
 SubCard.displayName = 'SubCard';

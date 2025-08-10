@@ -6,7 +6,7 @@ async function debugTest() {
     const response = await request('http://localhost:3001')
       .post('/api/sessions')
       .send({ name: 'test-session' });
-    
+
     console.log('Status:', response.status);
     console.log('Body:', JSON.stringify(response.body, null, 2));
   } catch (error) {

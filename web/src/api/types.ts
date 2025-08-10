@@ -6,14 +6,14 @@ export const SessionStatus = {
   ERROR: 'ERROR',
 } as const;
 
-export type SessionStatus = typeof SessionStatus[keyof typeof SessionStatus];
+export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
 export const TerminalMode = {
   SIMPLE: 'SIMPLE',
   DUAL: 'DUAL',
 } as const;
 
-export type TerminalMode = typeof TerminalMode[keyof typeof TerminalMode];
+export type TerminalMode = (typeof TerminalMode)[keyof typeof TerminalMode];
 
 export interface PortPair {
   host: number;

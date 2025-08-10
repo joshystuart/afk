@@ -6,7 +6,7 @@ interface SessionState {
   currentSession: Session | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   setSessions: (sessions: Session[]) => void;
   setCurrentSession: (session: Session | null) => void;
@@ -15,7 +15,7 @@ interface SessionState {
   removeSession: (sessionId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
+
   // WebSocket updates
   handleSessionStatusChange: (sessionId: string, status: SessionStatus) => void;
 }
@@ -25,58 +25,62 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   currentSession: null,
   isLoading: false,
   error: null,
-  
+
   setSessions: (sessions: Session[]) => {
     set({ sessions, error: null });
   },
-  
+
   setCurrentSession: (session: Session | null) => {
     set({ currentSession: session });
   },
-  
+
   updateSession: (sessionId: string, updates: Partial<Session>) => {
     const { sessions, currentSession } = get();
-    
-    const updatedSessions = sessions.map(session => 
-      session.id === sessionId 
+
+    const updatedSessions = sessions.map((session) =>
+      session.id === sessionId
         ? { ...session, ...updates, updatedAt: new Date().toISOString() }
-        : session
+        : session,
     );
-    
-    const updatedCurrentSession = currentSession?.id === sessionId
-      ? { ...currentSession, ...updates, updatedAt: new Date().toISOString() }
-      : currentSession;
-    
+
+    const updatedCurrentSession =
+      currentSession?.id === sessionId
+        ? { ...currentSession, ...updates, updatedAt: new Date().toISOString() }
+        : currentSession;
+
     set({
       sessions: updatedSessions,
       currentSession: updatedCurrentSession,
     });
   },
-  
+
   addSession: (session: Session) => {
     const { sessions } = get();
     set({ sessions: [session, ...sessions] });
   },
-  
+
   removeSession: (sessionId: string) => {
     const { sessions, currentSession } = get();
-    const updatedSessions = sessions.filter(session => session.id !== sessionId);
-    const updatedCurrentSession = currentSession?.id === sessionId ? null : currentSession;
-    
+    const updatedSessions = sessions.filter(
+      (session) => session.id !== sessionId,
+    );
+    const updatedCurrentSession =
+      currentSession?.id === sessionId ? null : currentSession;
+
     set({
       sessions: updatedSessions,
       currentSession: updatedCurrentSession,
     });
   },
-  
+
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
   },
-  
+
   setError: (error: string | null) => {
     set({ error });
   },
-  
+
   handleSessionStatusChange: (sessionId: string, status: SessionStatus) => {
     get().updateSession(sessionId, { status });
   },

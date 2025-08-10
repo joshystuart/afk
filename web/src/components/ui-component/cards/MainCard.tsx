@@ -26,7 +26,7 @@ interface MainCardProps {
 
 const headerSX = {
   p: 2.5,
-  '& .MuiCardHeader-action': { m: '0px auto', alignSelf: 'center' }
+  '& .MuiCardHeader-action': { m: '0px auto', alignSelf: 'center' },
 };
 
 const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
@@ -47,7 +47,7 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
       modal = false,
       ...others
     },
-    ref
+    ref,
   ) => {
     const theme = useTheme();
     boxShadow = theme.palette.mode === 'dark' ? boxShadow || true : boxShadow;
@@ -60,16 +60,22 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
         sx={{
           border: border ? '1px solid' : 'none',
           borderRadius: 2,
-          borderColor: theme.palette.mode === 'dark' ? theme.palette.divider : theme.palette.grey[800],
-          boxShadow: boxShadow && (!border || theme.palette.mode === 'dark') ? shadow || theme.shadows[1] : 'inherit',
+          borderColor:
+            theme.palette.mode === 'dark'
+              ? theme.palette.divider
+              : theme.palette.grey[800],
+          boxShadow:
+            boxShadow && (!border || theme.palette.mode === 'dark')
+              ? shadow || theme.shadows[1]
+              : 'inherit',
           ':hover': {
-            boxShadow: boxShadow ? shadow || theme.shadows[1] : 'inherit'
+            boxShadow: boxShadow ? shadow || theme.shadows[1] : 'inherit',
           },
           '& pre': {
             m: 0,
             p: '16px !important',
             fontFamily: theme.typography.fontFamily,
-            fontSize: '0.75rem'
+            fontSize: '0.75rem',
           },
           ...(modal && {
             position: 'absolute' as const,
@@ -80,10 +86,10 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
             '& .MuiCardContent-root': {
               overflowY: 'auto',
               minHeight: 'auto',
-              maxHeight: `calc(100vh - 200px)`
-            }
+              maxHeight: `calc(100vh - 200px)`,
+            },
           }),
-          ...sx
+          ...sx,
         }}
       >
         {/* card header and action */}
@@ -97,7 +103,10 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
         )}
         {darkTitle && title && (
           <CardHeader
-            sx={{ ...headerSX, '& .MuiCardHeader-title': { color: theme.palette.primary.main } }}
+            sx={{
+              ...headerSX,
+              '& .MuiCardHeader-title': { color: theme.palette.primary.main },
+            }}
             titleTypographyProps={{ variant: 'subtitle1' }}
             title={title}
             action={secondary}
@@ -108,15 +117,11 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
         {title && divider && <Divider />}
 
         {/* card content */}
-        {content && (
-          <CardContent sx={contentSX}>
-            {children}
-          </CardContent>
-        )}
+        {content && <CardContent sx={contentSX}>{children}</CardContent>}
         {!content && children}
       </Card>
     );
-  }
+  },
 );
 
 MainCard.displayName = 'MainCard';

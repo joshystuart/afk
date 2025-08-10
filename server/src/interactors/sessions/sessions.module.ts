@@ -21,10 +21,10 @@ import { Session } from '../../domain/sessions/session.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Session]),
-    DockerModule, 
-    RepositoriesModule, 
-    DomainModule, 
-    SettingsModule
+    DockerModule,
+    RepositoriesModule,
+    DomainModule,
+    SettingsModule,
   ],
   controllers: [
     CreateSessionController,

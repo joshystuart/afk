@@ -12,5 +12,5 @@ export const settingsApi = {
     const response = await apiClient.put<Settings>('/settings', settings);
     // The response interceptor already unwraps the data from the ApiResponse structure
     return response as unknown as Settings;
-  }
+  },
 };

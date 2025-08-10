@@ -9,7 +9,10 @@ interface TerminalHealthStatus {
   error: string | null;
 }
 
-export const useSessionHealth = (sessionId: string | null, enabled: boolean = true) => {
+export const useSessionHealth = (
+  sessionId: string | null,
+  enabled: boolean = true,
+) => {
   const [healthStatus, setHealthStatus] = useState<TerminalHealthStatus>({
     claudeTerminalReady: false,
     manualTerminalReady: false,
@@ -21,7 +24,7 @@ export const useSessionHealth = (sessionId: string | null, enabled: boolean = tr
   const checkHealth = useCallback(async () => {
     if (!sessionId || !enabled) return;
 
-    setHealthStatus(prev => ({ ...prev, isLoading: true, error: null }));
+    setHealthStatus((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const health = await sessionsApi.checkSessionHealth(sessionId);
@@ -33,10 +36,13 @@ export const useSessionHealth = (sessionId: string | null, enabled: boolean = tr
         error: null,
       });
     } catch (error) {
-      setHealthStatus(prev => ({
+      setHealthStatus((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to check terminal health',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to check terminal health',
       }));
     }
   }, [sessionId, enabled]);
@@ -60,7 +66,7 @@ export const useSessionHealth = (sessionId: string | null, enabled: boolean = tr
     if (healthStatus.allReady) {
       // Add a small delay to ensure terminals are fully loaded
       const timeout = setTimeout(() => {
-        setHealthStatus(prev => ({ ...prev, isLoading: false }));
+        setHealthStatus((prev) => ({ ...prev, isLoading: false }));
       }, 1000);
       return () => clearTimeout(timeout);
     }

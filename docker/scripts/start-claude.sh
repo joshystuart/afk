@@ -487,7 +487,7 @@ usage() {
     echo "Environment Variables:"
     echo "  REPO_URL          - Git repository URL to clone"
     echo "  REPO_BRANCH       - Git branch to checkout (default: main)"
-    echo "  SSH_PRIVATE_KEY   - Base64 encoded SSH private key"
+    echo "  SSH_PRIVATE_KEY   - SSH private key for private repositories"
     echo "  GIT_USER_NAME     - Git user name (default: Claude User)"
     echo "  GIT_USER_EMAIL    - Git user email (default: claude@example.com)"
     echo "  WORKSPACE_DIR     - Workspace directory (default: /workspace)"
@@ -500,7 +500,7 @@ usage() {
     echo "  REPO_URL=https://github.com/user/repo.git $0"
     echo
     echo "  # Start with private repository"
-    echo "  REPO_URL=git@github.com:user/repo.git SSH_PRIVATE_KEY=\$(cat key | base64) $0"
+    echo "  REPO_URL=git@github.com:user/repo.git SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" $0"
     echo
     echo "  # Start dual mode (Claude + Manual sessions)"
     echo "  TERMINAL_MODE=dual REPO_URL=https://github.com/user/repo.git $0"

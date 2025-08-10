@@ -30,18 +30,19 @@ describe('Sessions E2E Tests', () => {
     if (settingsSetup) {
       return;
     }
-    
+
     if (settingsPromise) {
       await settingsPromise;
       return;
     }
-    
+
     settingsPromise = (async () => {
       if (!settingsSetup) {
         await request(app.getHttpServer())
           .put('/api/settings')
           .send({
-            sshPrivateKey: '-----BEGIN OPENSSH PRIVATE KEY-----\ntest-key-content\n-----END OPENSSH PRIVATE KEY-----',
+            sshPrivateKey:
+              '-----BEGIN OPENSSH PRIVATE KEY-----\ntest-key-content\n-----END OPENSSH PRIVATE KEY-----',
             claudeToken: 'sk-test-token-12345',
             gitUserName: 'Test User',
             gitUserEmail: 'test@example.com',
@@ -50,7 +51,7 @@ describe('Sessions E2E Tests', () => {
         settingsSetup = true;
       }
     })();
-    
+
     await settingsPromise;
   };
 
@@ -142,7 +143,9 @@ describe('Sessions E2E Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(JSON.stringify(response.body.error.message)).toContain('gitUserEmail');
+      expect(JSON.stringify(response.body.error.message)).toContain(
+        'gitUserEmail',
+      );
     });
 
     it('should validate terminal mode enum', async () => {
@@ -157,7 +160,9 @@ describe('Sessions E2E Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(JSON.stringify(response.body.error.message)).toContain('terminalMode');
+      expect(JSON.stringify(response.body.error.message)).toContain(
+        'terminalMode',
+      );
     });
 
     it('should reject unknown fields', async () => {
@@ -172,7 +177,9 @@ describe('Sessions E2E Tests', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(JSON.stringify(response.body.error.message)).toContain('should not exist');
+      expect(JSON.stringify(response.body.error.message)).toContain(
+        'should not exist',
+      );
     });
   });
 
@@ -207,7 +214,7 @@ describe('Sessions E2E Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveLength(3);
-      const names = response.body.data.map(s => s.name).sort();
+      const names = response.body.data.map((s) => s.name).sort();
       expect(names).toEqual(['session-1', 'session-2', 'session-3']);
     });
 
@@ -332,8 +339,6 @@ describe('Sessions E2E Tests', () => {
     });
   });
 
-
-
   describe('GET /api/sessions/:id/health', () => {
     let sessionId: string;
 
@@ -441,9 +446,11 @@ describe('Sessions E2E Tests', () => {
 
   describe('Concurrent Operations', () => {
     it('should handle concurrent session creation', async () => {
-      const promises = Array(5).fill(null).map((_, index) =>
-        createSession({ name: `concurrent-session-${index}` })
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map((_, index) =>
+          createSession({ name: `concurrent-session-${index}` }),
+        );
 
       const responses = await Promise.all(promises);
 
@@ -464,22 +471,26 @@ describe('Sessions E2E Tests', () => {
 
     it('should handle concurrent session operations', async () => {
       // Create a session first
-      const createResponse = await createSession({ name: 'concurrent-ops-session' });
+      const createResponse = await createSession({
+        name: 'concurrent-ops-session',
+      });
 
       const sessionId = createResponse.body.data.id;
 
       // Wait a moment to ensure database is ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Perform multiple concurrent reads
-      const promises = Array(3).fill(null).map(() =>
-        request(app.getHttpServer()).get(`/api/sessions/${sessionId}`)
-      );
+      const promises = Array(3)
+        .fill(null)
+        .map(() =>
+          request(app.getHttpServer()).get(`/api/sessions/${sessionId}`),
+        );
 
       const responses = await Promise.all(promises);
 
       // All responses should be successful
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.status).toBe(200);
         expect(response.body.data.id).toBe(sessionId);
       });

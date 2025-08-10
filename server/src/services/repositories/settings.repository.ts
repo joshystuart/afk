@@ -13,8 +13,8 @@ export class SettingsRepositoryImpl implements SettingsRepository {
 
   async get(): Promise<Settings> {
     // Always use the 'default' settings record
-    let settings = await this.repository.findOne({ 
-      where: { id: 'default' } 
+    let settings = await this.repository.findOne({
+      where: { id: 'default' },
     });
 
     if (!settings) {

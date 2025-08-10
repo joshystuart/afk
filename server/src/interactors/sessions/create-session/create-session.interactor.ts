@@ -162,19 +162,6 @@ export class CreateSessionInteractor {
 
   private isValidSSHKey(key: string): boolean {
     try {
-      // First try to decode from base64 in case it's encoded
-      let decodedKey = key;
-      try {
-        decodedKey = Buffer.from(key, 'base64').toString('utf-8');
-        // If decode was successful but result doesn't look like a key, use original
-        if (!decodedKey.includes('BEGIN') && key.includes('BEGIN')) {
-          decodedKey = key;
-        }
-      } catch {
-        // If base64 decode fails, use original key
-        decodedKey = key;
-      }
-
       // Validate SSH key format (supports various key types)
       const keyPatterns = [
         /-----BEGIN OPENSSH PRIVATE KEY-----/,
@@ -184,12 +171,9 @@ export class CreateSessionInteractor {
         /-----BEGIN PRIVATE KEY-----/,
       ];
 
-      const hasBeginMarker = keyPatterns.some((pattern) =>
-        pattern.test(decodedKey),
-      );
+      const hasBeginMarker = keyPatterns.some((pattern) => pattern.test(key));
       const hasEndMarker =
-        decodedKey.includes('-----END') &&
-        decodedKey.includes('PRIVATE KEY-----');
+        key.includes('-----END') && key.includes('PRIVATE KEY-----');
 
       return hasBeginMarker && hasEndMarker;
     } catch (error) {

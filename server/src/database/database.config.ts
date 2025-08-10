@@ -26,7 +26,7 @@ export const postgresConfig: TypeOrmModuleOptions = {
 // Export the configuration to use (can be changed via environment variable)
 export const getDatabaseConfig = (): TypeOrmModuleOptions => {
   const dbType = process.env.DATABASE_TYPE || 'sqlite';
-  
+
   switch (dbType) {
     case 'postgres':
       return postgresConfig;

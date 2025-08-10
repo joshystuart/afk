@@ -10,8 +10,8 @@ export interface ApplicationOptions {
 
 export class ApplicationFactory {
   static configure(
-    app: INestApplication, 
-    options: ApplicationOptions = {}
+    app: INestApplication,
+    options: ApplicationOptions = {},
   ): INestApplication {
     const {
       enableCors = true,
@@ -32,11 +32,11 @@ export class ApplicationFactory {
 
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalInterceptors(new ResponseInterceptor());
-    
+
     if (enableCors) {
       app.enableCors();
     }
-    
+
     if (globalPrefix) {
       app.setGlobalPrefix(globalPrefix);
     }

@@ -28,7 +28,7 @@ describe('Settings E2E Tests', () => {
 
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
-      
+
       const { data } = response.body;
       expect(data).toHaveProperty('updatedAt');
       expect(data.sshPrivateKey).toBeNull();
@@ -65,7 +65,8 @@ describe('Settings E2E Tests', () => {
   describe('PUT /api/settings', () => {
     it('should update all settings fields', async () => {
       const updateData = {
-        sshPrivateKey: '-----BEGIN OPENSSH PRIVATE KEY-----\ntest-key-content\n-----END OPENSSH PRIVATE KEY-----',
+        sshPrivateKey:
+          '-----BEGIN OPENSSH PRIVATE KEY-----\ntest-key-content\n-----END OPENSSH PRIVATE KEY-----',
         claudeToken: 'sk-test-token-12345',
         gitUserName: 'John Doe',
         gitUserEmail: 'john.doe@example.com',
@@ -136,7 +137,9 @@ describe('Settings E2E Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBeDefined();
-      expect(JSON.stringify(response.body.error.message)).toContain('gitUserEmail');
+      expect(JSON.stringify(response.body.error.message)).toContain(
+        'gitUserEmail',
+      );
     });
 
     it('should coerce field types', async () => {
@@ -169,7 +172,9 @@ describe('Settings E2E Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBeDefined();
-      expect(JSON.stringify(response.body.error.message)).toContain('should not exist');
+      expect(JSON.stringify(response.body.error.message)).toContain(
+        'should not exist',
+      );
     });
 
     it('should handle very long string values', async () => {
@@ -191,7 +196,8 @@ describe('Settings E2E Tests', () => {
 
     it('should handle special characters in strings', async () => {
       const updateData = {
-        sshPrivateKey: '-----BEGIN KEY-----\n!@#$%^&*()_+{}|:"<>?\n-----END KEY-----',
+        sshPrivateKey:
+          '-----BEGIN KEY-----\n!@#$%^&*()_+{}|:"<>?\n-----END KEY-----',
         claudeToken: 'token-with-special-chars-!@#$%',
         gitUserName: 'User Name (with parentheses)',
         gitUserEmail: 'user+tag@example.com',
@@ -272,7 +278,7 @@ describe('Settings E2E Tests', () => {
       expect(updatedAt1).toBeDefined();
 
       // Wait a bit to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Update settings again
       const response2 = await request(app.getHttpServer())
@@ -285,7 +291,7 @@ describe('Settings E2E Tests', () => {
 
       // Verify timestamps are different
       expect(new Date(updatedAt2).getTime()).toBeGreaterThan(
-        new Date(updatedAt1).getTime()
+        new Date(updatedAt1).getTime(),
       );
     });
   });
@@ -323,9 +329,7 @@ describe('Settings E2E Tests', () => {
         .send({})
         .expect(404);
 
-      await request(app.getHttpServer())
-        .delete('/api/settings')
-        .expect(404);
+      await request(app.getHttpServer()).delete('/api/settings').expect(404);
     });
   });
 
@@ -341,17 +345,17 @@ describe('Settings E2E Tests', () => {
         .expect(200);
 
       // Wait a moment to ensure database is ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Perform multiple concurrent reads (reduced from 10 to 5 to avoid connection issues)
-      const promises = Array(5).fill(null).map(() =>
-        request(app.getHttpServer()).get('/api/settings')
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map(() => request(app.getHttpServer()).get('/api/settings'));
 
       const responses = await Promise.all(promises);
 
       // All responses should be successful and contain the same data
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.status).toBe(200);
         expect(response.body.data.claudeToken).toBe('concurrent-token');
         expect(response.body.data.gitUserName).toBe('Concurrent User');
@@ -366,22 +370,24 @@ describe('Settings E2E Tests', () => {
         .expect(200);
 
       // Wait a moment to ensure database is ready
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Perform multiple concurrent writes
-      const promises = Array(5).fill(null).map((_, index) =>
-        request(app.getHttpServer())
-          .put('/api/settings')
-          .send({
-            claudeToken: `token-${index}`,
-            gitUserName: `User ${index}`,
-          })
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map((_, index) =>
+          request(app.getHttpServer())
+            .put('/api/settings')
+            .send({
+              claudeToken: `token-${index}`,
+              gitUserName: `User ${index}`,
+            }),
+        );
 
       const responses = await Promise.all(promises);
 
       // All responses should be successful
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
       });

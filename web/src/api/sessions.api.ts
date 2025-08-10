@@ -7,17 +7,21 @@ import type {
 
 export const sessionsApi = {
   // Create a new session
-  createSession: async (request: CreateSessionRequest): Promise<CreateSessionResponse> => {
+  createSession: async (
+    request: CreateSessionRequest,
+  ): Promise<CreateSessionResponse> => {
     const response = await apiClient.post('/sessions', request);
     return response as unknown as CreateSessionResponse;
   },
 
-  // List all sessions with pagination  
+  // List all sessions with pagination
   listSessions: async (page = 1, limit = 10): Promise<Session[]> => {
-    const response = await apiClient.get(`/sessions?page=${page}&limit=${limit}`);
+    const response = await apiClient.get(
+      `/sessions?page=${page}&limit=${limit}`,
+    );
     // The API client already unwraps to just the array of sessions
     const sessions = Array.isArray(response) ? response : [];
-    
+
     // Transform each session to match frontend format
     return sessions.map((sessionData: any) => ({
       id: sessionData.id,
@@ -38,7 +42,7 @@ export const sessionsApi = {
     const response = await apiClient.get(`/sessions/${sessionId}`);
     // The response now should be properly formatted from the backend
     const sessionData = response as any;
-    
+
     // Transform the backend session structure to frontend format
     return {
       id: sessionData.id,
@@ -81,7 +85,9 @@ export const sessionsApi = {
   },
 
   // Check terminal health
-  checkSessionHealth: async (sessionId: string): Promise<{
+  checkSessionHealth: async (
+    sessionId: string,
+  ): Promise<{
     claudeTerminalReady: boolean;
     manualTerminalReady: boolean;
     allReady: boolean;

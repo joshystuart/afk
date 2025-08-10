@@ -1,35 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  TextField, 
-  Button, 
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
   Alert,
   CircularProgress,
   Grid,
-  Divider
+  Divider,
 } from '@mui/material';
-import { Save as SaveIcon, Settings as SettingsIcon } from '@mui/icons-material';
+import {
+  Save as SaveIcon,
+  Settings as SettingsIcon,
+} from '@mui/icons-material';
 import { useSettingsStore } from '../stores/settings.store';
 import type { UpdateSettingsRequest } from '../api/types';
 
 const Settings: React.FC = () => {
-  const { 
-    settings, 
-    loading, 
-    error, 
-    fetchSettings, 
-    updateSettings, 
-    clearError 
+  const {
+    settings,
+    loading,
+    error,
+    fetchSettings,
+    updateSettings,
+    clearError,
   } = useSettingsStore();
 
   const [formData, setFormData] = useState<UpdateSettingsRequest>({
     sshPrivateKey: '',
     claudeToken: '',
     gitUserName: '',
-    gitUserEmail: ''
+    gitUserEmail: '',
   });
 
   const [saveLoading, setSaveLoading] = useState(false);
@@ -45,27 +48,27 @@ const Settings: React.FC = () => {
         sshPrivateKey: settings.sshPrivateKey || '',
         claudeToken: settings.claudeToken || '',
         gitUserName: settings.gitUserName || '',
-        gitUserEmail: settings.gitUserEmail || ''
+        gitUserEmail: settings.gitUserEmail || '',
       });
     }
   }, [settings]);
 
-  const handleInputChange = (field: keyof UpdateSettingsRequest) => (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }));
-    if (successMessage) setSuccessMessage('');
-    if (error) clearError();
-  };
+  const handleInputChange =
+    (field: keyof UpdateSettingsRequest) =>
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+      if (successMessage) setSuccessMessage('');
+      if (error) clearError();
+    };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaveLoading(true);
     setSuccessMessage('');
-    
+
     try {
       await updateSettings(formData);
       setSuccessMessage('Settings saved successfully!');
@@ -77,15 +80,20 @@ const Settings: React.FC = () => {
   };
 
   const handleClear = (field: keyof UpdateSettingsRequest) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: ''
+      [field]: '',
     }));
   };
 
   if (loading && !settings) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -99,10 +107,11 @@ const Settings: React.FC = () => {
           Global Settings
         </Typography>
       </Box>
-      
+
       <Typography variant="body1" color="text.secondary" mb={3}>
-        Configure global settings that will be used for all new sessions. 
-        These settings eliminate the need to enter SSH keys and Claude tokens for each session.
+        Configure global settings that will be used for all new sessions. These
+        settings eliminate the need to enter SSH keys and Claude tokens for each
+        session.
       </Typography>
 
       {error && (
@@ -112,7 +121,11 @@ const Settings: React.FC = () => {
       )}
 
       {successMessage && (
-        <Alert severity="success" onClose={() => setSuccessMessage('')} sx={{ mb: 3 }}>
+        <Alert
+          severity="success"
+          onClose={() => setSuccessMessage('')}
+          sx={{ mb: 3 }}
+        >
           {successMessage}
         </Alert>
       )}
@@ -128,7 +141,7 @@ const Settings: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
               </Grid>
-              
+
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
@@ -139,7 +152,7 @@ const Settings: React.FC = () => {
                   helperText="Default git user name for commits"
                 />
               </Grid>
-              
+
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
@@ -159,7 +172,7 @@ const Settings: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
               </Grid>
-              
+
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
@@ -173,8 +186,8 @@ const Settings: React.FC = () => {
                   sx={{ fontFamily: 'monospace' }}
                 />
                 {formData.sshPrivateKey && (
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={() => handleClear('sshPrivateKey')}
                     sx={{ mt: 1 }}
                   >
@@ -190,7 +203,7 @@ const Settings: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
               </Grid>
-              
+
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
@@ -202,8 +215,8 @@ const Settings: React.FC = () => {
                   helperText="Claude API token for AI assistance. This will be used for all sessions."
                 />
                 {formData.claudeToken && (
-                  <Button 
-                    size="small" 
+                  <Button
+                    size="small"
                     onClick={() => handleClear('claudeToken')}
                     sx={{ mt: 1 }}
                   >
@@ -218,7 +231,13 @@ const Settings: React.FC = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    startIcon={saveLoading ? <CircularProgress size={20} /> : <SaveIcon />}
+                    startIcon={
+                      saveLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <SaveIcon />
+                      )
+                    }
                     disabled={saveLoading}
                     size="large"
                   >

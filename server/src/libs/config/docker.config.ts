@@ -5,7 +5,9 @@ export class DockerConfig {
   @IsString()
   @IsOptional()
   public readonly socketPath: string =
-    process.env.DOCKER_HOST?.replace('unix://', '') || '/var/run/docker.sock';
+    process.platform === 'win32'
+      ? '//./pipe/docker_engine'
+      : '/var/run/docker.sock';
 
   @IsString()
   @IsOptional()

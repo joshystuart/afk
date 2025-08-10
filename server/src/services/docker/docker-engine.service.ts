@@ -18,23 +18,8 @@ export class DockerEngineService {
       config: config,
     });
 
-    // Use DOCKER_HOST if set, otherwise fall back to config socketPath
     const dockerOptions: any = {};
-
-    if (process.env.DOCKER_HOST) {
-      if (process.env.DOCKER_HOST.startsWith('unix://')) {
-        dockerOptions.socketPath = process.env.DOCKER_HOST.replace(
-          'unix://',
-          '',
-        );
-      } else {
-        // For TCP connections
-        dockerOptions.host = process.env.DOCKER_HOST;
-      }
-    } else {
-      dockerOptions.socketPath =
-        config?.docker?.socketPath || '/var/run/docker.sock';
-    }
+    dockerOptions.socketPath = config?.docker?.socketPath;
 
     this.docker = new Dockerode(dockerOptions);
     this.logger.log('Docker client initialized', { options: dockerOptions });

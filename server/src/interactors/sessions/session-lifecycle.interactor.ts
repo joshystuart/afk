@@ -257,37 +257,7 @@ export class SessionLifecycleInteractor {
     }
   }
 
-  async restartSession(sessionId: SessionIdDto): Promise<void> {
-    const session = await this.sessionRepository.findById(sessionId);
 
-    if (!session) {
-      throw new Error('Session not found');
-    }
-
-    if (!session.containerId) {
-      throw new Error('Session has no associated container');
-    }
-
-    try {
-      // Stop if running
-      if (session.status === SessionStatus.RUNNING) {
-        await this.dockerEngine.stopContainer(session.containerId);
-      }
-
-      // Start container - we'll add a startContainer method to DockerEngineService
-      // For now, create a new container if restart is needed
-      throw new Error(
-        'Container restart not yet implemented - delete and recreate session instead',
-      );
-
-      this.logger.log('Session restarted', { sessionId: sessionId.toString() });
-    } catch (error) {
-      session.markAsError();
-      await this.sessionRepository.save(session);
-      this.logger.error('Failed to restart session', error);
-      throw error;
-    }
-  }
 
   async getSessionInfo(sessionId: SessionIdDto): Promise<any> {
     const session = await this.sessionRepository.findById(sessionId);

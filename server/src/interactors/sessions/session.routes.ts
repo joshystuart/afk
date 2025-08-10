@@ -3,7 +3,6 @@ export enum SessionRoutes {
   ITEM = '/:id',
   START = '/:id/start',
   STOP = '/:id/stop',
-  RESTART = '/:id/restart',
   HEALTH = '/:id/health',
 }
 

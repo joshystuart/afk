@@ -9,7 +9,6 @@ import { GetSessionController } from './get-session.controller';
 import { CheckSessionHealthController } from './check-session-health.controller';
 import { StartSessionController } from './start-session.controller';
 import { StopSessionController } from './stop-session.controller';
-import { RestartSessionController } from './restart-session.controller';
 import { DeleteSessionController } from './delete-session.controller';
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
@@ -34,7 +33,6 @@ import { Session } from '../../domain/sessions/session.entity';
     CheckSessionHealthController,
     StartSessionController,
     StopSessionController,
-    RestartSessionController,
     DeleteSessionController,
   ],
   providers: [

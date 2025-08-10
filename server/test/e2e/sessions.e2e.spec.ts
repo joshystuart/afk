@@ -332,32 +332,7 @@ describe('Sessions E2E Tests', () => {
     });
   });
 
-  describe('POST /api/sessions/:id/restart', () => {
-    let sessionId: string;
 
-    beforeEach(async () => {
-      // Sessions are created in RUNNING state, so no need to start them
-      const response = await createSession({ name: 'test-session' });
-      sessionId = response.body.data.id;
-    });
-
-    it('should return error that restart is not implemented', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/api/sessions/${sessionId}/restart`)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toBe('Container restart not yet implemented - delete and recreate session instead');
-    });
-
-    it('should return 400 for non-existent session', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions/non-existent-id/restart')
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-    });
-  });
 
   describe('GET /api/sessions/:id/health', () => {
     let sessionId: string;
@@ -430,14 +405,6 @@ describe('Sessions E2E Tests', () => {
         .expect(201);
 
       expect(stopResponse.body.success).toBe(true);
-
-      // Restart session (should fail as it's not implemented)
-      const restartResponse = await request(app.getHttpServer())
-        .post(`/api/sessions/${sessionId}/restart`)
-        .expect(400);
-
-      expect(restartResponse.body.success).toBe(false);
-      expect(restartResponse.body.error.message).toBe('Container restart not yet implemented - delete and recreate session instead');
 
       // Delete session (works after stopping)
       const deleteResponse = await request(app.getHttpServer())

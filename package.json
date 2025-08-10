@@ -7,6 +7,8 @@
     "dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
     "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
     "docker:build": "cd docker && npm run build",
+    "docker:rebuild": "cd docker && npm run rebuild",
+    "docker:build:force": "cd docker && npm run build:force",
     "server:dev": "cd server && npm run start:dev",
     "server:start": "cd server && npm run start",
     "server:build": "cd server && npm run build",
@@ -17,7 +19,8 @@
     "lint": "cd server && npm run lint && cd ../web && npm run lint",
     "test": "cd server && npm run test",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\" --ignore-path .prettierignore",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\" --ignore-path .prettierignore"
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}\" --ignore-path .prettierignore",
+    "format:staged": "prettier --write --list-different"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

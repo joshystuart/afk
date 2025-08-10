@@ -67,6 +67,8 @@ From the root directory:
 - `npm run install:all` - Install dependencies for all packages
 - `npm run lint` - Run linting on both server and web
 - `npm run test` - Run server tests
+- `npm run format` - Format all files with Prettier
+- `npm run format:check` - Check if files are formatted correctly
 
 ### Server Scripts
 
@@ -88,6 +90,26 @@ npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
 ```
+
+### Code Formatting
+
+This project uses Prettier for consistent code formatting. Configuration is defined in `.prettierrc`.
+
+```bash
+# Format all files
+npm run format
+
+# Check formatting without making changes
+npm run format:check
+```
+
+Prettier is configured with:
+
+- Single quotes for strings
+- Trailing commas
+- 2-space indentation
+- 80-character line width
+- Semicolons required
 
 ## ⚙️ Configuration
 

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "AFK - Away From Keyboard - Docker image",
   "scripts": {
-    "build": "docker build -t afk-docker ."
+    "build": "docker build -t afk .",
+    "rebuild": "docker build --no-cache -t afk .",
+    "build:force": "docker build --no-cache --pull -t afk ."
   },
   "author": "joshstuartx+afk@gmail.com",
   "license": "MIT",

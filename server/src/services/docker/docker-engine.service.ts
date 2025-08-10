@@ -19,13 +19,8 @@ export class DockerEngineService {
     });
 
     const dockerOptions: DockerOptions = {};
-    if (config.socketPath) {
-      if (config.socketPath.startsWith('unix://')) {
-        dockerOptions.socketPath = config.socketPath.replace('unix://', '');
-      } else {
-        // For TCP connections
-        dockerOptions.host = config.socketPath;
-      }
+    if (config.socketPath.startsWith('unix://')) {
+      dockerOptions.socketPath = config.socketPath.replace('unix://', '');
     } else {
       dockerOptions.socketPath = config.socketPath;
     }

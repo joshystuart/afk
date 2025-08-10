@@ -1,9 +1,8 @@
 services:
   afk-terminal:
-    image: afk
-    #    build:
-    #      context: .
-    #      dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - '${CLAUDE_PORT:-7681}:${CLAUDE_PORT:-7681}' # Claude session port
       - '${MANUAL_PORT:-7682}:${MANUAL_PORT:-7682}' # Manual session port

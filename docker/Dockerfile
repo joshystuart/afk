@@ -3,10 +3,10 @@ FROM node:20
 ARG CLAUDE_CODE_VERSION=latest
 
 # Copy certificate bundle
-COPY osg_curl_ca_bundle.pem /etc/ssl/certs/osg_curl_ca_bundle.pem
-
-ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/osg_curl_ca_bundle.pem
-ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
+#COPY osg_curl_ca_bundle.pem /etc/ssl/certs/osg_curl_ca_bundle.pem
+#
+#ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/osg_curl_ca_bundle.pem
+#ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
 
 # Install basic development tools and iptables/ipset
 RUN apt-get update && apt-get install -y --no-install-recommends \

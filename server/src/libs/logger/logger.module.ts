@@ -9,24 +9,24 @@ export class LoggerModule {
     return {
       module: LoggerModule,
       imports: [
-          PinoLoggerModule.forRootAsync({
-              useFactory: (loggerConfig: LoggerConfig) => {
-                  const transport = loggerConfig.prettyPrint
-                      ? {
-                          target: 'pino-pretty',
-                      }
-                      : undefined;
+        PinoLoggerModule.forRootAsync({
+          useFactory: (loggerConfig: LoggerConfig) => {
+            const transport = loggerConfig.prettyPrint
+              ? {
+                  target: 'pino-pretty',
+                }
+              : undefined;
 
-                  return {
-                      forRoutes: ['/none'],
-                      pinoHttp: {
-                          transport,
-                          level: loggerConfig.level,
-                      },
-                  };
+            return {
+              forRoutes: ['/none'],
+              pinoHttp: {
+                transport,
+                level: loggerConfig.level,
               },
-              inject: [LoggerConfig],
-          }),
+            };
+          },
+          inject: [LoggerConfig],
+        }),
       ],
       exports: [PinoLoggerModule],
     };

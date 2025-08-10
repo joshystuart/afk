@@ -8,7 +8,7 @@ import { SettingsModule } from './interactors/settings/settings.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
 import { getDatabaseConfig } from './database/database.config';
-import {LoggerModule} from "./libs/logger/logger.module";
+import { LoggerModule } from './libs/logger/logger.module';
 
 @Module({})
 export class AppModule {
@@ -18,7 +18,7 @@ export class AppModule {
       imports: [
         ConfigModule.forRoot({ path: options?.configPath }),
         TypeOrmModule.forRoot(getDatabaseConfig()),
-          LoggerModule.forRootAsync(),
+        LoggerModule.forRootAsync(),
         SessionsModule,
         SettingsModule,
         GatewaysModule,

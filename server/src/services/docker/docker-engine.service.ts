@@ -1,8 +1,12 @@
-import {Injectable, Logger} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
-import {DockerOptions} from 'dockerode';
-import {ContainerCreateOptions, ContainerInfo, ContainerStats,} from '../../domain/containers/container.entity';
-import {DockerConfig} from '../../libs/config/docker.config';
+import { DockerOptions } from 'dockerode';
+import {
+  ContainerCreateOptions,
+  ContainerInfo,
+  ContainerStats,
+} from '../../domain/containers/container.entity';
+import { DockerConfig } from '../../libs/config/docker.config';
 
 @Injectable()
 export class DockerEngineService {
@@ -15,8 +19,16 @@ export class DockerEngineService {
     });
 
     const dockerOptions: DockerOptions = {};
-    // dockerOptions.socketPath = config.socketPath;
-    dockerOptions.host = config.socketPath;
+    if (config.socketPath) {
+      if (config.socketPath.startsWith('unix://')) {
+        dockerOptions.socketPath = config.socketPath.replace('unix://', '');
+      } else {
+        // For TCP connections
+        dockerOptions.host = config.socketPath;
+      }
+    } else {
+      dockerOptions.socketPath = config.socketPath;
+    }
 
     this.docker = new Dockerode(dockerOptions);
     this.logger.log('Docker client initialized', { options: dockerOptions });

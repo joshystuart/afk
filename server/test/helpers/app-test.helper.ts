@@ -46,12 +46,12 @@ export class AppTestHelper {
         stopContainer: jest.fn().mockResolvedValue(undefined),
         removeContainer: jest.fn().mockResolvedValue(undefined),
         getContainerInfo: jest.fn().mockResolvedValue({
-          State: { Running: true },
-          NetworkSettings: {
-            Ports: {
-              '7681/tcp': [{ HostPort: '8080' }],
-            },
-          },
+          id: 'test-container-id',
+          name: 'test-container',
+          state: 'running',
+          created: new Date(),
+          ports: [{ host: 8080, container: 7681, protocol: 'tcp' }],
+          labels: {},
         }),
         execCommand: jest.fn().mockResolvedValue({
           stdout: 'command output',
@@ -69,6 +69,12 @@ export class AppTestHelper {
         releasePort: jest.fn().mockResolvedValue(undefined),
         isPortAvailable: jest.fn().mockResolvedValue(true),
         getRandomPort: jest.fn().mockReturnValue(8080),
+        allocatePortPair: jest.fn().mockResolvedValue({
+          claudePort: 8080,
+          manualPort: 8081,
+          toJSON: () => ({ claude: 8080, manual: 8081 }),
+        }),
+        releasePortPair: jest.fn().mockResolvedValue(undefined),
       })
       // Override AppConfig for testing (but keep most settings the same)
       .overrideProvider(AppConfig)

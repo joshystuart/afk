@@ -152,14 +152,6 @@ const Login: React.FC = () => {
               </Button>
             </Box>
 
-            <Typography
-              variant="body2"
-              align="center"
-              color="textSecondary"
-              sx={{ mt: 2 }}
-            >
-              Default credentials: admin / password123
-            </Typography>
           </CardContent>
         </Card>
       </Box>

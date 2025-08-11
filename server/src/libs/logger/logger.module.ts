@@ -1,6 +1,7 @@
 import { Global, Module, DynamicModule } from '@nestjs/common';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { LoggerConfig } from '../config/logger.config';
+import { Logger } from './logger';
 
 @Global()
 @Module({})
@@ -16,7 +17,6 @@ export class LoggerModule {
                   target: 'pino-pretty',
                 }
               : undefined;
-
             return {
               forRoutes: ['/none'],
               pinoHttp: {
@@ -28,7 +28,8 @@ export class LoggerModule {
           inject: [LoggerConfig],
         }),
       ],
-      exports: [PinoLoggerModule],
+      providers: [Logger],
+      exports: [Logger],
     };
   }
 }

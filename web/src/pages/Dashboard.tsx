@@ -25,7 +25,6 @@ import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   Refresh as RefreshIcon,
-  RestartAlt as RestartIcon,
   Terminal as TerminalIcon,
   Visibility as ViewIcon,
   Delete as DeleteIcon,
@@ -38,6 +37,7 @@ import { ROUTES } from '../utils/constants';
 // Berry Components
 import MainCard from '../components/ui-component/cards/MainCard';
 import AnimateButton from '../components/ui-component/extended/AnimateButton';
+import ApprovalModal from '../components/ApprovalModal';
 
 const Dashboard: React.FC = () => {
   const theme = useTheme();
@@ -49,25 +49,67 @@ const Dashboard: React.FC = () => {
     error,
     startSession,
     stopSession,
-    restartSession,
     deleteSession,
     refetchSessions,
     clearError,
     isStarting,
     isStopping,
-    isRestarting,
     isDeleting,
   } = useSession();
+
+  // Approval modal state
+  const [approvalModal, setApprovalModal] = React.useState<{
+    open: boolean;
+    type: 'stop' | 'delete';
+    sessionId: string;
+    sessionName?: string;
+  }>({
+    open: false,
+    type: 'stop',
+    sessionId: '',
+    sessionName: '',
+  });
 
   const handleViewSession = (sessionId: string) => {
     navigate(ROUTES.getSessionDetails(sessionId));
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
+  // Modal handlers
+  const handleStopSessionClick = (sessionId: string) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    setApprovalModal({
+      open: true,
+      type: 'stop',
+      sessionId,
+      sessionName: session?.name || session?.id.slice(0, 12),
+    });
+  };
+
+  const handleDeleteSessionClick = (sessionId: string) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    setApprovalModal({
+      open: true,
+      type: 'delete',
+      sessionId,
+      sessionName: session?.name || session?.id.slice(0, 12),
+    });
+  };
+
+  const handleModalClose = () => {
+    setApprovalModal((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleModalConfirm = async () => {
     try {
-      await deleteSession(sessionId);
+      if (approvalModal.type === 'stop') {
+        await stopSession(approvalModal.sessionId);
+      } else {
+        await deleteSession(approvalModal.sessionId);
+      }
+      handleModalClose();
     } catch (error) {
-      console.error('Failed to delete session:', error);
+      console.error(`Failed to ${approvalModal.type} session:`, error);
+      // Keep modal open on error so user can try again
     }
   };
 
@@ -433,7 +475,7 @@ const Dashboard: React.FC = () => {
                           variant="contained"
                           size="small"
                           startIcon={<StopIcon />}
-                          onClick={() => stopSession(session.id)}
+                          onClick={() => handleStopSessionClick(session.id)}
                           disabled={isStopping}
                           color="warning"
                         >
@@ -445,25 +487,12 @@ const Dashboard: React.FC = () => {
                     <Box sx={{ flex: 1 }} />
 
                     {/* Icon Actions */}
-                    {session.status === SessionStatus.RUNNING && (
-                      <AnimateButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => restartSession(session.id)}
-                          disabled={isRestarting}
-                          title="Restart"
-                        >
-                          <RestartIcon />
-                        </IconButton>
-                      </AnimateButton>
-                    )}
-
                     {(session.status === SessionStatus.STOPPED ||
                       session.status === SessionStatus.ERROR) && (
                       <AnimateButton>
                         <IconButton
                           size="small"
-                          onClick={() => handleDeleteSession(session.id)}
+                          onClick={() => handleDeleteSessionClick(session.id)}
                           disabled={isDeleting}
                           title="Delete Session"
                           color="error"
@@ -630,7 +659,9 @@ const Dashboard: React.FC = () => {
                           <AnimateButton>
                             <IconButton
                               size="small"
-                              onClick={() => handleDeleteSession(session.id)}
+                              onClick={() =>
+                                handleDeleteSessionClick(session.id)
+                              }
                               disabled={isDeleting}
                               title="Delete Session"
                               color="error"
@@ -647,7 +678,7 @@ const Dashboard: React.FC = () => {
                               variant="contained"
                               size="small"
                               startIcon={<StopIcon />}
-                              onClick={() => stopSession(session.id)}
+                              onClick={() => handleStopSessionClick(session.id)}
                               disabled={isStopping}
                               color="warning"
                               sx={{ minWidth: 80 }}
@@ -658,19 +689,6 @@ const Dashboard: React.FC = () => {
                         )}
 
                         {/* Restart Button */}
-                        {session.status === SessionStatus.RUNNING && (
-                          <AnimateButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => restartSession(session.id)}
-                              disabled={isRestarting}
-                              title="Restart"
-                            >
-                              <RestartIcon />
-                            </IconButton>
-                          </AnimateButton>
-                        )}
-
                         {/* View Details Button */}
                         <AnimateButton>
                           <IconButton
@@ -691,6 +709,16 @@ const Dashboard: React.FC = () => {
           </TableContainer>
         )}
       </MainCard>
+
+      {/* Approval Modal */}
+      <ApprovalModal
+        open={approvalModal.open}
+        onClose={handleModalClose}
+        onConfirm={handleModalConfirm}
+        type={approvalModal.type}
+        sessionName={approvalModal.sessionName}
+        isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+      />
     </Box>
   );
 };

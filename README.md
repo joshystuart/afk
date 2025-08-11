@@ -13,6 +13,7 @@ AFK is a remote terminal access service that enables running Claude Code in Dock
 - Node.js 18+
 - npm or yarn
 - Docker (for container management)
+- Claude CLI (for OAuth token generation)
 
 ### Installation
 
@@ -72,6 +73,58 @@ The server API will be available at [http://localhost:3001](http://localhost:300
 ```bash
 npm run start
 ```
+
+### Getting Started
+
+Log into the web interface at [http://localhost:4173](http://localhost:4173) using the admin credentials you set in `server/.env.yaml`:
+
+![afk-login.png](docs/afk-login.png)
+
+Once the application is running you will need to ensure you have the following set up:
+
+#### 1. Generate Claude OAuth Token
+
+Before using AFK, you'll need to generate a Claude OAuth token:
+
+```bash
+# Install Claude CLI if not already installed
+npm install -g @anthropic-ai/claude-cli
+
+# Generate and set up your OAuth token
+claude setup-token
+```
+
+This will guide you through the authentication process and store your token securely.
+
+#### 2. Set Up SSH Keys for Code Access
+
+For security, we recommend creating a dedicated SSH key pair for container access:
+
+```bash
+# Generate a new SSH key specifically for AFK containers
+ssh-keygen -t ed25519 -f ~/.ssh/afk_container_key -C "afk-container-access"
+
+# Add the key to your SSH agent
+ssh-add ~/.ssh/afk_container_key
+
+# Add the public key to your GitHub/GitLab account
+cat ~/.ssh/afk_container_key.pub
+# Copy the output and add it to your Git provider's SSH keys
+```
+
+**Security Note:** Using a separate SSH key for container access provides better security isolation. This key can be easily revoked if needed without affecting your main development workflow.
+
+Add both of these in the settings page of the web interface.
+
+![afk-settings.png](docs/afk-settings.png)
+
+#### Create a Session
+
+To create a new session, click the "Create Session" button in the web interface. You can configure the session name
+and git repository URL. The session will automatically start a Docker container with the specified settings and
+checkout the provided repository.
+
+![afk-create-session.png](docs/afk-create-session.png)
 
 ## 📁 Project Structure
 

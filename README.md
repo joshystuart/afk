@@ -1,4 +1,4 @@
-# AFK - Away From Keyboard
+# AFK - Away From Klaude
 
 AFK is a remote terminal access service that enables running Claude Code in Docker containers with web-based terminal access. The project provides containerized development environments with dual terminal sessions (Claude + manual access), automatic git integration, and a modern web interface for session management.
 

@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
 import { useAuthStore } from '../stores/auth.store';
+import { authApi } from '../api/auth.api';
 
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -21,16 +22,15 @@ export const useAuth = () => {
     async (credentials: LoginCredentials) => {
       setLoading(true);
       try {
-        // For now, simulate authentication since we don't have auth endpoints yet
-        // In a real implementation, this would make an API call
-        const mockUser = {
-          id: '1',
-          name: 'Developer',
-          email: credentials.email,
+        const response = await authApi.login(credentials);
+        
+        const user = {
+          id: response.user.userId,
+          name: response.user.username,
+          email: `${response.user.username}@afk.local`, // Legacy compatibility
         };
-        const mockToken = 'mock-jwt-token';
 
-        loginStore(mockToken, mockUser);
+        loginStore(response.token, user);
       } catch (error) {
         console.error('Login failed:', error);
         throw error;

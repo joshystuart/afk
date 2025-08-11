@@ -26,7 +26,7 @@ const Login: React.FC = () => {
     formState: { errors },
   } = useForm<LoginCredentials>({
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   });
@@ -94,24 +94,24 @@ const Login: React.FC = () => {
               sx={{ mt: 2 }}
             >
               <Controller
-                name="email"
+                name="username"
                 control={control}
                 rules={{
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address',
+                  required: 'Username is required',
+                  minLength: {
+                    value: 3,
+                    message: 'Username must be at least 3 characters',
                   },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     fullWidth
-                    label="Email"
-                    type="email"
+                    label="Username"
+                    type="text"
                     margin="normal"
-                    error={!!errors.email}
-                    helperText={errors.email?.message}
+                    error={!!errors.username}
+                    helperText={errors.username?.message}
                     disabled={isLoading}
                   />
                 )}
@@ -158,7 +158,7 @@ const Login: React.FC = () => {
               color="textSecondary"
               sx={{ mt: 2 }}
             >
-              Demo credentials: any email/password combination
+              Default credentials: admin / password123
             </Typography>
           </CardContent>
         </Card>

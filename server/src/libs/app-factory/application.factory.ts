@@ -1,6 +1,8 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
 import { ResponseInterceptor } from '../common/interceptors/response.interceptor';
+import { AuthGuard } from '../../auth/auth.guard';
 
 export interface ApplicationOptions {
   enableCors?: boolean;
@@ -32,6 +34,11 @@ export class ApplicationFactory {
 
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalInterceptors(new ResponseInterceptor());
+    
+    // Set up global auth guard
+    const authGuard = app.get(AuthGuard);
+    const reflector = app.get(Reflector);
+    app.useGlobalGuards(authGuard);
 
     if (enableCors) {
       app.enableCors();

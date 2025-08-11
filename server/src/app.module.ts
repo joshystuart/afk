@@ -7,6 +7,7 @@ import { SessionsModule } from './interactors/sessions/sessions.module';
 import { SettingsModule } from './interactors/settings/settings.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
 import { getDatabaseConfig } from './database/database.config';
 import { LoggerModule } from './libs/logger/logger.module';
 
@@ -19,6 +20,7 @@ export class AppModule {
         ConfigModule.forRoot({ path: options?.configPath }),
         TypeOrmModule.forRoot(getDatabaseConfig()),
         LoggerModule.forRootAsync(),
+        AuthModule,
         SessionsModule,
         SettingsModule,
         GatewaysModule,

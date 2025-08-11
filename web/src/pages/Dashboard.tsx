@@ -25,7 +25,6 @@ import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   Refresh as RefreshIcon,
-  RestartAlt as RestartIcon,
   Terminal as TerminalIcon,
   Visibility as ViewIcon,
   Delete as DeleteIcon,
@@ -50,13 +49,11 @@ const Dashboard: React.FC = () => {
     error,
     startSession,
     stopSession,
-    restartSession,
     deleteSession,
     refetchSessions,
     clearError,
     isStarting,
     isStopping,
-    isRestarting,
     isDeleting,
   } = useSession();
 
@@ -79,7 +76,7 @@ const Dashboard: React.FC = () => {
 
   // Modal handlers
   const handleStopSessionClick = (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId);
+    const session = sessions.find((s) => s.id === sessionId);
     setApprovalModal({
       open: true,
       type: 'stop',
@@ -89,7 +86,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDeleteSessionClick = (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId);
+    const session = sessions.find((s) => s.id === sessionId);
     setApprovalModal({
       open: true,
       type: 'delete',
@@ -99,7 +96,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleModalClose = () => {
-    setApprovalModal(prev => ({ ...prev, open: false }));
+    setApprovalModal((prev) => ({ ...prev, open: false }));
   };
 
   const handleModalConfirm = async () => {
@@ -490,19 +487,6 @@ const Dashboard: React.FC = () => {
                     <Box sx={{ flex: 1 }} />
 
                     {/* Icon Actions */}
-                    {session.status === SessionStatus.RUNNING && (
-                      <AnimateButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => restartSession(session.id)}
-                          disabled={isRestarting}
-                          title="Restart"
-                        >
-                          <RestartIcon />
-                        </IconButton>
-                      </AnimateButton>
-                    )}
-
                     {(session.status === SessionStatus.STOPPED ||
                       session.status === SessionStatus.ERROR) && (
                       <AnimateButton>
@@ -675,7 +659,9 @@ const Dashboard: React.FC = () => {
                           <AnimateButton>
                             <IconButton
                               size="small"
-                              onClick={() => handleDeleteSessionClick(session.id)}
+                              onClick={() =>
+                                handleDeleteSessionClick(session.id)
+                              }
                               disabled={isDeleting}
                               title="Delete Session"
                               color="error"
@@ -703,19 +689,6 @@ const Dashboard: React.FC = () => {
                         )}
 
                         {/* Restart Button */}
-                        {session.status === SessionStatus.RUNNING && (
-                          <AnimateButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => restartSession(session.id)}
-                              disabled={isRestarting}
-                              title="Restart"
-                            >
-                              <RestartIcon />
-                            </IconButton>
-                          </AnimateButton>
-                        )}
-
                         {/* View Details Button */}
                         <AnimateButton>
                           <IconButton

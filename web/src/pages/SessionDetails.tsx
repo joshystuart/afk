@@ -19,7 +19,6 @@ import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   Refresh as RefreshIcon,
-  RestartAlt as RestartIcon,
   Terminal as TerminalIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
@@ -56,12 +55,10 @@ const SessionDetails: React.FC = () => {
     isLoading,
     startSession,
     stopSession,
-    restartSession,
     deleteSession,
     getSession,
     isStarting,
     isStopping,
-    isRestarting,
     isDeleting,
   } = useSession();
 
@@ -109,12 +106,12 @@ const SessionDetails: React.FC = () => {
   };
 
   const handleModalClose = () => {
-    setApprovalModal(prev => ({ ...prev, open: false }));
+    setApprovalModal((prev) => ({ ...prev, open: false }));
   };
 
   const handleModalConfirm = async () => {
     if (!session) return;
-    
+
     try {
       if (approvalModal.type === 'stop') {
         await stopSession(session.id);
@@ -415,6 +412,7 @@ const SessionDetails: React.FC = () => {
                 fontWeight: 600,
                 animation: 'pulse 2s infinite',
                 flexShrink: 0,
+                marginRight: 1,
               }}
             />
           </Box>
@@ -454,27 +452,6 @@ const SessionDetails: React.FC = () => {
                 </IconButton>
               </AnimateButton>
             )}
-
-            <AnimateButton>
-              <IconButton
-                size="small"
-                onClick={() => restartSession(session.id)}
-                disabled={isRestarting}
-                title="Restart Session"
-              >
-                <RestartIcon />
-              </IconButton>
-            </AnimateButton>
-
-            <AnimateButton>
-              <IconButton
-                size="small"
-                onClick={() => sessionQuery?.refetch()}
-                title="Refresh"
-              >
-                <RefreshIcon />
-              </IconButton>
-            </AnimateButton>
           </Box>
         </Box>
 

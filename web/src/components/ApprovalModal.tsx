@@ -10,11 +10,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import {
-  Warning as WarningIcon,
-  Stop as StopIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Stop as StopIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import AnimateButton from './ui-component/extended/AnimateButton';
 
 export interface ApprovalModalProps {
@@ -50,9 +46,13 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
     : 'Deleting the session will permanently remove the container and all its data. This action cannot be undone.';
 
   const confirmButtonColor = isStopAction ? 'warning' : 'error';
-  const confirmButtonText = isStopAction 
-    ? (isLoading ? 'Stopping...' : 'Yes, Stop Session')
-    : (isLoading ? 'Deleting...' : 'Yes, Delete Session');
+  const confirmButtonText = isStopAction
+    ? isLoading
+      ? 'Stopping...'
+      : 'Yes, Stop Session'
+    : isLoading
+      ? 'Deleting...'
+      : 'Yes, Delete Session';
 
   return (
     <Dialog
@@ -86,10 +86,10 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
       <DialogContent sx={{ px: 3, pb: 2 }}>
         <Box sx={{ textAlign: 'center' }}>
           {sessionName && (
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                fontFamily: 'monospace', 
+            <Typography
+              variant="body1"
+              sx={{
+                fontFamily: 'monospace',
                 bgcolor: 'grey.100',
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 1,
@@ -118,7 +118,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
             variant="outlined"
             size="large"
             disabled={isLoading}
-            sx={{ 
+            sx={{
               flex: isMobile ? 1 : 'none',
               minWidth: isMobile ? 'auto' : 120,
             }}
@@ -133,7 +133,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
             size="large"
             color={confirmButtonColor}
             disabled={isLoading}
-            sx={{ 
+            sx={{
               flex: isMobile ? 1 : 'none',
               minWidth: isMobile ? 'auto' : 160,
             }}

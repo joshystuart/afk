@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { DockerConfig } from './docker.config';
 import { SessionConfig } from './session.config';
 import { LoggerConfig } from './logger.config';
+import { AdminUserConfig } from './admin-user.config';
 
 export class AppConfig {
   @IsNumber()
@@ -26,4 +27,8 @@ export class AppConfig {
   @ValidateNested()
   @Type(() => LoggerConfig)
   public readonly logger!: LoggerConfig;
+
+  @ValidateNested()
+  @Type(() => AdminUserConfig)
+  public readonly adminUser!: AdminUserConfig;
 }

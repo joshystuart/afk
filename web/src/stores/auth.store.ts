@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { authApi } from '../api/auth.api';
 
 interface User {
   id: string;
@@ -34,13 +35,25 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      logout: () => {
-        set({
-          token: null,
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+      logout: async () => {
+        try {
+          // Call server logout endpoint if authenticated
+          const currentState = useAuthStore.getState();
+          if (currentState.isAuthenticated) {
+            await authApi.logout();
+          }
+        } catch (error) {
+          // Continue with logout even if server call fails
+          console.warn('Server logout failed:', error);
+        } finally {
+          // Always clear local state
+          set({
+            token: null,
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+        }
       },
 
       setLoading: (loading: boolean) => {

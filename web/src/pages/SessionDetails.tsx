@@ -18,7 +18,6 @@ import {
   ArrowBack as ArrowBackIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
-  Refresh as RefreshIcon,
   Terminal as TerminalIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,

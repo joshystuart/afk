@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "description": "AFK - Away From Keyboard - Remote terminal access service",
   "scripts": {
-    "build": "npm run docker:build && npm run server:build && npm run web:build",
+    "init": "npm run install:all && npm run build && npm run docker:pull",
+    "build": "npm run server:build && npm run web:build",
     "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
     "start:dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
+    "docker:pull": "cd docker && npm run pull",
     "docker:build": "cd docker && npm run build",
     "docker:rebuild": "cd docker && npm run rebuild",
     "docker:build:force": "cd docker && npm run build:force",

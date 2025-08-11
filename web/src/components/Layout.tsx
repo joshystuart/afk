@@ -22,9 +22,11 @@ import {
   ChevronLeft as ChevronLeftIcon,
   Terminal as TerminalIcon,
   Settings as SettingsIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
+import { useAuthStore } from '../stores/auth.store';
 
 const drawerWidth = 260;
 
@@ -35,7 +37,9 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const matchDownLG = useMediaQuery(theme.breakpoints.down('lg'));
+  const { logout } = useAuthStore();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [open, setOpen] = useState(!matchDownLG);
@@ -50,6 +54,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleDrawerClose = () => {
     setOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate(ROUTES.LOGIN);
   };
 
   const menuItems = [
@@ -82,6 +91,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         height: '100%',
         bgcolor: 'background.paper',
         borderRight: `1px solid ${theme.palette.divider}`,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {/* Logo */}
@@ -117,7 +128,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </Box>
 
       {/* Navigation */}
-      <List sx={{ px: 2 }}>
+      <List sx={{ px: 2, flexGrow: 1 }}>
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isSelected = location.pathname === item.url;
@@ -165,6 +176,44 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </ListItem>
           );
         })}
+      </List>
+
+      {/* Logout Button */}
+      <List sx={{ px: 2, pb: 2 }}>
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={handleLogout}
+            sx={{
+              minHeight: 44,
+              borderRadius: 1.5,
+              px: 2,
+              py: 1,
+              color: 'text.secondary',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                color: 'text.primary',
+              },
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 32,
+                color: 'inherit',
+              }}
+            >
+              <LogoutIcon fontSize="small" />
+            </ListItemIcon>
+            {open && (
+              <ListItemText
+                primary="Logout"
+                primaryTypographyProps={{
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                }}
+              />
+            )}
+          </ListItemButton>
+        </ListItem>
       </List>
     </Box>
   );

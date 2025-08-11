@@ -23,7 +23,7 @@ export const useAuth = () => {
       setLoading(true);
       try {
         const response = await authApi.login(credentials);
-        
+
         const user = {
           id: response.user.userId,
           name: response.user.username,

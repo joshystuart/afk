@@ -7,7 +7,9 @@ import { AuthGuard } from './auth.guard';
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'afk-development-secret-key-change-in-production',
+      secret:
+        process.env.JWT_SECRET ||
+        'afk-development-secret-key-change-in-production',
       signOptions: { expiresIn: '24h' },
     }),
   ],

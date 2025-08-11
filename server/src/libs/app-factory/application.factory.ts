@@ -34,7 +34,7 @@ export class ApplicationFactory {
 
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalInterceptors(new ResponseInterceptor());
-    
+
     // Set up global auth guard
     const authGuard = app.get(AuthGuard);
     const reflector = app.get(Reflector);

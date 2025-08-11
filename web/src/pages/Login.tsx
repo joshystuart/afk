@@ -151,7 +151,6 @@ const Login: React.FC = () => {
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </Box>
-
           </CardContent>
         </Card>
       </Box>

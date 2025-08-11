@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AppConfig } from '../libs/config/app.config';
 
@@ -15,17 +15,24 @@ export interface AuthPayload {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly appConfig: AppConfig,
   ) {}
 
-  async login(credentials: LoginCredentials): Promise<{ token: string; user: AuthPayload }> {
+  async login(
+    credentials: LoginCredentials,
+  ): Promise<{ token: string; user: AuthPayload }> {
     const { username, password } = credentials;
     const { adminUser } = this.appConfig;
 
+    this.logger.log(`Login attempt for username: ${username}`);
+
     // Validate credentials against configured admin user
     if (username !== adminUser.username || password !== adminUser.password) {
+      this.logger.warn(`Failed login attempt for username: ${username}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -37,6 +44,8 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
 
+    this.logger.log(`Successful login for username: ${username}`);
+
     return {
       token,
       user: payload,
@@ -45,8 +54,13 @@ export class AuthService {
 
   async validateToken(token: string): Promise<AuthPayload> {
     try {
-      return this.jwtService.verify(token);
+      const payload = this.jwtService.verify(token);
+      this.logger.debug(
+        `Token validated successfully for user: ${payload.username}`,
+      );
+      return payload;
     } catch (error) {
+      this.logger.warn(`Invalid token validation attempt`);
       throw new UnauthorizedException('Invalid token');
     }
   }

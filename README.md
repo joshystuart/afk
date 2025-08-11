@@ -2,6 +2,10 @@
 
 AFK is a remote terminal access service that enables running Claude Code in Docker containers with web-based terminal access. The project provides containerized development environments with dual terminal sessions (Claude + manual access), automatic git integration, and a modern web interface for session management.
 
+![afk-dashboard.png](docs/afk-dashboard.png)
+
+![afk-session-details.png](docs/afk-session-details.png)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -22,28 +26,52 @@ cd afk
 2. Install dependencies:
 
 ```bash
-npm run install:all
+npm run init
 ```
+
+This will:
+
+- Install dependencies for both the server and web client
+- Build the server and web client applications
+- Pull the Docker image to be able to run sessions
 
 3. Configure environment variables:
 
+**Server Configuration:**
+
 ```bash
-cp server/.env.example server/.env
-# Edit server/.env with your configuration
+# Copy one of the platform-specific config files
+cp server/src/config/.env.mac.yaml server/.env.yaml     # For macOS
+# or
+cp server/src/config/.env.test.yaml server/.env.yaml    # For testing/other platforms
+
+# Edit server/.env.yaml with your configuration
+```
+
+**Web Client Configuration:**
+
+```bash
+# Copy the web environment file
+cp web/.env.example web/.env
+# Edit web/.env if you need to change API endpoints
 ```
 
 4. Start the application:
 
-```bash
-# Development mode (both server and web client with hot reload)
-npm run dev
+The web interface will be available at [http://localhost:5173](http://localhost:5173).
+The server API will be available at [http://localhost:3001](http://localhost:3001).
 
-# Production mode
-npm run start
+```bash
+# Development mode (both server and web client will hot reload)
+npm run start:dev
 ```
 
-The web interface will be available at `http://localhost:5173` (development) or `http://localhost:4173` (production).
-The server API will be available at `http://localhost:3001`.
+The web interface will be available at [http://localhost:4173](http://localhost:4173)
+The server API will be available at [http://localhost:3001](http://localhost:3001).
+
+```bash
+npm run start
+```
 
 ## 📁 Project Structure
 
@@ -115,20 +143,53 @@ Prettier is configured with:
 
 ### Server Configuration
 
-Configure the server by editing `server/.env`:
+Configure the server by creating `server/.env.yaml` from one of the provided templates:
 
-```bash
-# Application Configuration
-PORT=3001
-NODE_ENV=development
+```yaml
+# Example server/.env.yaml (based on .env.mac.yaml)
+port: 3001
+nodeEnv: development
+baseUrl: http://localhost
 
-# Docker Configuration (optional - defaults provided)
-# DOCKER_IMAGE_NAME=afk:latest
-# DOCKER_START_PORT=7681
-# DOCKER_END_PORT=7780
+docker:
+  socketPath: '${DOCKER_HOST:-/var/run/docker.sock}'
+  imageName: afk:latest
+  startPort: 7681
+  endPort: 7780
+
+logger:
+  level: debug
+  prettyPrint: true
+
+session:
+  maxSessionsPerUser: 10
+  sessionTimeoutMinutes: 60
+  healthCheckIntervalSeconds: 30
+
+adminUser:
+  username: '${ADMIN_USERNAME:-admin}'
+  password: '${ADMIN_PASSWORD:-password123}'
 ```
 
-All other settings use sensible defaults. See `server/src/libs/config/` for available configuration options.
+**Available template configurations:**
+
+- `server/src/config/.env.mac.yaml` - macOS-specific settings
+- `server/src/config/.env.test.yaml` - Test environment settings
+- `server/src/config/.env.windows.yaml` - Windows-specific settings
+
+You can use environment variables in the YAML file (e.g., `"${ADMIN_PASSWORD:-defaultvalue}"`).
+
+### Web Client Configuration
+
+Configure the web client by editing `web/.env`:
+
+```bash
+# API endpoints
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=http://localhost:3001
+```
+
+The web client uses Vite, so all environment variables must be prefixed with `VITE_`.
 
 ## 🏗 Architecture
 

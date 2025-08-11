@@ -15,15 +15,23 @@ export interface LoginResponse {
   token: string;
   user: AuthUser;
 }
+export interface LogoutResponse {
+  message: string;
+}
 
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response = await apiClient.post('/auth/login', credentials);
+    const response = await apiClient.post<LoginResponse, LoginResponse>(
+      '/auth/login',
+      credentials,
+    );
     return response;
   },
 
-  logout: async (): Promise<{ message: string }> => {
-    const response = await apiClient.post('/auth/logout');
+  logout: async (): Promise<LogoutResponse> => {
+    const response = await apiClient.post<LogoutResponse, LogoutResponse>(
+      '/auth/logout',
+    );
     return response;
   },
 };

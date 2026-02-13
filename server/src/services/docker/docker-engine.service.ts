@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
+import { ContainerNotFoundError } from './container-not-found.error';
 import { DockerOptions } from 'dockerode';
 import {
   ContainerCreateOptions,
@@ -14,8 +15,9 @@ export class DockerEngineService {
   private readonly logger = new Logger(DockerEngineService.name);
 
   constructor(private readonly config: DockerConfig) {
-    this.logger.log('Config received in DockerEngineService', {
-      config,
+    this.logger.log('DockerEngineService initializing', {
+      socketPath: config.socketPath,
+      imageName: config.imageName,
     });
 
     const dockerOptions: DockerOptions = {};
@@ -32,9 +34,13 @@ export class DockerEngineService {
   async createContainer(
     options: ContainerCreateOptions,
   ): Promise<Dockerode.Container> {
-    this.logger.log('Creating container', { options });
-    this.logger.log('Config at container creation', {
-      config: this.config,
+    this.logger.log('Creating container', {
+      sessionId: options.sessionId,
+      sessionName: options.sessionName,
+      repoUrl: options.repoUrl,
+      branch: options.branch,
+      terminalMode: options.terminalMode,
+      ports: options.ports,
     });
 
     try {
@@ -49,7 +55,11 @@ export class DockerEngineService {
         ExposedPorts: this.buildExposedPorts(options.ports),
         HostConfig: {
           PortBindings: this.buildPortBindings(options.ports),
-          Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
+          Binds: [
+            '/var/run/docker.sock:/var/run/docker.sock',
+            `afk-tmux-${options.sessionId}:/home/node/.tmux/resurrect`,
+            `afk-claude-${options.sessionId}:/home/node/.claude`,
+          ],
           Privileged: true,
           RestartPolicy: { Name: 'unless-stopped' },
         },
@@ -116,8 +126,37 @@ export class DockerEngineService {
   }
 
   async removeContainer(containerId: string): Promise<void> {
-    const container = this.docker.getContainer(containerId);
-    await container.remove({ force: true });
+    try {
+      const container = this.docker.getContainer(containerId);
+      await container.remove({ force: true });
+    } catch (error: any) {
+      if (error?.statusCode === 404 && error?.reason === 'no such container') {
+        throw new ContainerNotFoundError(containerId, error);
+      }
+      throw error;
+    }
+  }
+
+  async removeVolume(volumeName: string): Promise<void> {
+    try {
+      const volume = this.docker.getVolume(volumeName);
+      await volume.remove();
+      this.logger.log(`Volume removed: ${volumeName}`);
+    } catch (error: any) {
+      if (error?.statusCode === 404) {
+        this.logger.warn(`Volume not found (already removed): ${volumeName}`);
+        return;
+      }
+      throw error;
+    }
+  }
+
+  async removeSessionVolumes(sessionId: string): Promise<void> {
+    const volumeNames = [`afk-tmux-${sessionId}`, `afk-claude-${sessionId}`];
+
+    for (const volumeName of volumeNames) {
+      await this.removeVolume(volumeName);
+    }
   }
 
   async getContainerInfo(containerId: string): Promise<ContainerInfo> {
@@ -207,40 +246,6 @@ export class DockerEngineService {
     }
 
     return env;
-  }
-
-  private convertToSshUrl(url: string): string {
-    // Convert HTTPS GitHub/GitLab/Bitbucket URLs to SSH format
-    const httpsPatterns = [
-      {
-        pattern: /^https:\/\/github\.com\/(.+)\/(.+?)(?:\.git)?$/,
-        replacement: 'git@github.com:$1/$2.git',
-      },
-      {
-        pattern: /^https:\/\/gitlab\.com\/(.+)\/(.+?)(?:\.git)?$/,
-        replacement: 'git@gitlab.com:$1/$2.git',
-      },
-      {
-        pattern: /^https:\/\/bitbucket\.org\/(.+)\/(.+?)(?:\.git)?$/,
-        replacement: 'git@bitbucket.org:$1/$2.git',
-      },
-    ];
-
-    for (const { pattern, replacement } of httpsPatterns) {
-      if (pattern.test(url)) {
-        const convertedUrl = url.replace(pattern, replacement);
-        this.logger.log(
-          `Converted HTTPS URL to SSH: ${url} -> ${convertedUrl}`,
-        );
-        return convertedUrl;
-      }
-    }
-
-    // Return original URL if no conversion needed
-    this.logger.log(
-      `URL already in SSH format or not supported for conversion: ${url}`,
-    );
-    return url;
   }
 
   private buildExposedPorts(ports: any): Record<string, {}> {

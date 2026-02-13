@@ -1,14 +1,10 @@
 FROM node:20
 
-ARG CLAUDE_CODE_VERSION=latest
+# Claude Code version: "latest", "stable", or a specific version like "2.1.19"
+ARG CLAUDE_CODE_VERSION=2.1.42
 
-# Copy certificate bundle
-#COPY osg_curl_ca_bundle.pem /etc/ssl/certs/osg_curl_ca_bundle.pem
-#
-#ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/osg_curl_ca_bundle.pem
-#ENV CURL_CA_BUNDLE=/etc/ssl/certs/osg_curl_ca_bundle.pem
-
-# Install basic development tools and iptables/ipset
+# Install basic development tools and dependencies
+# ripgrep is required by Claude Code for search functionality
 RUN apt-get update && apt-get install -y --no-install-recommends \
   less \
   git \
@@ -29,6 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   curl \
   screen \
   tmux \
+  ripgrep \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd from GitHub releases
@@ -36,19 +33,15 @@ RUN TTYD_VERSION=$(curl -s https://api.github.com/repos/tsl0922/ttyd/releases/la
     curl -sL https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64 -o /usr/local/bin/ttyd && \
     chmod +x /usr/local/bin/ttyd
 
-# Ensure default node user has access to /usr/local/share
-RUN mkdir -p /usr/local/share/npm-global && \
-  chown -R node:node /usr/local/share
-
 ARG USERNAME=node
 
 # Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts
+RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.local/bin /home/node/.local/share
 COPY .claude.json /home/node/.claude.json
 COPY scripts/ /home/node/scripts/
 COPY scripts/.screenrc /home/node/.screenrc
 COPY scripts/.tmux.conf /home/node/.tmux.conf
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc /home/node/.tmux.conf && \
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc /home/node/.tmux.conf /home/node/.local && \
     chmod 700 /home/node/.ssh && \
     chmod +x /home/node/scripts/*.sh
 
@@ -57,12 +50,14 @@ WORKDIR /workspace
 # Set up non-root user
 USER node
 
-# Install global packages
-ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
-ENV PATH=$PATH:/usr/local/share/npm-global/bin
+# Add Claude Code binary location to PATH and disable auto-updates in containers
+ENV PATH="/home/node/.local/bin:$PATH"
+ENV DISABLE_AUTOUPDATER=1
 
-# Install Claude
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+# Install Claude Code using native installer (replaces deprecated npm method)
+# See: https://code.claude.com/docs/en/setup#install-a-specific-version
+RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
+    && claude --version
 
 CMD ["/home/node/scripts/start-claude.sh"]
 

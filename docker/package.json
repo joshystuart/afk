@@ -6,7 +6,8 @@
     "build": "docker build -t afk .",
     "pull": "docker pull --platform linux/arm64 crimsonronin/afk:latest",
     "rebuild": "docker build --no-cache -t afk .",
-    "build:force": "docker build --no-cache --pull -t afk ."
+    "build:force": "docker build --no-cache --pull -t afk .",
+    "run": "docker run -it --rm afk /bin/bash"
   },
   "author": "joshstuartx+afk@gmail.com",
   "license": "MIT",

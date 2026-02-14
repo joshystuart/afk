@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DockerEngineService } from '../../services/docker/docker-engine.service';
+import { ContainerNotFoundError } from '../../services/docker/container-not-found.error';
 import { SessionRepository } from '../../services/repositories/session.repository';
 import { PortManagerService } from '../../services/docker/port-manager.service';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
@@ -257,9 +258,30 @@ export class SessionLifecycleInteractor {
     }
 
     try {
-      // Remove container
+      // Remove container (if it still exists - may have been removed manually)
       if (session.containerId) {
-        await this.dockerEngine.removeContainer(session.containerId);
+        try {
+          await this.dockerEngine.removeContainer(session.containerId);
+        } catch (containerError) {
+          if (containerError instanceof ContainerNotFoundError) {
+            this.logger.warn('Container already removed, continuing cleanup', {
+              sessionId: sessionId.toString(),
+              containerId: session.containerId,
+            });
+          } else {
+            throw containerError;
+          }
+        }
+      }
+
+      // Clean up named volumes (tmux state, Claude data)
+      try {
+        await this.dockerEngine.removeSessionVolumes(session.id);
+      } catch (volumeError) {
+        this.logger.warn('Failed to remove session volumes, continuing', {
+          sessionId: sessionId.toString(),
+          error: volumeError.message,
+        });
       }
 
       // Release ports

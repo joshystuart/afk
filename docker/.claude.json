@@ -1,23 +1,17 @@
 {
   "hasCompletedOnboarding": true,
-  "lastOnboardingVersion": "1.0.51",
+  "lastOnboardingVersion": "2.1.19",
+  "lastReleaseNotesSeen": "2.1.31",
+  "installMethod": "native",
+  "autoUpdates": false,
+  "bypassPermissionsModeAccepted": true,
   "projects": {
     "/workspace": {
       "allowedTools": [],
-      "history": [],
-      "dontCrawlDirectory": false,
-      "enableArchitectTool": false,
-      "mcpContextUris": [],
-      "mcpServers": {},
-      "approvedMcprcServers": [],
-      "rejectedMcprcServers": [],
-      "exampleFiles": [],
-      "exampleFilesGeneratedAt": 1741180925950,
+      "hasTrustDialogAccepted": true,
       "hasCompletedProjectOnboarding": true,
-      "hasTrustDialogAccepted": true
+      "projectOnboardingSeenCount": 1
     }
   },
-  "lastReleaseNotesSeen": "1.0.65",
-  "bypassPermissionsModeAccepted": true,
   "verbose": true
 }

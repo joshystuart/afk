@@ -11,6 +11,7 @@
     "docker:build": "cd docker && npm run build",
     "docker:rebuild": "cd docker && npm run rebuild",
     "docker:build:force": "cd docker && npm run build:force",
+    "docker:run": "cd docker && npm run run",
     "server:dev": "cd server && npm run start:dev",
     "server:start": "cd server && npm run start",
     "server:build": "cd server && npm run build",
@@ -34,6 +35,9 @@
     "remote-access",
     "claude-code"
   ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "author": "joshstuartx+afk@gmail.com",
   "license": "MIT",
   "private": true

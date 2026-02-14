@@ -44,3 +44,4 @@ docker/workspace/*
 *.sqlite
 
 server/src/config/.env.yaml
+server/.env.yaml

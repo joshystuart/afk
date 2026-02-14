@@ -5,10 +5,12 @@ import { AppTestHelper } from '../helpers/app-test.helper';
 describe('Settings E2E Tests', () => {
   let app: INestApplication;
   let appTestHelper: AppTestHelper;
+  let authToken: string;
 
   beforeAll(async () => {
     appTestHelper = new AppTestHelper();
     app = await appTestHelper.initializeApp();
+    authToken = await appTestHelper.getAuthToken();
   });
 
   afterEach(async () => {
@@ -20,18 +22,28 @@ describe('Settings E2E Tests', () => {
     await appTestHelper.closeApp();
   });
 
+  // Helper to make authenticated requests
+  const authGet = (url: string) =>
+    request(app.getHttpServer())
+      .get(url)
+      .set('Authorization', `Bearer ${authToken}`);
+
+  const authPut = (url: string) =>
+    request(app.getHttpServer())
+      .put(url)
+      .set('Authorization', `Bearer ${authToken}`);
+
   describe('GET /api/settings', () => {
     it('should return initial empty settings', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/settings')
-        .expect(200);
+      const response = await authGet('/api/settings').expect(200);
 
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
 
       const { data } = response.body;
       expect(data).toHaveProperty('updatedAt');
-      expect(data.sshPrivateKey).toBeNull();
+      expect(data.hasSshPrivateKey).toBe(false);
+      expect(data).not.toHaveProperty('sshPrivateKey');
       expect(data.claudeToken).toBeNull();
       expect(data.gitUserName).toBeNull();
       expect(data.gitUserEmail).toBeNull();
@@ -46,18 +58,18 @@ describe('Settings E2E Tests', () => {
         gitUserEmail: 'test@example.com',
       };
 
-      await request(app.getHttpServer())
-        .put('/api/settings')
-        .send(updateData)
-        .expect(200);
+      await authPut('/api/settings').send(updateData).expect(200);
 
       // Then get the settings
-      const response = await request(app.getHttpServer())
-        .get('/api/settings')
-        .expect(200);
+      const response = await authGet('/api/settings').expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toMatchObject(updateData);
+      // SSH key should be masked - only hasSshPrivateKey boolean is returned
+      expect(response.body.data.hasSshPrivateKey).toBe(true);
+      expect(response.body.data).not.toHaveProperty('sshPrivateKey');
+      expect(response.body.data.claudeToken).toBe(updateData.claudeToken);
+      expect(response.body.data.gitUserName).toBe(updateData.gitUserName);
+      expect(response.body.data.gitUserEmail).toBe(updateData.gitUserEmail);
       expect(response.body.data.updatedAt).toBeDefined();
     });
   });
@@ -72,13 +84,17 @@ describe('Settings E2E Tests', () => {
         gitUserEmail: 'john.doe@example.com',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(updateData)
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toMatchObject(updateData);
+      // SSH key should be masked in response
+      expect(response.body.data.hasSshPrivateKey).toBe(true);
+      expect(response.body.data).not.toHaveProperty('sshPrivateKey');
+      expect(response.body.data.claudeToken).toBe(updateData.claudeToken);
+      expect(response.body.data.gitUserName).toBe(updateData.gitUserName);
+      expect(response.body.data.gitUserEmail).toBe(updateData.gitUserEmail);
       expect(response.body.data.updatedAt).toBeDefined();
     });
 
@@ -91,10 +107,7 @@ describe('Settings E2E Tests', () => {
         gitUserEmail: 'initial@example.com',
       };
 
-      await request(app.getHttpServer())
-        .put('/api/settings')
-        .send(initialData)
-        .expect(200);
+      await authPut('/api/settings').send(initialData).expect(200);
 
       // Update only some fields
       const partialUpdate = {
@@ -102,8 +115,7 @@ describe('Settings E2E Tests', () => {
         gitUserEmail: 'updated@example.com',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(partialUpdate)
         .expect(200);
 
@@ -111,15 +123,12 @@ describe('Settings E2E Tests', () => {
       expect(response.body.data.claudeToken).toBe('updated-token');
       expect(response.body.data.gitUserEmail).toBe('updated@example.com');
       // Check that other fields remain unchanged
-      expect(response.body.data.sshPrivateKey).toBe('initial-ssh-key');
+      expect(response.body.data.hasSshPrivateKey).toBe(true);
       expect(response.body.data.gitUserName).toBe('Initial User');
     });
 
     it('should handle empty update request', async () => {
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
-        .send({})
-        .expect(200);
+      const response = await authPut('/api/settings').send({}).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeDefined();
@@ -130,8 +139,7 @@ describe('Settings E2E Tests', () => {
         gitUserEmail: 'invalid-email-format',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(invalidData)
         .expect(400);
 
@@ -149,13 +157,12 @@ describe('Settings E2E Tests', () => {
         claudeToken: true, // Will be coerced to "true"
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(invalidData)
         .expect(200); // NestJS coerces the types
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.sshPrivateKey).toBe('123');
+      expect(response.body.data.hasSshPrivateKey).toBe(true);
       expect(response.body.data.claudeToken).toBe('true');
     });
 
@@ -165,8 +172,7 @@ describe('Settings E2E Tests', () => {
         unknownField: 'should-be-rejected',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(dataWithUnknownFields)
         .expect(400);
 
@@ -184,13 +190,12 @@ describe('Settings E2E Tests', () => {
         claudeToken: 'normal-token',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(updateData)
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.sshPrivateKey).toBe(longString);
+      expect(response.body.data.hasSshPrivateKey).toBe(true);
       expect(response.body.data.claudeToken).toBe('normal-token');
     });
 
@@ -203,13 +208,15 @@ describe('Settings E2E Tests', () => {
         gitUserEmail: 'user+tag@example.com',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(updateData)
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toMatchObject(updateData);
+      expect(response.body.data.hasSshPrivateKey).toBe(true);
+      expect(response.body.data.claudeToken).toBe(updateData.claudeToken);
+      expect(response.body.data.gitUserName).toBe(updateData.gitUserName);
+      expect(response.body.data.gitUserEmail).toBe(updateData.gitUserEmail);
     });
 
     it('should handle null values', async () => {
@@ -219,10 +226,7 @@ describe('Settings E2E Tests', () => {
         claudeToken: 'initial-token',
       };
 
-      await request(app.getHttpServer())
-        .put('/api/settings')
-        .send(initialData)
-        .expect(200);
+      await authPut('/api/settings').send(initialData).expect(200);
 
       // Try to set empty values (which should clear the values)
       const emptyData = {
@@ -230,14 +234,13 @@ describe('Settings E2E Tests', () => {
         claudeToken: '',
       };
 
-      const response = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response = await authPut('/api/settings')
         .send(emptyData)
         .expect(200);
 
       // Values should be cleared
       expect(response.body.success).toBe(true);
-      expect(response.body.data.sshPrivateKey).toBe('');
+      expect(response.body.data.hasSshPrivateKey).toBe(false);
       expect(response.body.data.claudeToken).toBe('');
     });
   });
@@ -252,25 +255,22 @@ describe('Settings E2E Tests', () => {
       };
 
       // Update settings
-      await request(app.getHttpServer())
-        .put('/api/settings')
-        .send(settingsData)
-        .expect(200);
+      await authPut('/api/settings').send(settingsData).expect(200);
 
       // Make multiple GET requests to verify persistence
       for (let i = 0; i < 3; i++) {
-        const response = await request(app.getHttpServer())
-          .get('/api/settings')
-          .expect(200);
+        const response = await authGet('/api/settings').expect(200);
 
-        expect(response.body.data).toMatchObject(settingsData);
+        expect(response.body.data.hasSshPrivateKey).toBe(true);
+        expect(response.body.data.claudeToken).toBe(settingsData.claudeToken);
+        expect(response.body.data.gitUserName).toBe(settingsData.gitUserName);
+        expect(response.body.data.gitUserEmail).toBe(settingsData.gitUserEmail);
       }
     });
 
     it('should maintain updatedAt timestamp', async () => {
       // Create initial settings
-      const response1 = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response1 = await authPut('/api/settings')
         .send({ claudeToken: 'token1' })
         .expect(200);
 
@@ -281,8 +281,7 @@ describe('Settings E2E Tests', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Update settings again
-      const response2 = await request(app.getHttpServer())
-        .put('/api/settings')
+      const response2 = await authPut('/api/settings')
         .send({ claudeToken: 'token2' })
         .expect(200);
 
@@ -300,6 +299,7 @@ describe('Settings E2E Tests', () => {
     it('should handle malformed JSON in request body', async () => {
       const response = await request(app.getHttpServer())
         .put('/api/settings')
+        .set('Authorization', `Bearer ${authToken}`)
         .set('Content-Type', 'application/json')
         .send('{"invalid json}')
         .expect(400);
@@ -311,6 +311,7 @@ describe('Settings E2E Tests', () => {
     it('should handle invalid content type', async () => {
       const response = await request(app.getHttpServer())
         .put('/api/settings')
+        .set('Authorization', `Bearer ${authToken}`)
         .set('Content-Type', 'text/plain')
         .send('plain text')
         .expect(200); // NestJS handles this gracefully by parsing empty body
@@ -320,24 +321,25 @@ describe('Settings E2E Tests', () => {
     });
 
     it('should return 404 for non-existent endpoints', async () => {
-      await request(app.getHttpServer())
-        .get('/api/settings/non-existent')
-        .expect(404);
+      await authGet('/api/settings/non-existent').expect(404);
 
       await request(app.getHttpServer())
         .post('/api/settings')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({})
         .expect(404);
 
-      await request(app.getHttpServer()).delete('/api/settings').expect(404);
+      await request(app.getHttpServer())
+        .delete('/api/settings')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
     });
   });
 
   describe('Concurrent Operations', () => {
     it('should handle concurrent read operations', async () => {
       // Set initial data
-      await request(app.getHttpServer())
-        .put('/api/settings')
+      await authPut('/api/settings')
         .send({
           claudeToken: 'concurrent-token',
           gitUserName: 'Concurrent User',
@@ -350,7 +352,7 @@ describe('Settings E2E Tests', () => {
       // Perform multiple concurrent reads (reduced from 10 to 5 to avoid connection issues)
       const promises = Array(5)
         .fill(null)
-        .map(() => request(app.getHttpServer()).get('/api/settings'));
+        .map(() => authGet('/api/settings'));
 
       const responses = await Promise.all(promises);
 
@@ -364,8 +366,7 @@ describe('Settings E2E Tests', () => {
 
     it('should handle concurrent write operations gracefully', async () => {
       // Initialize settings first to avoid concurrent creation issues
-      await request(app.getHttpServer())
-        .put('/api/settings')
+      await authPut('/api/settings')
         .send({ claudeToken: 'initial' })
         .expect(200);
 
@@ -376,12 +377,10 @@ describe('Settings E2E Tests', () => {
       const promises = Array(5)
         .fill(null)
         .map((_, index) =>
-          request(app.getHttpServer())
-            .put('/api/settings')
-            .send({
-              claudeToken: `token-${index}`,
-              gitUserName: `User ${index}`,
-            }),
+          authPut('/api/settings').send({
+            claudeToken: `token-${index}`,
+            gitUserName: `User ${index}`,
+          }),
         );
 
       const responses = await Promise.all(promises);
@@ -393,9 +392,7 @@ describe('Settings E2E Tests', () => {
       });
 
       // Final state should have one of the values (last write wins)
-      const finalResponse = await request(app.getHttpServer())
-        .get('/api/settings')
-        .expect(200);
+      const finalResponse = await authGet('/api/settings').expect(200);
 
       expect(finalResponse.body.data.claudeToken).toMatch(/^token-\d$/);
       expect(finalResponse.body.data.gitUserName).toMatch(/^User \d$/);

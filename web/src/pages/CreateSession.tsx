@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   TextField,
   Button,
   FormControl,
@@ -10,10 +9,6 @@ import {
   Select,
   MenuItem,
   Alert,
-  Card,
-  CardContent,
-  Grid,
-  Divider,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -22,6 +17,7 @@ import { useSession } from '../hooks/useSession';
 import { TerminalMode, type CreateSessionRequest } from '../api/types';
 import { ROUTES, TERMINAL_MODE_LABELS } from '../utils/constants';
 import { useSettingsStore } from '../stores/settings.store';
+import { afkColors } from '../themes/afk';
 
 interface CreateSessionForm {
   name: string;
@@ -35,13 +31,11 @@ const CreateSession: React.FC = () => {
   const { createSession, isCreating, createError, clearError } = useSession();
   const { settings, fetchSettings } = useSettingsStore();
 
-  // Fetch settings on component mount
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
 
-  // Check if required settings are missing
-  const missingSettings = !settings?.sshPrivateKey || !settings?.claudeToken;
+  const missingSettings = !settings?.hasSshPrivateKey || !settings?.claudeToken;
 
   const {
     control,
@@ -69,25 +63,24 @@ const CreateSession: React.FC = () => {
       await createSession(request);
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
-      // Error will be displayed via the error state from useSession
       console.error('Failed to create session:', err);
     }
   };
 
   return (
-    <Box sx={{ p: 3, width: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ p: 3, width: '100%', maxWidth: 640 }}>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
         <Button
           component={Link}
           to={ROUTES.DASHBOARD}
           startIcon={<ArrowBackIcon />}
-          sx={{ mr: 2 }}
+          size="small"
+          sx={{ mb: 2, color: afkColors.textSecondary }}
         >
-          Back to Dashboard
+          Back
         </Button>
-        <Typography variant="h4" component="h1">
-          Create New Session
-        </Typography>
+        <Typography variant="h3">New Session</Typography>
       </Box>
 
       {createError && (
@@ -99,193 +92,152 @@ const CreateSession: React.FC = () => {
       {missingSettings && (
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="body2">
-            Please configure your SSH Private Key and Claude Token in{' '}
-            <Button
-              component={Link}
-              to={ROUTES.SETTINGS}
-              variant="text"
-              size="small"
-              sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
-            >
-              Settings
-            </Button>{' '}
-            before creating a session.
+            Configure your SSH Key and Claude Token in{' '}
+            <Link to={ROUTES.SETTINGS}>Settings</Link> before creating a
+            session.
           </Typography>
         </Alert>
       )}
 
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ p: 3 }}>
-            <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-              <Typography variant="h6" gutterBottom>
-                Session Configuration
-              </Typography>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+        {/* Repository section */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              Session Details
+            </Typography>
+          </Box>
 
-              <Controller
-                name="name"
-                control={control}
-                rules={{
-                  required: 'Session name is required',
-                  minLength: {
-                    value: 3,
-                    message: 'Name must be at least 3 characters',
-                  },
-                  maxLength: {
-                    value: 50,
-                    message: 'Name must be at most 50 characters',
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Session Name"
-                    margin="normal"
-                    helperText="A descriptive name for your session"
-                    error={!!errors.name}
-                  />
-                )}
-              />
-              {errors.name && (
-                <Typography variant="body2" color="error" sx={{ mt: 0.5 }}>
-                  {errors.name.message}
-                </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Controller
+              name="name"
+              control={control}
+              rules={{
+                required: 'Session name is required',
+                minLength: {
+                  value: 3,
+                  message: 'Name must be at least 3 characters',
+                },
+                maxLength: {
+                  value: 50,
+                  message: 'Name must be at most 50 characters',
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Session Name"
+                  helperText={
+                    errors.name?.message ||
+                    'A descriptive name for your session'
+                  }
+                  error={!!errors.name}
+                />
               )}
+            />
 
-              <Controller
-                name="repoUrl"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Git Repository URL (Optional)"
-                    margin="normal"
-                    helperText="URL of the git repository to clone"
-                    error={!!errors.repoUrl}
-                  />
-                )}
-              />
+            <Controller
+              name="repoUrl"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Git Repository URL"
+                  helperText="Optional. SSH URL of the git repository to clone"
+                  error={!!errors.repoUrl}
+                />
+              )}
+            />
 
-              <Controller
-                name="branch"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Git Branch (Optional)"
-                    margin="normal"
-                    helperText="Branch to checkout (defaults to main)"
-                    error={!!errors.branch}
-                  />
-                )}
-              />
+            <Controller
+              name="branch"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Branch"
+                  helperText="Defaults to main"
+                  error={!!errors.branch}
+                />
+              )}
+            />
+          </Box>
+        </Box>
 
-              <Divider sx={{ my: 3 }} />
-              <Typography variant="h6" gutterBottom>
-                Terminal Configuration
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                SSH keys and Claude tokens are now managed in{' '}
-                <Link to={ROUTES.SETTINGS} style={{ textDecoration: 'none' }}>
-                  Settings
-                </Link>{' '}
-                and will be automatically used for all sessions.
-              </Typography>
+        {/* Terminal section */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              Terminal Configuration
+            </Typography>
+          </Box>
 
-              <Controller
-                name="terminalMode"
-                control={control}
-                rules={{ required: 'Terminal mode is required' }}
-                render={({ field }) => (
-                  <FormControl
-                    fullWidth
-                    margin="normal"
-                    error={!!errors.terminalMode}
-                  >
-                    <InputLabel>Terminal Mode</InputLabel>
-                    <Select {...field} label="Terminal Mode">
-                      {Object.entries(TERMINAL_MODE_LABELS).map(
-                        ([value, label]) => (
-                          <MenuItem key={value} value={value}>
-                            {label}
-                          </MenuItem>
-                        ),
-                      )}
-                    </Select>
-                    {errors.terminalMode && (
-                      <Typography
-                        variant="body2"
-                        color="error"
-                        sx={{ mt: 0.5 }}
-                      >
-                        {errors.terminalMode.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                )}
-              />
+          <Controller
+            name="terminalMode"
+            control={control}
+            rules={{ required: 'Terminal mode is required' }}
+            render={({ field }) => (
+              <FormControl fullWidth error={!!errors.terminalMode}>
+                <InputLabel>Terminal Mode</InputLabel>
+                <Select {...field} label="Terminal Mode">
+                  {Object.entries(TERMINAL_MODE_LABELS).map(
+                    ([value, label]) => (
+                      <MenuItem key={value} value={value}>
+                        {label}
+                      </MenuItem>
+                    ),
+                  )}
+                </Select>
+              </FormControl>
+            )}
+          />
 
-              <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={isCreating || missingSettings}
-                  sx={{ minWidth: 120 }}
-                >
-                  {isCreating ? 'Creating...' : 'Create Session'}
-                </Button>
-                <Button
-                  variant="outlined"
-                  component={Link}
-                  to={ROUTES.DASHBOARD}
-                  disabled={isCreating}
-                >
-                  Cancel
-                </Button>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
+          {/* Inline help instead of sidebar card */}
+          <Box sx={{ mt: 1.5 }}>
+            <Typography
+              variant="body2"
+              sx={{ color: afkColors.textTertiary, fontSize: '0.75rem' }}
+            >
+              <strong>Simple</strong> &mdash; Claude Code terminal only.{' '}
+              <strong>Dual</strong> &mdash; Claude Code + manual web terminal.
+            </Typography>
+          </Box>
+        </Box>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Terminal Modes
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box>
-                  <Typography variant="body2" fontWeight="medium">
-                    Claude Only
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Only Claude Code has access to the terminal
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" fontWeight="medium">
-                    Manual Only
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Only manual web terminal access
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" fontWeight="medium">
-                    Dual Terminal
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Both Claude Code and manual access available
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* Actions */}
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isCreating || missingSettings}
+          >
+            {isCreating ? 'Creating...' : 'Create Session'}
+          </Button>
+          <Button
+            variant="outlined"
+            component={Link}
+            to={ROUTES.DASHBOARD}
+            disabled={isCreating}
+          >
+            Cancel
+          </Button>
+        </Box>
+      </Box>
     </Box>
   );
 };

@@ -2,27 +2,22 @@ import React from 'react';
 import {
   Box,
   Button,
-  Chip,
   IconButton,
   Skeleton,
   Typography,
   useTheme,
-  Breadcrumbs,
-  Stack,
-  Divider,
   useMediaQuery,
   Tabs,
   Tab,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   Terminal as TerminalIcon,
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
-  NavigateNext as NavigateNextIcon,
   Delete as DeleteIcon,
+  FiberManualRecord as DotIcon,
 } from '@mui/icons-material';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
@@ -30,11 +25,7 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
-
-// Berry Components
-import MainCard from '../components/ui-component/cards/MainCard';
-import SubCard from '../components/ui-component/cards/SubCard';
-import AnimateButton from '../components/ui-component/extended/AnimateButton';
+import { afkColors } from '../themes/afk';
 import TerminalLoading from '../components/TerminalLoading';
 import ApprovalModal from '../components/ApprovalModal';
 
@@ -61,7 +52,6 @@ const SessionDetails: React.FC = () => {
     isDeleting,
   } = useSession();
 
-  // Approval modal state
   const [approvalModal, setApprovalModal] = React.useState<{
     open: boolean;
     type: 'stop' | 'delete';
@@ -74,16 +64,13 @@ const SessionDetails: React.FC = () => {
     sessionName: '',
   });
 
-  // Get session data
   const sessionQuery = id ? getSession(id) : null;
   const session = sessionQuery?.data;
 
-  // Health check for terminals
   const shouldCheckHealth =
     session?.status === SessionStatus.RUNNING && !!session?.terminalUrls;
   const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
 
-  // Modal handlers
   const handleStopSessionClick = () => {
     if (!session) return;
     setApprovalModal({
@@ -110,7 +97,6 @@ const SessionDetails: React.FC = () => {
 
   const handleModalConfirm = async () => {
     if (!session) return;
-
     try {
       if (approvalModal.type === 'stop') {
         await stopSession(session.id);
@@ -121,7 +107,6 @@ const SessionDetails: React.FC = () => {
       handleModalClose();
     } catch (error) {
       console.error(`Failed to ${approvalModal.type} session:`, error);
-      // Keep modal open on error so user can try again
     }
   };
 
@@ -136,59 +121,70 @@ const SessionDetails: React.FC = () => {
     };
   }, [id, subscribeToSession, unsubscribeFromSession]);
 
+  // Loading state
   if (isLoading || sessionQuery?.isLoading) {
     return (
-      <Box sx={{ p: 3, width: '100%' }}>
-        <MainCard>
-          <Stack spacing={3}>
-            <Skeleton variant="rectangular" height={40} />
-            <Skeleton variant="rectangular" height={60} />
-            <Skeleton variant="rectangular" height={400} />
-          </Stack>
-        </MainCard>
+      <Box
+        sx={{
+          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          p: 3,
+        }}
+      >
+        <Skeleton
+          variant="rectangular"
+          height={40}
+          sx={{ mb: 2, borderRadius: '6px' }}
+        />
+        <Skeleton variant="rectangular" sx={{ flex: 1, borderRadius: '6px' }} />
       </Box>
     );
   }
 
+  // Not found
   if (!sessionQuery?.data && !sessionQuery?.isLoading) {
     return (
-      <Box sx={{ p: 3, width: '100%' }}>
-        <MainCard>
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <TerminalIcon
-              sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }}
-            />
-            <Typography variant="h4" sx={{ mb: 2 }}>
-              Session not found
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              The session you're looking for doesn't exist or has been removed.
-            </Typography>
-            <AnimateButton>
-              <Button
-                component={Link}
-                to={ROUTES.DASHBOARD}
-                variant="contained"
-                startIcon={<ArrowBackIcon />}
-              >
-                Back to Dashboard
-              </Button>
-            </AnimateButton>
-          </Box>
-        </MainCard>
+      <Box
+        sx={{
+          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '1rem',
+              color: afkColors.textSecondary,
+              mb: 2,
+            }}
+          >
+            Session not found
+          </Typography>
+          <Button
+            component={Link}
+            to={ROUTES.DASHBOARD}
+            variant="outlined"
+            size="small"
+          >
+            Back to Dashboard
+          </Button>
+        </Box>
       </Box>
     );
   }
 
   if (!sessionQuery?.data) {
     return (
-      <Box sx={{ p: 3, width: '100%' }}>
-        <MainCard>
-          <Stack spacing={3}>
-            <Skeleton variant="rectangular" height={40} />
-            <Skeleton variant="rectangular" height={400} />
-          </Stack>
-        </MainCard>
+      <Box sx={{ p: 3 }}>
+        <Skeleton
+          variant="rectangular"
+          height={400}
+          sx={{ borderRadius: '6px' }}
+        />
       </Box>
     );
   }
@@ -199,306 +195,186 @@ const SessionDetails: React.FC = () => {
     (session.status === SessionStatus.STOPPED ||
       session.status === SessionStatus.ERROR);
 
-  // If session is not running, show the start interface
+  // Session not running - show start interface
   if (
     !session ||
     session.status !== SessionStatus.RUNNING ||
     !session.terminalUrls
   ) {
     return (
-      <Box sx={{ p: 3, width: '100%' }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs
-          separator={<NavigateNextIcon fontSize="small" />}
-          sx={{ mb: 3 }}
-        >
-          <Button
-            component={Link}
-            to={ROUTES.DASHBOARD}
-            startIcon={<ArrowBackIcon />}
-            variant="text"
-            color="inherit"
-            size="small"
-          >
-            Dashboard
-          </Button>
-          <Typography color="text.primary" sx={{ fontFamily: 'monospace' }}>
-            {session?.name || session?.id.slice(0, 12)}
-          </Typography>
-        </Breadcrumbs>
-
-        {/* Session Status Card */}
-        <MainCard
-          title={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <TerminalIcon sx={{ color: 'primary.main' }} />
-              <Typography variant="h3" sx={{ fontFamily: 'monospace' }}>
-                {session?.name || session?.id.slice(0, 12)}
-              </Typography>
-            </Box>
-          }
-          secondary={
-            <Chip
-              label={session?.status}
-              sx={{
-                bgcolor:
-                  session?.status === SessionStatus.ERROR
-                    ? 'error.main'
-                    : 'grey.500',
-                color: 'white',
-                fontWeight: 600,
-              }}
-            />
-          }
-        >
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <TerminalIcon
-              sx={{ fontSize: 120, color: 'text.secondary', mb: 3 }}
-            />
-            <Typography variant="h4" sx={{ mb: 2 }}>
-              Session {session?.status.toLowerCase()}
-            </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}
-            >
-              {canStart
-                ? 'Your development environment is ready. Click the button below to start the session and access your terminals.'
-                : session?.status === SessionStatus.ERROR
-                  ? 'Session encountered an error. You can delete this session and create a new one.'
-                  : 'Session is not ready yet. Please wait or try refreshing.'}
-            </Typography>
-
-            <Stack direction="row" spacing={2} alignItems="center">
-              {canStart && (
-                <AnimateButton>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<PlayIcon />}
-                    onClick={() => startSession(session!.id)}
-                    disabled={isStarting}
-                    color="success"
-                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
-                  >
-                    {isStarting ? 'Starting Session...' : 'Start Session'}
-                  </Button>
-                </AnimateButton>
-              )}
-
-              {canDelete && (
-                <AnimateButton>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    startIcon={<DeleteIcon />}
-                    onClick={handleDeleteSessionClick}
-                    disabled={isDeleting}
-                    color="error"
-                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
-                  >
-                    {isDeleting ? 'Deleting Session...' : 'Delete Session'}
-                  </Button>
-                </AnimateButton>
-              )}
-            </Stack>
-          </Box>
-        </MainCard>
-      </Box>
-    );
-  }
-
-  // Main terminal interface (full-width layout)
-  return (
-    <>
-      <Box
-        sx={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          bgcolor: 'background.default',
-        }}
-      >
-        {/* Header Bar */}
+      <>
         <Box
           sx={{
-            bgcolor: 'background.paper',
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            px: isMobile ? 2 : 3,
-            py: 2,
+            height: isMobile ? 'calc(100vh - 48px)' : '100vh',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            minHeight: 72,
-            zIndex: 1,
+            justifyContent: 'center',
           }}
         >
-          {/* Left: Navigation & Session Info */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? 1 : 3,
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
-            <AnimateButton>
-              <Button
-                component={Link}
-                to={ROUTES.DASHBOARD}
-                startIcon={<ArrowBackIcon />}
-                variant="text"
-                sx={{ color: 'text.secondary' }}
-                size={isMobile ? 'small' : 'medium'}
-              >
-                {isMobile ? '' : 'Dashboard'}
-              </Button>
-            </AnimateButton>
-
-            {!isMobile && <Divider orientation="vertical" flexItem />}
-
+          <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 2,
-                flex: 1,
-                minWidth: 0,
+                justifyContent: 'center',
+                gap: 1,
+                mb: 1,
               }}
             >
-              <TerminalIcon
-                sx={{ color: 'primary.main', fontSize: isMobile ? 24 : 28 }}
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  color: afkColors.textPrimary,
+                }}
+              >
+                {session?.name || session?.id.slice(0, 12)}
+              </Typography>
+              <DotIcon
+                sx={{
+                  fontSize: 8,
+                  color:
+                    session?.status === SessionStatus.ERROR
+                      ? afkColors.danger
+                      : afkColors.textTertiary,
+                }}
               />
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography
-                  variant={isMobile ? 'h6' : 'h5'}
-                  sx={{
-                    fontFamily: 'monospace',
-                    fontWeight: 700,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {session.name || session.id.slice(0, 12)}
-                </Typography>
-                {session.repoUrl && !isMobile && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      fontFamily: 'monospace',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      display: 'block',
-                    }}
-                  >
-                    {session.repoUrl.split('/').pop()?.replace('.git', '')}
-                  </Typography>
-                )}
-              </Box>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.6875rem',
+                  fontWeight: 500,
+                  color:
+                    session?.status === SessionStatus.ERROR
+                      ? afkColors.danger
+                      : afkColors.textTertiary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {session?.status.toLowerCase()}
+              </Typography>
             </Box>
 
-            <Chip
-              label="RUNNING"
-              size={isMobile ? 'small' : 'medium'}
+            <Typography
+              variant="body2"
+              sx={{ color: afkColors.textSecondary, mb: 3 }}
+            >
+              {canStart
+                ? 'Start the session to access your terminals.'
+                : session?.status === SessionStatus.ERROR
+                  ? 'Session encountered an error.'
+                  : 'Session is not ready yet.'}
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
+              {canStart && (
+                <Button
+                  variant="contained"
+                  startIcon={<PlayIcon />}
+                  onClick={() => startSession(session!.id)}
+                  disabled={isStarting}
+                >
+                  {isStarting ? 'Starting...' : 'Start Session'}
+                </Button>
+              )}
+
+              {canDelete && (
+                <Button
+                  variant="outlined"
+                  startIcon={<DeleteIcon />}
+                  onClick={handleDeleteSessionClick}
+                  disabled={isDeleting}
+                  sx={{
+                    borderColor: afkColors.danger,
+                    color: afkColors.danger,
+                    '&:hover': {
+                      borderColor: afkColors.danger,
+                      bgcolor: afkColors.dangerMuted,
+                    },
+                  }}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </Box>
+
+        <ApprovalModal
+          open={approvalModal.open}
+          onClose={handleModalClose}
+          onConfirm={handleModalConfirm}
+          type={approvalModal.type}
+          sessionName={approvalModal.sessionName}
+          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+        />
+      </>
+    );
+  }
+
+  // Running terminal interface
+  return (
+    <>
+      <Box
+        sx={{
+          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: afkColors.background,
+        }}
+      >
+        {/* Thin status bar */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 2,
+            py: 0.75,
+            borderBottom: `1px solid ${afkColors.border}`,
+            bgcolor: afkColors.surface,
+            minHeight: 40,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography
               sx={{
-                bgcolor: 'success.main',
-                color: 'white',
-                fontWeight: 600,
-                animation: 'pulse 2s infinite',
-                flexShrink: 0,
-                marginRight: 1,
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                color: afkColors.textPrimary,
+              }}
+            >
+              {session.name || session.id.slice(0, 8)}
+            </Typography>
+            <DotIcon
+              sx={{
+                fontSize: 8,
+                color: afkColors.accent,
+                animation: 'pulse-dot 2s ease-in-out infinite',
               }}
             />
           </Box>
 
-          {/* Right: Actions */}
-          <Box
+          <Button
+            size="small"
+            startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
+            onClick={handleStopSessionClick}
+            disabled={isStopping}
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: isMobile ? 0.5 : 1,
-              flexShrink: 0,
+              fontSize: '0.75rem',
+              color: afkColors.warning,
+              minWidth: 'auto',
+              px: 1,
             }}
           >
-            {!isMobile ? (
-              <AnimateButton>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<StopIcon />}
-                  onClick={handleStopSessionClick}
-                  disabled={isStopping}
-                  color="warning"
-                >
-                  {isStopping ? 'Stopping...' : 'Stop'}
-                </Button>
-              </AnimateButton>
-            ) : (
-              <AnimateButton>
-                <IconButton
-                  size="small"
-                  onClick={handleStopSessionClick}
-                  disabled={isStopping}
-                  title={isStopping ? 'Stopping...' : 'Stop Session'}
-                  color="warning"
-                >
-                  <StopIcon />
-                </IconButton>
-              </AnimateButton>
-            )}
-          </Box>
+            {isStopping ? 'Stopping...' : 'Stop'}
+          </Button>
         </Box>
 
-        {/* Terminal Access Bar - Hide on mobile when tabs are available */}
-        {!(session.terminalMode === 'DUAL' && isMobile) && (
-          <Box
-            sx={{
-              bgcolor: 'background.paper',
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              px: isMobile ? 2 : 3,
-              py: 2,
-              display: 'flex',
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
-          >
-            <AnimateButton>
-              <Button
-                variant="contained"
-                size={isMobile ? 'small' : 'medium'}
-                startIcon={<TerminalIcon />}
-                href={session.terminalUrls.claude}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ fontWeight: 600 }}
-              >
-                {isMobile ? 'Claude' : 'Open Claude Terminal'}
-              </Button>
-            </AnimateButton>
-
-            {session.terminalMode === 'DUAL' && (
-              <AnimateButton>
-                <Button
-                  variant="outlined"
-                  size={isMobile ? 'small' : 'medium'}
-                  startIcon={<TerminalIcon />}
-                  href={session.terminalUrls.manual}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {isMobile ? 'Manual' : 'Open Manual Terminal'}
-                </Button>
-              </AnimateButton>
-            )}
-          </Box>
-        )}
-
-        {/* Terminal Panels */}
+        {/* Terminal area */}
         <Box
           sx={{
             flex: 1,
@@ -508,418 +384,140 @@ const SessionDetails: React.FC = () => {
           }}
         >
           {session.terminalMode === 'DUAL' && isMobile ? (
-            /* Mobile Tabbed Terminals */
+            /* Mobile Tabs */
             <>
-              {/* Tab Navigation */}
               <Box
                 sx={{
-                  bgcolor: 'background.paper',
-                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  borderBottom: `1px solid ${afkColors.border}`,
+                  bgcolor: afkColors.surface,
                 }}
               >
                 <Tabs
                   value={activeTab}
-                  onChange={(_, newValue) => setActiveTab(newValue)}
+                  onChange={(_, v) => setActiveTab(v)}
                   variant="fullWidth"
-                  sx={{ minHeight: 48 }}
+                  sx={{ minHeight: 36 }}
                 >
                   <Tab
-                    label={
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <TerminalIcon fontSize="small" />
-                        Claude
-                      </Box>
-                    }
-                    sx={{ minHeight: 48 }}
+                    label="Claude"
+                    sx={{
+                      minHeight: 36,
+                      fontSize: '0.75rem',
+                      fontFamily: '"JetBrains Mono", monospace',
+                    }}
                   />
                   <Tab
-                    label={
-                      <Box
-                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                      >
-                        <TerminalIcon fontSize="small" />
-                        Manual
-                      </Box>
-                    }
-                    sx={{ minHeight: 48 }}
+                    label="Manual"
+                    sx={{
+                      minHeight: 36,
+                      fontSize: '0.75rem',
+                      fontFamily: '"JetBrains Mono", monospace',
+                    }}
                   />
                 </Tabs>
               </Box>
 
-              {/* Tab Content */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0,
+                }}
+              >
                 {activeTab === 0 ? (
-                  /* Claude Terminal Tab */
-                  <SubCard
-                    sx={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      borderRadius: 0,
-                      height: '100%',
-                    }}
-                    title={
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <TerminalIcon
-                            fontSize="small"
-                            sx={{ color: 'primary.main' }}
-                          />
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ fontWeight: 600 }}
-                          >
-                            Claude Terminal
-                          </Typography>
-                        </Box>
-                        <AnimateButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setIsFullscreen(true);
-                              setFullscreenTerminal('claude');
-                            }}
-                          >
-                            <FullscreenIcon fontSize="small" />
-                          </IconButton>
-                        </AnimateButton>
-                      </Box>
+                  <TerminalPanel
+                    label="Claude"
+                    ready={healthCheck.claudeTerminalReady}
+                    url={session.terminalUrls.claude}
+                    isLoading={healthCheck.isLoading}
+                    isError={!!healthCheck.error}
+                    onRetry={
+                      healthCheck.error ? healthCheck.refetch : undefined
                     }
-                    content={false}
-                  >
-                    {healthCheck.claudeTerminalReady ? (
-                      <Box
-                        component="iframe"
-                        src={session.terminalUrls.claude}
-                        sx={{
-                          flex: 1,
-                          border: 'none',
-                          bgcolor: '#1e293b',
-                          width: '100%',
-                        }}
-                        title="Claude Terminal"
-                      />
-                    ) : (
-                      <TerminalLoading
-                        title="Claude Terminal"
-                        message={
-                          healthCheck.isLoading
-                            ? 'Starting Claude terminal...'
-                            : 'Waiting for container...'
-                        }
-                        isError={!!healthCheck.error}
-                        onRetry={
-                          healthCheck.error ? healthCheck.refetch : undefined
-                        }
-                      />
-                    )}
-                  </SubCard>
+                    onFullscreen={() => {
+                      setIsFullscreen(true);
+                      setFullscreenTerminal('claude');
+                    }}
+                  />
                 ) : (
-                  /* Manual Terminal Tab */
-                  <SubCard
-                    sx={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      borderRadius: 0,
-                      height: '100%',
-                    }}
-                    title={
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                        }}
-                      >
-                        <Box
-                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                        >
-                          <TerminalIcon
-                            fontSize="small"
-                            sx={{ color: 'grey.500' }}
-                          />
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ fontWeight: 600 }}
-                          >
-                            Manual Terminal
-                          </Typography>
-                        </Box>
-                        <AnimateButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => {
-                              setIsFullscreen(true);
-                              setFullscreenTerminal('manual');
-                            }}
-                          >
-                            <FullscreenIcon fontSize="small" />
-                          </IconButton>
-                        </AnimateButton>
-                      </Box>
+                  <TerminalPanel
+                    label="Manual"
+                    ready={healthCheck.manualTerminalReady}
+                    url={session.terminalUrls.manual}
+                    isLoading={healthCheck.isLoading}
+                    isError={!!healthCheck.error}
+                    onRetry={
+                      healthCheck.error ? healthCheck.refetch : undefined
                     }
-                    content={false}
-                  >
-                    {healthCheck.manualTerminalReady ? (
-                      <Box
-                        component="iframe"
-                        src={session.terminalUrls.manual}
-                        sx={{
-                          flex: 1,
-                          border: 'none',
-                          bgcolor: '#1e293b',
-                          width: '100%',
-                        }}
-                        title="Manual Terminal"
-                      />
-                    ) : (
-                      <TerminalLoading
-                        title="Manual Terminal"
-                        message={
-                          healthCheck.isLoading
-                            ? 'Starting manual terminal...'
-                            : 'Waiting for container...'
-                        }
-                        isError={!!healthCheck.error}
-                        onRetry={
-                          healthCheck.error ? healthCheck.refetch : undefined
-                        }
-                      />
-                    )}
-                  </SubCard>
+                    onFullscreen={() => {
+                      setIsFullscreen(true);
+                      setFullscreenTerminal('manual');
+                    }}
+                  />
                 )}
               </Box>
             </>
           ) : session.terminalMode === 'DUAL' ? (
-            /* Desktop Side-by-Side Terminals */
+            /* Desktop Side-by-Side */
             <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
-              {/* Claude Terminal */}
-              <SubCard
+              <Box
                 sx={{
                   flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 0,
-                  borderRight: `1px solid ${theme.palette.divider}`,
-                  height: '100%',
+                  borderRight: `1px solid ${afkColors.borderSubtle}`,
                 }}
-                title={
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TerminalIcon
-                        fontSize="small"
-                        sx={{ color: 'primary.main' }}
-                      />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        Claude Terminal
-                      </Typography>
-                    </Box>
-                    <AnimateButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setIsFullscreen(true);
-                          setFullscreenTerminal('claude');
-                        }}
-                      >
-                        <FullscreenIcon fontSize="small" />
-                      </IconButton>
-                    </AnimateButton>
-                  </Box>
-                }
-                content={false}
               >
-                {healthCheck.claudeTerminalReady ? (
-                  <Box
-                    component="iframe"
-                    src={session.terminalUrls.claude}
-                    sx={{
-                      flex: 1,
-                      border: 'none',
-                      bgcolor: '#1e293b',
-                      width: '100%',
-                    }}
-                    title="Claude Terminal"
-                  />
-                ) : (
-                  <TerminalLoading
-                    title="Claude Terminal"
-                    message={
-                      healthCheck.isLoading
-                        ? 'Starting Claude terminal...'
-                        : 'Waiting for container...'
-                    }
-                    isError={!!healthCheck.error}
-                    onRetry={
-                      healthCheck.error ? healthCheck.refetch : undefined
-                    }
-                  />
-                )}
-              </SubCard>
-
-              {/* Manual Terminal */}
-              <SubCard
-                sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 0,
-                  height: '100%',
-                }}
-                title={
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <TerminalIcon
-                        fontSize="small"
-                        sx={{ color: 'grey.500' }}
-                      />
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        Manual Terminal
-                      </Typography>
-                    </Box>
-                    <AnimateButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setIsFullscreen(true);
-                          setFullscreenTerminal('manual');
-                        }}
-                      >
-                        <FullscreenIcon fontSize="small" />
-                      </IconButton>
-                    </AnimateButton>
-                  </Box>
-                }
-                content={false}
-              >
-                {healthCheck.manualTerminalReady ? (
-                  <Box
-                    component="iframe"
-                    src={session.terminalUrls.manual}
-                    sx={{
-                      flex: 1,
-                      border: 'none',
-                      bgcolor: '#1e293b',
-                      width: '100%',
-                    }}
-                    title="Manual Terminal"
-                  />
-                ) : (
-                  <TerminalLoading
-                    title="Manual Terminal"
-                    message={
-                      healthCheck.isLoading
-                        ? 'Starting manual terminal...'
-                        : 'Waiting for container...'
-                    }
-                    isError={!!healthCheck.error}
-                    onRetry={
-                      healthCheck.error ? healthCheck.refetch : undefined
-                    }
-                  />
-                )}
-              </SubCard>
+                <TerminalPanel
+                  label="Claude"
+                  ready={healthCheck.claudeTerminalReady}
+                  url={session.terminalUrls.claude}
+                  isLoading={healthCheck.isLoading}
+                  isError={!!healthCheck.error}
+                  onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                  onFullscreen={() => {
+                    setIsFullscreen(true);
+                    setFullscreenTerminal('claude');
+                  }}
+                />
+              </Box>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <TerminalPanel
+                  label="Manual"
+                  ready={healthCheck.manualTerminalReady}
+                  url={session.terminalUrls.manual}
+                  isLoading={healthCheck.isLoading}
+                  isError={!!healthCheck.error}
+                  onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                  onFullscreen={() => {
+                    setIsFullscreen(true);
+                    setFullscreenTerminal('manual');
+                  }}
+                />
+              </Box>
             </Box>
           ) : (
             /* Single Terminal */
-            <SubCard
-              sx={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: 0,
-                height: '100%',
-              }}
-              title={
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TerminalIcon
-                      fontSize="small"
-                      sx={{ color: 'primary.main' }}
-                    />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Claude Terminal
-                    </Typography>
-                  </Box>
-                  <AnimateButton>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setIsFullscreen(true);
-                        setFullscreenTerminal('claude');
-                      }}
-                    >
-                      <FullscreenIcon fontSize="small" />
-                    </IconButton>
-                  </AnimateButton>
-                </Box>
-              }
-              content={false}
-            >
-              {healthCheck.claudeTerminalReady ? (
-                <Box
-                  component="iframe"
-                  src={session.terminalUrls.claude}
-                  sx={{
-                    flex: 1,
-                    border: 'none',
-                    bgcolor: '#000',
-                    width: '100%',
-                  }}
-                  title="Claude Terminal"
-                />
-              ) : (
-                <TerminalLoading
-                  title="Claude Terminal"
-                  message={
-                    healthCheck.isLoading
-                      ? 'Starting Claude terminal...'
-                      : 'Waiting for container...'
-                  }
-                  isError={!!healthCheck.error}
-                  onRetry={healthCheck.error ? healthCheck.refetch : undefined}
-                />
-              )}
-            </SubCard>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <TerminalPanel
+                label="Claude"
+                ready={healthCheck.claudeTerminalReady}
+                url={session.terminalUrls.claude}
+                isLoading={healthCheck.isLoading}
+                isError={!!healthCheck.error}
+                onRetry={healthCheck.error ? healthCheck.refetch : undefined}
+                onFullscreen={() => {
+                  setIsFullscreen(true);
+                  setFullscreenTerminal('claude');
+                }}
+              />
+            </Box>
           )}
         </Box>
       </Box>
 
-      {/* Fullscreen Terminal Modal */}
+      {/* Fullscreen overlay */}
       {isFullscreen && fullscreenTerminal && session.terminalUrls && (
         <Box
           sx={{
@@ -928,52 +526,12 @@ const SessionDetails: React.FC = () => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            bgcolor: '#1e293b',
+            bgcolor: afkColors.background,
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          {/* Fullscreen Header */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              p: 1,
-              bgcolor: 'rgba(0, 0, 0, 0.8)',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
-          >
-            <Typography
-              sx={{
-                color: 'white',
-                fontFamily: 'monospace',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <TerminalIcon fontSize="small" />
-              {fullscreenTerminal === 'claude'
-                ? 'Claude Terminal'
-                : 'Manual Terminal'}{' '}
-              - {session.name || session.id.slice(0, 12)}
-            </Typography>
-            <AnimateButton>
-              <IconButton
-                onClick={() => {
-                  setIsFullscreen(false);
-                  setFullscreenTerminal(null);
-                }}
-                sx={{ color: 'white' }}
-              >
-                <FullscreenExitIcon />
-              </IconButton>
-            </AnimateButton>
-          </Box>
-
-          {/* Fullscreen Terminal */}
           <Box
             component="iframe"
             src={
@@ -985,10 +543,32 @@ const SessionDetails: React.FC = () => {
               width: '100%',
               flex: 1,
               border: 'none',
-              bgcolor: '#1e293b',
+              bgcolor: afkColors.background,
             }}
-            title={`${fullscreenTerminal === 'claude' ? 'Claude' : 'Manual'} Terminal Fullscreen`}
+            title={`${fullscreenTerminal} Terminal Fullscreen`}
           />
+          {/* Tiny exit button overlay */}
+          <IconButton
+            onClick={() => {
+              setIsFullscreen(false);
+              setFullscreenTerminal(null);
+            }}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: afkColors.textTertiary,
+              bgcolor: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+              '&:hover': {
+                bgcolor: 'rgba(0,0,0,0.8)',
+                color: afkColors.textPrimary,
+              },
+            }}
+            size="small"
+          >
+            <FullscreenExitIcon fontSize="small" />
+          </IconButton>
         </Box>
       )}
 
@@ -1001,6 +581,96 @@ const SessionDetails: React.FC = () => {
         sessionName={approvalModal.sessionName}
         isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
       />
+    </>
+  );
+};
+
+// Internal terminal panel component
+interface TerminalPanelProps {
+  label: string;
+  ready: boolean;
+  url: string;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry?: () => void;
+  onFullscreen: () => void;
+}
+
+const TerminalPanel: React.FC<TerminalPanelProps> = ({
+  label,
+  ready,
+  url,
+  isLoading: loading,
+  isError,
+  onRetry,
+  onFullscreen,
+}) => {
+  return (
+    <>
+      {/* Terminal header */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 1.5,
+          py: 0.5,
+          borderBottom: `1px solid ${afkColors.borderSubtle}`,
+          bgcolor: afkColors.surface,
+          minHeight: 32,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <TerminalIcon sx={{ fontSize: 14, color: afkColors.textTertiary }} />
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.6875rem',
+              fontWeight: 500,
+              color: afkColors.textSecondary,
+            }}
+          >
+            {label}
+          </Typography>
+        </Box>
+        <IconButton
+          size="small"
+          onClick={onFullscreen}
+          sx={{
+            p: 0.5,
+            color: afkColors.textTertiary,
+            '&:hover': { color: afkColors.textSecondary },
+          }}
+        >
+          <FullscreenIcon sx={{ fontSize: 14 }} />
+        </IconButton>
+      </Box>
+
+      {/* Terminal content */}
+      {ready ? (
+        <Box
+          component="iframe"
+          src={url}
+          sx={{
+            flex: 1,
+            border: 'none',
+            bgcolor: afkColors.background,
+            width: '100%',
+          }}
+          title={`${label} Terminal`}
+        />
+      ) : (
+        <TerminalLoading
+          title={`${label} Terminal`}
+          message={
+            loading
+              ? `Starting ${label.toLowerCase()} terminal...`
+              : 'Waiting for container...'
+          }
+          isError={isError}
+          onRetry={onRetry}
+        />
+      )}
     </>
   );
 };

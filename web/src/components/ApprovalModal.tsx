@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Typography,
@@ -10,8 +9,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { Stop as StopIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import AnimateButton from './ui-component/extended/AnimateButton';
+import { afkColors } from '../themes/afk';
 
 export interface ApprovalModalProps {
   open: boolean;
@@ -34,113 +32,96 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isStopAction = type === 'stop';
-  const title = `Are you sure you want to ${type} this session?`;
-  const icon = isStopAction ? (
-    <StopIcon sx={{ color: 'warning.main', fontSize: 48 }} />
-  ) : (
-    <DeleteIcon sx={{ color: 'error.main', fontSize: 48 }} />
-  );
+  const title = isStopAction ? 'Stop session?' : 'Delete session?';
 
   const description = isStopAction
-    ? 'Stopping the session will terminate all running processes and close terminal connections. Any unsaved work may be lost.'
-    : 'Deleting the session will permanently remove the container and all its data. This action cannot be undone.';
+    ? 'This will terminate all running processes and close terminal connections.'
+    : 'This will permanently remove the container and all its data.';
 
-  const confirmButtonColor = isStopAction ? 'warning' : 'error';
   const confirmButtonText = isStopAction
     ? isLoading
       ? 'Stopping...'
-      : 'Yes, Stop Session'
+      : 'Stop Session'
     : isLoading
       ? 'Deleting...'
-      : 'Yes, Delete Session';
+      : 'Delete Session';
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="xs"
       fullWidth
       fullScreen={isMobile}
       PaperProps={{
         sx: {
-          borderRadius: isMobile ? 0 : 2,
+          borderRadius: isMobile ? 0 : '12px',
+          p: 1,
         },
       }}
     >
-      <DialogTitle sx={{ textAlign: 'center', pt: 3 }}>
-        <Box
+      <DialogContent sx={{ pb: 1 }}>
+        <Typography
           sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2,
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '1rem',
+            fontWeight: 600,
+            color: afkColors.textPrimary,
+            mb: 1.5,
           }}
         >
-          {icon}
-          <Typography variant={isMobile ? 'h5' : 'h4'} component="div">
-            {title}
-          </Typography>
-        </Box>
-      </DialogTitle>
+          {title}
+        </Typography>
 
-      <DialogContent sx={{ px: 3, pb: 2 }}>
-        <Box sx={{ textAlign: 'center' }}>
-          {sessionName && (
-            <Typography
-              variant="body1"
-              sx={{
-                fontFamily: 'monospace',
-                bgcolor: 'grey.100',
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 1,
-                px: 2,
-                py: 1,
-                mb: 2,
-                display: 'inline-block',
-                ...(theme.palette.mode === 'dark' && {
-                  bgcolor: 'grey.900',
-                }),
-              }}
-            >
-              {sessionName}
-            </Typography>
-          )}
-          <Typography variant="body1" color="text.secondary">
-            {description}
-          </Typography>
-        </Box>
+        {sessionName && (
+          <Box
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.8125rem',
+              color: afkColors.accent,
+              bgcolor: afkColors.accentMuted,
+              borderRadius: '4px',
+              px: 1.5,
+              py: 0.75,
+              mb: 2,
+              display: 'inline-block',
+            }}
+          >
+            {sessionName}
+          </Box>
+        )}
+
+        <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
+          {description}
+        </Typography>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, pt: 1, gap: 1 }}>
-        <AnimateButton>
-          <Button
-            onClick={onClose}
-            variant="outlined"
-            size="large"
-            disabled={isLoading}
-            sx={{
-              flex: isMobile ? 1 : 'none',
-              minWidth: isMobile ? 'auto' : 120,
-            }}
-          >
-            No, Cancel
-          </Button>
-        </AnimateButton>
-        <AnimateButton>
-          <Button
-            onClick={onConfirm}
-            variant="contained"
-            size="large"
-            color={confirmButtonColor}
-            disabled={isLoading}
-            sx={{
-              flex: isMobile ? 1 : 'none',
-              minWidth: isMobile ? 'auto' : 160,
-            }}
-          >
-            {confirmButtonText}
-          </Button>
-        </AnimateButton>
+      <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          size="small"
+          disabled={isLoading}
+          sx={{ flex: isMobile ? 1 : 'none' }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={onConfirm}
+          variant="contained"
+          size="small"
+          disabled={isLoading}
+          sx={{
+            flex: isMobile ? 1 : 'none',
+            bgcolor: isStopAction ? afkColors.warning : afkColors.danger,
+            color: isStopAction ? '#000' : '#fff',
+            '&:hover': {
+              bgcolor: isStopAction ? '#d97706' : '#dc2626',
+            },
+          }}
+        >
+          {confirmButtonText}
+        </Button>
       </DialogActions>
     </Dialog>
   );

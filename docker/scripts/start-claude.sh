@@ -193,11 +193,12 @@ start_claude_simple() {
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
-        --client-option theme='{"background":"#1e293b","foreground":"#f1f5f9","cursor":"#3b82f6","cursorAccent":"#1e40af","selectionBackground":"#334155","selectionForeground":"#f8fafc","black":"#0f172a","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#f1f5f9","brightBlack":"#475569","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
+        --client-option disableLeaveAlert=true \
+        --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
-        --client-option fontFamily="'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace" \
+        --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
         --client-option cursorBlink=true \
-        --client-option cursorStyle='block' \
+        --client-option cursorStyle='bar' \
         --client-option bellStyle='none' \
         --client-option scrollback=1000 \
         --client-option tabStopWidth=4 \
@@ -246,10 +247,12 @@ start_claude_dual_tty() {
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
-        --client-option theme='{"background":"#1e293b","foreground":"#f1f5f9","cursor":"#3b82f6","cursorAccent":"#1e40af","selectionBackground":"#334155","selectionForeground":"#f8fafc","black":"#0f172a","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#f1f5f9","brightBlack":"#475569","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
+        --client-option disableLeaveAlert=true \
+        --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
+        --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
         --client-option cursorBlink=true \
-        --client-option cursorStyle='block' \
+        --client-option cursorStyle='bar' \
         --client-option bellStyle='none' \
         --client-option scrollback=1000 \
         --client-option tabStopWidth=4 \
@@ -289,10 +292,12 @@ start_claude_dual_tty() {
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
-        --client-option theme='{"background":"#1e293b","foreground":"#f1f5f9","cursor":"#3b82f6","cursorAccent":"#1e40af","selectionBackground":"#334155","selectionForeground":"#f8fafc","black":"#0f172a","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#f1f5f9","brightBlack":"#475569","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
+        --client-option disableLeaveAlert=true \
+        --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
+        --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
         --client-option cursorBlink=true \
-        --client-option cursorStyle='block' \
+        --client-option cursorStyle='bar' \
         --client-option bellStyle='none' \
         --client-option scrollback=1000 \
         --client-option tabStopWidth=4 \

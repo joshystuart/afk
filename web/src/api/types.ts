@@ -72,7 +72,7 @@ export interface ApiResponse<T> {
 }
 
 export interface Settings {
-  sshPrivateKey?: string;
+  hasSshPrivateKey: boolean;
   claudeToken?: string;
   gitUserName?: string;
   gitUserEmail?: string;

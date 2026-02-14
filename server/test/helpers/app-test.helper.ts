@@ -2,11 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
+import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { ApplicationFactory } from '../../src/libs/app-factory/application.factory';
 import { DockerEngineService } from '../../src/services/docker/docker-engine.service';
 import { PortManagerService } from '../../src/services/docker/port-manager.service';
 import { AppConfig } from '../../src/libs/config/app.config';
+
+const TEST_ADMIN_USER = {
+  username: 'admin',
+  password: 'admin123',
+};
 
 /**
  * Helper class for E2E tests to set up the application with real dependencies
@@ -14,6 +20,7 @@ import { AppConfig } from '../../src/libs/config/app.config';
 export class AppTestHelper {
   private app: INestApplication | null = null;
   private moduleFixture: TestingModule | null = null;
+  private authToken: string | null = null;
 
   /**
    * Initializes the application for E2E testing with an in-memory SQLite database
@@ -89,7 +96,9 @@ export class AppTestHelper {
       .useValue({
         port: 3001,
         nodeEnv: 'test',
+        baseUrl: 'http://localhost',
         defaultWorkingDirectory: '/workspace',
+        adminUser: TEST_ADMIN_USER,
       })
       .compile();
 
@@ -166,6 +175,33 @@ export class AppTestHelper {
       this.app = null;
       this.moduleFixture = null;
     }
+  }
+
+  /**
+   * Logs in with the test admin credentials and caches the auth token
+   */
+  async login(): Promise<string> {
+    if (!this.app) {
+      throw new Error('App not initialized yet');
+    }
+
+    const response = await request(this.app.getHttpServer())
+      .post('/api/auth/login')
+      .send(TEST_ADMIN_USER)
+      .expect(200);
+
+    this.authToken = response.body.data?.token ?? response.body.token;
+    return this.authToken!;
+  }
+
+  /**
+   * Returns a cached auth token, logging in if needed
+   */
+  async getAuthToken(): Promise<string> {
+    if (this.authToken) {
+      return this.authToken;
+    }
+    return this.login();
   }
 
   /**

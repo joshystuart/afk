@@ -21,8 +21,8 @@ import Login from './pages/Login';
 // Layout
 import Layout from './components/Layout';
 
-// Berry Theme
-import { berryTheme } from './themes/berry';
+// AFK Theme
+import { afkTheme } from './themes/afk';
 
 // Create query client
 const queryClient = new QueryClient({
@@ -58,7 +58,7 @@ const AppContent = () => {
           path={ROUTES.HOME}
           element={<Navigate to={ROUTES.DASHBOARD} replace />}
         />
-        {/* Routes with Layout */}
+        {/* All authenticated routes use Layout */}
         <Route
           path={ROUTES.DASHBOARD}
           element={
@@ -89,12 +89,13 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        {/* Routes without Layout (full screen) */}
         <Route
           path={ROUTES.SESSION_DETAILS}
           element={
             <ProtectedRoute>
-              <SessionDetails />
+              <Layout>
+                <SessionDetails />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -106,7 +107,7 @@ const AppContent = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={berryTheme}>
+      <ThemeProvider theme={afkTheme}>
         <CssBaseline />
         <AppContent />
       </ThemeProvider>

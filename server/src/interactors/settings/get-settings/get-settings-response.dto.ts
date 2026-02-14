@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Settings } from '../../../domain/settings/settings.entity';
 
 export class GetSettingsResponseDto {
-  @ApiProperty({ required: false })
-  sshPrivateKey?: string;
+  @ApiProperty({ description: 'Whether an SSH private key is configured' })
+  hasSshPrivateKey!: boolean;
 
   @ApiProperty({ required: false })
   claudeToken?: string;
@@ -19,7 +19,7 @@ export class GetSettingsResponseDto {
 
   static fromDomain(settings: Settings): GetSettingsResponseDto {
     const dto = new GetSettingsResponseDto();
-    dto.sshPrivateKey = settings.sshPrivateKey;
+    dto.hasSshPrivateKey = !!settings.sshPrivateKey;
     dto.claudeToken = settings.claudeToken;
     dto.gitUserName = settings.gitUserName;
     dto.gitUserEmail = settings.gitUserEmail;

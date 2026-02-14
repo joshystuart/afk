@@ -113,6 +113,17 @@ export const useSession = () => {
     isRestarting: restartSessionMutation.isPending,
     isDeleting: deleteSessionMutation.isPending,
 
+    // Per-session mutation states (session ID being acted on, or undefined)
+    startingSessionId: startSessionMutation.isPending
+      ? startSessionMutation.variables
+      : undefined,
+    stoppingSessionId: stopSessionMutation.isPending
+      ? stopSessionMutation.variables
+      : undefined,
+    deletingSessionId: deleteSessionMutation.isPending
+      ? deleteSessionMutation.variables
+      : undefined,
+
     // Mutation errors
     createError: createSessionMutation.error,
     startError: startSessionMutation.error,

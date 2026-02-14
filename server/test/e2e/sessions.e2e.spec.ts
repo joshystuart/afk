@@ -7,12 +7,12 @@ import { TerminalMode } from '../../src/domain/sessions/terminal-mode.enum';
 describe('Sessions E2E Tests', () => {
   let app: INestApplication;
   let appTestHelper: AppTestHelper;
-  let dockerServiceMock: any;
+  let authToken: string;
 
   beforeAll(async () => {
     appTestHelper = new AppTestHelper();
     app = await appTestHelper.initializeApp();
-    dockerServiceMock = appTestHelper.getDockerServiceMock();
+    authToken = await appTestHelper.getAuthToken();
   });
 
   afterEach(async () => {
@@ -22,6 +22,27 @@ describe('Sessions E2E Tests', () => {
     settingsSetup = false; // Reset settings flag
     settingsPromise = null; // Reset promise
   });
+
+  // Helper to make authenticated requests
+  const authGet = (url: string) =>
+    request(app.getHttpServer())
+      .get(url)
+      .set('Authorization', `Bearer ${authToken}`);
+
+  const authPost = (url: string) =>
+    request(app.getHttpServer())
+      .post(url)
+      .set('Authorization', `Bearer ${authToken}`);
+
+  const authPut = (url: string) =>
+    request(app.getHttpServer())
+      .put(url)
+      .set('Authorization', `Bearer ${authToken}`);
+
+  const authDelete = (url: string) =>
+    request(app.getHttpServer())
+      .delete(url)
+      .set('Authorization', `Bearer ${authToken}`);
 
   // Helper function to set up required settings for session creation
   let settingsSetup = false;
@@ -38,8 +59,7 @@ describe('Sessions E2E Tests', () => {
 
     settingsPromise = (async () => {
       if (!settingsSetup) {
-        await request(app.getHttpServer())
-          .put('/api/settings')
+        await authPut('/api/settings')
           .send({
             sshPrivateKey:
               '-----BEGIN OPENSSH PRIVATE KEY-----\ntest-key-content\n-----END OPENSSH PRIVATE KEY-----',
@@ -58,8 +78,7 @@ describe('Sessions E2E Tests', () => {
   // Helper function to create a session (with settings setup)
   const createSession = async (sessionData: any, expectedStatus = 201) => {
     await setupRequiredSettings();
-    return await request(app.getHttpServer())
-      .post('/api/sessions')
+    return await authPost('/api/sessions')
       .send(sessionData)
       .expect(expectedStatus);
   };
@@ -107,8 +126,7 @@ describe('Sessions E2E Tests', () => {
         name: 'ab', // Too short
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions')
+      const response = await authPost('/api/sessions')
         .send(invalidData)
         .expect(400);
 
@@ -122,8 +140,7 @@ describe('Sessions E2E Tests', () => {
         repoUrl: 'not-a-valid-git-url',
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions')
+      const response = await authPost('/api/sessions')
         .send(invalidData)
         .expect(400);
 
@@ -137,8 +154,7 @@ describe('Sessions E2E Tests', () => {
         gitUserEmail: 'invalid-email',
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions')
+      const response = await authPost('/api/sessions')
         .send(invalidData)
         .expect(400);
 
@@ -154,8 +170,7 @@ describe('Sessions E2E Tests', () => {
         terminalMode: 'INVALID_MODE',
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions')
+      const response = await authPost('/api/sessions')
         .send(invalidData)
         .expect(400);
 
@@ -171,8 +186,7 @@ describe('Sessions E2E Tests', () => {
         unknownField: 'should-be-rejected',
       };
 
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions')
+      const response = await authPost('/api/sessions')
         .send(invalidData)
         .expect(400);
 
@@ -185,9 +199,7 @@ describe('Sessions E2E Tests', () => {
 
   describe('GET /api/sessions', () => {
     it('should return empty array when no sessions exist', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/sessions')
-        .expect(200);
+      const response = await authGet('/api/sessions').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual([]);
@@ -208,9 +220,7 @@ describe('Sessions E2E Tests', () => {
       }
 
       // List all sessions
-      const response = await request(app.getHttpServer())
-        .get('/api/sessions')
-        .expect(200);
+      const response = await authGet('/api/sessions').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveLength(3);
@@ -222,8 +232,7 @@ describe('Sessions E2E Tests', () => {
       // Create sessions with different statuses
       await createSession({ name: 'created-session' });
 
-      const response = await request(app.getHttpServer())
-        .get('/api/sessions')
+      const response = await authGet('/api/sessions')
         .query({ status: SessionStatus.RUNNING })
         .expect(200);
 
@@ -242,9 +251,7 @@ describe('Sessions E2E Tests', () => {
     });
 
     it('should get session by id', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/sessions/${sessionId}`)
-        .expect(200);
+      const response = await authGet(`/api/sessions/${sessionId}`).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.id).toBe(sessionId);
@@ -253,9 +260,9 @@ describe('Sessions E2E Tests', () => {
 
     it('should return 400 for non-existent session', async () => {
       // Use a proper UUID format for the non-existent session ID
-      const response = await request(app.getHttpServer())
-        .get('/api/sessions/123e4567-e89b-12d3-a456-426614174000')
-        .expect(400);
+      const response = await authGet(
+        '/api/sessions/123e4567-e89b-12d3-a456-426614174000',
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
     });
@@ -270,17 +277,17 @@ describe('Sessions E2E Tests', () => {
     });
 
     it('should return error when trying to delete session', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/api/sessions/${sessionId}`)
-        .expect(400);
+      const response = await authDelete(`/api/sessions/${sessionId}`).expect(
+        400,
+      );
 
       expect(response.body.success).toBe(false);
     });
 
     it('should return 404 when deleting non-existent session', async () => {
-      const response = await request(app.getHttpServer())
-        .delete('/api/sessions/123e4567-e89b-12d3-a456-426614174000')
-        .expect(400);
+      const response = await authDelete(
+        '/api/sessions/123e4567-e89b-12d3-a456-426614174000',
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
     });
@@ -296,18 +303,18 @@ describe('Sessions E2E Tests', () => {
 
     it('should return error when trying to start an already running session', async () => {
       // Since our mock creates sessions in RUNNING state, starting them should fail
-      const response = await request(app.getHttpServer())
-        .post(`/api/sessions/${sessionId}/start`)
-        .expect(400);
+      const response = await authPost(
+        `/api/sessions/${sessionId}/start`,
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.message).toBe('Session is not stopped');
     });
 
     it('should return 400 for non-existent session', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions/non-existent-id/start')
-        .expect(400);
+      const response = await authPost(
+        '/api/sessions/non-existent-id/start',
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
     });
@@ -323,17 +330,17 @@ describe('Sessions E2E Tests', () => {
     });
 
     it('should stop a running session', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/api/sessions/${sessionId}/stop`)
-        .expect(201);
+      const response = await authPost(`/api/sessions/${sessionId}/stop`).expect(
+        201,
+      );
 
       expect(response.body.success).toBe(true);
     });
 
     it('should return 400 for non-existent session', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/sessions/non-existent-id/stop')
-        .expect(400);
+      const response = await authPost(
+        '/api/sessions/non-existent-id/stop',
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
     });
@@ -348,9 +355,9 @@ describe('Sessions E2E Tests', () => {
     });
 
     it('should check session health', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/api/sessions/${sessionId}/health`)
-        .expect(200);
+      const response = await authGet(
+        `/api/sessions/${sessionId}/health`,
+      ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('claudeTerminalReady');
@@ -361,18 +368,18 @@ describe('Sessions E2E Tests', () => {
 
     it('should return health status for running session', async () => {
       // Session is already running, check health directly
-      const response = await request(app.getHttpServer())
-        .get(`/api/sessions/${sessionId}/health`)
-        .expect(200);
+      const response = await authGet(
+        `/api/sessions/${sessionId}/health`,
+      ).expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.allReady).toBeDefined();
     });
 
     it('should return 400 for non-existent session', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/sessions/non-existent-id/health')
-        .expect(400);
+      const response = await authGet(
+        '/api/sessions/non-existent-id/health',
+      ).expect(400);
 
       expect(response.body.success).toBe(false);
     });
@@ -392,29 +399,29 @@ describe('Sessions E2E Tests', () => {
 
       // Session is already running, no need to start it
       // Check that it's running
-      const getResponse = await request(app.getHttpServer())
-        .get(`/api/sessions/${sessionId}`)
-        .expect(200);
+      const getResponse = await authGet(`/api/sessions/${sessionId}`).expect(
+        200,
+      );
       expect(getResponse.body.data.status).toBe(SessionStatus.RUNNING);
 
       // Check health
-      const healthResponse = await request(app.getHttpServer())
-        .get(`/api/sessions/${sessionId}/health`)
-        .expect(200);
+      const healthResponse = await authGet(
+        `/api/sessions/${sessionId}/health`,
+      ).expect(200);
 
       expect(healthResponse.body.success).toBe(true);
 
       // Stop session
-      const stopResponse = await request(app.getHttpServer())
-        .post(`/api/sessions/${sessionId}/stop`)
-        .expect(201);
+      const stopResponse = await authPost(
+        `/api/sessions/${sessionId}/stop`,
+      ).expect(201);
 
       expect(stopResponse.body.success).toBe(true);
 
       // Delete session (works after stopping)
-      const deleteResponse = await request(app.getHttpServer())
-        .delete(`/api/sessions/${sessionId}`)
-        .expect(200);
+      const deleteResponse = await authDelete(
+        `/api/sessions/${sessionId}`,
+      ).expect(200);
 
       expect(deleteResponse.body.success).toBe(true);
     });
@@ -424,6 +431,7 @@ describe('Sessions E2E Tests', () => {
     it('should handle malformed JSON in request body', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/sessions')
+        .set('Authorization', `Bearer ${authToken}`)
         .set('Content-Type', 'application/json')
         .send('{"invalid json}')
         .expect(400);
@@ -433,12 +441,11 @@ describe('Sessions E2E Tests', () => {
     });
 
     it('should return 404 for non-existent endpoints', async () => {
-      await request(app.getHttpServer())
-        .get('/api/sessions/123/non-existent')
-        .expect(404);
+      await authGet('/api/sessions/123/non-existent').expect(404);
 
       await request(app.getHttpServer())
         .patch('/api/sessions/123')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({})
         .expect(404);
     });
@@ -462,9 +469,7 @@ describe('Sessions E2E Tests', () => {
       });
 
       // Verify all sessions were created
-      const listResponse = await request(app.getHttpServer())
-        .get('/api/sessions')
-        .expect(200);
+      const listResponse = await authGet('/api/sessions').expect(200);
 
       expect(listResponse.body.data).toHaveLength(5);
     });
@@ -483,9 +488,7 @@ describe('Sessions E2E Tests', () => {
       // Perform multiple concurrent reads
       const promises = Array(3)
         .fill(null)
-        .map(() =>
-          request(app.getHttpServer()).get(`/api/sessions/${sessionId}`),
-        );
+        .map(() => authGet(`/api/sessions/${sessionId}`));
 
       const responses = await Promise.all(promises);
 

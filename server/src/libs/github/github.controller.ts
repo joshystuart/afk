@@ -19,16 +19,14 @@ import {
   ResponseService,
   ApiResponse as ApiResponseType,
 } from '../response/response.service';
+import { Public } from '../../auth/auth.guard';
 import * as crypto from 'crypto';
 
 @ApiTags('GitHub')
 @Controller('github')
 export class GitHubController {
   private readonly logger = new Logger(GitHubController.name);
-  private readonly oauthStates = new Map<
-    string,
-    { createdAt: number; frontendUrl?: string }
-  >();
+  private readonly oauthStates = new Map<string, { createdAt: number }>();
 
   constructor(
     private readonly githubService: GitHubService,
@@ -38,13 +36,11 @@ export class GitHubController {
     private readonly settingsRepository: SettingsRepository,
   ) {}
 
+  @Public()
   @Get('auth')
   @ApiOperation({ summary: 'Start GitHub OAuth flow' })
   @ApiResponse({ status: 302, description: 'Redirects to GitHub OAuth' })
-  async auth(
-    @Res() res: Response,
-    @Query('returnUrl') returnUrl?: string,
-  ): Promise<void> {
+  async auth(@Res() res: Response): Promise<void> {
     if (!this.githubConfig.clientId || !this.githubConfig.clientSecret) {
       throw new HttpException(
         'GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.',
@@ -53,10 +49,7 @@ export class GitHubController {
     }
 
     const state = crypto.randomBytes(16).toString('hex');
-    this.oauthStates.set(state, {
-      createdAt: Date.now(),
-      frontendUrl: returnUrl,
-    });
+    this.oauthStates.set(state, { createdAt: Date.now() });
 
     // Clean up old states (older than 10 min)
     const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
@@ -75,6 +68,7 @@ export class GitHubController {
     res.redirect(authUrl);
   }
 
+  @Public()
   @Get('callback')
   @ApiOperation({ summary: 'GitHub OAuth callback' })
   @ApiResponse({ status: 302, description: 'Redirects to frontend' })
@@ -83,11 +77,13 @@ export class GitHubController {
     @Query('state') state: string,
     @Res() res: Response,
   ): Promise<void> {
+    const redirectUrl = this.githubConfig.frontendRedirectUrl;
+
     // Validate state
     const storedState = this.oauthStates.get(state);
     if (!storedState) {
       this.logger.warn('Invalid OAuth state received');
-      res.redirect('/settings?github=error&reason=invalid_state');
+      res.redirect(`${redirectUrl}?github=error&reason=invalid_state`);
       return;
     }
     this.oauthStates.delete(state);
@@ -110,11 +106,10 @@ export class GitHubController {
 
       this.logger.log(`GitHub connected for user: ${user.login}`);
 
-      const returnUrl = storedState.frontendUrl || '/settings';
-      res.redirect(`${returnUrl}?github=connected`);
+      res.redirect(`${redirectUrl}?github=connected`);
     } catch (error) {
       this.logger.error('GitHub OAuth callback failed', error);
-      res.redirect('/settings?github=error&reason=token_exchange_failed');
+      res.redirect(`${redirectUrl}?github=error&reason=token_exchange_failed`);
     }
   }
 

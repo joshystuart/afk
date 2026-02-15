@@ -12,4 +12,8 @@ export class GitHubConfig {
   @IsString()
   @IsOptional()
   public readonly callbackUrl!: string;
+
+  @IsString()
+  @IsOptional()
+  public readonly frontendRedirectUrl!: string;
 }

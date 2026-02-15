@@ -108,15 +108,18 @@ export GITHUB_CLIENT_ID="your-client-id"
 export GITHUB_CLIENT_SECRET="your-client-secret"
 # Optional: override the callback URL (defaults to http://localhost:3001/api/github/callback)
 export GITHUB_CALLBACK_URL="http://localhost:3001/api/github/callback"
+# Optional: override the frontend URL to redirect to after OAuth (defaults to http://localhost:5173/settings)
+export GITHUB_FRONTEND_REDIRECT_URL="http://localhost:5173/settings"
 ```
 
 Or add them directly to `server/.env.yaml`:
 
 ```yaml
 github:
-  clientId: "your-client-id"
-  clientSecret: "your-client-secret"
-  callbackUrl: "http://localhost:3001/api/github/callback"
+  clientId: 'your-client-id'
+  clientSecret: 'your-client-secret'
+  callbackUrl: 'http://localhost:3001/api/github/callback'
+  frontendRedirectUrl: 'http://localhost:5173/settings'
 ```
 
 Then connect your account through the web interface:
@@ -265,6 +268,7 @@ github:
   clientId: '${GITHUB_CLIENT_ID:-}'
   clientSecret: '${GITHUB_CLIENT_SECRET:-}'
   callbackUrl: '${GITHUB_CALLBACK_URL:-http://localhost:3001/api/github/callback}'
+  frontendRedirectUrl: '${GITHUB_FRONTEND_REDIRECT_URL:-http://localhost:5173/settings}'
 ```
 
 **Available template configurations:**

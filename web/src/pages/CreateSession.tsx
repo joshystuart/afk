@@ -58,10 +58,10 @@ const CreateSession: React.FC = () => {
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
 
   // Fetch repos when connected
-  const {
-    data: repos,
-    isLoading: reposLoading,
-  } = useRepos(undefined, repoSource === 'github');
+  const { data: repos, isLoading: reposLoading } = useRepos(
+    undefined,
+    repoSource === 'github',
+  );
 
   useEffect(() => {
     fetchSettings();
@@ -79,9 +79,7 @@ const CreateSession: React.FC = () => {
   // Derive recent repo URLs from session history
   const recentRepoUrls = useMemo(() => {
     if (!sessions || !Array.isArray(sessions)) return new Set<string>();
-    const urls = sessions
-      .filter((s) => s.repoUrl)
-      .map((s) => s.repoUrl!);
+    const urls = sessions.filter((s) => s.repoUrl).map((s) => s.repoUrl!);
     return new Set(urls);
   }, [sessions]);
 
@@ -89,8 +87,10 @@ const CreateSession: React.FC = () => {
   const groupedRepos = useMemo(() => {
     if (!repos) return [];
     return [...repos].sort((a, b) => {
-      const aRecent = recentRepoUrls.has(a.clone_url) || recentRepoUrls.has(a.ssh_url);
-      const bRecent = recentRepoUrls.has(b.clone_url) || recentRepoUrls.has(b.ssh_url);
+      const aRecent =
+        recentRepoUrls.has(a.clone_url) || recentRepoUrls.has(a.ssh_url);
+      const bRecent =
+        recentRepoUrls.has(b.clone_url) || recentRepoUrls.has(b.ssh_url);
       if (aRecent && !bRecent) return -1;
       if (!aRecent && bRecent) return 1;
       return 0;
@@ -158,7 +158,8 @@ const CreateSession: React.FC = () => {
   };
 
   const getRepoGroup = (repo: GitHubRepo): string => {
-    const isRecent = recentRepoUrls.has(repo.clone_url) || recentRepoUrls.has(repo.ssh_url);
+    const isRecent =
+      recentRepoUrls.has(repo.clone_url) || recentRepoUrls.has(repo.ssh_url);
     return isRecent ? 'Recent' : 'All Repositories';
   };
 
@@ -260,8 +261,7 @@ const CreateSession: React.FC = () => {
                 fullWidth
                 label="Session Name"
                 helperText={
-                  errors.name?.message ||
-                  'A descriptive name for your session'
+                  errors.name?.message || 'A descriptive name for your session'
                 }
                 error={!!errors.name}
               />
@@ -331,10 +331,7 @@ const CreateSession: React.FC = () => {
                 mb: 2,
               }}
             >
-              <Link
-                to={ROUTES.SETTINGS}
-                style={{ color: afkColors.accent }}
-              >
+              <Link to={ROUTES.SETTINGS} style={{ color: afkColors.accent }}>
                 Connect GitHub
               </Link>{' '}
               in Settings to browse and select repositories
@@ -459,7 +456,10 @@ const CreateSession: React.FC = () => {
                             fontSize: '0.6875rem',
                           }}
                         >
-                          Updated {formatRelativeTime(option.pushed_at || option.updated_at)}
+                          Updated{' '}
+                          {formatRelativeTime(
+                            option.pushed_at || option.updated_at,
+                          )}
                         </Typography>
                       </Box>
                     );

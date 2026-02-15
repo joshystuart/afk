@@ -31,7 +31,7 @@ export const useGitHub = () => {
   return {
     isConnected,
     username,
-    authUrl: githubApi.getAuthUrl('/settings'),
+    authUrl: githubApi.getAuthUrl(),
     useRepos,
     disconnect: disconnectMutation.mutateAsync,
     isDisconnecting: disconnectMutation.isPending,

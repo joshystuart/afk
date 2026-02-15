@@ -6,12 +6,8 @@ const API_BASE_URL =
 
 export const githubApi = {
   /** Get the full auth URL to redirect to (direct browser navigation) */
-  getAuthUrl(returnUrl?: string): string {
-    const params = new URLSearchParams();
-    if (returnUrl) {
-      params.set('returnUrl', returnUrl);
-    }
-    return `${API_BASE_URL}/github/auth${params.toString() ? `?${params.toString()}` : ''}`;
+  getAuthUrl(): string {
+    return `${API_BASE_URL}/github/auth`;
   },
 
   /** Get GitHub connection status */

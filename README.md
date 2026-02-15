@@ -100,12 +100,7 @@ This will guide you through the authentication process and store your token secu
 
 The easiest way to give AFK access to your repositories is by connecting your GitHub account via OAuth. This lets you browse and select repos from a searchable dropdown when creating sessions, and handles private repo access automatically over HTTPS.
 
-1. Go to **Settings** in the web interface
-2. Click **Connect GitHub** in the GitHub Connection section
-3. Authorize the application on GitHub
-4. You'll be redirected back to Settings with a confirmation
-
-To use this feature, you'll need to set up a [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) and configure the credentials:
+First, set up a [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) and configure the credentials:
 
 ```bash
 # Set these environment variables before starting the server
@@ -123,6 +118,13 @@ github:
   clientSecret: "your-client-secret"
   callbackUrl: "http://localhost:3001/api/github/callback"
 ```
+
+Then connect your account through the web interface:
+
+1. Go to **Settings** in the web interface
+2. Click **Connect GitHub** in the GitHub Connection section
+3. Authorize the application on GitHub
+4. You'll be redirected back to Settings with a confirmation
 
 Once connected, the Create Session page will default to a GitHub repository picker with search, recent repos, and auto-filled branch names.
 

@@ -1,7 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import * as net from 'net';
 import { AppConfig } from '../../libs/config/app.config';
 import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factory';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
+import { DockerEngineService } from './docker-engine.service';
 
 @Injectable()
 export class PortManagerService implements OnModuleInit {
@@ -12,6 +14,7 @@ export class PortManagerService implements OnModuleInit {
   constructor(
     private readonly config: AppConfig,
     private readonly portPairFactory: PortPairDtoFactory,
+    private readonly dockerEngine: DockerEngineService,
   ) {
     this.initializePortPool();
   }
@@ -55,14 +58,26 @@ export class PortManagerService implements OnModuleInit {
       throw new Error('No available ports in pool');
     }
 
-    const port = availablePorts[0];
-    this.allocatedPorts.add(port);
+    // Try each candidate port and verify it's actually free on the host
+    for (const port of availablePorts) {
+      const isFree = await this.isPortFreeOnHost(port);
+      if (isFree) {
+        this.allocatedPorts.add(port);
+        this.logger.debug('Port allocated', {
+          port,
+          allocated: this.allocatedPorts.size,
+        });
+        return port;
+      }
 
-    this.logger.debug('Port allocated', {
-      port,
-      allocated: this.allocatedPorts.size,
-    });
-    return port;
+      this.logger.warn(
+        `Port ${port} is in use on host (by non-AFK process or orphaned container), skipping`,
+      );
+    }
+
+    throw new Error(
+      'No available ports - all ports in the pool are currently in use on the host',
+    );
   }
 
   private releasePort(port: number): void {
@@ -84,9 +99,70 @@ export class PortManagerService implements OnModuleInit {
     this.logger.log(`Initialized port pool with ${this.portPool.length} ports`);
   }
 
+  /**
+   * Syncs the in-memory allocated ports set with ports actually in use
+   * by running AFK-managed Docker containers. This handles the case where
+   * the server restarts but containers from the previous run are still alive.
+   */
   private async syncWithRunningContainers(): Promise<void> {
-    // In a real implementation, we would sync with running containers
-    // For now, we'll just log this step
-    this.logger.log('Port synchronization with running containers completed');
+    try {
+      const containers = await this.dockerEngine.listAFKContainers();
+      let syncedPorts = 0;
+
+      for (const container of containers) {
+        if (container.state === 'running' && container.ports) {
+          const hostPorts = Object.values(container.ports).filter(
+            (port): port is number => typeof port === 'number',
+          );
+
+          for (const port of hostPorts) {
+            if (
+              this.portPool.includes(port) &&
+              !this.allocatedPorts.has(port)
+            ) {
+              this.allocatedPorts.add(port);
+              syncedPorts++;
+            }
+          }
+        }
+      }
+
+      this.logger.log(
+        `Port sync complete: ${syncedPorts} ports marked as in-use from ${containers.length} AFK container(s)`,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to sync ports with running containers. Port allocation may conflict with existing containers.',
+        error,
+      );
+    }
+  }
+
+  /**
+   * Checks whether a port is actually free on the host by attempting
+   * to bind a TCP server to it. This catches ports used by non-AFK
+   * processes or orphaned containers not tracked in our state.
+   */
+  private isPortFreeOnHost(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const server = net.createServer();
+
+      server.once('error', (err: NodeJS.ErrnoException) => {
+        if (err.code === 'EADDRINUSE') {
+          resolve(false);
+        } else {
+          this.logger.warn(
+            `Unexpected error checking port ${port}: ${err.message}`,
+          );
+          resolve(false);
+        }
+      });
+
+      server.once('listening', () => {
+        server.close(() => resolve(true));
+      });
+
+      server.listen(port, '0.0.0.0');
+    });
   }
 }

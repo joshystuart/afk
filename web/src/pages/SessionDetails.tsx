@@ -1,10 +1,15 @@
 import React from 'react';
 import {
   Box,
+  Badge,
   Button,
+  Chip,
   IconButton,
   Skeleton,
+  Snackbar,
+  Alert,
   Typography,
+  Tooltip,
   useTheme,
   useMediaQuery,
   Tabs,
@@ -18,16 +23,19 @@ import {
   FullscreenExit as FullscreenExitIcon,
   Delete as DeleteIcon,
   FiberManualRecord as DotIcon,
+  CloudUpload as PushIcon,
 } from '@mui/icons-material';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
+import { useGitStatus } from '../hooks/useGitStatus';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 import TerminalLoading from '../components/TerminalLoading';
 import ApprovalModal from '../components/ApprovalModal';
+import CommitPushDialog from '../components/CommitPushDialog';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -70,6 +78,29 @@ const SessionDetails: React.FC = () => {
   const shouldCheckHealth =
     session?.status === SessionStatus.RUNNING && !!session?.terminalUrls;
   const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
+
+  const isRunning = session?.status === SessionStatus.RUNNING;
+  const gitStatus = useGitStatus(id || null, isRunning ?? false);
+
+  const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
+  const [snackbar, setSnackbar] = React.useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
+
+  const handleCommitAndPush = async (message: string) => {
+    const result = await gitStatus.commitAndPush(message);
+    if (result && !result.success) {
+      throw new Error(result.message);
+    }
+    setCommitDialogOpen(false);
+    setSnackbar({
+      open: true,
+      message: 'Changes committed and pushed successfully',
+      severity: 'success',
+    });
+  };
 
   const handleStopSessionClick = () => {
     if (!session) return;
@@ -356,22 +387,80 @@ const SessionDetails: React.FC = () => {
                 animation: 'pulse-dot 2s ease-in-out infinite',
               }}
             />
+            {gitStatus.branch && (
+              <Chip
+                label={gitStatus.branch}
+                size="small"
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.625rem',
+                  height: 20,
+                  bgcolor: afkColors.accentMuted,
+                  color: afkColors.accent,
+                  border: `1px solid rgba(16, 185, 129, 0.2)`,
+                }}
+              />
+            )}
           </Box>
 
-          <Button
-            size="small"
-            startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
-            onClick={handleStopSessionClick}
-            disabled={isStopping}
-            sx={{
-              fontSize: '0.75rem',
-              color: afkColors.warning,
-              minWidth: 'auto',
-              px: 1,
-            }}
-          >
-            {isStopping ? 'Stopping...' : 'Stop'}
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Tooltip
+              title={
+                gitStatus.hasChanges
+                  ? `${gitStatus.changedFileCount} file${gitStatus.changedFileCount !== 1 ? 's' : ''} changed`
+                  : 'No changes'
+              }
+            >
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setCommitDialogOpen(true)}
+                  disabled={!gitStatus.hasChanges}
+                  sx={{
+                    p: 0.5,
+                    color: gitStatus.hasChanges
+                      ? afkColors.accent
+                      : afkColors.textTertiary,
+                    '&:hover': {
+                      color: gitStatus.hasChanges
+                        ? afkColors.accentLight
+                        : afkColors.textSecondary,
+                    },
+                  }}
+                >
+                  <Badge
+                    variant="dot"
+                    invisible={!gitStatus.hasChanges}
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        bgcolor: afkColors.accent,
+                        width: 6,
+                        height: 6,
+                        minWidth: 6,
+                      },
+                    }}
+                  >
+                    <PushIcon sx={{ fontSize: 16 }} />
+                  </Badge>
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            <Button
+              size="small"
+              startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={handleStopSessionClick}
+              disabled={isStopping}
+              sx={{
+                fontSize: '0.75rem',
+                color: afkColors.warning,
+                minWidth: 'auto',
+                px: 1,
+              }}
+            >
+              {isStopping ? 'Stopping...' : 'Stop'}
+            </Button>
+          </Box>
         </Box>
 
         {/* Terminal area */}
@@ -581,6 +670,41 @@ const SessionDetails: React.FC = () => {
         sessionName={approvalModal.sessionName}
         isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
       />
+
+      {/* Commit & Push Dialog */}
+      <CommitPushDialog
+        open={commitDialogOpen}
+        onClose={() => {
+          setCommitDialogOpen(false);
+          gitStatus.resetCommitState();
+        }}
+        branch={gitStatus.branch}
+        changedFileCount={gitStatus.changedFileCount}
+        isCommitting={gitStatus.isCommitting}
+        error={
+          gitStatus.commitError
+            ? (gitStatus.commitError as Error).message
+            : null
+        }
+        onCommitAndPush={handleCommitAndPush}
+      />
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

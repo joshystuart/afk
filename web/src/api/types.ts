@@ -123,3 +123,18 @@ export interface ApiError {
   };
   statusCode: number;
 }
+
+export interface GitStatus {
+  hasChanges: boolean;
+  changedFileCount: number;
+  branch: string;
+}
+
+export interface CommitAndPushRequest {
+  message: string;
+}
+
+export interface CommitAndPushResponse {
+  success: boolean;
+  message: string;
+}

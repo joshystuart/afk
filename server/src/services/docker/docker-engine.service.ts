@@ -214,6 +214,57 @@ export class DockerEngineService {
     return stream;
   }
 
+  async execInContainer(
+    containerId: string,
+    cmd: string[],
+    workingDir = '/workspace/repo',
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    const container = this.docker.getContainer(containerId);
+
+    const exec = await container.exec({
+      Cmd: cmd,
+      AttachStdout: true,
+      AttachStderr: true,
+      WorkingDir: workingDir,
+    });
+
+    const stream = await exec.start({ hijack: true, stdin: false });
+
+    return new Promise((resolve, reject) => {
+      const stdoutBuffers: Buffer[] = [];
+      const stderrBuffers: Buffer[] = [];
+
+      // Dockerode multiplexes stdout/stderr into a single stream.
+      // Use demuxStream to separate them.
+      const stdoutPassthrough = new (require('stream').PassThrough)();
+      const stderrPassthrough = new (require('stream').PassThrough)();
+
+      container.modem.demuxStream(stream, stdoutPassthrough, stderrPassthrough);
+
+      stdoutPassthrough.on('data', (chunk: Buffer) =>
+        stdoutBuffers.push(chunk),
+      );
+      stderrPassthrough.on('data', (chunk: Buffer) =>
+        stderrBuffers.push(chunk),
+      );
+
+      stream.on('end', async () => {
+        try {
+          const inspectResult = await exec.inspect();
+          resolve({
+            stdout: Buffer.concat(stdoutBuffers).toString('utf8').trim(),
+            stderr: Buffer.concat(stderrBuffers).toString('utf8').trim(),
+            exitCode: inspectResult.ExitCode ?? -1,
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      stream.on('error', reject);
+    });
+  }
+
   async ping(): Promise<void> {
     try {
       await this.docker.ping();

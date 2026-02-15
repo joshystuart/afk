@@ -62,10 +62,7 @@ export class Settings {
     this.updatedAt = new Date();
   }
 
-  updateGitHubToken(
-    token?: string | null,
-    username?: string | null,
-  ): void {
+  updateGitHubToken(token?: string | null, username?: string | null): void {
     this.githubAccessToken = token;
     this.githubUsername = username;
     this.updatedAt = new Date();

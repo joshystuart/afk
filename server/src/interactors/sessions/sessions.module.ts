@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreateSessionInteractor } from './create-session/create-session.interactor';
 import { ListSessionsInteractor } from './list-sessions/list-sessions.interactor';
 import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
+import { GitInteractor } from './git.interactor';
 import { CreateSessionController } from './create-session/create-session.controller';
 import { ListSessionsController } from './list-sessions/list-sessions.controller';
 import { GetSessionController } from './get-session.controller';
@@ -10,6 +11,8 @@ import { CheckSessionHealthController } from './check-session-health.controller'
 import { StartSessionController } from './start-session.controller';
 import { StopSessionController } from './stop-session.controller';
 import { DeleteSessionController } from './delete-session.controller';
+import { GitStatusController } from './git-status.controller';
+import { GitCommitPushController } from './git-commit-push.controller';
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
@@ -34,11 +37,14 @@ import { Session } from '../../domain/sessions/session.entity';
     StartSessionController,
     StopSessionController,
     DeleteSessionController,
+    GitStatusController,
+    GitCommitPushController,
   ],
   providers: [
     CreateSessionInteractor,
     ListSessionsInteractor,
     SessionLifecycleInteractor,
+    GitInteractor,
     SessionConfig,
     ResponseService,
   ],
@@ -46,6 +52,7 @@ import { Session } from '../../domain/sessions/session.entity';
     CreateSessionInteractor,
     ListSessionsInteractor,
     SessionLifecycleInteractor,
+    GitInteractor,
   ],
 })
 export class SessionsModule {}

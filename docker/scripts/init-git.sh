@@ -158,15 +158,13 @@ checkout_branch() {
     
     cd "$repo_dir"
     
-    # Check if branch exists
+    # Check if branch exists on remote
     if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-        log_info "Checking out branch: $branch"
+        log_info "Checking out existing branch: $branch"
         git checkout "$branch"
     else
-        log_warning "Branch '$branch' not found, staying on default branch"
-        # Show available branches for debugging
-        log_info "Available remote branches:"
-        git branch -r | sed 's/origin\///' | grep -v HEAD | head -10
+        log_info "Branch '$branch' not found on remote, creating new branch"
+        git checkout -b "$branch"
     fi
 }
 
@@ -185,6 +183,7 @@ setup_git_config() {
     git config --global init.defaultBranch main
     git config --global pull.rebase false
     git config --global core.editor vim
+    git config --global push.autoSetupRemote true
     
     # Configure GitHub token credential helper if GITHUB_TOKEN is set
     if [ -n "$GITHUB_TOKEN" ]; then

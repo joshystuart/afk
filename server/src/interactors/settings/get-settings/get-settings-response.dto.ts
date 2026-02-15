@@ -51,7 +51,7 @@ export class GetSettingsResponseDto {
     dto.gitUserName = settings.gitUserName;
     dto.gitUserEmail = settings.gitUserEmail;
     dto.hasGitHubToken = !!settings.githubAccessToken;
-    dto.githubUsername = settings.githubUsername;
+    dto.githubUsername = settings.githubUsername ?? undefined;
     dto.updatedAt = settings.updatedAt.toISOString();
     return dto;
   }

@@ -1,31 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Octokit } from '@octokit/rest';
+import { exchangeWebFlowCode } from '@octokit/oauth-methods';
+import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
 
-export interface GitHubUser {
-  login: string;
-  id: number;
-  avatar_url: string;
-  name: string | null;
-}
+const octokit = new Octokit();
 
-export interface GitHubRepo {
-  id: number;
-  name: string;
-  full_name: string;
-  description: string | null;
-  private: boolean;
-  clone_url: string;
-  ssh_url: string;
-  html_url: string;
-  language: string | null;
-  updated_at: string;
-  pushed_at: string;
-  stargazers_count: number;
-  default_branch: string;
-  owner: {
-    login: string;
-    avatar_url: string;
-  };
-}
+export type GitHubUser = GetResponseDataTypeFromEndpointMethod<
+  typeof octokit.users.getAuthenticated
+>;
+
+export type GitHubRepo = GetResponseDataTypeFromEndpointMethod<
+  typeof octokit.repos.listForAuthenticatedUser
+>[number];
 
 export interface GitHubRepoListParams {
   search?: string;
@@ -37,6 +23,13 @@ export interface GitHubRepoListParams {
 @Injectable()
 export class GitHubService {
   private readonly logger = new Logger(GitHubService.name);
+
+  private createOctokit(token: string): Octokit {
+    return new Octokit({
+      auth: token,
+      userAgent: 'AFK-App',
+    });
+  }
 
   getAuthUrl(clientId: string, callbackUrl: string, state: string): string {
     const params = new URLSearchParams({
@@ -54,51 +47,20 @@ export class GitHubService {
     clientSecret: string,
     code: string,
   ): Promise<string> {
-    const response = await fetch(
-      'https://github.com/login/oauth/access_token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          code,
-        }),
-      },
-    );
+    const { authentication } = await exchangeWebFlowCode({
+      clientType: 'oauth-app',
+      clientId,
+      clientSecret,
+      code,
+    });
 
-    if (!response.ok) {
-      throw new Error(`GitHub token exchange failed: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    if (data.error) {
-      throw new Error(
-        `GitHub OAuth error: ${data.error_description || data.error}`,
-      );
-    }
-
-    return data.access_token;
+    return authentication.token;
   }
 
   async getUser(token: string): Promise<GitHubUser> {
-    const response = await fetch('https://api.github.com/user', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json',
-        'User-Agent': 'AFK-App',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`);
-    }
-
-    return response.json();
+    const octokit = this.createOctokit(token);
+    const { data } = await octokit.users.getAuthenticated();
+    return data;
   }
 
   async listRepos(
@@ -107,36 +69,20 @@ export class GitHubService {
   ): Promise<GitHubRepo[]> {
     const { search, sort = 'pushed', page = 1, perPage = 30 } = params;
 
-    // If there's a search term, use the search API
     if (search && search.trim()) {
       return this.searchRepos(token, search, page, perPage);
     }
 
-    // Otherwise, list user repos
-    const queryParams = new URLSearchParams({
-      sort,
+    const octokit = this.createOctokit(token);
+    const { data } = await octokit.repos.listForAuthenticatedUser({
+      sort: sort as 'pushed' | 'updated' | 'full_name' | 'created',
       direction: 'desc',
-      per_page: perPage.toString(),
-      page: page.toString(),
+      per_page: perPage,
+      page,
       type: 'all',
     });
 
-    const response = await fetch(
-      `https://api.github.com/user/repos?${queryParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'AFK-App',
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`);
-    }
-
-    return response.json();
+    return data;
   }
 
   private async searchRepos(
@@ -145,31 +91,15 @@ export class GitHubService {
     page: number,
     perPage: number,
   ): Promise<GitHubRepo[]> {
-    // Search repos the user has access to
-    const queryParams = new URLSearchParams({
+    const octokit = this.createOctokit(token);
+    const { data } = await octokit.search.repos({
       q: `${search} in:name fork:true`,
       sort: 'updated',
       order: 'desc',
-      per_page: perPage.toString(),
-      page: page.toString(),
+      per_page: perPage,
+      page,
     });
 
-    const response = await fetch(
-      `https://api.github.com/search/repositories?${queryParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'AFK-App',
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.items || [];
+    return data.items as GitHubRepo[];
   }
 }

@@ -123,7 +123,7 @@ export class GitHubController {
 
     return this.responseService.success({
       connected: !!settings.githubAccessToken,
-      username: settings.githubUsername,
+      username: settings.githubUsername ?? undefined,
     });
   }
 
@@ -171,7 +171,7 @@ export class GitHubController {
   @ApiResponse({ status: 200, description: 'GitHub disconnected' })
   async disconnect(): Promise<ApiResponseType<{ disconnected: boolean }>> {
     const settings = await this.settingsRepository.get();
-    settings.updateGitHubToken(undefined, undefined);
+    settings.updateGitHubToken(null, null);
     await this.settingsRepository.save(settings);
 
     this.logger.log('GitHub disconnected');

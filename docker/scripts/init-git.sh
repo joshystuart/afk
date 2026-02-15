@@ -186,6 +186,12 @@ setup_git_config() {
     git config --global pull.rebase false
     git config --global core.editor vim
     
+    # Configure GitHub token credential helper if GITHUB_TOKEN is set
+    if [ -n "$GITHUB_TOKEN" ]; then
+        log_info "Configuring git credential helper for GitHub token"
+        git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; }; f'
+    fi
+    
     log_info "Git configured with:"
     log_info "  Name: $user_name"
     log_info "  Email: $user_email"

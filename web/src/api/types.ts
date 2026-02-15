@@ -76,7 +76,34 @@ export interface Settings {
   claudeToken?: string;
   gitUserName?: string;
   gitUserEmail?: string;
+  hasGitHubToken: boolean;
+  githubUsername?: string;
   updatedAt: string;
+}
+
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  private: boolean;
+  clone_url: string;
+  ssh_url: string;
+  html_url: string;
+  language: string | null;
+  updated_at: string;
+  pushed_at: string;
+  stargazers_count: number;
+  default_branch: string;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
+export interface GitHubStatus {
+  connected: boolean;
+  username?: string;
 }
 
 export interface UpdateSettingsRequest {

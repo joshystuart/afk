@@ -6,15 +6,20 @@ import {
   Button,
   Alert,
   CircularProgress,
+  Chip,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   Check as CheckIcon,
   Lock as LockIcon,
+  GitHub as GitHubIcon,
+  LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
 import { useSettingsStore } from '../stores/settings.store';
+import { useGitHub } from '../hooks/useGitHub';
 import type { UpdateSettingsRequest } from '../api/types';
 import { afkColors } from '../themes/afk';
+import { useSearchParams } from 'react-router-dom';
 
 const Settings: React.FC = () => {
   const {
@@ -25,6 +30,11 @@ const Settings: React.FC = () => {
     updateSettings,
     clearError,
   } = useSettingsStore();
+
+  const { isConnected, username, authUrl, disconnect, isDisconnecting } =
+    useGitHub();
+
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [formData, setFormData] = useState<UpdateSettingsRequest>({
     sshPrivateKey: '',
@@ -41,6 +51,25 @@ const Settings: React.FC = () => {
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  // Handle GitHub OAuth redirect
+  useEffect(() => {
+    const githubParam = searchParams.get('github');
+    if (githubParam === 'connected') {
+      setSuccessMessage('GitHub connected successfully!');
+      fetchSettings();
+      // Clean up URL params
+      searchParams.delete('github');
+      setSearchParams(searchParams, { replace: true });
+    } else if (githubParam === 'error') {
+      clearError();
+      setSuccessMessage('');
+      // We'll show this as an error through the existing error mechanism
+      searchParams.delete('github');
+      searchParams.delete('reason');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, fetchSettings, clearError]);
 
   useEffect(() => {
     if (settings) {
@@ -177,6 +206,112 @@ const Settings: React.FC = () => {
               />
             </Box>
           </Box>
+        </Box>
+
+        {/* GitHub Connection */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              GitHub Connection
+            </Typography>
+          </Box>
+
+          {isConnected ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                p: 2,
+                border: `1px solid ${afkColors.border}`,
+                borderRadius: 1,
+                bgcolor: afkColors.surfaceElevated,
+              }}
+            >
+              <GitHubIcon sx={{ fontSize: 20, color: afkColors.textPrimary }} />
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: afkColors.textPrimary, fontWeight: 500 }}
+                  >
+                    {username}
+                  </Typography>
+                  <Chip
+                    label="Connected"
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.6875rem',
+                      bgcolor: afkColors.accentMuted,
+                      color: afkColors.accent,
+                    }}
+                  />
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{ color: afkColors.textTertiary }}
+                >
+                  You can browse and select repositories when creating sessions
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                startIcon={
+                  isDisconnecting ? (
+                    <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                  ) : (
+                    <LinkOffIcon sx={{ fontSize: 16 }} />
+                  )
+                }
+                onClick={() => disconnect()}
+                disabled={isDisconnecting}
+                sx={{
+                  fontSize: '0.75rem',
+                  color: afkColors.danger,
+                  '&:hover': { bgcolor: afkColors.dangerMuted },
+                }}
+              >
+                Disconnect
+              </Button>
+            </Box>
+          ) : (
+            <Box>
+              <Button
+                variant="outlined"
+                startIcon={<GitHubIcon />}
+                href={authUrl}
+                sx={{
+                  borderColor: afkColors.border,
+                  color: afkColors.textPrimary,
+                  '&:hover': {
+                    borderColor: afkColors.textSecondary,
+                    bgcolor: 'rgba(255, 255, 255, 0.04)',
+                  },
+                }}
+              >
+                Connect GitHub
+              </Button>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: afkColors.textTertiary,
+                  mt: 1,
+                  display: 'block',
+                  ml: 0.5,
+                }}
+              >
+                Connect your GitHub account to browse and select repositories
+                when creating sessions
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* SSH Configuration */}

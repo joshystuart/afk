@@ -10,6 +10,7 @@ import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { getDatabaseConfig } from './database/database.config';
 import { LoggerModule } from './libs/logger/logger.module';
+import { GitHubModule } from './libs/github/github.module';
 
 @Module({})
 export class AppModule {
@@ -25,6 +26,7 @@ export class AppModule {
         SettingsModule,
         GatewaysModule,
         HealthModule,
+        GitHubModule,
       ],
       controllers: [],
       providers: [ResponseService, HttpExceptionFilter],

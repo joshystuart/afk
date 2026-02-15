@@ -14,6 +14,12 @@ export class GetSettingsResponseDto {
   @ApiProperty({ required: false })
   gitUserEmail?: string;
 
+  @ApiProperty({ description: 'Whether GitHub is connected' })
+  hasGitHubToken!: boolean;
+
+  @ApiProperty({ required: false, description: 'Connected GitHub username' })
+  githubUsername?: string;
+
   @ApiProperty()
   updatedAt!: string;
 
@@ -23,6 +29,8 @@ export class GetSettingsResponseDto {
     dto.claudeToken = settings.claudeToken;
     dto.gitUserName = settings.gitUserName;
     dto.gitUserEmail = settings.gitUserEmail;
+    dto.hasGitHubToken = !!settings.githubAccessToken;
+    dto.githubUsername = settings.githubUsername;
     dto.updatedAt = settings.updatedAt.toISOString();
     return dto;
   }

@@ -96,9 +96,39 @@ claude setup-token
 
 This will guide you through the authentication process and store your token securely.
 
-#### 2. Set Up SSH Keys for Code Access
+#### 2. Connect GitHub (Recommended)
 
-For security, we recommend creating a dedicated SSH key pair for container access:
+The easiest way to give AFK access to your repositories is by connecting your GitHub account via OAuth. This lets you browse and select repos from a searchable dropdown when creating sessions, and handles private repo access automatically over HTTPS.
+
+1. Go to **Settings** in the web interface
+2. Click **Connect GitHub** in the GitHub Connection section
+3. Authorize the application on GitHub
+4. You'll be redirected back to Settings with a confirmation
+
+To use this feature, you'll need to set up a [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) and configure the credentials:
+
+```bash
+# Set these environment variables before starting the server
+export GITHUB_CLIENT_ID="your-client-id"
+export GITHUB_CLIENT_SECRET="your-client-secret"
+# Optional: override the callback URL (defaults to http://localhost:3001/api/github/callback)
+export GITHUB_CALLBACK_URL="http://localhost:3001/api/github/callback"
+```
+
+Or add them directly to `server/.env.yaml`:
+
+```yaml
+github:
+  clientId: "your-client-id"
+  clientSecret: "your-client-secret"
+  callbackUrl: "http://localhost:3001/api/github/callback"
+```
+
+Once connected, the Create Session page will default to a GitHub repository picker with search, recent repos, and auto-filled branch names.
+
+#### 3. Set Up SSH Keys for Code Access (Alternative)
+
+If you prefer SSH-based access or need to work with non-GitHub repositories, you can set up SSH keys instead:
 
 ```bash
 # Generate a new SSH key specifically for AFK containers
@@ -114,15 +144,20 @@ cat ~/.ssh/afk_container_key.pub
 
 **Security Note:** Using a separate SSH key for container access provides better security isolation. This key can be easily revoked if needed without affecting your main development workflow.
 
-Add both of these in the settings page of the web interface.
+**Note:** If you've connected GitHub, SSH keys are not required for GitHub repositories -- AFK will use your GitHub token for HTTPS cloning. SSH keys are still needed for non-GitHub repos accessed via SSH URLs.
+
+Add your Claude token and (optionally) SSH key in the settings page of the web interface.
 
 ![afk-settings.png](docs/afk-settings.png)
 
 #### Create a Session
 
-To create a new session, click the "Create Session" button in the web interface. You can configure the session name
-and git repository URL. The session will automatically start a Docker container with the specified settings and
-checkout the provided repository.
+To create a new session, click the "Create Session" button in the web interface. You can configure the session name and repository:
+
+- **GitHub mode** (when connected): Browse your repositories with a searchable dropdown. Repos from previous sessions appear at the top under "Recent". Selecting a repo auto-fills the clone URL and default branch.
+- **Manual URL mode**: Enter any git repository URL (SSH or HTTPS) and branch manually.
+
+The session will automatically start a Docker container with the specified settings and clone the provided repository.
 
 ![afk-create-session.png](docs/afk-create-session.png)
 
@@ -222,6 +257,12 @@ session:
 adminUser:
   username: '${ADMIN_USERNAME:-admin}'
   password: '${ADMIN_PASSWORD:-password123}'
+
+# Optional: GitHub OAuth for repository browsing
+github:
+  clientId: '${GITHUB_CLIENT_ID:-}'
+  clientSecret: '${GITHUB_CLIENT_SECRET:-}'
+  callbackUrl: '${GITHUB_CALLBACK_URL:-http://localhost:3001/api/github/callback}'
 ```
 
 **Available template configurations:**
@@ -259,6 +300,14 @@ The web client uses Vite, so all environment variables must be prefixed with `VI
 - Real-time session status updates via WebSocket
 - Start, stop, restart, and delete sessions
 - Session lifecycle management with automatic cleanup
+
+### GitHub Integration
+
+- Connect your GitHub account via OAuth
+- Browse and search your repositories from a searchable dropdown
+- Recent repos from past sessions surfaced at the top
+- Private repository access via HTTPS token (no SSH key required)
+- Auto-filled clone URLs and default branch names
 
 ### Terminal Access
 

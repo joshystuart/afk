@@ -245,6 +245,10 @@ export class DockerEngineService {
       env.push(`CLAUDE_CODE_OAUTH_TOKEN=${options.claudeToken}`);
     }
 
+    if (options.githubToken) {
+      env.push(`GITHUB_TOKEN=${options.githubToken}`);
+    }
+
     return env;
   }
 

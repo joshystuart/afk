@@ -14,6 +14,7 @@ const now = new Date().toISOString();
 const mockSettings = {
   empty: {
     hasSshPrivateKey: false,
+    hasGitHubToken: false,
     claudeToken: '',
     gitUserName: '',
     gitUserEmail: '',
@@ -21,6 +22,7 @@ const mockSettings = {
   },
   partial: {
     hasSshPrivateKey: false,
+    hasGitHubToken: false,
     claudeToken: '',
     gitUserName: 'Jane Doe',
     gitUserEmail: 'jane@example.com',
@@ -28,6 +30,7 @@ const mockSettings = {
   },
   fullyConfigured: {
     hasSshPrivateKey: true,
+    hasGitHubToken: true,
     claudeToken: 'sk-ant-api03-abc123xyz',
     gitUserName: 'Jane Doe',
     gitUserEmail: 'jane@example.com',
@@ -35,6 +38,7 @@ const mockSettings = {
   },
   withSshKeyOnly: {
     hasSshPrivateKey: true,
+    hasGitHubToken: false,
     claudeToken: '',
     gitUserName: '',
     gitUserEmail: '',

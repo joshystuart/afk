@@ -14,6 +14,7 @@ const now = new Date().toISOString();
 
 const configuredSettings: Settings = {
   hasSshPrivateKey: true,
+  hasGitHubToken: false,
   claudeToken: 'sk-ant-mock-token',
   gitUserName: 'dev-user',
   gitUserEmail: 'dev@example.com',
@@ -22,12 +23,14 @@ const configuredSettings: Settings = {
 
 const missingAllSettings: Settings = {
   hasSshPrivateKey: false,
+  hasGitHubToken: false,
   claudeToken: undefined,
   updatedAt: now,
 };
 
 const missingSshKeyOnly: Settings = {
   hasSshPrivateKey: false,
+  hasGitHubToken: false,
   claudeToken: 'sk-ant-mock-token',
   gitUserName: 'dev-user',
   gitUserEmail: 'dev@example.com',
@@ -36,6 +39,7 @@ const missingSshKeyOnly: Settings = {
 
 const missingClaudeTokenOnly: Settings = {
   hasSshPrivateKey: true,
+  hasGitHubToken: false,
   claudeToken: undefined,
   gitUserName: 'dev-user',
   gitUserEmail: 'dev@example.com',

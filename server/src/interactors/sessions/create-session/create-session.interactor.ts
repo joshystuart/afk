@@ -50,6 +50,15 @@ export class CreateSessionInteractor {
       // Allocate ports
       const ports = await this.portManager.allocatePortPair();
 
+      // Determine if we should pass the GitHub token for HTTPS cloning
+      const isGitHubHttpsUrl =
+        sessionConfig.repoUrl &&
+        sessionConfig.repoUrl.startsWith('https://github.com');
+      const githubToken =
+        isGitHubHttpsUrl && settings.githubAccessToken
+          ? settings.githubAccessToken
+          : undefined;
+
       // Create container
       const container = await this.dockerEngine.createContainer({
         sessionId: session.id,
@@ -62,6 +71,7 @@ export class CreateSessionInteractor {
         terminalMode: sessionConfig.terminalMode.toString().toLowerCase(),
         ports,
         claudeToken: settings.claudeToken,
+        githubToken,
       });
 
       // Update session with container info
@@ -107,10 +117,18 @@ export class CreateSessionInteractor {
     // Get settings for validation
     const settings = await this.settingsRepository.get();
 
-    // Validate required settings are configured
-    if (!settings.sshPrivateKey || settings.sshPrivateKey.trim() === '') {
+    // SSH key is required unless GitHub is connected or no repo URL needs SSH
+    const hasGitHub = !!settings.githubAccessToken;
+    const isHttpsUrl =
+      request.repoUrl && request.repoUrl.startsWith('https://');
+    const needsSshKey = !hasGitHub && !isHttpsUrl;
+
+    if (
+      needsSshKey &&
+      (!settings.sshPrivateKey || settings.sshPrivateKey.trim() === '')
+    ) {
       throw new Error(
-        'SSH Private Key is required. Please configure it in Settings before creating a session.',
+        'SSH Private Key is required for SSH repository URLs. Please configure it in Settings or connect GitHub for HTTPS access.',
       );
     }
 

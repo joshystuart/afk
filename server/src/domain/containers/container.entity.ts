@@ -33,4 +33,5 @@ export interface ContainerCreateOptions {
   terminalMode: string;
   ports: PortPairDto;
   claudeToken?: string;
+  githubToken?: string;
 }

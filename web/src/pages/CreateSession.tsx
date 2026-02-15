@@ -112,7 +112,7 @@ const CreateSession: React.FC = () => {
   // Determine if SSH key or GitHub is needed
   const missingSettings = useMemo(() => {
     if (!settings) return true;
-    if (!settings.claudeToken) return true;
+    if (!settings.hasClaudeToken) return true;
     // If using GitHub mode, no SSH key needed
     if (repoSource === 'github' && isConnected) return false;
     // If manual mode, SSH key needed for SSH URLs only
@@ -216,7 +216,7 @@ const CreateSession: React.FC = () => {
         </Alert>
       )}
 
-      {!settings?.claudeToken && (
+      {!settings?.hasClaudeToken && (
         <Alert severity="warning" sx={{ mb: 3 }}>
           <Typography variant="body2">
             Configure your Claude Token in{' '}

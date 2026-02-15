@@ -43,6 +43,7 @@ describe('Settings E2E Tests', () => {
       const { data } = response.body;
       expect(data).toHaveProperty('updatedAt');
       expect(data.hasSshPrivateKey).toBe(false);
+      expect(data.hasClaudeToken).toBe(false);
       expect(data).not.toHaveProperty('sshPrivateKey');
       expect(data.claudeToken).toBeNull();
       expect(data.gitUserName).toBeNull();
@@ -66,8 +67,11 @@ describe('Settings E2E Tests', () => {
       expect(response.body.success).toBe(true);
       // SSH key should be masked - only hasSshPrivateKey boolean is returned
       expect(response.body.data.hasSshPrivateKey).toBe(true);
+      expect(response.body.data.hasClaudeToken).toBe(true);
       expect(response.body.data).not.toHaveProperty('sshPrivateKey');
-      expect(response.body.data.claudeToken).toBe(updateData.claudeToken);
+      // Claude token should be obfuscated, not returned in plain text
+      expect(response.body.data.claudeToken).not.toBe(updateData.claudeToken);
+      expect(response.body.data.claudeToken).toContain('•');
       expect(response.body.data.gitUserName).toBe(updateData.gitUserName);
       expect(response.body.data.gitUserEmail).toBe(updateData.gitUserEmail);
       expect(response.body.data.updatedAt).toBeDefined();
@@ -91,8 +95,11 @@ describe('Settings E2E Tests', () => {
       expect(response.body.success).toBe(true);
       // SSH key should be masked in response
       expect(response.body.data.hasSshPrivateKey).toBe(true);
+      expect(response.body.data.hasClaudeToken).toBe(true);
       expect(response.body.data).not.toHaveProperty('sshPrivateKey');
-      expect(response.body.data.claudeToken).toBe(updateData.claudeToken);
+      // Claude token should be obfuscated, not returned in plain text
+      expect(response.body.data.claudeToken).not.toBe(updateData.claudeToken);
+      expect(response.body.data.claudeToken).toContain('•');
       expect(response.body.data.gitUserName).toBe(updateData.gitUserName);
       expect(response.body.data.gitUserEmail).toBe(updateData.gitUserEmail);
       expect(response.body.data.updatedAt).toBeDefined();
@@ -120,7 +127,10 @@ describe('Settings E2E Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.claudeToken).toBe('updated-token');
+      // Claude token should be obfuscated
+      expect(response.body.data.hasClaudeToken).toBe(true);
+      expect(response.body.data.claudeToken).toContain('•');
+      expect(response.body.data.claudeToken).not.toBe('updated-token');
       expect(response.body.data.gitUserEmail).toBe('updated@example.com');
       // Check that other fields remain unchanged
       expect(response.body.data.hasSshPrivateKey).toBe(true);
@@ -163,7 +173,9 @@ describe('Settings E2E Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.hasSshPrivateKey).toBe(true);
-      expect(response.body.data.claudeToken).toBe('true');
+      expect(response.body.data.hasClaudeToken).toBe(true);
+      // "true" is only 4 chars, so obfuscated to "••••••••"
+      expect(response.body.data.claudeToken).toBe('••••••••');
     });
 
     it('should reject unknown fields', async () => {
@@ -196,7 +208,10 @@ describe('Settings E2E Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.hasSshPrivateKey).toBe(true);
-      expect(response.body.data.claudeToken).toBe('normal-token');
+      expect(response.body.data.hasClaudeToken).toBe(true);
+      // "normal-token" obfuscated: first 4 + bullets + last 4
+      expect(response.body.data.claudeToken).toContain('•');
+      expect(response.body.data.claudeToken).not.toBe('normal-token');
     });
 
     it('should handle special characters in strings', async () => {
@@ -214,7 +229,10 @@ describe('Settings E2E Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.hasSshPrivateKey).toBe(true);
-      expect(response.body.data.claudeToken).toBe(updateData.claudeToken);
+      expect(response.body.data.hasClaudeToken).toBe(true);
+      // Claude token should be obfuscated
+      expect(response.body.data.claudeToken).toContain('•');
+      expect(response.body.data.claudeToken).not.toBe(updateData.claudeToken);
       expect(response.body.data.gitUserName).toBe(updateData.gitUserName);
       expect(response.body.data.gitUserEmail).toBe(updateData.gitUserEmail);
     });
@@ -241,7 +259,8 @@ describe('Settings E2E Tests', () => {
       // Values should be cleared
       expect(response.body.success).toBe(true);
       expect(response.body.data.hasSshPrivateKey).toBe(false);
-      expect(response.body.data.claudeToken).toBe('');
+      expect(response.body.data.hasClaudeToken).toBe(false);
+      expect(response.body.data.claudeToken).toBeFalsy();
     });
   });
 
@@ -262,7 +281,12 @@ describe('Settings E2E Tests', () => {
         const response = await authGet('/api/settings').expect(200);
 
         expect(response.body.data.hasSshPrivateKey).toBe(true);
-        expect(response.body.data.claudeToken).toBe(settingsData.claudeToken);
+        expect(response.body.data.hasClaudeToken).toBe(true);
+        // Claude token should be obfuscated
+        expect(response.body.data.claudeToken).toContain('•');
+        expect(response.body.data.claudeToken).not.toBe(
+          settingsData.claudeToken,
+        );
         expect(response.body.data.gitUserName).toBe(settingsData.gitUserName);
         expect(response.body.data.gitUserEmail).toBe(settingsData.gitUserEmail);
       }
@@ -359,7 +383,8 @@ describe('Settings E2E Tests', () => {
       // All responses should be successful and contain the same data
       responses.forEach((response) => {
         expect(response.status).toBe(200);
-        expect(response.body.data.claudeToken).toBe('concurrent-token');
+        expect(response.body.data.hasClaudeToken).toBe(true);
+        expect(response.body.data.claudeToken).toContain('•');
         expect(response.body.data.gitUserName).toBe('Concurrent User');
       });
     });
@@ -394,7 +419,10 @@ describe('Settings E2E Tests', () => {
       // Final state should have one of the values (last write wins)
       const finalResponse = await authGet('/api/settings').expect(200);
 
-      expect(finalResponse.body.data.claudeToken).toMatch(/^token-\d$/);
+      // Claude token is obfuscated: first 4 chars + bullets + last 4 chars
+      // "token-X" (7 chars) would be "••••••••" since length <= 8
+      expect(finalResponse.body.data.hasClaudeToken).toBe(true);
+      expect(finalResponse.body.data.claudeToken).toBe('••••••••');
       expect(finalResponse.body.data.gitUserName).toMatch(/^User \d$/);
     });
   });

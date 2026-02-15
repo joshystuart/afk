@@ -47,6 +47,8 @@ const Settings: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isEditingSshKey, setIsEditingSshKey] = useState(false);
   const [sshKeyModified, setSshKeyModified] = useState(false);
+  const [isEditingClaudeToken, setIsEditingClaudeToken] = useState(false);
+  const [claudeTokenModified, setClaudeTokenModified] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -75,12 +77,14 @@ const Settings: React.FC = () => {
     if (settings) {
       setFormData({
         sshPrivateKey: '',
-        claudeToken: settings.claudeToken || '',
+        claudeToken: '',
         gitUserName: settings.gitUserName || '',
         gitUserEmail: settings.gitUserEmail || '',
       });
       setIsEditingSshKey(false);
       setSshKeyModified(false);
+      setIsEditingClaudeToken(false);
+      setClaudeTokenModified(false);
     }
   }, [settings]);
 
@@ -105,6 +109,10 @@ const Settings: React.FC = () => {
       // Only include sshPrivateKey if the user actually entered a new one
       if (!sshKeyModified) {
         delete submitData.sshPrivateKey;
+      }
+      // Only include claudeToken if the user actually entered a new one
+      if (!claudeTokenModified) {
+        delete submitData.claudeToken;
       }
       await updateSettings(submitData);
       setSuccessMessage('Settings saved successfully!');
@@ -432,30 +440,85 @@ const Settings: React.FC = () => {
             </Typography>
           </Box>
 
-          <TextField
-            fullWidth
-            label="Claude API Token"
-            type="password"
-            value={formData.claudeToken}
-            onChange={handleInputChange('claudeToken')}
-            placeholder="sk-ant-api03-..."
-            helperText="Claude API token for AI assistance"
-          />
-          {formData.claudeToken && (
-            <Button
-              size="small"
-              onClick={() => handleClear('claudeToken')}
-              sx={{
-                mt: 1,
-                color: afkColors.danger,
-                fontSize: '0.75rem',
-                '&:hover': {
-                  bgcolor: afkColors.dangerMuted,
-                },
-              }}
-            >
-              Clear Claude Token
-            </Button>
+          {settings?.hasClaudeToken && !isEditingClaudeToken ? (
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  p: 2,
+                  border: `1px solid ${afkColors.border}`,
+                  borderRadius: 1,
+                  bgcolor: afkColors.surfaceElevated,
+                }}
+              >
+                <LockIcon sx={{ fontSize: 18, color: afkColors.accent }} />
+                <Typography
+                  variant="body2"
+                  sx={{ color: afkColors.textSecondary, flex: 1 }}
+                >
+                  Claude API token is configured
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={() => setIsEditingClaudeToken(true)}
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  Replace
+                </Button>
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: afkColors.textTertiary,
+                  mt: 0.5,
+                  ml: 1.75,
+                  display: 'block',
+                }}
+              >
+                Claude API token for AI assistance
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <TextField
+                fullWidth
+                label="Claude API Token"
+                type="password"
+                value={formData.claudeToken}
+                onChange={(e) => {
+                  handleInputChange('claudeToken')(e);
+                  setClaudeTokenModified(true);
+                }}
+                placeholder="sk-ant-api03-..."
+                helperText="Claude API token for AI assistance"
+              />
+              {(formData.claudeToken || isEditingClaudeToken) && (
+                <Button
+                  size="small"
+                  onClick={() => {
+                    handleClear('claudeToken');
+                    setClaudeTokenModified(true);
+                    if (settings?.hasClaudeToken) {
+                      setIsEditingClaudeToken(false);
+                    }
+                  }}
+                  sx={{
+                    mt: 1,
+                    color: afkColors.danger,
+                    fontSize: '0.75rem',
+                    '&:hover': {
+                      bgcolor: afkColors.dangerMuted,
+                    },
+                  }}
+                >
+                  {isEditingClaudeToken && !formData.claudeToken
+                    ? 'Cancel'
+                    : 'Clear Claude Token'}
+                </Button>
+              )}
+            </>
           )}
         </Box>
 

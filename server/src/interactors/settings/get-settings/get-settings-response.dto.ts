@@ -12,13 +12,13 @@ export class GetSettingsResponseDto {
     required: false,
     description: 'Obfuscated Claude token (e.g. sk-a…abcd)',
   })
-  claudeToken?: string;
+  claudeToken?: string | null;
 
-  @ApiProperty({ required: false })
-  gitUserName?: string;
+  @ApiProperty({ required: false, nullable: true })
+  gitUserName?: string | null;
 
-  @ApiProperty({ required: false })
-  gitUserEmail?: string;
+  @ApiProperty({ required: false, nullable: true })
+  gitUserEmail?: string | null;
 
   @ApiProperty({ description: 'Whether GitHub is connected' })
   hasGitHubToken!: boolean;
@@ -29,8 +29,8 @@ export class GetSettingsResponseDto {
   @ApiProperty()
   updatedAt!: string;
 
-  static obfuscateToken(token?: string): string | undefined {
-    if (!token) return undefined;
+  static obfuscateToken(token?: string): string | null {
+    if (!token) return null;
 
     if (token.length <= 8) {
       return '••••••••';
@@ -48,8 +48,8 @@ export class GetSettingsResponseDto {
     dto.claudeToken = GetSettingsResponseDto.obfuscateToken(
       settings.claudeToken,
     );
-    dto.gitUserName = settings.gitUserName;
-    dto.gitUserEmail = settings.gitUserEmail;
+    dto.gitUserName = settings.gitUserName ?? null;
+    dto.gitUserEmail = settings.gitUserEmail ?? null;
     dto.hasGitHubToken = !!settings.githubAccessToken;
     dto.githubUsername = settings.githubUsername ?? undefined;
     dto.updatedAt = settings.updatedAt.toISOString();

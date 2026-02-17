@@ -154,7 +154,6 @@ export class SessionLifecycleInteractor {
       branch: session.config.branch,
       gitUserName: session.config.gitUserName,
       gitUserEmail: session.config.gitUserEmail,
-      terminalMode: session.config.terminalMode,
       sshPrivateKey: session.config.sshPrivateKey,
       claudeToken: session.config.claudeToken,
       ports: session.ports,
@@ -361,10 +360,9 @@ export class SessionLifecycleInteractor {
     const claudeReady = await this.checkTerminalEndpoint(
       session.ports.claudePort,
     );
-    const manualReady =
-      session.config.terminalMode === 'DUAL'
-        ? await this.checkTerminalEndpoint(session.ports.manualPort)
-        : true; // Manual terminal not needed in simple mode
+    const manualReady = await this.checkTerminalEndpoint(
+      session.ports.manualPort,
+    );
 
     return {
       claudeTerminalReady: claudeReady,

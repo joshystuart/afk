@@ -41,7 +41,6 @@ export class CreateSessionInteractor {
       gitUserName: request.gitUserName || settings.gitUserName,
       gitUserEmail: request.gitUserEmail || settings.gitUserEmail,
       hasSSHKey: !!settings.sshPrivateKey,
-      terminalMode: request.terminalMode,
     });
 
     const session = this.sessionFactory.create(request.name, sessionConfig);
@@ -68,7 +67,6 @@ export class CreateSessionInteractor {
         gitUserName: sessionConfig.gitUserName,
         gitUserEmail: sessionConfig.gitUserEmail,
         sshPrivateKey: settings.sshPrivateKey,
-        terminalMode: sessionConfig.terminalMode.toString().toLowerCase(),
         ports,
         claudeToken: settings.claudeToken,
         githubToken,

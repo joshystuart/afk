@@ -30,7 +30,6 @@ export interface ContainerCreateOptions {
   gitUserName: string;
   gitUserEmail: string;
   sshPrivateKey?: string;
-  terminalMode: string;
   ports: PortPairDto;
   claudeToken?: string;
   githubToken?: string;

@@ -39,7 +39,6 @@ export class DockerEngineService {
       sessionName: options.sessionName,
       repoUrl: options.repoUrl,
       branch: options.branch,
-      terminalMode: options.terminalMode,
       ports: options.ports,
     });
 
@@ -329,7 +328,6 @@ export class DockerEngineService {
       `REPO_BRANCH=${options.branch || 'main'}`,
       `GIT_USER_NAME=${options.gitUserName}`,
       `GIT_USER_EMAIL=${options.gitUserEmail}`,
-      `TERMINAL_MODE=${options.terminalMode}`,
       `CLAUDE_PORT=${options.ports.claudePort}`,
       `MANUAL_PORT=${options.ports.manualPort}`,
     ];

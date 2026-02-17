@@ -177,7 +177,7 @@ export const RunningSessions: Story = {
   ],
 };
 
-/** A single running session with dual terminal mode. */
+/** A single running session. */
 export const SingleDualSession: Story = {
   decorators: [withDashboardContext({ sessions: [mockSessions.runningDual] })],
 };

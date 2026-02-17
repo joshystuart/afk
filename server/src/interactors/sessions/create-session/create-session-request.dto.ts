@@ -5,9 +5,7 @@ import {
   MinLength,
   MaxLength,
   Allow,
-  IsEnum,
 } from 'class-validator';
-import { TerminalMode } from '../../../domain/sessions/terminal-mode.enum';
 import { IsGitUrl } from '../../../libs/validators/git-url.validator';
 
 export class CreateSessionRequest {
@@ -31,10 +29,6 @@ export class CreateSessionRequest {
   @IsOptional()
   @IsEmail()
   gitUserEmail?: string;
-
-  @IsOptional()
-  @IsEnum(TerminalMode)
-  terminalMode?: TerminalMode;
 
   // This would be populated from authentication context
   @Allow()

@@ -8,13 +8,6 @@ export const SessionStatus = {
 
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
-export const TerminalMode = {
-  SIMPLE: 'SIMPLE',
-  DUAL: 'DUAL',
-} as const;
-
-export type TerminalMode = (typeof TerminalMode)[keyof typeof TerminalMode];
-
 export interface PortPair {
   host: number;
   container: number;
@@ -22,7 +15,6 @@ export interface PortPair {
 
 export interface SessionConfigDto {
   image: string;
-  mode: TerminalMode;
   workspacePath?: string;
 }
 
@@ -32,7 +24,6 @@ export interface Session {
   status: SessionStatus;
   repoUrl?: string;
   branch: string;
-  terminalMode: TerminalMode;
   ports?: {
     claude: number;
     manual: number;
@@ -51,7 +42,6 @@ export interface CreateSessionRequest {
   branch?: string;
   gitUserName?: string;
   gitUserEmail?: string;
-  terminalMode?: TerminalMode;
 }
 
 export interface CreateSessionResponse {

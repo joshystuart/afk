@@ -318,7 +318,7 @@ The web client uses Vite, so all environment variables must be prefixed with `VI
 ### Terminal Access
 
 - Embedded terminal access in the browser
-- Support for multiple terminal modes (debug, dual, normal)
+- Dual terminal sessions (Claude + manual web terminal)
 - External terminal access in new windows
 - Responsive design for desktop and mobile
 

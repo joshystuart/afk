@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { SessionConfigDto } from './session-config.dto';
-import { TerminalMode } from './terminal-mode.enum';
 
 @Injectable()
 export class SessionConfigDtoFactory {
@@ -11,7 +10,6 @@ export class SessionConfigDtoFactory {
       'Claude User',
       'claude@example.com',
       false,
-      TerminalMode.SIMPLE,
     );
   }
 
@@ -22,7 +20,6 @@ export class SessionConfigDtoFactory {
       params.gitUserName ?? 'Claude User',
       params.gitUserEmail ?? 'claude@example.com',
       params.hasSSHKey ?? false,
-      params.terminalMode ?? TerminalMode.SIMPLE,
     );
   }
 }

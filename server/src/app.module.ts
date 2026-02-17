@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { getDatabaseConfig } from './database/database.config';
 import { LoggerModule } from './libs/logger/logger.module';
 import { GitHubModule } from './libs/github/github.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({})
 export class AppModule {
@@ -20,6 +21,7 @@ export class AppModule {
       imports: [
         ConfigModule.forRoot({ path: options?.configPath }),
         TypeOrmModule.forRoot(getDatabaseConfig()),
+        EventEmitterModule.forRoot(),
         LoggerModule.forRootAsync(),
         AuthModule,
         SessionsModule,

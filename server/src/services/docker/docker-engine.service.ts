@@ -265,6 +265,52 @@ export class DockerEngineService {
     });
   }
 
+  async execStreamInContainer(
+    containerId: string,
+    cmd: string[],
+    onData: (data: string) => void,
+    workingDir = '/workspace/repo',
+  ): Promise<{ stream: NodeJS.ReadableStream; kill: () => Promise<void> }> {
+    const container = this.docker.getContainer(containerId);
+
+    const exec = await container.exec({
+      Cmd: cmd,
+      AttachStdout: true,
+      AttachStderr: true,
+      WorkingDir: workingDir,
+    });
+
+    const stream = await exec.start({ hijack: true, stdin: false });
+
+    const stdoutPassthrough = new (require('stream').PassThrough)();
+    const stderrPassthrough = new (require('stream').PassThrough)();
+
+    container.modem.demuxStream(stream, stdoutPassthrough, stderrPassthrough);
+
+    stdoutPassthrough.on('data', (chunk: Buffer) => {
+      onData(chunk.toString('utf8'));
+    });
+
+    stderrPassthrough.on('data', (chunk: Buffer) => {
+      this.logger.debug('execStream stderr', chunk.toString('utf8'));
+    });
+
+    const kill = async () => {
+      try {
+        stream.destroy();
+        stdoutPassthrough.destroy();
+        stderrPassthrough.destroy();
+      } catch (error) {
+        this.logger.warn('Error killing exec stream', {
+          containerId,
+          error: error.message,
+        });
+      }
+    };
+
+    return { stream: stdoutPassthrough, kill };
+  }
+
   async ping(): Promise<void> {
     try {
       await this.docker.ping();

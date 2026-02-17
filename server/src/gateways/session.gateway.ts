@@ -8,9 +8,16 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { SessionSubscriptionService } from './session-subscription.service';
 import { DockerEngineService } from '../services/docker/docker-engine.service';
+import {
+  GitWatcherService,
+  GitStatusResult,
+} from '../services/git-watcher/git-watcher.service';
+import { SessionRepository } from '../services/repositories/session.repository';
+import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
 
 export interface SessionUpdate {
@@ -36,6 +43,9 @@ export class SessionGateway
   constructor(
     private readonly sessionSubscriptionService: SessionSubscriptionService,
     private readonly dockerEngine: DockerEngineService,
+    private readonly gitWatcherService: GitWatcherService,
+    private readonly sessionRepository: SessionRepository,
+    private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -45,7 +55,21 @@ export class SessionGateway
   }
 
   async handleDisconnect(client: Socket) {
+    // Get sessions this client was subscribed to before unsubscribing
+    const sessions =
+      this.sessionSubscriptionService.getSessionsForClient(client.id);
+
     await this.sessionSubscriptionService.unsubscribeAll(client.id);
+
+    // Check if any sessions now have zero subscribers and stop watching
+    for (const sessionId of sessions) {
+      const remaining =
+        this.sessionSubscriptionService.getSubscribersForSession(sessionId);
+      if (remaining.length === 0) {
+        await this.gitWatcherService.stopWatching(sessionId);
+      }
+    }
+
     this.logger.log('Client disconnected', { clientId: client.id });
   }
 
@@ -61,6 +85,14 @@ export class SessionGateway
       );
 
       client.join(`session:${data.sessionId}`);
+
+      // Start git watcher if session is running
+      this.startGitWatcherIfRunning(data.sessionId).catch((error) => {
+        this.logger.warn('Failed to start git watcher on subscribe', {
+          sessionId: data.sessionId,
+          error: error.message,
+        });
+      });
 
       return {
         event: 'subscription.success',
@@ -84,6 +116,13 @@ export class SessionGateway
       data.sessionId,
     );
     client.leave(`session:${data.sessionId}`);
+
+    // Stop watcher if no subscribers remain
+    const remaining =
+      this.sessionSubscriptionService.getSubscribersForSession(data.sessionId);
+    if (remaining.length === 0) {
+      await this.gitWatcherService.stopWatching(data.sessionId);
+    }
 
     return {
       event: 'unsubscription.success',
@@ -138,6 +177,21 @@ export class SessionGateway
     };
   }
 
+  // Listen for git status changes from GitWatcherService
+  @OnEvent('git.status.changed')
+  handleGitStatusChanged(payload: {
+    sessionId: string;
+    status: GitStatusResult;
+  }) {
+    this.server
+      .to(`session:${payload.sessionId}`)
+      .emit('session.git.status', {
+        sessionId: payload.sessionId,
+        ...payload.status,
+        timestamp: new Date().toISOString(),
+      });
+  }
+
   // Emit session status updates
   emitSessionUpdate(sessionId: string, update: SessionUpdate) {
     this.server.to(`session:${sessionId}`).emit('session.updated', {
@@ -160,5 +214,23 @@ export class SessionGateway
       ...data,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  private async startGitWatcherIfRunning(sessionId: string): Promise<void> {
+    if (this.gitWatcherService.isWatching(sessionId)) {
+      return;
+    }
+
+    const session = await this.sessionRepository.findById(
+      this.sessionIdFactory.fromString(sessionId),
+    );
+
+    if (
+      session &&
+      session.status === SessionStatus.RUNNING &&
+      session.containerId
+    ) {
+      await this.gitWatcherService.startWatching(sessionId, session.containerId);
+    }
   }
 }

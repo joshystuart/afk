@@ -8,8 +8,9 @@ export const useGitStatus = (sessionId: string | null, enabled: boolean) => {
     queryKey: ['gitStatus', sessionId],
     queryFn: () => sessionsApi.getGitStatus(sessionId!),
     enabled: enabled && !!sessionId,
-    refetchInterval: 30_000, // Poll every 30 seconds
+    refetchInterval: 60_000, // Fallback poll every 60s in case WebSocket misses an update
     retry: false,
+    staleTime: 30_000,
   });
 
   const commitAndPushMutation = useMutation({

@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   screen \
   tmux \
   ripgrep \
+  inotify-tools \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install ttyd from GitHub releases

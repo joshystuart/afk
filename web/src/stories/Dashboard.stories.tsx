@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '../pages/Dashboard';
 import { useSessionStore } from '../stores/session.store';
-import { SessionStatus, TerminalMode } from '../api/types';
+import { SessionStatus } from '../api/types';
 import type { Session } from '../api/types';
 
 // ---------------------------------------------------------------------------
@@ -22,7 +22,6 @@ const mockSessions = {
     status: SessionStatus.RUNNING,
     repoUrl: 'https://github.com/acme/webapp.git',
     branch: 'main',
-    terminalMode: TerminalMode.DUAL,
     ports: { claude: 7681, manual: 7682 },
     terminalUrls: {
       claude: 'http://localhost:7681',
@@ -31,13 +30,12 @@ const mockSessions = {
     createdAt: hourAgo,
     updatedAt: now,
   },
-  runningSimple: {
+  runningTwo: {
     id: '789ghi012jkl7891',
     name: 'api-migration',
     status: SessionStatus.RUNNING,
     repoUrl: 'https://github.com/acme/api-service.git',
     branch: 'feature/v2',
-    terminalMode: TerminalMode.SIMPLE,
     ports: { claude: 7683, manual: 7684 },
     terminalUrls: {
       claude: 'http://localhost:7683',
@@ -52,7 +50,6 @@ const mockSessions = {
     status: SessionStatus.STOPPED,
     repoUrl: 'https://github.com/acme/etl-jobs.git',
     branch: 'main',
-    terminalMode: TerminalMode.SIMPLE,
     createdAt: dayAgo,
     updatedAt: hourAgo,
   },
@@ -62,7 +59,6 @@ const mockSessions = {
     status: SessionStatus.ERROR,
     repoUrl: 'https://github.com/acme/legacy-app.git',
     branch: 'hotfix/auth',
-    terminalMode: TerminalMode.DUAL,
     createdAt: dayAgo,
     updatedAt: hourAgo,
   },
@@ -71,7 +67,6 @@ const mockSessions = {
     name: 'scratch-session',
     status: SessionStatus.RUNNING,
     branch: 'main',
-    terminalMode: TerminalMode.SIMPLE,
     ports: { claude: 7685, manual: 7686 },
     terminalUrls: {
       claude: 'http://localhost:7685',
@@ -177,7 +172,7 @@ export const WithSessions: Story = {
 export const RunningSessions: Story = {
   decorators: [
     withDashboardContext({
-      sessions: [mockSessions.runningDual, mockSessions.runningSimple],
+      sessions: [mockSessions.runningDual, mockSessions.runningTwo],
     }),
   ],
 };

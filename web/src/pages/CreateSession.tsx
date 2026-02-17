@@ -4,10 +4,6 @@ import {
   Typography,
   TextField,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   Autocomplete,
   Chip,
@@ -26,12 +22,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { useGitHub } from '../hooks/useGitHub';
-import {
-  TerminalMode,
-  type CreateSessionRequest,
-  type GitHubRepo,
-} from '../api/types';
-import { ROUTES, TERMINAL_MODE_LABELS } from '../utils/constants';
+import { type CreateSessionRequest, type GitHubRepo } from '../api/types';
+import { ROUTES } from '../utils/constants';
 import { useSettingsStore } from '../stores/settings.store';
 import { afkColors } from '../themes/afk';
 
@@ -41,7 +33,6 @@ interface CreateSessionForm {
   name: string;
   repoUrl?: string;
   branch?: string;
-  terminalMode: TerminalMode;
 }
 
 const CreateSession: React.FC = () => {
@@ -130,7 +121,6 @@ const CreateSession: React.FC = () => {
       name: '',
       repoUrl: '',
       branch: 'main',
-      terminalMode: TerminalMode.DUAL,
     },
   });
 
@@ -184,7 +174,6 @@ const CreateSession: React.FC = () => {
         name: data.name,
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
-        terminalMode: data.terminalMode,
       };
 
       await createSession(request);
@@ -558,52 +547,6 @@ const CreateSession: React.FC = () => {
                 />
               </>
             )}
-          </Box>
-        </Box>
-
-        {/* Terminal section */}
-        <Box sx={{ mb: 4 }}>
-          <Box
-            sx={{
-              borderLeft: `2px solid ${afkColors.accent}`,
-              pl: 2,
-              mb: 2.5,
-            }}
-          >
-            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
-              Terminal Configuration
-            </Typography>
-          </Box>
-
-          <Controller
-            name="terminalMode"
-            control={control}
-            rules={{ required: 'Terminal mode is required' }}
-            render={({ field }) => (
-              <FormControl fullWidth error={!!errors.terminalMode}>
-                <InputLabel>Terminal Mode</InputLabel>
-                <Select {...field} label="Terminal Mode">
-                  {Object.entries(TERMINAL_MODE_LABELS).map(
-                    ([value, label]) => (
-                      <MenuItem key={value} value={value}>
-                        {label}
-                      </MenuItem>
-                    ),
-                  )}
-                </Select>
-              </FormControl>
-            )}
-          />
-
-          {/* Inline help instead of sidebar card */}
-          <Box sx={{ mt: 1.5 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: afkColors.textTertiary, fontSize: '0.75rem' }}
-            >
-              <strong>Simple</strong> &mdash; Claude Code terminal only.{' '}
-              <strong>Dual</strong> &mdash; Claude Code + manual web terminal.
-            </Typography>
           </Box>
         </Box>
 

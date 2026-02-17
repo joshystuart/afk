@@ -365,28 +365,26 @@ const Dashboard: React.FC = () => {
                     >
                       <TerminalIcon sx={{ fontSize: 16 }} />
                     </IconButton>
-                    {session.terminalMode === 'DUAL' && (
-                      <IconButton
-                        size="small"
-                        href={session.terminalUrls.manual}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        title="Manual Terminal"
-                        sx={{
-                          border: `1px solid ${afkColors.border}`,
-                          borderRadius: '6px',
-                          p: 0.75,
-                          color: afkColors.textSecondary,
-                          '&:hover': {
-                            borderColor: afkColors.textSecondary,
-                            bgcolor: 'rgba(255,255,255,0.04)',
-                          },
-                        }}
-                      >
-                        <TerminalIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    )}
+                    <IconButton
+                      size="small"
+                      href={session.terminalUrls.manual}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      title="Manual Terminal"
+                      sx={{
+                        border: `1px solid ${afkColors.border}`,
+                        borderRadius: '6px',
+                        p: 0.75,
+                        color: afkColors.textSecondary,
+                        '&:hover': {
+                          borderColor: afkColors.textSecondary,
+                          bgcolor: 'rgba(255,255,255,0.04)',
+                        },
+                      }}
+                    >
+                      <TerminalIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
                   </Box>
                 )}
 

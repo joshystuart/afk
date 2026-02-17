@@ -17,6 +17,7 @@ import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
 import { SettingsModule } from '../settings/settings.module';
+import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
 import { Session } from '../../domain/sessions/session.entity';
@@ -28,6 +29,7 @@ import { Session } from '../../domain/sessions/session.entity';
     RepositoriesModule,
     DomainModule,
     SettingsModule,
+    GitWatcherModule,
   ],
   controllers: [
     CreateSessionController,

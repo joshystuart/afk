@@ -414,7 +414,10 @@ const SessionDetails: React.FC = () => {
               <span>
                 <IconButton
                   size="small"
-                  onClick={() => setCommitDialogOpen(true)}
+                  onClick={() => {
+                    gitStatus.refetchStatus();
+                    setCommitDialogOpen(true);
+                  }}
                   disabled={!gitStatus.hasChanges}
                   sx={{
                     p: 0.5,
@@ -472,7 +475,7 @@ const SessionDetails: React.FC = () => {
             minHeight: 0,
           }}
         >
-          {session.terminalMode === 'DUAL' && isMobile ? (
+          {isMobile ? (
             /* Mobile Tabs */
             <>
               <Box
@@ -547,7 +550,7 @@ const SessionDetails: React.FC = () => {
                 )}
               </Box>
             </>
-          ) : session.terminalMode === 'DUAL' ? (
+          ) : (
             /* Desktop Side-by-Side */
             <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
               <Box
@@ -585,22 +588,6 @@ const SessionDetails: React.FC = () => {
                   }}
                 />
               </Box>
-            </Box>
-          ) : (
-            /* Single Terminal */
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <TerminalPanel
-                label="Claude"
-                ready={healthCheck.claudeTerminalReady}
-                url={session.terminalUrls.claude}
-                isLoading={healthCheck.isLoading}
-                isError={!!healthCheck.error}
-                onRetry={healthCheck.error ? healthCheck.refetch : undefined}
-                onFullscreen={() => {
-                  setIsFullscreen(true);
-                  setFullscreenTerminal('claude');
-                }}
-              />
             </Box>
           )}
         </Box>

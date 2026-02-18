@@ -109,13 +109,20 @@ clone_repository() {
             
             if [ "$existing_remote" = "$url" ]; then
                 log_info "Directory is already the correct git repository"
-                log_info "Pulling latest changes instead of cloning"
-                if git pull --rebase 2>&1; then
-                    log_info "Repository updated successfully"
-                    return 0
+                
+                # Check for uncommitted changes before attempting pull
+                if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet HEAD 2>/dev/null; then
+                    log_info "Working tree is clean, pulling latest changes"
+                    if git pull --rebase 2>&1; then
+                        log_info "Repository updated successfully"
+                    else
+                        log_warning "Git pull failed, continuing with existing state"
+                    fi
                 else
-                    log_warning "Git pull failed, will remove and reclone"
+                    log_info "Uncommitted changes detected, skipping pull to preserve local work"
                 fi
+                
+                return 0
             else
                 log_warning "Directory contains a different repository, will remove and reclone"
             fi

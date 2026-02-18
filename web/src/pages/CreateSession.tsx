@@ -30,7 +30,7 @@ import { afkColors } from '../themes/afk';
 type RepoSource = 'github' | 'manual';
 
 interface CreateSessionForm {
-  name: string;
+  name?: string;
   repoUrl?: string;
   branch?: string;
 }
@@ -171,7 +171,7 @@ const CreateSession: React.FC = () => {
     try {
       clearError();
       const request: CreateSessionRequest = {
-        name: data.name,
+        name: data.name?.trim() || undefined,
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
       };
@@ -216,48 +216,6 @@ const CreateSession: React.FC = () => {
       )}
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-        {/* Session Details */}
-        <Box sx={{ mb: 4 }}>
-          <Box
-            sx={{
-              borderLeft: `2px solid ${afkColors.accent}`,
-              pl: 2,
-              mb: 2.5,
-            }}
-          >
-            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
-              Session Details
-            </Typography>
-          </Box>
-
-          <Controller
-            name="name"
-            control={control}
-            rules={{
-              required: 'Session name is required',
-              minLength: {
-                value: 3,
-                message: 'Name must be at least 3 characters',
-              },
-              maxLength: {
-                value: 50,
-                message: 'Name must be at most 50 characters',
-              },
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                label="Session Name"
-                helperText={
-                  errors.name?.message || 'A descriptive name for your session'
-                }
-                error={!!errors.name}
-              />
-            )}
-          />
-        </Box>
-
         {/* Repository section */}
         <Box sx={{ mb: 4 }}>
           <Box
@@ -548,6 +506,48 @@ const CreateSession: React.FC = () => {
               </>
             )}
           </Box>
+        </Box>
+
+        {/* Session Details */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              Session Details
+            </Typography>
+          </Box>
+
+          <Controller
+            name="name"
+            control={control}
+            rules={{
+              minLength: {
+                value: 3,
+                message: 'Name must be at least 3 characters',
+              },
+              maxLength: {
+                value: 50,
+                message: 'Name must be at most 50 characters',
+              },
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="Session Name"
+                helperText={
+                  errors.name?.message ||
+                  'Optional. Defaults to repo name and branch if not provided.'
+                }
+                error={!!errors.name}
+              />
+            )}
+          />
         </Box>
 
         {/* Actions */}

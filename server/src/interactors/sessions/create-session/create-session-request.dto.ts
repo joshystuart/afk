@@ -9,10 +9,11 @@ import {
 import { IsGitUrl } from '../../../libs/validators/git-url.validator';
 
 export class CreateSessionRequest {
+  @IsOptional()
   @IsString()
   @MinLength(3)
   @MaxLength(50)
-  name!: string;
+  name?: string;
 
   @IsOptional()
   @IsGitUrl()

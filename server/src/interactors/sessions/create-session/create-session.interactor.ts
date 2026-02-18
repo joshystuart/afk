@@ -26,7 +26,11 @@ export class CreateSessionInteractor {
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
-    this.logger.log('Creating new session', { sessionName: request.name });
+    // Default name from repo URL and branch if not provided
+    const sessionName =
+      request.name || this.deriveSessionName(request.repoUrl, request.branch);
+
+    this.logger.log('Creating new session', { sessionName });
 
     // Get global settings
     const settings = await this.settingsRepository.get();
@@ -43,7 +47,7 @@ export class CreateSessionInteractor {
       hasSSHKey: !!settings.sshPrivateKey,
     });
 
-    const session = this.sessionFactory.create(request.name, sessionConfig);
+    const session = this.sessionFactory.create(sessionName, sessionConfig);
 
     try {
       // Allocate ports
@@ -169,6 +173,30 @@ export class CreateSessionInteractor {
     }
 
     throw new Error('Container failed to start within timeout');
+  }
+
+  private deriveSessionName(repoUrl?: string, branch?: string): string {
+    if (!repoUrl) {
+      return `session-${Date.now()}`;
+    }
+
+    // Extract repo name from URL (supports HTTPS and SSH formats)
+    let repoName: string;
+    try {
+      // SSH format: git@github.com:owner/repo.git
+      const sshMatch = repoUrl.match(/[:/]([^/]+?)(?:\.git)?$/);
+      if (sshMatch) {
+        repoName = sshMatch[1];
+      } else {
+        repoName = repoUrl.split('/').pop()?.replace(/\.git$/, '') || 'repo';
+      }
+    } catch {
+      repoName = 'repo';
+    }
+
+    const branchName = branch || 'main';
+    const shortId = Date.now().toString(36).slice(-4);
+    return `${repoName}/${branchName}-${shortId}`;
   }
 
   private isValidRepoUrl(url: string): boolean {

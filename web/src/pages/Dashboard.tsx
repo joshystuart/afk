@@ -11,7 +11,6 @@ import {
   Add as AddIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
-  Terminal as TerminalIcon,
   Visibility as ViewIcon,
   Delete as DeleteIcon,
   FiberManualRecord as DotIcon,
@@ -340,53 +339,6 @@ const Dashboard: React.FC = () => {
                   </Typography>
                 </Box>
               </Box>
-
-              {/* Terminal access icons */}
-              {session.status === SessionStatus.RUNNING &&
-                session.terminalUrls && (
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <IconButton
-                      size="small"
-                      href={session.terminalUrls.claude}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      title="Claude Terminal"
-                      sx={{
-                        border: `1px solid ${afkColors.border}`,
-                        borderRadius: '6px',
-                        p: 0.75,
-                        color: afkColors.accent,
-                        '&:hover': {
-                          borderColor: afkColors.accent,
-                          bgcolor: afkColors.accentMuted,
-                        },
-                      }}
-                    >
-                      <TerminalIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      href={session.terminalUrls.manual}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      title="Manual Terminal"
-                      sx={{
-                        border: `1px solid ${afkColors.border}`,
-                        borderRadius: '6px',
-                        p: 0.75,
-                        color: afkColors.textSecondary,
-                        '&:hover': {
-                          borderColor: afkColors.textSecondary,
-                          bgcolor: 'rgba(255,255,255,0.04)',
-                        },
-                      }}
-                    >
-                      <TerminalIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </Box>
-                )}
 
               {/* Actions row */}
               <Box

@@ -37,7 +37,7 @@ export interface Session {
 }
 
 export interface CreateSessionRequest {
-  name: string;
+  name?: string;
   repoUrl?: string;
   branch?: string;
   gitUserName?: string;

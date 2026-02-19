@@ -188,7 +188,11 @@ export class CreateSessionInteractor {
       if (sshMatch) {
         repoName = sshMatch[1];
       } else {
-        repoName = repoUrl.split('/').pop()?.replace(/\.git$/, '') || 'repo';
+        repoName =
+          repoUrl
+            .split('/')
+            .pop()
+            ?.replace(/\.git$/, '') || 'repo';
       }
     } catch {
       repoName = 'repo';

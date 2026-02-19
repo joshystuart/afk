@@ -56,8 +56,9 @@ export class SessionGateway
 
   async handleDisconnect(client: Socket) {
     // Get sessions this client was subscribed to before unsubscribing
-    const sessions =
-      this.sessionSubscriptionService.getSessionsForClient(client.id);
+    const sessions = this.sessionSubscriptionService.getSessionsForClient(
+      client.id,
+    );
 
     await this.sessionSubscriptionService.unsubscribeAll(client.id);
 
@@ -118,8 +119,9 @@ export class SessionGateway
     client.leave(`session:${data.sessionId}`);
 
     // Stop watcher if no subscribers remain
-    const remaining =
-      this.sessionSubscriptionService.getSubscribersForSession(data.sessionId);
+    const remaining = this.sessionSubscriptionService.getSubscribersForSession(
+      data.sessionId,
+    );
     if (remaining.length === 0) {
       await this.gitWatcherService.stopWatching(data.sessionId);
     }
@@ -183,13 +185,11 @@ export class SessionGateway
     sessionId: string;
     status: GitStatusResult;
   }) {
-    this.server
-      .to(`session:${payload.sessionId}`)
-      .emit('session.git.status', {
-        sessionId: payload.sessionId,
-        ...payload.status,
-        timestamp: new Date().toISOString(),
-      });
+    this.server.to(`session:${payload.sessionId}`).emit('session.git.status', {
+      sessionId: payload.sessionId,
+      ...payload.status,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   // Emit session status updates
@@ -230,7 +230,10 @@ export class SessionGateway
       session.status === SessionStatus.RUNNING &&
       session.containerId
     ) {
-      await this.gitWatcherService.startWatching(sessionId, session.containerId);
+      await this.gitWatcherService.startWatching(
+        sessionId,
+        session.containerId,
+      );
     }
   }
 }

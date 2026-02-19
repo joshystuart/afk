@@ -8,6 +8,8 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -24,9 +26,12 @@ import * as crypto from 'crypto';
 
 @ApiTags('GitHub')
 @Controller('github')
-export class GitHubController {
+export class GitHubController implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(GitHubController.name);
+  private static readonly OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+  private static readonly OAUTH_STATE_CLEANUP_INTERVAL_MS = 60 * 1000;
   private readonly oauthStates = new Map<string, { createdAt: number }>();
+  private oauthStateCleanupTimer?: NodeJS.Timeout;
 
   constructor(
     private readonly githubService: GitHubService,
@@ -35,6 +40,34 @@ export class GitHubController {
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
   ) {}
+
+  onModuleInit(): void {
+    this.oauthStateCleanupTimer = setInterval(() => {
+      this.cleanupExpiredOauthStates();
+    }, GitHubController.OAUTH_STATE_CLEANUP_INTERVAL_MS);
+
+    this.oauthStateCleanupTimer.unref();
+  }
+
+  onModuleDestroy(): void {
+    if (this.oauthStateCleanupTimer) {
+      clearInterval(this.oauthStateCleanupTimer);
+      this.oauthStateCleanupTimer = undefined;
+    }
+  }
+
+  private cleanupExpiredOauthStates(now = Date.now()): void {
+    const expiryCutoff = now - GitHubController.OAUTH_STATE_TTL_MS;
+    for (const [key, value] of this.oauthStates.entries()) {
+      if (value.createdAt < expiryCutoff) {
+        this.oauthStates.delete(key);
+      }
+    }
+  }
+
+  private isStateExpired(createdAt: number, now = Date.now()): boolean {
+    return now - createdAt > GitHubController.OAUTH_STATE_TTL_MS;
+  }
 
   @Public()
   @Get('auth')
@@ -50,14 +83,7 @@ export class GitHubController {
 
     const state = crypto.randomBytes(16).toString('hex');
     this.oauthStates.set(state, { createdAt: Date.now() });
-
-    // Clean up old states (older than 10 min)
-    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-    for (const [key, value] of this.oauthStates.entries()) {
-      if (value.createdAt < tenMinutesAgo) {
-        this.oauthStates.delete(key);
-      }
-    }
+    this.cleanupExpiredOauthStates();
 
     const authUrl = this.githubService.getAuthUrl(
       this.githubConfig.clientId,
@@ -83,6 +109,12 @@ export class GitHubController {
     const storedState = this.oauthStates.get(state);
     if (!storedState) {
       this.logger.warn('Invalid OAuth state received');
+      res.redirect(`${redirectUrl}?github=error&reason=invalid_state`);
+      return;
+    }
+    if (this.isStateExpired(storedState.createdAt)) {
+      this.oauthStates.delete(state);
+      this.logger.warn('Expired OAuth state received');
       res.redirect(`${redirectUrl}?github=error&reason=invalid_state`);
       return;
     }

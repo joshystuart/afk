@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AppConfig } from '../libs/config/app.config';
+import { AppConfig } from '../config/app.config';
 
 export interface LoginCredentials {
   username: string;

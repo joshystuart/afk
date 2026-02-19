@@ -21,7 +21,7 @@ import {
   ResponseService,
   ApiResponse as ApiResponseType,
 } from '../response/response.service';
-import { Public } from '../../auth/auth.guard';
+import { Public } from '../auth/auth.guard';
 import * as crypto from 'crypto';
 
 @ApiTags('GitHub')

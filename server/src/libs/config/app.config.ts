@@ -10,6 +10,7 @@ import { SessionConfig } from './session.config';
 import { LoggerConfig } from './logger.config';
 import { AdminUserConfig } from './admin-user.config';
 import { GitHubConfig } from '../github/github.config';
+import { AuthConfig } from '../auth/auth.config';
 
 export class AppConfig {
   @IsNumber()
@@ -42,4 +43,8 @@ export class AppConfig {
   @Type(() => GitHubConfig)
   @IsOptional()
   public readonly github!: GitHubConfig;
+
+  @ValidateNested()
+  @Type(() => AuthConfig)
+  public readonly auth!: AuthConfig;
 }

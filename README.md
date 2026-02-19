@@ -1,16 +1,15 @@
 # AFK - Away From Klaude
 
-AFK is a remote terminal access service that enables running Claude Code in Docker containers with web-based terminal access. The project provides containerized development environments with dual terminal sessions (Claude + manual access), automatic git integration, and a modern web interface for session management.
+AFK (Away From Klaude) lets you run multiple Claude Code sessions in isolated Docker environments for maximunm safety, security and efficiency.
 
 ![afk-dashboard.png](docs/afk-dashboard.png)
-
 ![afk-session-details.png](docs/afk-session-details.png)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 24+
 - npm or yarn
 - Docker (for container management)
 - Claude CLI (for OAuth token generation)
@@ -59,24 +58,29 @@ cp web/.env.example web/.env
 
 4. Start the application:
 
-The web interface will be available at [http://localhost:5173](http://localhost:5173).
-The server API will be available at [http://localhost:3001](http://localhost:3001).
-
 ```bash
-# Development mode (both server and web client will hot reload)
+# Development mode (hot reload)
 npm run start:dev
 ```
 
-The web interface will be available at [http://localhost:4173](http://localhost:4173)
-The server API will be available at [http://localhost:3001](http://localhost:3001).
+- Web interface: [http://localhost:5173](http://localhost:5173)
+- Server API: [http://localhost:3001](http://localhost:3001)
 
 ```bash
+# Production-like mode (built frontend preview + server start)
+npm run build
 npm run start
 ```
 
+- Web interface: [http://localhost:4173](http://localhost:4173)
+- Server API: [http://localhost:3001](http://localhost:3001)
+
 ### Getting Started
 
-Log into the web interface at [http://localhost:4173](http://localhost:4173) using the admin credentials you set in `server/.env.yaml`:
+Log into the web interface using the admin credentials you set in `server/.env.yaml`:
+
+- `http://localhost:5173` when using `npm run start:dev`
+- `http://localhost:4173` when using `npm run build && npm run start`
 
 ![afk-login.png](docs/afk-login.png)
 
@@ -84,11 +88,11 @@ Once the application is running you will need to ensure you have the following s
 
 #### 1. Generate Claude OAuth Token
 
-Before using AFK, you'll need to generate a Claude OAuth token:
+Before using AFK, you'll need to generate a Claude OAuth token: [https://code.claude.com/docs/en/setup](https://code.claude.com/docs/en/setup)
 
 ```bash
 # Install Claude CLI if not already installed
-npm install -g @anthropic-ai/claude-cli
+curl -fsSL https://claude.ai/install.sh | bash
 
 # Generate and set up your OAuth token
 claude setup-token
@@ -106,10 +110,6 @@ First, set up a [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/bu
 # Set these environment variables before starting the server
 export GITHUB_CLIENT_ID="your-client-id"
 export GITHUB_CLIENT_SECRET="your-client-secret"
-# Optional: override the callback URL (defaults to http://localhost:3001/api/github/callback)
-export GITHUB_CALLBACK_URL="http://localhost:3001/api/github/callback"
-# Optional: override the frontend URL to redirect to after OAuth (defaults to http://localhost:5173/settings)
-export GITHUB_FRONTEND_REDIRECT_URL="http://localhost:5173/settings"
 ```
 
 Or add them directly to `server/.env.yaml`:
@@ -151,7 +151,7 @@ cat ~/.ssh/afk_container_key.pub
 
 **Note:** If you've connected GitHub, SSH keys are not required for GitHub repositories -- AFK will use your GitHub token for HTTPS cloning. SSH keys are still needed for non-GitHub repos accessed via SSH URLs.
 
-Add your Claude token and (optionally) SSH key in the settings page of the web interface.
+Add your Claude token, Git identity, and (optionally) SSH key in the Settings page of the web interface.
 
 ![afk-settings.png](docs/afk-settings.png)
 
@@ -163,6 +163,21 @@ To create a new session, click the "Create Session" button in the web interface.
 - **Manual URL mode**: Enter any git repository URL (SSH or HTTPS) and branch manually.
 
 The session will automatically start a Docker container with the specified settings and clone the provided repository.
+
+#### Commit & Push from Session View
+
+When a session is running, AFK continuously tracks git status for the checked-out repo and shows branch + change count in the session header.
+
+To commit and push from the UI:
+
+![afk-commit.png](docs/afk-commit.png)
+
+1. Open a running session
+2. Click the **cloud upload** icon in the top status bar
+3. Enter a commit message in the **Commit & Push** dialog
+4. Submit to run `git add -A`, `git commit -m "<message>"`, and `git push` inside the session container
+
+If no files have changed, the action is disabled automatically.
 
 ![afk-create-session.png](docs/afk-create-session.png)
 
@@ -183,7 +198,7 @@ afk/
 
 From the root directory:
 
-- `npm run dev` - Start both server and web client in development mode
+- `npm run start:dev` - Start both server and web client in development mode
 - `npm run start` - Start both applications in production mode
 - `npm run install:all` - Install dependencies for all packages
 - `npm run lint` - Run linting on both server and web
@@ -314,6 +329,13 @@ The web client uses Vite, so all environment variables must be prefixed with `VI
 - Recent repos from past sessions surfaced at the top
 - Private repository access via HTTPS token (no SSH key required)
 - Auto-filled clone URLs and default branch names
+
+### Git Workflow in Session
+
+- Real-time git status (branch + changed file count) in session view
+- One-click Commit & Push dialog from the session header
+- Uses saved Git user name/email from Settings as defaults for new sessions
+- Runs git operations inside the same isolated session container
 
 ### Terminal Access
 

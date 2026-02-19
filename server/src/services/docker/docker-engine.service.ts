@@ -55,11 +55,9 @@ export class DockerEngineService {
         HostConfig: {
           PortBindings: this.buildPortBindings(options.ports),
           Binds: [
-            '/var/run/docker.sock:/var/run/docker.sock',
             `afk-tmux-${options.sessionId}:/home/node/.tmux/resurrect`,
             `afk-claude-${options.sessionId}:/home/node/.claude`,
           ],
-          Privileged: true,
           RestartPolicy: { Name: 'unless-stopped' },
         },
         Labels: {

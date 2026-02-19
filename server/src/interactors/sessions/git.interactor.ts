@@ -39,27 +39,41 @@ export class GitInteractor {
       throw new Error('Session has no associated container');
     }
 
-    // Get changed files
-    const statusResult = await this.dockerEngine.execInContainer(
-      session.containerId,
-      ['git', 'status', '--porcelain'],
-    );
+    try {
+      // Get changed files
+      const statusResult = await this.dockerEngine.execInContainer(
+        session.containerId,
+        ['git', 'status', '--porcelain'],
+      );
 
-    // Get current branch
-    const branchResult = await this.dockerEngine.execInContainer(
-      session.containerId,
-      ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-    );
+      // Get current branch
+      const branchResult = await this.dockerEngine.execInContainer(
+        session.containerId,
+        ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+      );
 
-    const changedFiles = statusResult.stdout
-      ? statusResult.stdout.split('\n').filter((line) => line.trim().length > 0)
-      : [];
+      const changedFiles = statusResult.stdout
+        ? statusResult.stdout
+            .split('\n')
+            .filter((line) => line.trim().length > 0)
+        : [];
 
-    return {
-      hasChanges: changedFiles.length > 0,
-      changedFileCount: changedFiles.length,
-      branch: branchResult.stdout || 'unknown',
-    };
+      return {
+        hasChanges: changedFiles.length > 0,
+        changedFileCount: changedFiles.length,
+        branch: branchResult.stdout || 'unknown',
+      };
+    } catch (error) {
+      this.logger.debug(
+        'Git status not available yet (repo may still be initializing)',
+        { sessionId: sessionId.toString(), error: error.message },
+      );
+      return {
+        hasChanges: false,
+        changedFileCount: 0,
+        branch: '',
+      };
+    }
   }
 
   async commitAndPush(

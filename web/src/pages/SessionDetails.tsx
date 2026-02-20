@@ -524,6 +524,7 @@ const SessionDetails: React.FC = () => {
                     url={session.terminalUrls.claude}
                     isLoading={healthCheck.isLoading}
                     isError={!!healthCheck.error}
+                    isStopping={isStopping}
                     onRetry={
                       healthCheck.error ? healthCheck.refetch : undefined
                     }
@@ -539,6 +540,7 @@ const SessionDetails: React.FC = () => {
                     url={session.terminalUrls.manual}
                     isLoading={healthCheck.isLoading}
                     isError={!!healthCheck.error}
+                    isStopping={isStopping}
                     onRetry={
                       healthCheck.error ? healthCheck.refetch : undefined
                     }
@@ -567,6 +569,7 @@ const SessionDetails: React.FC = () => {
                   url={session.terminalUrls.claude}
                   isLoading={healthCheck.isLoading}
                   isError={!!healthCheck.error}
+                  isStopping={isStopping}
                   onRetry={healthCheck.error ? healthCheck.refetch : undefined}
                   onFullscreen={() => {
                     setIsFullscreen(true);
@@ -581,6 +584,7 @@ const SessionDetails: React.FC = () => {
                   url={session.terminalUrls.manual}
                   isLoading={healthCheck.isLoading}
                   isError={!!healthCheck.error}
+                  isStopping={isStopping}
                   onRetry={healthCheck.error ? healthCheck.refetch : undefined}
                   onFullscreen={() => {
                     setIsFullscreen(true);
@@ -703,6 +707,7 @@ interface TerminalPanelProps {
   url: string;
   isLoading: boolean;
   isError: boolean;
+  isStopping?: boolean;
   onRetry?: () => void;
   onFullscreen: () => void;
 }
@@ -713,9 +718,12 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({
   url,
   isLoading: loading,
   isError,
+  isStopping,
   onRetry,
   onFullscreen,
 }) => {
+  const showTerminal = ready && !isStopping;
+
   return (
     <>
       {/* Terminal header */}
@@ -758,7 +766,7 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({
       </Box>
 
       {/* Terminal content */}
-      {ready ? (
+      {showTerminal ? (
         <Box
           component="iframe"
           src={url}
@@ -774,9 +782,11 @@ const TerminalPanel: React.FC<TerminalPanelProps> = ({
         <TerminalLoading
           title={`${label} Terminal`}
           message={
-            loading
-              ? `Starting ${label.toLowerCase()} terminal...`
-              : 'Waiting for container...'
+            isStopping
+              ? 'Stopping session...'
+              : loading
+                ? `Starting ${label.toLowerCase()} terminal...`
+                : 'Waiting for container...'
           }
           isError={isError}
           onRetry={onRetry}

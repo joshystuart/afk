@@ -193,6 +193,8 @@ start_claude_dual_tty() {
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
         --client-option disableLeaveAlert=true \
+        --client-option disableResizeOverlay=true \
+        --client-option disableReconnect=true \
         --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
         --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
@@ -238,6 +240,8 @@ start_claude_dual_tty() {
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
         --client-option disableLeaveAlert=true \
+        --client-option disableResizeOverlay=true \
+        --client-option disableReconnect=true \
         --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
         --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \

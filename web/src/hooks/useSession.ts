@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi } from '../api/sessions.api';
 import { useSessionStore } from '../stores/session.store';
-import type { CreateSessionRequest } from '../api/types';
+import type { CreateSessionRequest, UpdateSessionRequest } from '../api/types';
 import { useEffect } from 'react';
 
 export const useSession = () => {
@@ -51,6 +51,21 @@ export const useSession = () => {
     },
   });
 
+  // Update session mutation
+  const updateSessionMutation = useMutation({
+    mutationFn: ({
+      sessionId,
+      request,
+    }: {
+      sessionId: string;
+      request: UpdateSessionRequest;
+    }) => sessionsApi.updateSession(sessionId, request),
+    onSuccess: (_, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+    },
+  });
+
   // Start session mutation
   const startSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionsApi.startSession(sessionId),
@@ -97,6 +112,7 @@ export const useSession = () => {
 
     // Actions
     createSession: createSessionMutation.mutateAsync,
+    updateSession: updateSessionMutation.mutateAsync,
     startSession: startSessionMutation.mutateAsync,
     stopSession: stopSessionMutation.mutateAsync,
     restartSession: restartSessionMutation.mutateAsync,
@@ -108,6 +124,7 @@ export const useSession = () => {
 
     // Mutation states
     isCreating: createSessionMutation.isPending,
+    isUpdating: updateSessionMutation.isPending,
     isStarting: startSessionMutation.isPending,
     isStopping: stopSessionMutation.isPending,
     isRestarting: restartSessionMutation.isPending,
@@ -126,6 +143,7 @@ export const useSession = () => {
 
     // Mutation errors
     createError: createSessionMutation.error,
+    updateError: updateSessionMutation.error,
     startError: startSessionMutation.error,
     stopError: stopSessionMutation.error,
     restartError: restartSessionMutation.error,

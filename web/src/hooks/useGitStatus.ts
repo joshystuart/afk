@@ -18,6 +18,11 @@ export const useGitStatus = (sessionId: string | null, enabled: boolean) => {
   const queryClient = useQueryClient();
   const [initialBranch, setInitialBranch] = useState('');
 
+  useEffect(() => {
+    // Keep branch cache scoped to the active session.
+    setInitialBranch('');
+  }, [sessionId]);
+
   const statusQuery = useQuery({
     queryKey: ['gitStatus', sessionId],
     queryFn: async () => {

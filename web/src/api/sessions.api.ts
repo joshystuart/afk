@@ -2,6 +2,7 @@ import { apiClient } from './client';
 import type {
   Session,
   CreateSessionRequest,
+  UpdateSessionRequest,
   CreateSessionResponse,
   GitStatus,
   CommitAndPushRequest,
@@ -46,6 +47,27 @@ export const sessionsApi = {
     const sessionData = response as any;
 
     // Transform the backend session structure to frontend format
+    return {
+      id: sessionData.id,
+      name: sessionData.name,
+      status: sessionData.status,
+      repoUrl: sessionData.repoUrl,
+      branch: sessionData.branch || 'main',
+      ports: sessionData.ports,
+      terminalUrls: sessionData.terminalUrls,
+      createdAt: sessionData.createdAt,
+      updatedAt: sessionData.updatedAt,
+    } as Session;
+  },
+
+  // Update session fields
+  updateSession: async (
+    sessionId: string,
+    request: UpdateSessionRequest,
+  ): Promise<Session> => {
+    const response = await apiClient.put(`/sessions/${sessionId}`, request);
+    const sessionData = response as any;
+
     return {
       id: sessionData.id,
       name: sessionData.name,

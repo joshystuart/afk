@@ -44,6 +44,10 @@ export interface CreateSessionRequest {
   gitUserEmail?: string;
 }
 
+export interface UpdateSessionRequest {
+  name: string;
+}
+
 export interface CreateSessionResponse {
   session: Session;
 }

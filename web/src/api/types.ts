@@ -8,13 +8,6 @@ export const SessionStatus = {
 
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
-export const TerminalMode = {
-  SIMPLE: 'SIMPLE',
-  DUAL: 'DUAL',
-} as const;
-
-export type TerminalMode = (typeof TerminalMode)[keyof typeof TerminalMode];
-
 export interface PortPair {
   host: number;
   container: number;
@@ -22,7 +15,6 @@ export interface PortPair {
 
 export interface SessionConfigDto {
   image: string;
-  mode: TerminalMode;
   workspacePath?: string;
 }
 
@@ -32,7 +24,6 @@ export interface Session {
   status: SessionStatus;
   repoUrl?: string;
   branch: string;
-  terminalMode: TerminalMode;
   ports?: {
     claude: number;
     manual: number;
@@ -46,12 +37,11 @@ export interface Session {
 }
 
 export interface CreateSessionRequest {
-  name: string;
+  name?: string;
   repoUrl?: string;
   branch?: string;
   gitUserName?: string;
   gitUserEmail?: string;
-  terminalMode?: TerminalMode;
 }
 
 export interface CreateSessionResponse {
@@ -73,10 +63,38 @@ export interface ApiResponse<T> {
 
 export interface Settings {
   hasSshPrivateKey: boolean;
+  hasClaudeToken: boolean;
   claudeToken?: string;
   gitUserName?: string;
   gitUserEmail?: string;
+  hasGitHubToken: boolean;
+  githubUsername?: string;
   updatedAt: string;
+}
+
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string | null;
+  private: boolean;
+  clone_url: string;
+  ssh_url: string;
+  html_url: string;
+  language: string | null;
+  updated_at: string;
+  pushed_at: string;
+  stargazers_count: number;
+  default_branch: string;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
+export interface GitHubStatus {
+  connected: boolean;
+  username?: string;
 }
 
 export interface UpdateSettingsRequest {
@@ -94,4 +112,19 @@ export interface ApiError {
     timestamp: string;
   };
   statusCode: number;
+}
+
+export interface GitStatus {
+  hasChanges: boolean;
+  changedFileCount: number;
+  branch: string;
+}
+
+export interface CommitAndPushRequest {
+  message: string;
+}
+
+export interface CommitAndPushResponse {
+  success: boolean;
+  message: string;
 }

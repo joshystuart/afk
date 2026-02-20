@@ -149,61 +149,6 @@ configure_git_identity() {
     log_info "Git identity configured: $GIT_USER_NAME <$GIT_USER_EMAIL>"
 }
 
-# Start ttyd with simple claude command using persistent screen session
-start_claude_simple() {
-    log_step "Starting Claude Code in persistent screen session"
-    
-    # Ensure working directory exists
-    if [ ! -d "$WORKING_DIR" ]; then
-        log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
-        mkdir -p "$WORKING_DIR"
-    fi
-    
-    # Change to working directory
-    cd "$WORKING_DIR"
-    
-    log_info "Starting persistent Claude session in tmux"
-    log_info "Working directory: $(pwd)"
-    log_info "Access the terminal at: http://localhost:$CLAUDE_PORT"
-    
-    # Force cleanup any existing sessions and start fresh
-    log_info "Cleaning up any existing tmux sessions"
-    if tmux has-session -t claude-session 2>/dev/null; then
-        log_info "Killing existing claude-session"
-        tmux kill-session -t claude-session 2>/dev/null || true
-    fi
-    
-    # Always create a new tmux session for better reliability
-    log_info "Creating new tmux session 'claude-session' with Claude"
-    # Configure tmux with better terminal settings
-    tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
-    
-    # Wait for Claude to initialize properly
-    sleep 3
-    
-    # Verify the session is actually working
-    if ! tmux list-sessions | grep -q "claude-session"; then
-        log_error "Failed to create claude-session"
-        return 1
-    fi
-    
-    # Start ttyd that attaches to the existing tmux session with themed client options
-    exec ttyd \
-        --port "$CLAUDE_PORT" \
-        --writable \
-        --interface 0.0.0.0 \
-        --terminal-type xterm-256color \
-        --client-option disableLeaveAlert=true \
-        --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
-        --client-option fontSize=14 \
-        --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
-        --client-option cursorBlink=true \
-        --client-option cursorStyle='bar' \
-        --client-option bellStyle='none' \
-        --client-option scrollback=1000 \
-        --client-option tabStopWidth=4 \
-        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t claude-session"
-}
 
 # Dual TTY approach: Start two separate persistent screen sessions
 start_claude_dual_tty() {
@@ -355,14 +300,11 @@ health_check() {
             fi
         fi
         
-        # Check dual mode manual session if needed
-        local manual_ok=true
-        if [ "${TERMINAL_MODE:-simple}" = "dual" ]; then
-            manual_ok=false
-            if tmux list-sessions 2>/dev/null | grep -q "manual-session" && tmux list-panes -t manual-session >/dev/null 2>&1; then
-                if curl -s "http://localhost:$MANUAL_PORT" >/dev/null 2>&1; then
-                    manual_ok=true
-                fi
+        # Check manual session health
+        local manual_ok=false
+        if tmux list-sessions 2>/dev/null | grep -q "manual-session" && tmux list-panes -t manual-session >/dev/null 2>&1; then
+            if curl -s "http://localhost:$MANUAL_PORT" >/dev/null 2>&1; then
+                manual_ok=true
             fi
         fi
         
@@ -370,9 +312,7 @@ health_check() {
             log_info "Health check passed - all services are healthy"
             log_info "  - ttyd responding: ✓"
             log_info "  - tmux sessions healthy: ✓"
-            if [ "${TERMINAL_MODE:-simple}" = "dual" ]; then
-                log_info "  - manual session healthy: ✓"
-            fi
+            log_info "  - manual session healthy: ✓"
             return 0
         fi
         
@@ -398,13 +338,8 @@ print_banner() {
     log_info "Git User: $GIT_USER_NAME <$GIT_USER_EMAIL>"
     log_info "SSH Key: ${SSH_PRIVATE_KEY:+'Provided'}${SSH_PRIVATE_KEY:-'Not provided'}"
     log_info "Working Directory: $WORKING_DIR"
-    log_info "Terminal Mode: ${TERMINAL_MODE:-simple}"
-    if [ "${TERMINAL_MODE:-simple}" = "dual" ]; then
-        log_info "Claude Port: $CLAUDE_PORT"
-        log_info "Manual Port: $MANUAL_PORT"
-    else
-        log_info "Claude Port: $CLAUDE_PORT"
-    fi
+    log_info "Claude Port: $CLAUDE_PORT"
+    log_info "Manual Port: $MANUAL_PORT"
     echo
 }
 
@@ -466,23 +401,8 @@ main() {
     ) &
     
     # Step 5: Start the terminal (this will block)
-    # Select terminal mode based on TERMINAL_MODE environment variable
-    TERMINAL_MODE="${TERMINAL_MODE:-simple}"
-    
-    case "$TERMINAL_MODE" in
-        simple)
-            log_info "Using simple mode - direct Claude connection"
-            start_claude_simple
-            ;;
-        dual)
-            log_info "Using dual mode - separate Claude and Manual sessions"
-            start_claude_dual_tty
-            ;;
-        *)
-            log_warning "Unknown terminal mode: $TERMINAL_MODE, defaulting to simple"
-            start_claude_simple
-            ;;
-    esac
+    log_info "Starting dual mode - separate Claude and Manual sessions"
+    start_claude_dual_tty
 }
 
 # Show usage information
@@ -497,8 +417,7 @@ usage() {
     echo "  GIT_USER_EMAIL    - Git user email (default: claude@example.com)"
     echo "  WORKSPACE_DIR     - Workspace directory (default: /workspace)"
     echo "  CLAUDE_PORT       - Claude session port (default: 7681)"
-    echo "  MANUAL_PORT       - Manual session port for dual mode (default: 7682)"
-    echo "  TERMINAL_MODE     - Terminal mode: simple, dual (default: simple)"
+    echo "  MANUAL_PORT       - Manual session port (default: 7682)"
     echo
     echo "Examples:"
     echo "  # Start with public repository"
@@ -506,9 +425,6 @@ usage() {
     echo
     echo "  # Start with private repository"
     echo "  REPO_URL=git@github.com:user/repo.git SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" $0"
-    echo
-    echo "  # Start dual mode (Claude + Manual sessions)"
-    echo "  TERMINAL_MODE=dual REPO_URL=https://github.com/user/repo.git $0"
     echo
     echo "  # Start without repository"
     echo "  $0"

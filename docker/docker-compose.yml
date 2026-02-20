@@ -15,9 +15,6 @@ services:
       - GIT_USER_NAME=${GIT_USER_NAME:-Claude User}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-claude@example.com}
       - GIT_SSH_HOST=${GIT_SSH_HOST}
-      # Terminal mode: simple, dual
-      - TERMINAL_MODE=${TERMINAL_MODE:-simple}
-      # Dual mode port configuration
       - CLAUDE_PORT=${CLAUDE_PORT:-7681}
       - MANUAL_PORT=${MANUAL_PORT:-7682}
     volumes:

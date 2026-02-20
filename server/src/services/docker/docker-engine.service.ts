@@ -39,7 +39,6 @@ export class DockerEngineService {
       sessionName: options.sessionName,
       repoUrl: options.repoUrl,
       branch: options.branch,
-      terminalMode: options.terminalMode,
       ports: options.ports,
     });
 
@@ -56,11 +55,9 @@ export class DockerEngineService {
         HostConfig: {
           PortBindings: this.buildPortBindings(options.ports),
           Binds: [
-            '/var/run/docker.sock:/var/run/docker.sock',
             `afk-tmux-${options.sessionId}:/home/node/.tmux/resurrect`,
             `afk-claude-${options.sessionId}:/home/node/.claude`,
           ],
-          Privileged: true,
           RestartPolicy: { Name: 'unless-stopped' },
         },
         Labels: {
@@ -214,6 +211,103 @@ export class DockerEngineService {
     return stream;
   }
 
+  async execInContainer(
+    containerId: string,
+    cmd: string[],
+    workingDir = '/workspace/repo',
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    const container = this.docker.getContainer(containerId);
+
+    const exec = await container.exec({
+      Cmd: cmd,
+      AttachStdout: true,
+      AttachStderr: true,
+      WorkingDir: workingDir,
+    });
+
+    const stream = await exec.start({ hijack: true, stdin: false });
+
+    return new Promise((resolve, reject) => {
+      const stdoutBuffers: Buffer[] = [];
+      const stderrBuffers: Buffer[] = [];
+
+      // Dockerode multiplexes stdout/stderr into a single stream.
+      // Use demuxStream to separate them.
+      const stdoutPassthrough = new (require('stream').PassThrough)();
+      const stderrPassthrough = new (require('stream').PassThrough)();
+
+      container.modem.demuxStream(stream, stdoutPassthrough, stderrPassthrough);
+
+      stdoutPassthrough.on('data', (chunk: Buffer) =>
+        stdoutBuffers.push(chunk),
+      );
+      stderrPassthrough.on('data', (chunk: Buffer) =>
+        stderrBuffers.push(chunk),
+      );
+
+      stream.on('end', async () => {
+        try {
+          const inspectResult = await exec.inspect();
+          resolve({
+            stdout: Buffer.concat(stdoutBuffers).toString('utf8').trim(),
+            stderr: Buffer.concat(stderrBuffers).toString('utf8').trim(),
+            exitCode: inspectResult.ExitCode ?? -1,
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      stream.on('error', reject);
+    });
+  }
+
+  async execStreamInContainer(
+    containerId: string,
+    cmd: string[],
+    onData: (data: string) => void,
+    workingDir = '/workspace/repo',
+  ): Promise<{ stream: NodeJS.ReadableStream; kill: () => Promise<void> }> {
+    const container = this.docker.getContainer(containerId);
+
+    const exec = await container.exec({
+      Cmd: cmd,
+      AttachStdout: true,
+      AttachStderr: true,
+      WorkingDir: workingDir,
+    });
+
+    const stream = await exec.start({ hijack: true, stdin: false });
+
+    const stdoutPassthrough = new (require('stream').PassThrough)();
+    const stderrPassthrough = new (require('stream').PassThrough)();
+
+    container.modem.demuxStream(stream, stdoutPassthrough, stderrPassthrough);
+
+    stdoutPassthrough.on('data', (chunk: Buffer) => {
+      onData(chunk.toString('utf8'));
+    });
+
+    stderrPassthrough.on('data', (chunk: Buffer) => {
+      this.logger.debug('execStream stderr', chunk.toString('utf8'));
+    });
+
+    const kill = async () => {
+      try {
+        stream.destroy();
+        stdoutPassthrough.destroy();
+        stderrPassthrough.destroy();
+      } catch (error) {
+        this.logger.warn('Error killing exec stream', {
+          containerId,
+          error: error.message,
+        });
+      }
+    };
+
+    return { stream: stdoutPassthrough, kill };
+  }
+
   async ping(): Promise<void> {
     try {
       await this.docker.ping();
@@ -232,7 +326,6 @@ export class DockerEngineService {
       `REPO_BRANCH=${options.branch || 'main'}`,
       `GIT_USER_NAME=${options.gitUserName}`,
       `GIT_USER_EMAIL=${options.gitUserEmail}`,
-      `TERMINAL_MODE=${options.terminalMode}`,
       `CLAUDE_PORT=${options.ports.claudePort}`,
       `MANUAL_PORT=${options.ports.manualPort}`,
     ];
@@ -243,6 +336,10 @@ export class DockerEngineService {
 
     if (options.claudeToken) {
       env.push(`CLAUDE_CODE_OAUTH_TOKEN=${options.claudeToken}`);
+    }
+
+    if (options.githubToken) {
+      env.push(`GITHUB_TOKEN=${options.githubToken}`);
     }
 
     return env;

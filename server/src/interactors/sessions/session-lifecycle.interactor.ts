@@ -3,6 +3,7 @@ import { DockerEngineService } from '../../services/docker/docker-engine.service
 import { ContainerNotFoundError } from '../../services/docker/container-not-found.error';
 import { SessionRepository } from '../../services/repositories/session.repository';
 import { PortManagerService } from '../../services/docker/port-manager.service';
+import { GitWatcherService } from '../../services/git-watcher/git-watcher.service';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
 import * as http from 'http';
@@ -15,6 +16,7 @@ export class SessionLifecycleInteractor {
     private readonly dockerEngine: DockerEngineService,
     private readonly sessionRepository: SessionRepository,
     private readonly portManager: PortManagerService,
+    private readonly gitWatcherService: GitWatcherService,
   ) {}
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
@@ -29,6 +31,9 @@ export class SessionLifecycleInteractor {
     }
 
     try {
+      // Stop git watcher before stopping container
+      await this.gitWatcherService.stopWatching(sessionId.toString());
+
       await this.dockerEngine.stopContainer(session.containerId!);
       session.stop();
       await this.sessionRepository.save(session);
@@ -149,7 +154,6 @@ export class SessionLifecycleInteractor {
       branch: session.config.branch,
       gitUserName: session.config.gitUserName,
       gitUserEmail: session.config.gitUserEmail,
-      terminalMode: session.config.terminalMode,
       sshPrivateKey: session.config.sshPrivateKey,
       claudeToken: session.config.claudeToken,
       ports: session.ports,
@@ -258,6 +262,9 @@ export class SessionLifecycleInteractor {
     }
 
     try {
+      // Stop git watcher if still active
+      await this.gitWatcherService.stopWatching(sessionId.toString());
+
       // Remove container (if it still exists - may have been removed manually)
       if (session.containerId) {
         try {
@@ -353,10 +360,9 @@ export class SessionLifecycleInteractor {
     const claudeReady = await this.checkTerminalEndpoint(
       session.ports.claudePort,
     );
-    const manualReady =
-      session.config.terminalMode === 'DUAL'
-        ? await this.checkTerminalEndpoint(session.ports.manualPort)
-        : true; // Manual terminal not needed in simple mode
+    const manualReady = await this.checkTerminalEndpoint(
+      session.ports.manualPort,
+    );
 
     return {
       claudeTerminalReady: claudeReady,

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../stores/session.store';
 import { useAuthStore } from '../stores/auth.store';
 import { SessionStatus } from '../api/types';
+import type { GitStatus } from '../api/types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
@@ -10,6 +12,7 @@ export const useWebSocket = () => {
   const socketRef = useRef<Socket | null>(null);
   const { isAuthenticated, token } = useAuthStore();
   const { handleSessionStatusChange } = useSessionStore();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -21,8 +24,8 @@ export const useWebSocket = () => {
       return;
     }
 
-    // Create socket connection
-    const socket = io(WS_URL, {
+    // Create socket connection to the /sessions namespace
+    const socket = io(`${WS_URL}/sessions`, {
       auth: {
         token,
       },
@@ -58,12 +61,30 @@ export const useWebSocket = () => {
       console.log('Session logs:', data);
     });
 
+    // Reactive git status updates
+    socket.on(
+      'session.git.status',
+      (data: {
+        sessionId: string;
+        hasChanges: boolean;
+        changedFileCount: number;
+        branch: string;
+      }) => {
+        const gitStatus: GitStatus = {
+          hasChanges: data.hasChanges,
+          changedFileCount: data.changedFileCount,
+          branch: data.branch,
+        };
+        queryClient.setQueryData(['gitStatus', data.sessionId], gitStatus);
+      },
+    );
+
     // Cleanup on unmount
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [isAuthenticated, token, handleSessionStatusChange]);
+  }, [isAuthenticated, token, handleSessionStatusChange, queryClient]);
 
   // Subscribe to session updates
   const subscribeToSession = (sessionId: string) => {

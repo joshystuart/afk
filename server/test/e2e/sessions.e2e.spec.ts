@@ -2,7 +2,6 @@ import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { AppTestHelper } from '../helpers/app-test.helper';
 import { SessionStatus } from '../../src/domain/sessions/session-status.enum';
-import { TerminalMode } from '../../src/domain/sessions/terminal-mode.enum';
 
 describe('Sessions E2E Tests', () => {
   let app: INestApplication;
@@ -95,7 +94,6 @@ describe('Sessions E2E Tests', () => {
         branch: 'main',
         gitUserName: 'Test User',
         gitUserEmail: 'test@example.com',
-        terminalMode: TerminalMode.DUAL,
       };
 
       const response = await createSession(sessionData);
@@ -161,22 +159,6 @@ describe('Sessions E2E Tests', () => {
       expect(response.body.success).toBe(false);
       expect(JSON.stringify(response.body.error.message)).toContain(
         'gitUserEmail',
-      );
-    });
-
-    it('should validate terminal mode enum', async () => {
-      const invalidData = {
-        name: 'test-session',
-        terminalMode: 'INVALID_MODE',
-      };
-
-      const response = await authPost('/api/sessions')
-        .send(invalidData)
-        .expect(400);
-
-      expect(response.body.success).toBe(false);
-      expect(JSON.stringify(response.body.error.message)).toContain(
-        'terminalMode',
       );
     });
 

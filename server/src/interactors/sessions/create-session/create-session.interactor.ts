@@ -26,7 +26,11 @@ export class CreateSessionInteractor {
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
-    this.logger.log('Creating new session', { sessionName: request.name });
+    // Default name from repo URL and branch if not provided
+    const sessionName =
+      request.name || this.deriveSessionName(request.repoUrl, request.branch);
+
+    this.logger.log('Creating new session', { sessionName });
 
     // Get global settings
     const settings = await this.settingsRepository.get();
@@ -41,14 +45,22 @@ export class CreateSessionInteractor {
       gitUserName: request.gitUserName || settings.gitUserName,
       gitUserEmail: request.gitUserEmail || settings.gitUserEmail,
       hasSSHKey: !!settings.sshPrivateKey,
-      terminalMode: request.terminalMode,
     });
 
-    const session = this.sessionFactory.create(request.name, sessionConfig);
+    const session = this.sessionFactory.create(sessionName, sessionConfig);
 
     try {
       // Allocate ports
       const ports = await this.portManager.allocatePortPair();
+
+      // Determine if we should pass the GitHub token for HTTPS cloning
+      const isGitHubHttpsUrl =
+        sessionConfig.repoUrl &&
+        sessionConfig.repoUrl.startsWith('https://github.com');
+      const githubToken =
+        isGitHubHttpsUrl && settings.githubAccessToken
+          ? settings.githubAccessToken
+          : undefined;
 
       // Create container
       const container = await this.dockerEngine.createContainer({
@@ -59,9 +71,9 @@ export class CreateSessionInteractor {
         gitUserName: sessionConfig.gitUserName,
         gitUserEmail: sessionConfig.gitUserEmail,
         sshPrivateKey: settings.sshPrivateKey,
-        terminalMode: sessionConfig.terminalMode.toString().toLowerCase(),
         ports,
         claudeToken: settings.claudeToken,
+        githubToken,
       });
 
       // Update session with container info
@@ -107,10 +119,18 @@ export class CreateSessionInteractor {
     // Get settings for validation
     const settings = await this.settingsRepository.get();
 
-    // Validate required settings are configured
-    if (!settings.sshPrivateKey || settings.sshPrivateKey.trim() === '') {
+    // SSH key is required unless GitHub is connected or no repo URL needs SSH
+    const hasGitHub = !!settings.githubAccessToken;
+    const isHttpsUrl =
+      request.repoUrl && request.repoUrl.startsWith('https://');
+    const needsSshKey = !hasGitHub && !isHttpsUrl;
+
+    if (
+      needsSshKey &&
+      (!settings.sshPrivateKey || settings.sshPrivateKey.trim() === '')
+    ) {
       throw new Error(
-        'SSH Private Key is required. Please configure it in Settings before creating a session.',
+        'SSH Private Key is required for SSH repository URLs. Please configure it in Settings or connect GitHub for HTTPS access.',
       );
     }
 
@@ -153,6 +173,34 @@ export class CreateSessionInteractor {
     }
 
     throw new Error('Container failed to start within timeout');
+  }
+
+  private deriveSessionName(repoUrl?: string, branch?: string): string {
+    if (!repoUrl) {
+      return `session-${Date.now()}`;
+    }
+
+    // Extract repo name from URL (supports HTTPS and SSH formats)
+    let repoName: string;
+    try {
+      // SSH format: git@github.com:owner/repo.git
+      const sshMatch = repoUrl.match(/[:/]([^/]+?)(?:\.git)?$/);
+      if (sshMatch) {
+        repoName = sshMatch[1];
+      } else {
+        repoName =
+          repoUrl
+            .split('/')
+            .pop()
+            ?.replace(/\.git$/, '') || 'repo';
+      }
+    } catch {
+      repoName = 'repo';
+    }
+
+    const branchName = branch || 'main';
+    const shortId = Date.now().toString(36).slice(-4);
+    return `${repoName}/${branchName}-${shortId}`;
   }
 
   private isValidRepoUrl(url: string): boolean {

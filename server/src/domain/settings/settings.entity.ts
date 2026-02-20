@@ -17,6 +17,12 @@ export class Settings {
   @Column('varchar', { length: 255, nullable: true })
   gitUserEmail?: string;
 
+  @Column('text', { nullable: true })
+  githubAccessToken?: string | null;
+
+  @Column('varchar', { length: 255, nullable: true })
+  githubUsername?: string | null;
+
   @UpdateDateColumn()
   updatedAt: Date;
 
@@ -53,6 +59,12 @@ export class Settings {
     if (userEmail !== undefined) {
       this.gitUserEmail = userEmail;
     }
+    this.updatedAt = new Date();
+  }
+
+  updateGitHubToken(token?: string | null, username?: string | null): void {
+    this.githubAccessToken = token;
+    this.githubUsername = username;
     this.updatedAt = new Date();
   }
 

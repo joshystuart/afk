@@ -7,7 +7,7 @@ import {
   DiskHealthIndicator,
 } from '@nestjs/terminus';
 import { DockerHealthIndicator } from './docker-health.indicator';
-import { Public } from '../auth/auth.guard';
+import { Public } from '../libs/auth/auth.guard';
 
 @ApiTags('Health')
 @Controller('health')

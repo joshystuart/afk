@@ -24,11 +24,6 @@ export const SESSION_STATUS_LABELS = {
   ERROR: 'Error',
 } as const;
 
-export const TERMINAL_MODE_LABELS = {
-  SIMPLE: 'Simple Terminal',
-  DUAL: 'Dual Terminal',
-} as const;
-
 export const DEFAULT_DOCKER_IMAGES = [
   {
     value: 'afk/dev:latest',

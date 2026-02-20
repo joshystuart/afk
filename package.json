@@ -18,6 +18,7 @@
     "web:dev": "cd web && npm run dev",
     "web:start": "cd web && npm run preview",
     "web:build": "cd web && npm run build",
+    "web:storybook": "cd web && npm run storybook",
     "install:all": "npm install && cd server && npm install && cd ../web && npm install",
     "lint": "cd server && npm run lint && cd ../web && npm run lint",
     "test": "cd server && npm run test",

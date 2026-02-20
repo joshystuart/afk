@@ -29,9 +29,19 @@ export const getDatabaseConfig = (): TypeOrmModuleOptions => {
 
   switch (dbType) {
     case 'postgres':
-      return postgresConfig;
+      return {
+        ...postgresConfig,
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        username: process.env.DB_USERNAME || 'afk',
+        password: process.env.DB_PASSWORD || 'password',
+        database: process.env.DB_NAME || 'afk',
+      };
     case 'sqlite':
     default:
-      return databaseConfig;
+      return {
+        ...databaseConfig,
+        database: process.env.DB_DATABASE || 'afk.sqlite',
+      };
   }
 };

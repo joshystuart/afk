@@ -1,6 +1,5 @@
 import { Session } from '../../../domain/sessions/session.entity';
 import { SessionStatus } from '../../../domain/sessions/session-status.enum';
-import { TerminalMode } from '../../../domain/sessions/terminal-mode.enum';
 
 export class CreateSessionResponseDto {
   id!: string;
@@ -8,7 +7,6 @@ export class CreateSessionResponseDto {
   status!: SessionStatus;
   repoUrl?: string;
   branch!: string;
-  terminalMode!: TerminalMode;
   ports?: {
     claude: number;
     manual: number;
@@ -30,7 +28,6 @@ export class CreateSessionResponseDto {
     dto.status = session.status;
     dto.repoUrl = session.config.repoUrl || undefined;
     dto.branch = session.config.branch;
-    dto.terminalMode = session.config.terminalMode;
     dto.createdAt = session.createdAt.toISOString();
     dto.updatedAt = session.updatedAt.toISOString();
 

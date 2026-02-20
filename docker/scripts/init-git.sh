@@ -109,13 +109,20 @@ clone_repository() {
             
             if [ "$existing_remote" = "$url" ]; then
                 log_info "Directory is already the correct git repository"
-                log_info "Pulling latest changes instead of cloning"
-                if git pull --rebase 2>&1; then
-                    log_info "Repository updated successfully"
-                    return 0
+                
+                # Check for uncommitted changes before attempting pull
+                if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet HEAD 2>/dev/null; then
+                    log_info "Working tree is clean, pulling latest changes"
+                    if git pull --rebase 2>&1; then
+                        log_info "Repository updated successfully"
+                    else
+                        log_warning "Git pull failed, continuing with existing state"
+                    fi
                 else
-                    log_warning "Git pull failed, will remove and reclone"
+                    log_info "Uncommitted changes detected, skipping pull to preserve local work"
                 fi
+                
+                return 0
             else
                 log_warning "Directory contains a different repository, will remove and reclone"
             fi
@@ -158,15 +165,13 @@ checkout_branch() {
     
     cd "$repo_dir"
     
-    # Check if branch exists
+    # Check if branch exists on remote
     if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-        log_info "Checking out branch: $branch"
+        log_info "Checking out existing branch: $branch"
         git checkout "$branch"
     else
-        log_warning "Branch '$branch' not found, staying on default branch"
-        # Show available branches for debugging
-        log_info "Available remote branches:"
-        git branch -r | sed 's/origin\///' | grep -v HEAD | head -10
+        log_info "Branch '$branch' not found on remote, creating new branch"
+        git checkout -b "$branch"
     fi
 }
 
@@ -185,6 +190,13 @@ setup_git_config() {
     git config --global init.defaultBranch main
     git config --global pull.rebase false
     git config --global core.editor vim
+    git config --global push.autoSetupRemote true
+    
+    # Configure GitHub token credential helper if GITHUB_TOKEN is set
+    if [ -n "$GITHUB_TOKEN" ]; then
+        log_info "Configuring git credential helper for GitHub token"
+        git config --global credential.helper '!f() { echo "username=x-access-token"; echo "password=$GITHUB_TOKEN"; }; f'
+    fi
     
     log_info "Git configured with:"
     log_info "  Name: $user_name"

@@ -3,6 +3,9 @@ import type {
   Session,
   CreateSessionRequest,
   CreateSessionResponse,
+  GitStatus,
+  CommitAndPushRequest,
+  CommitAndPushResponse,
 } from './types';
 
 export const sessionsApi = {
@@ -29,7 +32,6 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      terminalMode: sessionData.terminalMode,
       ports: sessionData.ports,
       terminalUrls: sessionData.terminalUrls,
       createdAt: sessionData.createdAt,
@@ -50,7 +52,6 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      terminalMode: sessionData.terminalMode,
       ports: sessionData.ports,
       terminalUrls: sessionData.terminalUrls,
       createdAt: sessionData.createdAt,
@@ -98,5 +99,23 @@ export const sessionsApi = {
       manualTerminalReady: boolean;
       allReady: boolean;
     };
+  },
+
+  // Get git status for a session
+  getGitStatus: async (sessionId: string): Promise<GitStatus> => {
+    const response = await apiClient.get(`/sessions/${sessionId}/git/status`);
+    return response as unknown as GitStatus;
+  },
+
+  // Commit and push changes for a session
+  commitAndPush: async (
+    sessionId: string,
+    request: CommitAndPushRequest,
+  ): Promise<CommitAndPushResponse> => {
+    const response = await apiClient.post(
+      `/sessions/${sessionId}/git/commit-and-push`,
+      request,
+    );
+    return response as unknown as CommitAndPushResponse;
   },
 };

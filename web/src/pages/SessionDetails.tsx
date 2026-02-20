@@ -5,6 +5,11 @@ import {
   Button,
   Chip,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
   Skeleton,
   Snackbar,
   Alert,
@@ -22,6 +27,7 @@ import {
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   FiberManualRecord as DotIcon,
   CloudUpload as PushIcon,
 } from '@mui/icons-material';
@@ -54,10 +60,12 @@ const SessionDetails: React.FC = () => {
     startSession,
     stopSession,
     deleteSession,
+    updateSession,
     getSession,
     isStarting,
     isStopping,
     isDeleting,
+    isUpdating,
   } = useSession();
 
   const [approvalModal, setApprovalModal] = React.useState<{
@@ -83,6 +91,9 @@ const SessionDetails: React.FC = () => {
   const gitStatus = useGitStatus(id || null, isRunning ?? false);
 
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = React.useState(false);
+  const [renameInput, setRenameInput] = React.useState('');
+  const [renameError, setRenameError] = React.useState<string | null>(null);
   const [snackbar, setSnackbar] = React.useState<{
     open: boolean;
     message: string;
@@ -120,6 +131,57 @@ const SessionDetails: React.FC = () => {
       sessionId: session.id,
       sessionName: session.name || session.id.slice(0, 12),
     });
+  };
+
+  const handleRenameOpen = () => {
+    if (!session) return;
+    setRenameInput(session.name || '');
+    setRenameError(null);
+    setRenameDialogOpen(true);
+  };
+
+  const handleRenameClose = () => {
+    if (isUpdating) return;
+    setRenameDialogOpen(false);
+    setRenameError(null);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (!session) return;
+    const trimmedName = renameInput.trim();
+
+    if (!trimmedName) {
+      setRenameError('Session name is required');
+      return;
+    }
+    if (trimmedName.length < 3) {
+      setRenameError('Session name must be at least 3 characters');
+      return;
+    }
+    if (trimmedName.length > 50) {
+      setRenameError('Session name must be 50 characters or less');
+      return;
+    }
+    if (trimmedName === session.name) {
+      handleRenameClose();
+      return;
+    }
+
+    setRenameError(null);
+    try {
+      await updateSession({
+        sessionId: session.id,
+        request: { name: trimmedName },
+      });
+      setRenameDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Session renamed successfully',
+        severity: 'success',
+      });
+    } catch (error) {
+      setRenameError((error as Error).message || 'Failed to rename session');
+    }
   };
 
   const handleModalClose = () => {
@@ -226,6 +288,72 @@ const SessionDetails: React.FC = () => {
     (session.status === SessionStatus.STOPPED ||
       session.status === SessionStatus.ERROR);
 
+  const renameDialog = (
+    <Dialog
+      open={renameDialogOpen}
+      onClose={handleRenameClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: afkColors.surface,
+          border: `1px solid ${afkColors.border}`,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '0.9375rem',
+          fontWeight: 600,
+          pb: 1,
+        }}
+      >
+        Rename Session
+      </DialogTitle>
+      <DialogContent sx={{ pt: '8px !important' }}>
+        <TextField
+          autoFocus
+          fullWidth
+          label="Session Name"
+          placeholder="Enter session name"
+          value={renameInput}
+          onChange={(e) => {
+            setRenameInput(e.target.value);
+            if (renameError) setRenameError(null);
+          }}
+          disabled={isUpdating}
+          error={!!renameError}
+          helperText={renameError || '3-50 characters'}
+          inputProps={{ minLength: 3, maxLength: 50 }}
+          sx={{
+            '& .MuiInputBase-input': {
+              fontFamily: '"DM Sans", sans-serif',
+              fontSize: '0.875rem',
+            },
+          }}
+        />
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <Button
+          onClick={handleRenameClose}
+          disabled={isUpdating}
+          sx={{ color: afkColors.textSecondary }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleRenameSubmit}
+          disabled={isUpdating || !renameInput.trim()}
+          startIcon={<EditIcon sx={{ fontSize: '16px !important' }} />}
+        >
+          {isUpdating ? 'Saving...' : 'Save'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   // Session not running - show start interface
   if (
     !session ||
@@ -262,6 +390,22 @@ const SessionDetails: React.FC = () => {
               >
                 {session?.name || session?.id.slice(0, 12)}
               </Typography>
+              <Tooltip title="Rename session">
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={handleRenameOpen}
+                    disabled={isUpdating}
+                    sx={{
+                      p: 0.25,
+                      color: afkColors.textTertiary,
+                      '&:hover': { color: afkColors.textSecondary },
+                    }}
+                  >
+                    <EditIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </span>
+              </Tooltip>
               <DotIcon
                 sx={{
                   fontSize: 8,
@@ -341,6 +485,7 @@ const SessionDetails: React.FC = () => {
           sessionName={approvalModal.sessionName}
           isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
         />
+        {renameDialog}
       </>
     );
   }
@@ -380,6 +525,22 @@ const SessionDetails: React.FC = () => {
             >
               {session.name || session.id.slice(0, 8)}
             </Typography>
+            <Tooltip title="Rename session">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handleRenameOpen}
+                  disabled={isUpdating}
+                  sx={{
+                    p: 0.25,
+                    color: afkColors.textTertiary,
+                    '&:hover': { color: afkColors.textSecondary },
+                  }}
+                >
+                  <EditIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
             <DotIcon
               sx={{
                 fontSize: 8,
@@ -679,6 +840,8 @@ const SessionDetails: React.FC = () => {
         }
         onCommitAndPush={handleCommitAndPush}
       />
+
+      {renameDialog}
 
       {/* Success/Error Snackbar */}
       <Snackbar

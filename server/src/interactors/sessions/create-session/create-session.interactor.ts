@@ -199,8 +199,7 @@ export class CreateSessionInteractor {
     }
 
     const branchName = branch || 'main';
-    const shortId = Date.now().toString(36).slice(-4);
-    return `${repoName}/${branchName}-${shortId}`;
+    return `${repoName}/${branchName}`;
   }
 
   private isValidRepoUrl(url: string): boolean {

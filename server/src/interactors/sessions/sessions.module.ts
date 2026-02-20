@@ -13,6 +13,8 @@ import { StopSessionController } from './stop-session.controller';
 import { DeleteSessionController } from './delete-session.controller';
 import { GitStatusController } from './git-status.controller';
 import { GitCommitPushController } from './git-commit-push.controller';
+import { UpdateSessionController } from './update-session/update-session.controller';
+import { UpdateSessionInteractor } from './update-session/update-session.interactor';
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
@@ -41,12 +43,14 @@ import { Session } from '../../domain/sessions/session.entity';
     DeleteSessionController,
     GitStatusController,
     GitCommitPushController,
+    UpdateSessionController,
   ],
   providers: [
     CreateSessionInteractor,
     ListSessionsInteractor,
     SessionLifecycleInteractor,
     GitInteractor,
+    UpdateSessionInteractor,
     SessionConfig,
     ResponseService,
   ],

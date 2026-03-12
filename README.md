@@ -337,11 +337,12 @@ The web client uses Vite, so all environment variables must be prefixed with `VI
 - Uses saved Git user name/email from Settings as defaults for new sessions
 - Runs git operations inside the same isolated session container
 
-### Terminal Access
+### Chat Interface
 
-- Embedded terminal access in the browser
-- Dual terminal sessions (Claude + manual web terminal)
-- External terminal access in new windows
+- Single chat pane per session for interacting with Claude Code
+- Chat history is persisted to the server database and restored when sessions are restarted
+- Claude's project context (`.claude/`) is stored in a Docker volume, surviving stop/start cycles
+- Web terminal available for manual shell access (openable in a new window)
 - Responsive design for desktop and mobile
 
 ### Web Interface

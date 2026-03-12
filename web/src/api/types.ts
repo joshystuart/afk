@@ -8,9 +8,8 @@ export const SessionStatus = {
 
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
-export interface PortPair {
-  host: number;
-  container: number;
+export interface SessionPort {
+  port: number;
 }
 
 export interface SessionConfigDto {
@@ -24,14 +23,8 @@ export interface Session {
   status: SessionStatus;
   repoUrl?: string;
   branch: string;
-  ports?: {
-    claude: number;
-    manual: number;
-  };
-  terminalUrls?: {
-    claude: string;
-    manual: string;
-  };
+  port?: number;
+  terminalUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

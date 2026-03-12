@@ -476,12 +476,8 @@ const SessionDetails: React.FC = () => {
   }
 
   const handleOpenTerminal = () => {
-    if (!session?.terminalUrls?.manual) return;
-    window.open(
-      session.terminalUrls.manual,
-      '_blank',
-      'popup,width=960,height=640',
-    );
+    if (!session?.terminalUrl) return;
+    window.open(session.terminalUrl, '_blank', 'popup,width=960,height=640');
   };
 
   return (
@@ -563,7 +559,7 @@ const SessionDetails: React.FC = () => {
                 <IconButton
                   size="small"
                   onClick={handleOpenTerminal}
-                  disabled={!healthCheck.manualTerminalReady || isStopping}
+                  disabled={!healthCheck.terminalReady || isStopping}
                   sx={{
                     p: 0.5,
                     color: afkColors.textTertiary,

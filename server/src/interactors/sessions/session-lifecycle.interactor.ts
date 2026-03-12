@@ -339,8 +339,7 @@ export class SessionLifecycleInteractor {
   }
 
   async checkTerminalHealth(sessionId: SessionIdDto): Promise<{
-    claudeTerminalReady: boolean;
-    manualTerminalReady: boolean;
+    terminalReady: boolean;
     allReady: boolean;
   }> {
     const session = await this.sessionRepository.findById(sessionId);
@@ -351,21 +350,16 @@ export class SessionLifecycleInteractor {
 
     if (session.status !== SessionStatus.RUNNING || !session.ports) {
       return {
-        claudeTerminalReady: false,
-        manualTerminalReady: false,
+        terminalReady: false,
         allReady: false,
       };
     }
 
-    const manualReady = await this.checkTerminalEndpoint(
-      session.ports.manualPort,
-    );
+    const terminalReady = await this.checkTerminalEndpoint(session.ports.port);
 
-    // Claude is invoked on-demand via docker exec, not via a terminal port
     return {
-      claudeTerminalReady: true,
-      manualTerminalReady: manualReady,
-      allReady: manualReady,
+      terminalReady,
+      allReady: terminalReady,
     };
   }
 

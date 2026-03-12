@@ -85,9 +85,8 @@ export class AppTestHelper {
         isPortAvailable: jest.fn().mockResolvedValue(true),
         getRandomPort: jest.fn().mockReturnValue(8080),
         allocatePortPair: jest.fn().mockResolvedValue({
-          claudePort: 8080,
-          manualPort: 8081,
-          toJSON: () => ({ claude: 8080, manual: 8081 }),
+          port: 8080,
+          toJSON: () => ({ port: 8080 }),
         }),
         releasePortPair: jest.fn().mockResolvedValue(undefined),
       })

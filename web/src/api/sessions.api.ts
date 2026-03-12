@@ -34,8 +34,8 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      ports: sessionData.ports,
-      terminalUrls: sessionData.terminalUrls,
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -54,8 +54,8 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      ports: sessionData.ports,
-      terminalUrls: sessionData.terminalUrls,
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -75,8 +75,8 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      ports: sessionData.ports,
-      terminalUrls: sessionData.terminalUrls,
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -112,14 +112,12 @@ export const sessionsApi = {
   checkSessionHealth: async (
     sessionId: string,
   ): Promise<{
-    claudeTerminalReady: boolean;
-    manualTerminalReady: boolean;
+    terminalReady: boolean;
     allReady: boolean;
   }> => {
     const response = await apiClient.get(`/sessions/${sessionId}/health`);
     return response as unknown as {
-      claudeTerminalReady: boolean;
-      manualTerminalReady: boolean;
+      terminalReady: boolean;
       allReady: boolean;
     };
   },

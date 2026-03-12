@@ -342,8 +342,7 @@ describe('Sessions E2E Tests', () => {
       ).expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('claudeTerminalReady');
-      expect(response.body.data).toHaveProperty('manualTerminalReady');
+      expect(response.body.data).toHaveProperty('terminalReady');
       expect(response.body.data).toHaveProperty('allReady');
       expect(typeof response.body.data.allReady).toBe('boolean');
     });

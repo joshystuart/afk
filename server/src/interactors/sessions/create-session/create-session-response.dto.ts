@@ -7,14 +7,8 @@ export class CreateSessionResponseDto {
   status!: SessionStatus;
   repoUrl?: string;
   branch!: string;
-  ports?: {
-    claude: number;
-    manual: number;
-  };
-  terminalUrls?: {
-    claude: string;
-    manual: string;
-  };
+  port?: number;
+  terminalUrl?: string;
   createdAt!: string;
   updatedAt!: string;
 
@@ -32,13 +26,13 @@ export class CreateSessionResponseDto {
     dto.updatedAt = session.updatedAt.toISOString();
 
     if (session.ports) {
-      dto.ports = session.ports.toJSON();
+      dto.port = session.ports.port;
     }
 
     if (baseUrl) {
-      const urls = session.getTerminalUrls(baseUrl);
-      if (urls) {
-        dto.terminalUrls = urls;
+      const url = session.getTerminalUrl(baseUrl);
+      if (url) {
+        dto.terminalUrl = url;
       }
     }
 

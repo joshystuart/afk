@@ -326,8 +326,7 @@ export class DockerEngineService {
       `REPO_BRANCH=${options.branch || 'main'}`,
       `GIT_USER_NAME=${options.gitUserName}`,
       `GIT_USER_EMAIL=${options.gitUserEmail}`,
-      `CLAUDE_PORT=${options.ports.claudePort}`,
-      `MANUAL_PORT=${options.ports.manualPort}`,
+      `TERMINAL_PORT=${options.ports.port}`,
       `CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1`,
     ];
 
@@ -348,8 +347,7 @@ export class DockerEngineService {
 
   private buildExposedPorts(ports: any): Record<string, {}> {
     return {
-      [`${ports.claudePort}/tcp`]: {},
-      [`${ports.manualPort}/tcp`]: {},
+      [`${ports.port}/tcp`]: {},
     };
   }
 
@@ -357,8 +355,7 @@ export class DockerEngineService {
     ports: any,
   ): Record<string, Array<{ HostPort: string }>> {
     return {
-      [`${ports.claudePort}/tcp`]: [{ HostPort: ports.claudePort.toString() }],
-      [`${ports.manualPort}/tcp`]: [{ HostPort: ports.manualPort.toString() }],
+      [`${ports.port}/tcp`]: [{ HostPort: ports.port.toString() }],
     };
   }
 

@@ -4,19 +4,16 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '${CLAUDE_PORT:-7681}:${CLAUDE_PORT:-7681}' # Claude session port
-      - '${MANUAL_PORT:-7682}:${MANUAL_PORT:-7682}' # Manual session port
+      - '${TERMINAL_PORT:-7681}:${TERMINAL_PORT:-7681}'
     environment:
       - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
-      # Git Integration Environment Variables
       - REPO_URL=${REPO_URL}
       - REPO_BRANCH=${REPO_BRANCH:-main}
       - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
       - GIT_USER_NAME=${GIT_USER_NAME:-Claude User}
       - GIT_USER_EMAIL=${GIT_USER_EMAIL:-claude@example.com}
       - GIT_SSH_HOST=${GIT_SSH_HOST}
-      - CLAUDE_PORT=${CLAUDE_PORT:-7681}
-      - MANUAL_PORT=${MANUAL_PORT:-7682}
+      - TERMINAL_PORT=${TERMINAL_PORT:-7681}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     privileged: true

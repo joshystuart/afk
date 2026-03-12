@@ -43,8 +43,7 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 # Default values
 DEFAULT_WORKSPACE="/workspace"
-DEFAULT_CLAUDE_PORT="7681"
-DEFAULT_MANUAL_PORT="7682"
+DEFAULT_TERMINAL_PORT="7681"
 
 # Environment variables
 REPO_URL="${REPO_URL:-}"
@@ -53,8 +52,7 @@ SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY:-}"
 GIT_USER_NAME="${GIT_USER_NAME:-Claude User}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-claude@example.com}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$DEFAULT_WORKSPACE}"
-CLAUDE_PORT="${CLAUDE_PORT:-$DEFAULT_CLAUDE_PORT}"
-MANUAL_PORT="${MANUAL_PORT:-$DEFAULT_MANUAL_PORT}"
+TERMINAL_PORT="${TERMINAL_PORT:-$DEFAULT_TERMINAL_PORT}"
 
 # State tracking
 SSH_SETUP_DONE=false
@@ -151,8 +149,8 @@ configure_git_identity() {
 }
 
 
-start_manual_terminal() {
-    log_step "Starting manual terminal session"
+start_terminal() {
+    log_step "Starting terminal session"
     
     if [ ! -d "$WORKING_DIR" ]; then
         log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
@@ -161,29 +159,29 @@ start_manual_terminal() {
     
     cd "$WORKING_DIR"
     
-    log_info "Starting manual terminal session:"
-    log_info "  Manual session: http://localhost:$MANUAL_PORT"
+    log_info "Starting terminal:"
+    log_info "  Terminal: http://localhost:$TERMINAL_PORT"
     log_info "  Claude Code: available on-demand via docker exec"
     log_info "Working directory: $(pwd)"
     
-    if tmux has-session -t manual-session 2>/dev/null; then
-        log_info "Killing existing manual-session"
-        tmux kill-session -t manual-session 2>/dev/null || true
+    if tmux has-session -t terminal 2>/dev/null; then
+        log_info "Killing existing terminal session"
+        tmux kill-session -t terminal 2>/dev/null || true
     fi
     
-    log_info "Creating new tmux session 'manual-session' with bash"
-    tmux -f /home/node/.tmux.conf new-session -d -s manual-session -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
+    log_info "Creating new tmux session 'terminal' with bash"
+    tmux -f /home/node/.tmux.conf new-session -d -s terminal -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
     sleep 1
     
-    if ! tmux list-sessions | grep -q "manual-session"; then
-        log_error "Failed to create manual-session"
+    if ! tmux list-sessions | grep -q "terminal"; then
+        log_error "Failed to create terminal session"
         return 1
     fi
     
-    log_info "Starting manual ttyd session on port $MANUAL_PORT (foreground)"
+    log_info "Starting ttyd on port $TERMINAL_PORT (foreground)"
     
     exec ttyd \
-        --port "$MANUAL_PORT" \
+        --port "$TERMINAL_PORT" \
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
@@ -198,15 +196,15 @@ start_manual_terminal() {
         --client-option bellStyle='none' \
         --client-option scrollback=1000 \
         --client-option tabStopWidth=4 \
-        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t manual-session"
+        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t terminal"
 }
 
 cleanup() {
     log_info "Shutting down AFK container"
     
-    if tmux has-session -t manual-session 2>/dev/null; then
-        log_info "Terminating manual-session tmux session"
-        tmux kill-session -t manual-session 2>/dev/null || true
+    if tmux has-session -t terminal 2>/dev/null; then
+        log_info "Terminating terminal tmux session"
+        tmux kill-session -t terminal 2>/dev/null || true
     fi
     
     if [ "$SSH_SETUP_DONE" = true ] && [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
@@ -227,22 +225,22 @@ health_check() {
     log_info "Performing health check..."
     
     while [ $attempt -le $max_attempts ]; do
-        local manual_ok=false
+        local terminal_ok=false
         
-        if tmux list-sessions 2>/dev/null | grep -q "manual-session" && tmux list-panes -t manual-session >/dev/null 2>&1; then
-            if curl -s "http://localhost:$MANUAL_PORT" >/dev/null 2>&1; then
-                manual_ok=true
+        if tmux list-sessions 2>/dev/null | grep -q "terminal" && tmux list-panes -t terminal >/dev/null 2>&1; then
+            if curl -s "http://localhost:$TERMINAL_PORT" >/dev/null 2>&1; then
+                terminal_ok=true
             fi
         fi
         
-        if [ "$manual_ok" = true ]; then
+        if [ "$terminal_ok" = true ]; then
             log_info "Health check passed"
-            log_info "  - manual terminal: healthy"
+            log_info "  - terminal: healthy"
             log_info "  - claude CLI: available on PATH"
             return 0
         fi
         
-        log_info "Health check attempt $attempt/$max_attempts - manual: $manual_ok"
+        log_info "Health check attempt $attempt/$max_attempts - terminal: $terminal_ok"
         sleep 2
         attempt=$((attempt + 1))
     done
@@ -262,7 +260,7 @@ print_banner() {
     log_info "Git User: $GIT_USER_NAME <$GIT_USER_EMAIL>"
     log_info "SSH Key: ${SSH_PRIVATE_KEY:+'Provided'}${SSH_PRIVATE_KEY:-'Not provided'}"
     log_info "Working Directory: $WORKING_DIR"
-    log_info "Manual Terminal Port: $MANUAL_PORT"
+    log_info "Terminal Port: $TERMINAL_PORT"
     log_info "Claude Code: on-demand via docker exec"
     echo
 }
@@ -315,15 +313,15 @@ main() {
     # Step 3: Configure git identity
     configure_git_identity
     
-    log_step "Launching manual terminal"
+    log_step "Launching terminal"
     
     (
         sleep 5
         health_check || log_warning "Health check failed, but terminal may still be accessible"
     ) &
     
-    log_info "Starting manual terminal (Claude available on-demand via docker exec)"
-    start_manual_terminal
+    log_info "Starting terminal (Claude available on-demand via docker exec)"
+    start_terminal
 }
 
 # Show usage information
@@ -337,8 +335,7 @@ usage() {
     echo "  GIT_USER_NAME     - Git user name (default: Claude User)"
     echo "  GIT_USER_EMAIL    - Git user email (default: claude@example.com)"
     echo "  WORKSPACE_DIR     - Workspace directory (default: /workspace)"
-    echo "  CLAUDE_PORT       - Claude session port (default: 7681)"
-    echo "  MANUAL_PORT       - Manual session port (default: 7682)"
+    echo "  TERMINAL_PORT     - Terminal port for ttyd (default: 7681)"
     echo
     echo "Examples:"
     echo "  # Start with public repository"

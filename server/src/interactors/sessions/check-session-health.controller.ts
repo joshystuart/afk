@@ -33,8 +33,7 @@ export class CheckSessionHealthController {
     schema: {
       type: 'object',
       properties: {
-        claudeTerminalReady: { type: 'boolean' },
-        manualTerminalReady: { type: 'boolean' },
+        terminalReady: { type: 'boolean' },
         allReady: { type: 'boolean' },
       },
     },
@@ -48,8 +47,7 @@ export class CheckSessionHealthController {
     @Param(SessionRouteParams.ITEM_ID) id: string,
   ): Promise<
     ApiResponseType<{
-      claudeTerminalReady: boolean;
-      manualTerminalReady: boolean;
+      terminalReady: boolean;
       allReady: boolean;
     }>
   > {

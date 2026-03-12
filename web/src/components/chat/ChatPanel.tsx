@@ -40,6 +40,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         sx={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           px: 3,
           py: 2,
           scrollbarColor: `${afkColors.surfaceElevated} transparent`,

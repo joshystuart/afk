@@ -39,6 +39,7 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
         border: `1px solid ${afkColors.borderSubtle}`,
         borderRadius: 1,
         overflow: 'hidden',
+        minWidth: 0,
         my: 0.5,
       }}
     >
@@ -53,6 +54,8 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
           cursor: 'pointer',
           bgcolor: 'rgba(255,255,255,0.02)',
           '&:hover': { bgcolor: 'rgba(255,255,255,0.04)' },
+          minWidth: 0,
+          overflow: 'hidden',
         }}
       >
         <ToolIcon sx={{ fontSize: 14, color: afkColors.textTertiary }} />
@@ -124,6 +127,8 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
                   fontFamily: '"JetBrains Mono", monospace',
                   color: afkColors.textSecondary,
                   m: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
                 }}
               >
                 {typeof input === 'string'
@@ -158,6 +163,8 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
                   fontFamily: '"JetBrains Mono", monospace',
                   color: isError ? afkColors.danger : afkColors.textSecondary,
                   m: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
                 }}
               >
                 {typeof result === 'string'

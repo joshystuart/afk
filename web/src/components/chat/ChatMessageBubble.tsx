@@ -52,11 +52,13 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
       <Box
         sx={{
           maxWidth: '90%',
+          minWidth: 0,
           px: 2,
           py: 1.5,
           borderRadius: 2,
           bgcolor: afkColors.surface,
           border: `1px solid ${afkColors.border}`,
+          overflow: 'hidden',
         }}
       >
         {streamEvents && streamEvents.length > 0 ? (
@@ -260,6 +262,7 @@ const AssistantEventList: React.FC<{
               sx={{
                 color: afkColors.textPrimary,
                 whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
                 py: 0.25,
               }}
             >

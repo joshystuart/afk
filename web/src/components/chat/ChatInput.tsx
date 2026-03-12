@@ -5,14 +5,32 @@ import {
   IconButton,
   Tooltip,
   Switch,
-  FormControlLabel,
   Typography,
+  Button,
+  Menu,
+  MenuItem,
 } from '@mui/material';
-import { Send as SendIcon, Stop as StopIcon } from '@mui/icons-material';
+import {
+  Send as SendIcon,
+  Stop as StopIcon,
+  KeyboardArrowDown as ChevronDownIcon,
+} from '@mui/icons-material';
 import { afkColors } from '../../themes/afk';
 
+const MODELS = [
+  { id: 'sonnet', label: 'Sonnet 4.6' },
+  { id: 'opus', label: 'Opus 4.6' },
+  { id: 'haiku', label: 'Haiku 4.5' },
+] as const;
+
+const DEFAULT_MODEL = MODELS[0].id;
+
 interface ChatInputProps {
-  onSend: (content: string, continueConversation: boolean) => void;
+  onSend: (
+    content: string,
+    continueConversation: boolean,
+    model?: string,
+  ) => void;
   onCancel: () => void;
   isProcessing: boolean;
   disabled?: boolean;
@@ -26,12 +44,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [value, setValue] = React.useState('');
   const [continueConversation, setContinueConversation] = React.useState(true);
+  const [selectedModel, setSelectedModel] = React.useState(DEFAULT_MODEL);
+  const [modelAnchorEl, setModelAnchorEl] = React.useState<null | HTMLElement>(
+    null,
+  );
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const selectedModelLabel =
+    MODELS.find((m) => m.id === selectedModel)?.label ?? selectedModel;
 
   const handleSend = () => {
     const trimmed = value.trim();
     if (!trimmed || isProcessing || disabled) return;
-    onSend(trimmed, continueConversation);
+    onSend(trimmed, continueConversation, selectedModel);
     setValue('');
   };
 
@@ -56,7 +81,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         bgcolor: afkColors.surface,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <TextField
           inputRef={inputRef}
           fullWidth
@@ -85,6 +110,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               sx={{
                 bgcolor: afkColors.dangerMuted,
                 color: afkColors.danger,
+                alignSelf: 'stretch',
+                borderRadius: '6px',
+                width: 42,
                 '&:hover': {
                   bgcolor: 'rgba(239, 68, 68, 0.2)',
                 },
@@ -95,7 +123,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </Tooltip>
         ) : (
           <Tooltip title="Send (Enter)">
-            <span>
+            <span style={{ alignSelf: 'stretch', display: 'flex' }}>
               <IconButton
                 onClick={handleSend}
                 disabled={!value.trim() || disabled}
@@ -104,6 +132,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     ? afkColors.accent
                     : afkColors.surfaceElevated,
                   color: value.trim() ? '#fff' : afkColors.textTertiary,
+                  alignSelf: 'stretch',
+                  borderRadius: '6px',
+                  width: 42,
                   '&:hover': {
                     bgcolor: value.trim()
                       ? afkColors.accentDark
@@ -121,33 +152,104 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </Tooltip>
         )}
       </Box>
-      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
-        <FormControlLabel
-          control={
-            <Switch
-              size="small"
-              checked={continueConversation}
-              onChange={(e) => setContinueConversation(e.target.checked)}
-              disabled={isProcessing}
-              sx={{
-                '& .MuiSwitch-switchBase.Mui-checked': {
-                  color: afkColors.accent,
-                },
-                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                  bgcolor: afkColors.accentMuted,
-                },
+
+      {/* Bottom toolbar: model selector (left) + continue toggle (right) */}
+      <Box
+        sx={{
+          mt: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Button
+          size="small"
+          onClick={(e) => setModelAnchorEl(e.currentTarget)}
+          disabled={isProcessing}
+          endIcon={<ChevronDownIcon sx={{ fontSize: '14px !important' }} />}
+          sx={{
+            color: afkColors.textSecondary,
+            fontSize: '0.7rem',
+            fontFamily: '"JetBrains Mono", monospace',
+            textTransform: 'none',
+            px: 1,
+            py: 0.25,
+            minWidth: 'auto',
+            borderRadius: '4px',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.04)',
+              color: afkColors.textPrimary,
+            },
+          }}
+        >
+          {selectedModelLabel}
+        </Button>
+
+        <Menu
+          anchorEl={modelAnchorEl}
+          open={Boolean(modelAnchorEl)}
+          onClose={() => setModelAnchorEl(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: afkColors.surface,
+                border: `1px solid ${afkColors.border}`,
+                minWidth: 160,
+              },
+            },
+          }}
+        >
+          {MODELS.map((model) => (
+            <MenuItem
+              key={model.id}
+              selected={model.id === selectedModel}
+              onClick={() => {
+                setSelectedModel(model.id);
+                setModelAnchorEl(null);
               }}
-            />
-          }
-          label={
-            <Typography
-              variant="caption"
-              sx={{ color: afkColors.textSecondary, fontSize: '0.7rem' }}
+              sx={{
+                fontSize: '0.8rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                py: 0.75,
+              }}
             >
-              Continue conversation
-            </Typography>
-          }
-        />
+              {model.label}
+            </MenuItem>
+          ))}
+        </Menu>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: afkColors.textSecondary,
+              fontSize: '0.7rem',
+              userSelect: 'none',
+              cursor: 'pointer',
+            }}
+            onClick={() =>
+              !isProcessing && setContinueConversation((v) => !v)
+            }
+          >
+            Continue
+          </Typography>
+          <Switch
+            size="small"
+            checked={continueConversation}
+            onChange={(e) => setContinueConversation(e.target.checked)}
+            disabled={isProcessing}
+            sx={{
+              '& .MuiSwitch-switchBase.Mui-checked': {
+                color: afkColors.accent,
+              },
+              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                bgcolor: afkColors.accentMuted,
+              },
+            }}
+          />
+        </Box>
       </Box>
     </Box>
   );

@@ -15,6 +15,7 @@ export interface ChatStreamEvent {
 
 export interface SendMessageOptions {
   continueConversation: boolean;
+  model?: string;
 }
 
 export interface SendMessageResult {
@@ -82,7 +83,11 @@ export class ChatService {
 
     const assistantMessageId = uuidv4();
     const startTime = Date.now();
-    const cmd = this.buildClaudeCommand(content, options.continueConversation);
+    const cmd = this.buildClaudeCommand(
+      content,
+      options.continueConversation,
+      options.model,
+    );
 
     this.logger.log('Executing Claude command', {
       sessionId,
@@ -315,6 +320,7 @@ export class ChatService {
   private buildClaudeCommand(
     prompt: string,
     continueConversation: boolean,
+    model?: string,
   ): string[] {
     const cmd = [
       'claude',
@@ -326,6 +332,10 @@ export class ChatService {
       '--dangerously-skip-permissions',
       '--include-partial-messages',
     ];
+
+    if (model) {
+      cmd.push('--model', model);
+    }
 
     if (continueConversation) {
       cmd.push('--continue');

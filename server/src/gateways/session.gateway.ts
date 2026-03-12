@@ -230,10 +230,15 @@ export class SessionGateway
   @SubscribeMessage('chat.send')
   async handleChatSend(
     @MessageBody()
-    data: { sessionId: string; content: string; continueConversation: boolean },
+    data: {
+      sessionId: string;
+      content: string;
+      continueConversation: boolean;
+      model?: string;
+    },
     @ConnectedSocket() client: Socket,
   ) {
-    const { sessionId, content, continueConversation } = data;
+    const { sessionId, content, continueConversation, model } = data;
     this.logger.log('Chat message received', {
       sessionId,
       continueConversation,
@@ -243,7 +248,7 @@ export class SessionGateway
       const result = await this.chatService.sendMessage(
         sessionId,
         content,
-        { continueConversation },
+        { continueConversation, model },
         (event) => {
           this.server.to(`session:${sessionId}`).emit('chat.stream', {
             sessionId,

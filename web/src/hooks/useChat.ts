@@ -11,7 +11,11 @@ interface UseChatReturn {
   streamingEvents: ChatStreamEvent[];
   isProcessing: boolean;
   isLoadingHistory: boolean;
-  sendMessage: (content: string, continueConversation: boolean) => void;
+  sendMessage: (
+    content: string,
+    continueConversation: boolean,
+    model?: string,
+  ) => void;
   cancelExecution: () => void;
 }
 
@@ -188,7 +192,7 @@ export const useChat = (sessionId: string): UseChatReturn => {
   }, [sessionId, token]);
 
   const sendMessage = useCallback(
-    (content: string, continueConversation: boolean) => {
+    (content: string, continueConversation: boolean, model?: string) => {
       if (!socketRef.current || isProcessing) return;
 
       const userMessage: ChatMessage = {
@@ -207,6 +211,7 @@ export const useChat = (sessionId: string): UseChatReturn => {
         sessionId,
         content,
         continueConversation,
+        model: model || undefined,
       });
     },
     [sessionId, isProcessing],

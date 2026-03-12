@@ -31,9 +31,7 @@ export class ChatMessagesController {
     status: 200,
     description: 'Chat history retrieved',
   })
-  async getMessages(
-    @Param(SessionRouteParams.ITEM_ID) id: string,
-  ): Promise<
+  async getMessages(@Param(SessionRouteParams.ITEM_ID) id: string): Promise<
     ApiResponseType<{
       messages: ChatMessage[];
       isExecuting: boolean;

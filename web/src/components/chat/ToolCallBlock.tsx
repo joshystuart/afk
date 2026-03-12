@@ -28,8 +28,7 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
     if (!input) return '';
     if (typeof input === 'string') return input;
     if (input.command) return input.command;
-    if (input.file_path || input.path)
-      return input.file_path || input.path;
+    if (input.file_path || input.path) return input.file_path || input.path;
     if (input.query) return input.query;
     return JSON.stringify(input).slice(0, 120);
   }, [input]);
@@ -83,13 +82,12 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
             {inputSummary}
           </Typography>
         )}
-        {result !== undefined && (
-          isError ? (
+        {result !== undefined &&
+          (isError ? (
             <ErrorIcon sx={{ fontSize: 14, color: afkColors.danger }} />
           ) : (
             <SuccessIcon sx={{ fontSize: 14, color: afkColors.accent }} />
-          )
-        )}
+          ))}
         <IconButton size="small" sx={{ p: 0, color: afkColors.textTertiary }}>
           {expanded ? (
             <CollapseIcon fontSize="small" />
@@ -158,9 +156,7 @@ export const ToolCallBlock: React.FC<ToolCallBlockProps> = ({
                   maxHeight: 200,
                   fontSize: '0.7rem',
                   fontFamily: '"JetBrains Mono", monospace',
-                  color: isError
-                    ? afkColors.danger
-                    : afkColors.textSecondary,
+                  color: isError ? afkColors.danger : afkColors.textSecondary,
                   m: 0,
                 }}
               >

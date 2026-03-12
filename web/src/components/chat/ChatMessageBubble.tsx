@@ -156,7 +156,8 @@ function processStreamEvents(events: ChatStreamEvent[]): ContentBlock[] {
           } else if (evt.delta.type === 'text_delta') {
             block.content += evt.delta.text || '';
           } else if (evt.delta.type === 'input_json_delta') {
-            block.content = (block.content || '') + (evt.delta.partial_json || '');
+            block.content =
+              (block.content || '') + (evt.delta.partial_json || '');
           }
         }
       }
@@ -223,9 +224,7 @@ function processStreamEvents(events: ChatStreamEvent[]): ContentBlock[] {
 
   // Fall back to result event text if no content blocks were produced
   if (blocks.length === 0) {
-    const resultEvent = events.find(
-      (e) => e.type === 'result' && e.result,
-    );
+    const resultEvent = events.find((e) => e.type === 'result' && e.result);
     if (resultEvent) {
       blocks.push({ type: 'text', content: resultEvent.result });
     }

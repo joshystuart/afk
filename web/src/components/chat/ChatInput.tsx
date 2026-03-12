@@ -8,10 +8,7 @@ import {
   FormControlLabel,
   Typography,
 } from '@mui/material';
-import {
-  Send as SendIcon,
-  Stop as StopIcon,
-} from '@mui/icons-material';
+import { Send as SendIcon, Stop as StopIcon } from '@mui/icons-material';
 import { afkColors } from '../../themes/afk';
 
 interface ChatInputProps {
@@ -106,9 +103,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   bgcolor: value.trim()
                     ? afkColors.accent
                     : afkColors.surfaceElevated,
-                  color: value.trim()
-                    ? '#fff'
-                    : afkColors.textTertiary,
+                  color: value.trim() ? '#fff' : afkColors.textTertiary,
                   '&:hover': {
                     bgcolor: value.trim()
                       ? afkColors.accentDark

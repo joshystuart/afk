@@ -151,9 +151,7 @@ export const useChat = (sessionId: string): UseChatReturn => {
         } else {
           const currentEvents = streamingEventsRef.current;
           if (currentEvents.length > 0) {
-            const resultEvent = currentEvents.find(
-              (e) => e.type === 'result',
-            );
+            const resultEvent = currentEvents.find((e) => e.type === 'result');
             const assistantMessage: ChatMessage = {
               id: data.messageId,
               sessionId: data.sessionId,

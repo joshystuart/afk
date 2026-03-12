@@ -234,7 +234,10 @@ export class SessionGateway
     @ConnectedSocket() client: Socket,
   ) {
     const { sessionId, content, continueConversation } = data;
-    this.logger.log('Chat message received', { sessionId, continueConversation });
+    this.logger.log('Chat message received', {
+      sessionId,
+      continueConversation,
+    });
 
     try {
       const result = await this.chatService.sendMessage(

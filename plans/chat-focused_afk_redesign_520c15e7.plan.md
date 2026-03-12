@@ -12,7 +12,7 @@ todos:
     content: Create NDJSON line-buffered parser utility for handling streaming Claude output.
     status: pending
   - id: chat-service
-    content: "Create ChatService: orchestrates claude CLI execution via execStreamInContainer, parses stream, saves messages, tracks active executions per session."
+    content: 'Create ChatService: orchestrates claude CLI execution via execStreamInContainer, parses stream, saves messages, tracks active executions per session.'
     status: pending
   - id: gateway-chat-events
     content: Extend SessionGateway with chat.send, chat.stream, chat.complete, chat.error, chat.cancel WebSocket events.
@@ -65,8 +65,6 @@ sequenceDiagram
     Chat-->>WS: chat.complete {messageId, cost}
     WS-->>User: finalize message
 ```
-
-
 
 ## Key Design Decisions
 
@@ -128,10 +126,10 @@ export class ChatMessage {
   content: string;
 
   @Column('json', { nullable: true })
-  streamEvents: any[];  // raw stream-json events for re-rendering
+  streamEvents: any[]; // raw stream-json events for re-rendering
 
   @Column('varchar', { nullable: true })
-  conversationId: string | null;  // Claude's conversation ID
+  conversationId: string | null; // Claude's conversation ID
 
   @Column('boolean', { default: false })
   isContinuation: boolean;
@@ -173,7 +171,6 @@ export class ChatMessage {
 
 New WebSocket events:
 
-
 | Direction        | Event           | Payload                                                         |
 | ---------------- | --------------- | --------------------------------------------------------------- |
 | Client -> Server | `chat.send`     | `{ sessionId, content, continue: boolean }`                     |
@@ -181,7 +178,6 @@ New WebSocket events:
 | Server -> Client | `chat.complete` | `{ sessionId, messageId, conversationId, costUsd, durationMs }` |
 | Server -> Client | `chat.error`    | `{ sessionId, messageId, error }`                               |
 | Client -> Server | `chat.cancel`   | `{ sessionId }`                                                 |
-
 
 ### New REST endpoint (on sessions controller)
 
@@ -222,4 +218,3 @@ Remove the dual-iframe `TerminalPanel` rendering. Replace with a new `ChatPanel`
 - Remove Claude terminal iframe references from `SessionDetails.tsx`
 - Update health check in `SessionLifecycleInteractor` to only check manual port
 - The `PortPairDto` and `Session.getTerminalUrls()` still work; the `claude` URL just won't be used in the UI (keep for backward compat)
-

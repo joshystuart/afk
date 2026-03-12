@@ -563,9 +563,7 @@ const SessionDetails: React.FC = () => {
                 <IconButton
                   size="small"
                   onClick={handleOpenTerminal}
-                  disabled={
-                    !healthCheck.manualTerminalReady || isStopping
-                  }
+                  disabled={!healthCheck.manualTerminalReady || isStopping}
                   sx={{
                     p: 0.5,
                     color: afkColors.textTertiary,

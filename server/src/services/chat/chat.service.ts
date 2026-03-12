@@ -305,9 +305,7 @@ export class ChatService {
     return this.activeExecutions.has(sessionId);
   }
 
-  getExecutionInfo(
-    sessionId: string,
-  ): { assistantMessageId: string } | null {
+  getExecutionInfo(sessionId: string): { assistantMessageId: string } | null {
     const execution = this.activeExecutions.get(sessionId);
     return execution
       ? { assistantMessageId: execution.assistantMessageId }

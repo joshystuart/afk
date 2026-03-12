@@ -54,6 +54,7 @@ USER node
 # Add Claude Code binary location to PATH and disable auto-updates in containers
 ENV PATH="/home/node/.local/bin:$PATH"
 ENV DISABLE_AUTOUPDATER=1
+ENV CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1
 
 # Install Claude Code using native installer (replaces deprecated npm method)
 # See: https://code.claude.com/docs/en/setup#install-a-specific-version

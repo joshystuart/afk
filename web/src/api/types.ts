@@ -132,3 +132,21 @@ export interface CommitAndPushResponse {
   success: boolean;
   message: string;
 }
+
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  streamEvents?: ChatStreamEvent[];
+  conversationId?: string;
+  isContinuation: boolean;
+  costUsd?: number;
+  durationMs?: number;
+  createdAt: string;
+}
+
+export interface ChatStreamEvent {
+  type: string;
+  [key: string]: any;
+}

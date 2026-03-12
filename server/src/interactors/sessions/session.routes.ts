@@ -6,6 +6,7 @@ export enum SessionRoutes {
   HEALTH = '/:id/health',
   GIT_STATUS = '/:id/git/status',
   GIT_COMMIT_PUSH = '/:id/git/commit-and-push',
+  MESSAGES = '/:id/messages',
 }
 
 export enum SessionRouteParams {

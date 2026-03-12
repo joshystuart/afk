@@ -357,17 +357,15 @@ export class SessionLifecycleInteractor {
       };
     }
 
-    const claudeReady = await this.checkTerminalEndpoint(
-      session.ports.claudePort,
-    );
     const manualReady = await this.checkTerminalEndpoint(
       session.ports.manualPort,
     );
 
+    // Claude is invoked on-demand via docker exec, not via a terminal port
     return {
-      claudeTerminalReady: claudeReady,
+      claudeTerminalReady: true,
       manualTerminalReady: manualReady,
-      allReady: claudeReady && manualReady,
+      allReady: manualReady,
     };
   }
 

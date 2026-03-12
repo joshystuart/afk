@@ -328,6 +328,7 @@ export class DockerEngineService {
       `GIT_USER_EMAIL=${options.gitUserEmail}`,
       `CLAUDE_PORT=${options.ports.claudePort}`,
       `MANUAL_PORT=${options.ports.manualPort}`,
+      `CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1`,
     ];
 
     if (options.sshPrivateKey) {

@@ -18,6 +18,7 @@ interface UseChatReturn {
 export const useChat = (sessionId: string): UseChatReturn => {
   const socketRef = useRef<Socket | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const streamingEventsRef = useRef<ChatStreamEvent[]>([]);
   const { token } = useAuthStore();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -26,8 +27,8 @@ export const useChat = (sessionId: string): UseChatReturn => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   messagesRef.current = messages;
+  streamingEventsRef.current = streamingEvents;
 
-  // Load chat history on mount
   useEffect(() => {
     let cancelled = false;
     setIsLoadingHistory(true);
@@ -47,7 +48,6 @@ export const useChat = (sessionId: string): UseChatReturn => {
     };
   }, [sessionId]);
 
-  // Set up WebSocket connection for chat events
   useEffect(() => {
     if (!token) return;
 
@@ -71,43 +71,33 @@ export const useChat = (sessionId: string): UseChatReturn => {
         if (data.sessionId !== sessionId) return;
         const { messageId: assistantMessageId, event } = data;
 
-        const currentMessages = messagesRef.current;
-        const existingIdx =
-          assistantMessageId !== undefined
-            ? currentMessages.findIndex(
-                (m) =>
-                  m.role === 'assistant' && m.id === assistantMessageId,
-              )
-            : -1;
+        // Check synchronously whether we already have this assistant message
+        // (e.g. restored from history after navigating back mid-run)
+        const hasExisting =
+          assistantMessageId !== undefined &&
+          messagesRef.current.some(
+            (m) => m.role === 'assistant' && m.id === assistantMessageId,
+          );
 
-        if (existingIdx !== -1) {
-          // We have this message (e.g. restored from history after navigating back): merge into it, don't show separate streaming bubble
+        if (hasExisting) {
           setIsProcessing(true);
-          setMessages((prev) => {
-            const idx = prev.findIndex(
-              (m) => m.role === 'assistant' && m.id === assistantMessageId,
-            );
-            if (idx === -1) return prev;
-            const msg = prev[idx];
-            const nextEvents = [...(msg.streamEvents ?? []), event];
-            return prev.map((m, i) =>
-              i === idx
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.role === 'assistant' && m.id === assistantMessageId
                 ? {
                     ...m,
-                    streamEvents: nextEvents,
+                    streamEvents: [...(m.streamEvents ?? []), event],
                     content:
                       event.type === 'result' && event.result != null
                         ? event.result
                         : m.content,
                   }
                 : m,
-            );
-          });
-          return;
+            ),
+          );
+        } else {
+          setStreamingEvents((prev) => [...prev, event]);
         }
-
-        // New run: message not in list yet; show event in streaming bubble
-        setStreamingEvents((prev) => [...prev, event]);
       },
     );
 
@@ -122,38 +112,40 @@ export const useChat = (sessionId: string): UseChatReturn => {
       }) => {
         if (data.sessionId !== sessionId) return;
 
-        setMessages((prev) => {
-          const existingIdx = prev.findIndex(
-            (m) => m.role === 'assistant' && m.id === data.messageId,
-          );
-          if (existingIdx !== -1) {
-            // We were merging stream into this message (e.g. restored from history); just update metadata
-            const existing = prev[existingIdx];
-            const next = [...prev];
-            next[existingIdx] = {
-              ...existing,
-              conversationId: data.conversationId ?? undefined,
-              costUsd: data.costUsd ?? undefined,
-              durationMs: data.durationMs,
-              content:
-                existing.streamEvents?.find((e) => e.type === 'result')
-                  ?.result ?? existing.content,
-            };
-            return next;
-          }
-          return prev;
-        });
+        const hasExisting = messagesRef.current.some(
+          (m) => m.role === 'assistant' && m.id === data.messageId,
+        );
 
-        // If we had a separate streaming bubble, move its events into a new completed message
-        setStreamingEvents((currentEvents) => {
+        if (hasExisting) {
+          // Merge path: update metadata on the message we've been appending events to
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.role === 'assistant' && m.id === data.messageId
+                ? {
+                    ...m,
+                    conversationId: data.conversationId ?? undefined,
+                    costUsd: data.costUsd ?? undefined,
+                    durationMs: data.durationMs,
+                    content:
+                      m.streamEvents?.find((e) => e.type === 'result')
+                        ?.result ?? m.content,
+                  }
+                : m,
+            ),
+          );
+        } else {
+          // New run path: promote streaming bubble events into a completed message
+          const currentEvents = streamingEventsRef.current;
           if (currentEvents.length > 0) {
-            const resultEvent = currentEvents.find((e) => e.type === 'result');
+            const resultEvent = currentEvents.find(
+              (e) => e.type === 'result',
+            );
             const assistantMessage: ChatMessage = {
               id: data.messageId,
               sessionId: data.sessionId,
               role: 'assistant',
               content: resultEvent?.result || '',
-              streamEvents: currentEvents,
+              streamEvents: [...currentEvents],
               conversationId: data.conversationId ?? undefined,
               isContinuation: false,
               costUsd: data.costUsd ?? undefined,
@@ -162,8 +154,8 @@ export const useChat = (sessionId: string): UseChatReturn => {
             };
             setMessages((prev) => [...prev, assistantMessage]);
           }
-          return [];
-        });
+          setStreamingEvents([]);
+        }
 
         setIsProcessing(false);
       },

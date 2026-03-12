@@ -30,6 +30,8 @@ interface ActiveExecution {
 
 @Injectable()
 export class ChatService {
+  private static readonly PERSIST_INTERVAL_EVENTS = 15;
+
   private readonly logger = new Logger(ChatService.name);
   private readonly activeExecutions = new Map<string, ActiveExecution>();
 
@@ -94,21 +96,39 @@ export class ChatService {
     let costUsd: number | null = null;
     let resultContent = '';
 
-    // Persist assistant message at start so partial output is restored when user navigates away
-    const assistantMessagePlaceholder = new ChatMessage({
-      id: assistantMessageId,
-      sessionId,
-      role: 'assistant',
-      content: '',
-      streamEvents: [],
-      conversationId: null,
-      isContinuation: options.continueConversation,
-      costUsd: null,
-      durationMs: null,
-    });
-    await this.chatMessageRepository.save(assistantMessagePlaceholder);
+    // Persist placeholder so partial output survives navigation away or server restart
+    await this.chatMessageRepository.save(
+      new ChatMessage({
+        id: assistantMessageId,
+        sessionId,
+        role: 'assistant',
+        content: '',
+        streamEvents: [],
+        conversationId: null,
+        isContinuation: options.continueConversation,
+        costUsd: null,
+        durationMs: null,
+      }),
+    );
 
-    const PERSIST_EVERY_N_EVENTS = 15;
+    let lastPersistedCount = 0;
+    let pendingPersist: Promise<void> | null = null;
+
+    const persistPartialStream = () => {
+      const eventsSnapshot = [...streamEvents];
+      pendingPersist = this.chatMessageRepository
+        .updateMessage(assistantMessageId, { streamEvents: eventsSnapshot })
+        .catch((err) =>
+          this.logger.warn('Failed to persist partial stream', {
+            sessionId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        )
+        .finally(() => {
+          pendingPersist = null;
+        });
+    };
+
     try {
       const { stream, kill } = await this.dockerEngine.execStreamInContainer(
         session.containerId,
@@ -125,21 +145,11 @@ export class ChatService {
               resultContent = event.result ?? '';
             }
           }
-          // Persist partial stream so conversation restores after navigate away or refresh
-          if (
-            streamEvents.length > 0 &&
-            streamEvents.length % PERSIST_EVERY_N_EVENTS === 0
-          ) {
-            this.chatMessageRepository
-              .updateMessage(assistantMessageId, {
-                streamEvents: [...streamEvents],
-              })
-              .catch((err) =>
-                this.logger.warn('Failed to persist partial stream', {
-                  sessionId,
-                  error: err instanceof Error ? err.message : String(err),
-                }),
-              );
+
+          const delta = streamEvents.length - lastPersistedCount;
+          if (delta >= ChatService.PERSIST_INTERVAL_EVENTS && !pendingPersist) {
+            lastPersistedCount = streamEvents.length;
+            persistPartialStream();
           }
         },
         '/workspace/repo',
@@ -164,21 +174,21 @@ export class ChatService {
           }
         }
 
+        // Wait for any in-flight periodic persist to finish before final save
+        if (pendingPersist) {
+          await pendingPersist.catch(() => {});
+        }
+
         const durationMs = Date.now() - startTime;
 
         try {
-          const assistantMessage = new ChatMessage({
-            id: assistantMessageId,
-            sessionId,
-            role: 'assistant',
+          await this.chatMessageRepository.updateMessage(assistantMessageId, {
             content: resultContent,
             streamEvents,
             conversationId,
-            isContinuation: options.continueConversation,
             costUsd,
             durationMs,
           });
-          await this.chatMessageRepository.save(assistantMessage);
 
           this.logger.log('Claude execution completed', {
             sessionId,
@@ -202,18 +212,50 @@ export class ChatService {
         }
       });
 
-      stream.on('error', (err: Error) => {
+      stream.on('error', async (err: Error) => {
         this.activeExecutions.delete(sessionId);
         this.logger.error('Stream error during Claude execution', {
           sessionId,
           error: err.message,
         });
+
+        // Persist whatever we collected so the user doesn't lose partial output
+        if (streamEvents.length > 0) {
+          const durationMs = Date.now() - startTime;
+          await this.chatMessageRepository
+            .updateMessage(assistantMessageId, {
+              content: resultContent || '(interrupted)',
+              streamEvents,
+              conversationId,
+              costUsd,
+              durationMs,
+            })
+            .catch((persistErr) =>
+              this.logger.warn('Failed to persist partial stream on error', {
+                sessionId,
+                error:
+                  persistErr instanceof Error
+                    ? persistErr.message
+                    : String(persistErr),
+              }),
+            );
+        } else {
+          // No events collected; remove the empty placeholder
+          await this.chatMessageRepository
+            .deleteById(assistantMessageId)
+            .catch(() => {});
+        }
+
         onError(err);
       });
 
       return { userMessageId, assistantMessageId, kill: wrappedKill };
     } catch (err) {
       this.activeExecutions.delete(sessionId);
+      // Exec failed to start; remove the empty placeholder
+      await this.chatMessageRepository
+        .deleteById(assistantMessageId)
+        .catch(() => {});
       throw err;
     }
   }

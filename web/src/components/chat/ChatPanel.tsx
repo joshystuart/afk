@@ -121,9 +121,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
                 isStreaming
               />
             )}
-            {isProcessing && streamingEvents.length === 0 && (
-              <StreamingIndicator />
-            )}
+            {isProcessing &&
+              streamingEvents.length === 0 &&
+              !(
+                messages.length > 0 &&
+                messages[messages.length - 1].role === 'assistant'
+              ) && <StreamingIndicator />}
           </>
         )}
         <div ref={messagesEndRef} />

@@ -41,6 +41,10 @@ export class ChatMessageRepository {
     return message?.conversationId ?? null;
   }
 
+  async deleteById(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+
   async deleteBySessionId(sessionId: string): Promise<void> {
     await this.repository.delete({ sessionId });
   }

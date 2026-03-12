@@ -33,9 +33,13 @@ export const useChat = (sessionId: string): UseChatReturn => {
     let cancelled = false;
     setIsLoadingHistory(true);
     sessionsApi
-      .getChatMessages(sessionId)
-      .then((msgs) => {
-        if (!cancelled) setMessages(msgs);
+      .getChatHistory(sessionId)
+      .then((response) => {
+        if (cancelled) return;
+        setMessages(response.messages);
+        if (response.isExecuting) {
+          setIsProcessing(true);
+        }
       })
       .catch((err) => {
         console.error('Failed to load chat history:', err);
@@ -61,6 +65,19 @@ export const useChat = (sessionId: string): UseChatReturn => {
       socket.emit('subscribe.session', { sessionId });
     });
 
+    // Server sends authoritative execution state on subscribe (and reconnect)
+    socket.on(
+      'chat.status',
+      (data: {
+        sessionId: string;
+        status: 'executing' | 'idle';
+        assistantMessageId: string | null;
+      }) => {
+        if (data.sessionId !== sessionId) return;
+        setIsProcessing(data.status === 'executing');
+      },
+    );
+
     socket.on(
       'chat.stream',
       (data: {
@@ -71,8 +88,8 @@ export const useChat = (sessionId: string): UseChatReturn => {
         if (data.sessionId !== sessionId) return;
         const { messageId: assistantMessageId, event } = data;
 
-        // Check synchronously whether we already have this assistant message
-        // (e.g. restored from history after navigating back mid-run)
+        setIsProcessing(true);
+
         const hasExisting =
           assistantMessageId !== undefined &&
           messagesRef.current.some(
@@ -80,7 +97,6 @@ export const useChat = (sessionId: string): UseChatReturn => {
           );
 
         if (hasExisting) {
-          setIsProcessing(true);
           setMessages((prev) =>
             prev.map((m) =>
               m.role === 'assistant' && m.id === assistantMessageId
@@ -117,7 +133,6 @@ export const useChat = (sessionId: string): UseChatReturn => {
         );
 
         if (hasExisting) {
-          // Merge path: update metadata on the message we've been appending events to
           setMessages((prev) =>
             prev.map((m) =>
               m.role === 'assistant' && m.id === data.messageId
@@ -134,7 +149,6 @@ export const useChat = (sessionId: string): UseChatReturn => {
             ),
           );
         } else {
-          // New run path: promote streaming bubble events into a completed message
           const currentEvents = streamingEventsRef.current;
           if (currentEvents.length > 0) {
             const resultEvent = currentEvents.find(
@@ -203,8 +217,6 @@ export const useChat = (sessionId: string): UseChatReturn => {
   const cancelExecution = useCallback(() => {
     if (!socketRef.current) return;
     socketRef.current.emit('chat.cancel', { sessionId });
-    setIsProcessing(false);
-    setStreamingEvents([]);
   }, [sessionId]);
 
   return {

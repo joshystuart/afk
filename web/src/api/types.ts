@@ -150,3 +150,9 @@ export interface ChatStreamEvent {
   type: string;
   [key: string]: any;
 }
+
+export interface ChatHistoryResponse {
+  messages: ChatMessage[];
+  isExecuting: boolean;
+  activeMessageId: string | null;
+}

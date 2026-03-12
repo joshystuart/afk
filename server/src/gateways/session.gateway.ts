@@ -97,6 +97,15 @@ export class SessionGateway
         });
       });
 
+      // Sync current chat execution state so reconnecting clients
+      // immediately know if Claude is mid-run
+      const executionInfo = this.chatService.getExecutionInfo(data.sessionId);
+      client.emit('chat.status', {
+        sessionId: data.sessionId,
+        status: executionInfo ? 'executing' : 'idle',
+        assistantMessageId: executionInfo?.assistantMessageId ?? null,
+      });
+
       return {
         event: 'subscription.success',
         data: { sessionId: data.sessionId },

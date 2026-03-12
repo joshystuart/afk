@@ -7,7 +7,7 @@ import type {
   GitStatus,
   CommitAndPushRequest,
   CommitAndPushResponse,
-  ChatMessage,
+  ChatHistoryResponse,
 } from './types';
 
 export const sessionsApi = {
@@ -142,8 +142,8 @@ export const sessionsApi = {
     return response as unknown as CommitAndPushResponse;
   },
 
-  getChatMessages: async (sessionId: string): Promise<ChatMessage[]> => {
+  getChatHistory: async (sessionId: string): Promise<ChatHistoryResponse> => {
     const response = await apiClient.get(`/sessions/${sessionId}/messages`);
-    return response as unknown as ChatMessage[];
+    return response as unknown as ChatHistoryResponse;
   },
 };

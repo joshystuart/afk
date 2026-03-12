@@ -129,6 +129,60 @@ export class ChatService {
         });
     };
 
+    // Guard: completion logic can be triggered by the `result` event
+    // (preferred) or by stream `end`/`error` — whichever fires first.
+    let completed = false;
+
+    const finalize = async (killStream: () => Promise<void>) => {
+      if (completed) return;
+      completed = true;
+
+      if (pendingPersist) {
+        await pendingPersist.catch(() => {});
+      }
+
+      const durationMs = Date.now() - startTime;
+
+      try {
+        await this.chatMessageRepository.updateMessage(assistantMessageId, {
+          content: resultContent,
+          streamEvents,
+          conversationId,
+          costUsd,
+          durationMs,
+        });
+
+        this.logger.log('Claude execution completed', {
+          sessionId,
+          assistantMessageId,
+          durationMs,
+          costUsd,
+          conversationId,
+        });
+
+        onComplete({
+          assistantMessageId,
+          conversationId,
+          costUsd,
+          durationMs,
+        });
+      } catch (err) {
+        this.logger.error('Failed to save assistant message', err);
+        onError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        this.activeExecutions.delete(sessionId);
+      }
+
+      // Claude CLI hangs after emitting the result event (known bug).
+      // Kill the Docker exec process so it doesn't linger.
+      killStream().catch((err) =>
+        this.logger.warn('Error killing exec stream after completion', {
+          sessionId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    };
+
     try {
       const { stream, kill } = await this.dockerEngine.execStreamInContainer(
         session.containerId,
@@ -143,6 +197,10 @@ export class ChatService {
               conversationId = event.session_id ?? null;
               costUsd = event.cost_usd ?? null;
               resultContent = event.result ?? '';
+
+              // Don't await — let the stream handler return so the event
+              // loop can process the kill and subsequent end/error events.
+              finalize(kill);
             }
           }
 
@@ -162,6 +220,8 @@ export class ChatService {
         this.activeExecutions.delete(sessionId);
       };
 
+      // Fallback: if the stream ends naturally (e.g. future CLI fix),
+      // finalize here so nothing is lost.
       stream.on('end', async () => {
         const remaining = parser.flush();
         for (const event of remaining) {
@@ -173,53 +233,22 @@ export class ChatService {
             resultContent = event.result ?? '';
           }
         }
-
-        // Wait for any in-flight periodic persist to finish before final save
-        if (pendingPersist) {
-          await pendingPersist.catch(() => {});
-        }
-
-        const durationMs = Date.now() - startTime;
-
-        try {
-          await this.chatMessageRepository.updateMessage(assistantMessageId, {
-            content: resultContent,
-            streamEvents,
-            conversationId,
-            costUsd,
-            durationMs,
-          });
-
-          this.logger.log('Claude execution completed', {
-            sessionId,
-            assistantMessageId,
-            durationMs,
-            costUsd,
-            conversationId,
-          });
-
-          onComplete({
-            assistantMessageId,
-            conversationId,
-            costUsd,
-            durationMs,
-          });
-        } catch (err) {
-          this.logger.error('Failed to save assistant message', err);
-          onError(err instanceof Error ? err : new Error(String(err)));
-        } finally {
-          this.activeExecutions.delete(sessionId);
-        }
+        await finalize(kill);
       });
 
       stream.on('error', async (err: Error) => {
+        if (completed) {
+          // Stream error after we already finalized (expected when we
+          // kill the hanging process) — ignore silently.
+          return;
+        }
+
         this.activeExecutions.delete(sessionId);
         this.logger.error('Stream error during Claude execution', {
           sessionId,
           error: err.message,
         });
 
-        // Persist whatever we collected so the user doesn't lose partial output
         if (streamEvents.length > 0) {
           const durationMs = Date.now() - startTime;
           await this.chatMessageRepository
@@ -240,7 +269,6 @@ export class ChatService {
               }),
             );
         } else {
-          // No events collected; remove the empty placeholder
           await this.chatMessageRepository
             .deleteById(assistantMessageId)
             .catch(() => {});
@@ -252,7 +280,6 @@ export class ChatService {
       return { userMessageId, assistantMessageId, kill: wrappedKill };
     } catch (err) {
       this.activeExecutions.delete(sessionId);
-      // Exec failed to start; remove the empty placeholder
       await this.chatMessageRepository
         .deleteById(assistantMessageId)
         .catch(() => {});
@@ -276,6 +303,15 @@ export class ChatService {
 
   isExecuting(sessionId: string): boolean {
     return this.activeExecutions.has(sessionId);
+  }
+
+  getExecutionInfo(
+    sessionId: string,
+  ): { assistantMessageId: string } | null {
+    const execution = this.activeExecutions.get(sessionId);
+    return execution
+      ? { assistantMessageId: execution.assistantMessageId }
+      : null;
   }
 
   private buildClaudeCommand(

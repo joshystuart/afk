@@ -33,11 +33,22 @@ export class ChatMessagesController {
   })
   async getMessages(
     @Param(SessionRouteParams.ITEM_ID) id: string,
-  ): Promise<ApiResponseType<ChatMessage[]>> {
+  ): Promise<
+    ApiResponseType<{
+      messages: ChatMessage[];
+      isExecuting: boolean;
+      activeMessageId: string | null;
+    }>
+  > {
     try {
       this.sessionIdFactory.fromString(id);
       const messages = await this.chatService.getHistory(id);
-      return this.responseService.success(messages);
+      const executionInfo = this.chatService.getExecutionInfo(id);
+      return this.responseService.success({
+        messages,
+        isExecuting: executionInfo !== null,
+        activeMessageId: executionInfo?.assistantMessageId ?? null,
+      });
     } catch (error) {
       if (error.message === 'Invalid session ID') {
         throw new BadRequestException(error.message);

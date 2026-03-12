@@ -17,12 +17,15 @@ interface UseChatReturn {
 
 export const useChat = (sessionId: string): UseChatReturn => {
   const socketRef = useRef<Socket | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
   const { token } = useAuthStore();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingEvents, setStreamingEvents] = useState<ChatStreamEvent[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  messagesRef.current = messages;
 
   // Load chat history on mount
   useEffect(() => {
@@ -58,10 +61,55 @@ export const useChat = (sessionId: string): UseChatReturn => {
       socket.emit('subscribe.session', { sessionId });
     });
 
-    socket.on('chat.stream', (data: { sessionId: string; event: ChatStreamEvent }) => {
-      if (data.sessionId !== sessionId) return;
-      setStreamingEvents((prev) => [...prev, data.event]);
-    });
+    socket.on(
+      'chat.stream',
+      (data: {
+        sessionId: string;
+        messageId?: string;
+        event: ChatStreamEvent;
+      }) => {
+        if (data.sessionId !== sessionId) return;
+        const { messageId: assistantMessageId, event } = data;
+
+        const currentMessages = messagesRef.current;
+        const existingIdx =
+          assistantMessageId !== undefined
+            ? currentMessages.findIndex(
+                (m) =>
+                  m.role === 'assistant' && m.id === assistantMessageId,
+              )
+            : -1;
+
+        if (existingIdx !== -1) {
+          // We have this message (e.g. restored from history after navigating back): merge into it, don't show separate streaming bubble
+          setIsProcessing(true);
+          setMessages((prev) => {
+            const idx = prev.findIndex(
+              (m) => m.role === 'assistant' && m.id === assistantMessageId,
+            );
+            if (idx === -1) return prev;
+            const msg = prev[idx];
+            const nextEvents = [...(msg.streamEvents ?? []), event];
+            return prev.map((m, i) =>
+              i === idx
+                ? {
+                    ...m,
+                    streamEvents: nextEvents,
+                    content:
+                      event.type === 'result' && event.result != null
+                        ? event.result
+                        : m.content,
+                  }
+                : m,
+            );
+          });
+          return;
+        }
+
+        // New run: message not in list yet; show event in streaming bubble
+        setStreamingEvents((prev) => [...prev, event]);
+      },
+    );
 
     socket.on(
       'chat.complete',
@@ -74,23 +122,46 @@ export const useChat = (sessionId: string): UseChatReturn => {
       }) => {
         if (data.sessionId !== sessionId) return;
 
-        // Move streaming events into a completed assistant message
-        setStreamingEvents((currentEvents) => {
-          const resultEvent = currentEvents.find((e) => e.type === 'result');
-          const assistantMessage: ChatMessage = {
-            id: data.messageId,
-            sessionId: data.sessionId,
-            role: 'assistant',
-            content: resultEvent?.result || '',
-            streamEvents: currentEvents,
-            conversationId: data.conversationId ?? undefined,
-            isContinuation: false,
-            costUsd: data.costUsd ?? undefined,
-            durationMs: data.durationMs,
-            createdAt: new Date().toISOString(),
-          };
+        setMessages((prev) => {
+          const existingIdx = prev.findIndex(
+            (m) => m.role === 'assistant' && m.id === data.messageId,
+          );
+          if (existingIdx !== -1) {
+            // We were merging stream into this message (e.g. restored from history); just update metadata
+            const existing = prev[existingIdx];
+            const next = [...prev];
+            next[existingIdx] = {
+              ...existing,
+              conversationId: data.conversationId ?? undefined,
+              costUsd: data.costUsd ?? undefined,
+              durationMs: data.durationMs,
+              content:
+                existing.streamEvents?.find((e) => e.type === 'result')
+                  ?.result ?? existing.content,
+            };
+            return next;
+          }
+          return prev;
+        });
 
-          setMessages((prev) => [...prev, assistantMessage]);
+        // If we had a separate streaming bubble, move its events into a new completed message
+        setStreamingEvents((currentEvents) => {
+          if (currentEvents.length > 0) {
+            const resultEvent = currentEvents.find((e) => e.type === 'result');
+            const assistantMessage: ChatMessage = {
+              id: data.messageId,
+              sessionId: data.sessionId,
+              role: 'assistant',
+              content: resultEvent?.result || '',
+              streamEvents: currentEvents,
+              conversationId: data.conversationId ?? undefined,
+              isContinuation: false,
+              costUsd: data.costUsd ?? undefined,
+              durationMs: data.durationMs,
+              createdAt: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+          }
           return [];
         });
 

@@ -14,6 +14,18 @@ export class ChatMessageRepository {
     await this.repository.save(message);
   }
 
+  async updateMessage(
+    id: string,
+    partial: Partial<
+      Pick<
+        ChatMessage,
+        'streamEvents' | 'content' | 'conversationId' | 'costUsd' | 'durationMs'
+      >
+    >,
+  ): Promise<void> {
+    await this.repository.update(id, partial);
+  }
+
   async findBySessionId(sessionId: string): Promise<ChatMessage[]> {
     return this.repository.find({
       where: { sessionId },

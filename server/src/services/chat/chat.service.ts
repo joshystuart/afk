@@ -94,6 +94,21 @@ export class ChatService {
     let costUsd: number | null = null;
     let resultContent = '';
 
+    // Persist assistant message at start so partial output is restored when user navigates away
+    const assistantMessagePlaceholder = new ChatMessage({
+      id: assistantMessageId,
+      sessionId,
+      role: 'assistant',
+      content: '',
+      streamEvents: [],
+      conversationId: null,
+      isContinuation: options.continueConversation,
+      costUsd: null,
+      durationMs: null,
+    });
+    await this.chatMessageRepository.save(assistantMessagePlaceholder);
+
+    const PERSIST_EVERY_N_EVENTS = 15;
     try {
       const { stream, kill } = await this.dockerEngine.execStreamInContainer(
         session.containerId,
@@ -109,6 +124,22 @@ export class ChatService {
               costUsd = event.cost_usd ?? null;
               resultContent = event.result ?? '';
             }
+          }
+          // Persist partial stream so conversation restores after navigate away or refresh
+          if (
+            streamEvents.length > 0 &&
+            streamEvents.length % PERSIST_EVERY_N_EVENTS === 0
+          ) {
+            this.chatMessageRepository
+              .updateMessage(assistantMessageId, {
+                streamEvents: [...streamEvents],
+              })
+              .catch((err) =>
+                this.logger.warn('Failed to persist partial stream', {
+                  sessionId,
+                  error: err instanceof Error ? err.message : String(err),
+                }),
+              );
           }
         },
         '/workspace/repo',

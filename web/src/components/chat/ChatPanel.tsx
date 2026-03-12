@@ -98,7 +98,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
           </Box>
         ) : (
           <>
-            {messages.map((msg) => (
+            {messages.map((msg, index) => (
               <ChatMessageBubble
                 key={msg.id}
                 role={msg.role}
@@ -106,6 +106,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
                 streamEvents={msg.streamEvents}
                 costUsd={msg.costUsd}
                 durationMs={msg.durationMs}
+                isStreaming={
+                  isProcessing &&
+                  msg.role === 'assistant' &&
+                  index === messages.length - 1
+                }
               />
             ))}
             {isProcessing && streamingEvents.length > 0 && (

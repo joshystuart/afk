@@ -270,7 +270,10 @@ const AssistantEventList: React.FC<{
 
         if (block.type === 'tool_use') {
           let input = block.toolInput;
-          if (!input && block.content) {
+          const inputIsEmpty =
+            !input ||
+            (typeof input === 'object' && Object.keys(input).length === 0);
+          if (inputIsEmpty && block.content) {
             try {
               input = JSON.parse(block.content);
             } catch {

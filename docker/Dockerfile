@@ -59,5 +59,5 @@ ENV CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
     && claude --version
 
-CMD ["/home/node/scripts/start-claude.sh"]
+CMD ["/home/node/scripts/entrypoint.sh"]
 

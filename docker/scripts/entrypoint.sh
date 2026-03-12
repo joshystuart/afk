@@ -1,15 +1,8 @@
 #!/bin/bash
 #
-# Integrated startup script for AFK containers
-# This script orchestrates git setup and provides a manual terminal.
-# Claude Code is invoked on-demand via docker exec (not started at boot).
-#
-# Flow:
-# 1. Setup SSH (if needed)
-# 2. Clone repository (if URL provided)
-# 3. Configure git identity
-# 4. cd to repository directory
-# 5. Start manual terminal via ttyd (Claude runs on-demand via docker exec)
+# Container entrypoint for AFK
+# Orchestrates git/SSH setup and starts ttyd for manual terminal access.
+# Claude Code is invoked on-demand via docker exec (not started here).
 #
 
 set -e  # Exit on error
@@ -125,7 +118,6 @@ setup_git() {
         fi
     else
         log_info "No repository URL provided, skipping git setup"
-        log_info "Starting Claude Code in workspace directory"
     fi
 }
 
@@ -252,7 +244,7 @@ health_check() {
 print_banner() {
     echo
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║           AFK Chat Startup           ║${NC}"
+    echo -e "${BLUE}║                 AFK                  ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
     echo
     log_info "Repository URL: ${REPO_URL:-'Not provided'}"

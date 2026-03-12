@@ -141,7 +141,7 @@ docker/
    scripts/
       init-git.sh         # Git repository initialization
       setup-ssh.sh        # SSH key management
-      start-claude.sh     # Main startup orchestration
+      entrypoint.sh       # Container entrypoint and startup orchestration
       .tmux.conf          # Tmux configuration for the terminal session
    README.md              # This file
 ```

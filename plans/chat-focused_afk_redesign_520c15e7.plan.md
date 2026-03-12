@@ -3,7 +3,7 @@ name: Chat-focused AFK redesign
 overview: Replace the terminal-focused dual-iframe experience with a chat-focused UI. Users send prompts via a chat input, which are executed inside Docker containers using Claude Code CLI's non-interactive mode (`-p --output-format stream-json`). Streaming output is forwarded via the existing Socket.IO gateway to render thinking, tool calls, and results in real-time.
 todos:
   - id: docker-startup
-    content: Modify start-claude.sh to remove Claude TUI session, keep only manual tmux+ttyd. Add CLAUDE_DANGEROUS_SKIP_PERMISSIONS env var.
+    content: Modify entrypoint.sh to remove Claude TUI session, keep only manual tmux+ttyd. Add CLAUDE_DANGEROUS_SKIP_PERMISSIONS env var.
     status: pending
   - id: chat-entity
     content: Create ChatMessage TypeORM entity and repository for persisting chat history.
@@ -87,7 +87,7 @@ sequenceDiagram
 
 ## Layer 1: Docker Image and Startup Script
 
-### [docker/scripts/start-claude.sh](docker/scripts/start-claude.sh)
+### [docker/scripts/entrypoint.sh](docker/scripts/entrypoint.sh)
 
 - Remove the `claude-session` tmux session and its ttyd instance
 - Keep `manual-session` tmux + ttyd (single instance, foreground, on `MANUAL_PORT`)

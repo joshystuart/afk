@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: base/Dockerfile
-    image: afk-base:latest
+    image: awayfromklaude/afk-base:latest
 
   afk-node:
     build:

@@ -1,4 +1,4 @@
-FROM afk-base:latest
+FROM awayfromklaude/afk-base:latest
 
 USER root
 

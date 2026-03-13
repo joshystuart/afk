@@ -5,13 +5,13 @@ IMAGES = node python go rust dotnet java
 all: base $(IMAGES)
 
 base:
-	docker build -t afk-base:latest -f base/Dockerfile .
+	docker build -t awayfromklaude/afk-base:latest -f base/Dockerfile .
 
 $(IMAGES): base
 	docker build -t afk-$@:latest -f $@/Dockerfile .
 
 clean:
-	-docker rmi $(addprefix afk-,$(addsuffix :latest,$(IMAGES))) afk-base:latest 2>/dev/null
+	-docker rmi $(addprefix afk-,$(addsuffix :latest,$(IMAGES))) awayfromklaude/afk-base:latest 2>/dev/null
 
 help:
 	@echo "Usage:"

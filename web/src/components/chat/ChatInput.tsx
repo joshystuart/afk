@@ -44,7 +44,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [value, setValue] = React.useState('');
   const [continueConversation, setContinueConversation] = React.useState(true);
-  const [selectedModel, setSelectedModel] = React.useState(DEFAULT_MODEL);
+  const [selectedModel, setSelectedModel] =
+    React.useState<(typeof MODELS)[number]['id']>(DEFAULT_MODEL);
   const [modelAnchorEl, setModelAnchorEl] = React.useState<null | HTMLElement>(
     null,
   );

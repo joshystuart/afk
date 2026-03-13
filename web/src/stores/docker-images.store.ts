@@ -17,7 +17,7 @@ interface DockerImagesState {
   clearError: () => void;
 }
 
-export const useDockerImagesStore = create<DockerImagesState>((set, get) => ({
+export const useDockerImagesStore = create<DockerImagesState>((set, _get) => ({
   images: [],
   loading: false,
   error: null,
@@ -77,7 +77,7 @@ export const useDockerImagesStore = create<DockerImagesState>((set, get) => ({
   removeImage: async (id: string) => {
     set({ error: null });
     try {
-      const image = get().images.find((img) => img.id === id);
+      const image = _get().images.find((img) => img.id === id);
       await dockerImagesApi.remove(id);
       if (image?.isBuiltIn) {
         set((state) => ({

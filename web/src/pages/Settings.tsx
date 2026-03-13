@@ -364,9 +364,7 @@ const Settings: React.FC = () => {
                     sx={{ fontSize: 20, color: afkColors.textPrimary }}
                   />
                   <Box sx={{ flex: 1 }}>
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                    >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography
                         variant="body2"
                         sx={{ color: afkColors.textPrimary, fontWeight: 500 }}
@@ -396,10 +394,7 @@ const Settings: React.FC = () => {
                     size="small"
                     startIcon={
                       isDisconnecting ? (
-                        <CircularProgress
-                          size={14}
-                          sx={{ color: 'inherit' }}
-                        />
+                        <CircularProgress size={14} sx={{ color: 'inherit' }} />
                       ) : (
                         <LinkOffIcon sx={{ fontSize: 16 }} />
                       )
@@ -678,10 +673,7 @@ const Settings: React.FC = () => {
               mb: 2.5,
             }}
           >
-            <Typography
-              variant="body2"
-              sx={{ color: afkColors.textSecondary }}
-            >
+            <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
               Manage Docker images available for sessions.
             </Typography>
             <Button
@@ -695,11 +687,7 @@ const Settings: React.FC = () => {
           </Box>
 
           {imagesError && (
-            <Alert
-              severity="error"
-              onClose={clearImagesError}
-              sx={{ mb: 2 }}
-            >
+            <Alert severity="error" onClose={clearImagesError} sx={{ mb: 2 }}>
               {imagesError}
             </Alert>
           )}
@@ -745,9 +733,7 @@ const Settings: React.FC = () => {
                   }}
                 />
               </Box>
-              <Box
-                sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}
-              >
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
                 <Button
                   size="small"
                   onClick={() => {
@@ -800,9 +786,7 @@ const Settings: React.FC = () => {
                   }}
                 >
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                    >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography
                         variant="body2"
                         sx={{

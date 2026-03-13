@@ -613,7 +613,10 @@ const CreateSession: React.FC = () => {
                     <Typography variant="body2">
                       SSH URLs require an SSH private key to authenticate. Add
                       one in{' '}
-                      <Link to={ROUTES.SETTINGS} style={{ color: 'inherit', fontWeight: 600 }}>
+                      <Link
+                        to={ROUTES.SETTINGS}
+                        style={{ color: 'inherit', fontWeight: 600 }}
+                      >
                         Settings
                       </Link>
                       , or use an HTTPS URL instead (e.g.{' '}

@@ -70,9 +70,7 @@ export class CreateSessionInteractor {
         request.imageId,
       );
       if (!dockerImage) {
-        throw new Error(
-          `Docker image not found: ${request.imageId}`,
-        );
+        throw new Error(`Docker image not found: ${request.imageId}`);
       }
       if (dockerImage.status !== DockerImageStatus.AVAILABLE) {
         throw new Error(

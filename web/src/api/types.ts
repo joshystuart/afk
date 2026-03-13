@@ -153,7 +153,11 @@ export interface ChatHistoryResponse {
   activeMessageId: string | null;
 }
 
-export type DockerImageStatus = 'AVAILABLE' | 'PULLING' | 'ERROR';
+export type DockerImageStatus =
+  | 'NOT_PULLED'
+  | 'AVAILABLE'
+  | 'PULLING'
+  | 'ERROR';
 
 export interface DockerImage {
   id: string;

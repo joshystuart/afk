@@ -253,6 +253,21 @@ const CreateSession: React.FC = () => {
         </Alert>
       )}
 
+      {availableImages.length === 0 && !!settings?.hasClaudeToken && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            No Docker images installed. Go to{' '}
+            <Link
+              to={`${ROUTES.SETTINGS}?tab=images`}
+              style={{ fontWeight: 600 }}
+            >
+              Settings &gt; Docker Images
+            </Link>{' '}
+            to install one.
+          </Typography>
+        </Alert>
+      )}
+
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         {/* Environment section */}
         <Box sx={{ mb: 4 }}>

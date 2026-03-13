@@ -165,6 +165,42 @@ export class DockerImagesController {
     return this.responseService.success(dto);
   }
 
+  @Post(':id/install')
+  @ApiOperation({
+    summary: 'Install a Docker image',
+    description:
+      'Triggers a pull for a NOT_PULLED image. Returns immediately with PULLING status.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Install started',
+    type: DockerImageResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Image is already installed or being pulled',
+    type: ApiErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Image not found',
+    type: ApiErrorResponseDto,
+  })
+  async install(
+    @Param('id') id: string,
+  ): Promise<ApiResponseType<DockerImageResponseDto>> {
+    try {
+      const image = await this.dockerImageService.installImage(id);
+      const dto = DockerImageResponseDto.fromDomain(image);
+      return this.responseService.success(dto);
+    } catch (error) {
+      if (error.message === 'Image not found') {
+        throw new NotFoundException(error.message);
+      }
+      throw new BadRequestException(error.message);
+    }
+  }
+
   @Post(':id/retry')
   @ApiOperation({
     summary: 'Retry pulling a failed image',

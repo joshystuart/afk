@@ -21,8 +21,10 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   Delete as DeleteIcon,
+  DeleteOutline as DeleteOutlineIcon,
   Refresh as RefreshIcon,
   Add as AddIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
@@ -66,6 +68,7 @@ const Settings: React.FC = () => {
     error: imagesError,
     fetchImages,
     addImage,
+    installImage,
     removeImage,
     setDefault: setDefaultImage,
     retryPull,
@@ -139,6 +142,15 @@ const Settings: React.FC = () => {
   const handleRetry = async (id: string) => {
     try {
       await retryPull(id);
+      startPolling(id);
+    } catch {
+      // Error handled by store
+    }
+  };
+
+  const handleInstall = async (id: string) => {
+    try {
+      await installImage(id);
       startPolling(id);
     } catch {
       // Error handled by store
@@ -770,168 +782,316 @@ const Settings: React.FC = () => {
               <CircularProgress size={20} />
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {images.map((img) => (
-                <Box
-                  key={img.id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    p: 1.5,
-                    border: `1px solid ${img.isDefault ? afkColors.accent : afkColors.border}`,
-                    borderRadius: 1,
-                    bgcolor: afkColors.surfaceElevated,
-                    transition: 'border-color 150ms ease',
-                  }}
-                >
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: afkColors.textPrimary,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {img.name}
-                      </Typography>
-                      {img.isDefault && (
-                        <Chip
-                          label="Default"
-                          size="small"
-                          sx={{
-                            height: 18,
-                            fontSize: '0.625rem',
-                            bgcolor: afkColors.accentMuted,
-                            color: afkColors.accent,
-                          }}
-                        />
-                      )}
-                      {img.isBuiltIn && (
-                        <Chip
-                          label="Built-in"
-                          size="small"
-                          sx={{
-                            height: 18,
-                            fontSize: '0.625rem',
-                            bgcolor: 'rgba(255, 255, 255, 0.06)',
-                            color: afkColors.textTertiary,
-                          }}
-                        />
-                      )}
-                      <Chip
-                        label={img.status}
-                        size="small"
-                        sx={{
-                          height: 18,
-                          fontSize: '0.625rem',
-                          bgcolor:
-                            img.status === 'AVAILABLE'
-                              ? afkColors.accentMuted
-                              : img.status === 'PULLING'
-                                ? afkColors.warningMuted
-                                : afkColors.dangerMuted,
-                          color:
-                            img.status === 'AVAILABLE'
-                              ? afkColors.accent
-                              : img.status === 'PULLING'
-                                ? afkColors.warning
-                                : afkColors.danger,
-                        }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: afkColors.textTertiary,
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.6875rem',
-                      }}
-                    >
-                      {img.image}
-                    </Typography>
-                    {img.status === 'ERROR' && img.errorMessage && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: afkColors.danger,
-                          display: 'block',
-                          mt: 0.25,
-                        }}
-                      >
-                        {img.errorMessage}
-                      </Typography>
-                    )}
-                  </Box>
-
-                  <Box
+            <>
+              {/* Installed Images */}
+              {images.filter((img) => img.status !== 'NOT_PULLED').length >
+                0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant="overline"
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      flexShrink: 0,
+                      color: afkColors.textTertiary,
+                      fontSize: '0.6875rem',
+                      letterSpacing: '0.08em',
+                      mb: 1,
+                      display: 'block',
                     }}
                   >
-                    {img.status === 'PULLING' && (
-                      <CircularProgress size={16} sx={{ mr: 0.5 }} />
-                    )}
-
-                    {img.status === 'ERROR' && (
-                      <Tooltip title="Retry pull">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleRetry(img.id)}
-                          sx={{ color: afkColors.warning }}
-                        >
-                          <RefreshIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-
-                    {!img.isDefault && img.status === 'AVAILABLE' && (
-                      <Tooltip title="Set as default">
-                        <IconButton
-                          size="small"
-                          onClick={() => setDefaultImage(img.id)}
-                          sx={{ color: afkColors.textTertiary }}
-                        >
-                          <StarBorderIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-
-                    {img.isDefault && (
-                      <Tooltip title="Default image">
-                        <StarIcon
+                    Installed
+                  </Typography>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                  >
+                    {images
+                      .filter((img) => img.status !== 'NOT_PULLED')
+                      .map((img) => (
+                        <Box
+                          key={img.id}
                           sx={{
-                            fontSize: 18,
-                            color: afkColors.accent,
-                            mx: 0.5,
-                          }}
-                        />
-                      </Tooltip>
-                    )}
-
-                    {!img.isBuiltIn && (
-                      <Tooltip title="Remove image">
-                        <IconButton
-                          size="small"
-                          onClick={() => removeImage(img.id)}
-                          disabled={img.isDefault}
-                          sx={{
-                            color: afkColors.textTertiary,
-                            '&:hover': { color: afkColors.danger },
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            p: 1.5,
+                            border: `1px solid ${img.isDefault ? afkColors.accent : afkColors.border}`,
+                            borderRadius: 1,
+                            bgcolor: afkColors.surfaceElevated,
+                            transition: 'border-color 150ms ease',
                           }}
                         >
-                          <DeleteIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
-                      </Tooltip>
-                    )}
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: afkColors.textPrimary,
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {img.name}
+                              </Typography>
+                              {img.isDefault && (
+                                <Chip
+                                  label="Default"
+                                  size="small"
+                                  sx={{
+                                    height: 18,
+                                    fontSize: '0.625rem',
+                                    bgcolor: afkColors.accentMuted,
+                                    color: afkColors.accent,
+                                  }}
+                                />
+                              )}
+                              {img.isBuiltIn && (
+                                <Chip
+                                  label="Built-in"
+                                  size="small"
+                                  sx={{
+                                    height: 18,
+                                    fontSize: '0.625rem',
+                                    bgcolor: 'rgba(255, 255, 255, 0.06)',
+                                    color: afkColors.textTertiary,
+                                  }}
+                                />
+                              )}
+                              <Chip
+                                label={img.status}
+                                size="small"
+                                sx={{
+                                  height: 18,
+                                  fontSize: '0.625rem',
+                                  bgcolor:
+                                    img.status === 'AVAILABLE'
+                                      ? afkColors.accentMuted
+                                      : img.status === 'PULLING'
+                                        ? afkColors.warningMuted
+                                        : afkColors.dangerMuted,
+                                  color:
+                                    img.status === 'AVAILABLE'
+                                      ? afkColors.accent
+                                      : img.status === 'PULLING'
+                                        ? afkColors.warning
+                                        : afkColors.danger,
+                                }}
+                              />
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: afkColors.textTertiary,
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: '0.6875rem',
+                              }}
+                            >
+                              {img.image}
+                            </Typography>
+                            {img.status === 'ERROR' && img.errorMessage && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: afkColors.danger,
+                                  display: 'block',
+                                  mt: 0.25,
+                                }}
+                              >
+                                {img.errorMessage}
+                              </Typography>
+                            )}
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {img.status === 'PULLING' && (
+                              <CircularProgress size={16} sx={{ mr: 0.5 }} />
+                            )}
+
+                            {img.status === 'ERROR' && (
+                              <Tooltip title="Retry pull">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleRetry(img.id)}
+                                  sx={{ color: afkColors.warning }}
+                                >
+                                  <RefreshIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
+                            {!img.isDefault && img.status === 'AVAILABLE' && (
+                              <Tooltip title="Set as default">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setDefaultImage(img.id)}
+                                  sx={{ color: afkColors.textTertiary }}
+                                >
+                                  <StarBorderIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
+                            {img.isDefault && (
+                              <Tooltip title="Default image">
+                                <StarIcon
+                                  sx={{
+                                    fontSize: 18,
+                                    color: afkColors.accent,
+                                    mx: 0.5,
+                                  }}
+                                />
+                              </Tooltip>
+                            )}
+
+                            {img.isBuiltIn && !img.isDefault && (
+                              <Tooltip title="Uninstall">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => removeImage(img.id)}
+                                  sx={{
+                                    color: afkColors.textTertiary,
+                                    '&:hover': { color: afkColors.danger },
+                                  }}
+                                >
+                                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
+                            {!img.isBuiltIn && (
+                              <Tooltip title="Remove image">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => removeImage(img.id)}
+                                  disabled={img.isDefault}
+                                  sx={{
+                                    color: afkColors.textTertiary,
+                                    '&:hover': { color: afkColors.danger },
+                                  }}
+                                >
+                                  <DeleteIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
+                        </Box>
+                      ))}
                   </Box>
                 </Box>
-              ))}
-            </Box>
+              )}
+
+              {/* Available to Install */}
+              {images.filter((img) => img.status === 'NOT_PULLED').length >
+                0 && (
+                <Box>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      color: afkColors.textTertiary,
+                      fontSize: '0.6875rem',
+                      letterSpacing: '0.08em',
+                      mb: 1,
+                      display: 'block',
+                    }}
+                  >
+                    Available to Install
+                  </Typography>
+                  <Box
+                    sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}
+                  >
+                    {images
+                      .filter((img) => img.status === 'NOT_PULLED')
+                      .map((img) => (
+                        <Box
+                          key={img.id}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            p: 1.5,
+                            border: `1px solid ${afkColors.border}`,
+                            borderRadius: 1,
+                            bgcolor: afkColors.surfaceElevated,
+                            opacity: 0.75,
+                            transition: 'opacity 150ms ease',
+                            '&:hover': { opacity: 1 },
+                          }}
+                        >
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: afkColors.textPrimary,
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {img.name}
+                              </Typography>
+                              {img.isBuiltIn && (
+                                <Chip
+                                  label="Built-in"
+                                  size="small"
+                                  sx={{
+                                    height: 18,
+                                    fontSize: '0.625rem',
+                                    bgcolor: 'rgba(255, 255, 255, 0.06)',
+                                    color: afkColors.textTertiary,
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: afkColors.textTertiary,
+                                fontFamily: '"JetBrains Mono", monospace',
+                                fontSize: '0.6875rem',
+                              }}
+                            >
+                              {img.image}
+                            </Typography>
+                          </Box>
+
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
+                            onClick={() => handleInstall(img.id)}
+                            sx={{
+                              fontSize: '0.75rem',
+                              flexShrink: 0,
+                              borderColor: afkColors.border,
+                              color: afkColors.textPrimary,
+                              '&:hover': {
+                                borderColor: afkColors.accent,
+                                color: afkColors.accent,
+                              },
+                            }}
+                          >
+                            Install
+                          </Button>
+                        </Box>
+                      ))}
+                  </Box>
+                </Box>
+              )}
+            </>
           )}
         </Box>
       )}

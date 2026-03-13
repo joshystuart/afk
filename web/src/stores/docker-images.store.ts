@@ -9,6 +9,7 @@ interface DockerImagesState {
 
   fetchImages: () => Promise<void>;
   addImage: (request: CreateDockerImageRequest) => Promise<DockerImage>;
+  installImage: (id: string) => Promise<DockerImage>;
   removeImage: (id: string) => Promise<void>;
   setDefault: (id: string) => Promise<void>;
   retryPull: (id: string) => Promise<void>;
@@ -53,13 +54,49 @@ export const useDockerImagesStore = create<DockerImagesState>((set, get) => ({
     }
   },
 
+  installImage: async (id: string) => {
+    set({ error: null });
+    try {
+      const updated = await dockerImagesApi.install(id);
+      set((state) => ({
+        images: state.images.map((img) =>
+          img.id === updated.id ? updated : img,
+        ),
+      }));
+      return updated;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to install Docker image';
+      set({ error: message });
+      throw error;
+    }
+  },
+
   removeImage: async (id: string) => {
     set({ error: null });
     try {
+      const image = get().images.find((img) => img.id === id);
       await dockerImagesApi.remove(id);
-      set((state) => ({
-        images: state.images.filter((img) => img.id !== id),
-      }));
+      if (image?.isBuiltIn) {
+        set((state) => ({
+          images: state.images.map((img) =>
+            img.id === id
+              ? {
+                  ...img,
+                  status: 'NOT_PULLED' as const,
+                  isDefault: false,
+                  errorMessage: null,
+                }
+              : img,
+          ),
+        }));
+      } else {
+        set((state) => ({
+          images: state.images.filter((img) => img.id !== id),
+        }));
+      }
     } catch (error) {
       const message =
         error instanceof Error

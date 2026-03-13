@@ -7,47 +7,15 @@ import { DockerImageStatus } from './docker-image-status.enum';
 interface BuiltInImage {
   name: string;
   image: string;
-  isDefault: boolean;
-  legacyImage: string;
 }
 
 const BUILT_IN_IMAGES: BuiltInImage[] = [
-  {
-    name: 'Node.js v24',
-    image: 'awayfromklaude/afk-node:latest',
-    isDefault: true,
-    legacyImage: 'afk-node:latest',
-  },
-  {
-    name: 'Python v3.13',
-    image: 'awayfromklaude/afk-python:latest',
-    isDefault: false,
-    legacyImage: 'afk-python:latest',
-  },
-  {
-    name: 'Go v1.26',
-    image: 'awayfromklaude/afk-go:latest',
-    isDefault: false,
-    legacyImage: 'afk-go:latest',
-  },
-  {
-    name: 'Rust',
-    image: 'awayfromklaude/afk-rust:latest',
-    isDefault: false,
-    legacyImage: 'afk-rust:latest',
-  },
-  {
-    name: '.NET v10',
-    image: 'awayfromklaude/afk-dotnet:latest',
-    isDefault: false,
-    legacyImage: 'afk-dotnet:latest',
-  },
-  {
-    name: 'Java v21',
-    image: 'awayfromklaude/afk-java:latest',
-    isDefault: false,
-    legacyImage: 'afk-java:latest',
-  },
+  { name: 'Node.js v24', image: 'awayfromklaude/afk-node:latest' },
+  { name: 'Python v3.13', image: 'awayfromklaude/afk-python:latest' },
+  { name: 'Go v1.26', image: 'awayfromklaude/afk-go:latest' },
+  { name: 'Rust', image: 'awayfromklaude/afk-rust:latest' },
+  { name: '.NET v10', image: 'awayfromklaude/afk-dotnet:latest' },
+  { name: 'Java v21', image: 'awayfromklaude/afk-java:latest' },
 ];
 
 @Injectable()
@@ -62,9 +30,7 @@ export class DockerImageSeedService implements OnModuleInit {
 
   private async seedBuiltInImages(): Promise<void> {
     for (const entry of BUILT_IN_IMAGES) {
-      const existing =
-        (await this.repository.findByImage(entry.image)) ||
-        (await this.repository.findByImage(entry.legacyImage));
+      const existing = await this.repository.findByImage(entry.image);
       if (existing) {
         const hasChanges =
           existing.name !== entry.name ||
@@ -87,9 +53,9 @@ export class DockerImageSeedService implements OnModuleInit {
         id: uuidv4(),
         name: entry.name,
         image: entry.image,
-        isDefault: entry.isDefault,
+        isDefault: false,
         isBuiltIn: true,
-        status: DockerImageStatus.AVAILABLE,
+        status: DockerImageStatus.NOT_PULLED,
         errorMessage: null,
       });
 

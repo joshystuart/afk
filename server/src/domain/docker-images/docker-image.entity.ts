@@ -46,6 +46,13 @@ export class DockerImage {
     }
   }
 
+  markAsNotPulled(): void {
+    this.status = DockerImageStatus.NOT_PULLED;
+    this.errorMessage = null;
+    this.isDefault = false;
+    this.updatedAt = new Date();
+  }
+
   markAsPulling(): void {
     this.status = DockerImageStatus.PULLING;
     this.errorMessage = null;

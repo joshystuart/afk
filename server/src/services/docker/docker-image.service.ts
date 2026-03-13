@@ -73,18 +73,49 @@ export class DockerImageService {
     return image;
   }
 
+  async installImage(id: string): Promise<DockerImage> {
+    const image = await this.repository.findById(id);
+    if (!image) {
+      throw new Error('Image not found');
+    }
+    if (image.status !== DockerImageStatus.NOT_PULLED) {
+      throw new Error('Image is already installed or being pulled');
+    }
+
+    image.markAsPulling();
+    await this.repository.save(image);
+
+    this.pullImageAsync(image).then(async () => {
+      const refreshed = await this.repository.findById(id);
+      if (
+        refreshed &&
+        refreshed.status === DockerImageStatus.AVAILABLE &&
+        !(await this.repository.findDefault())
+      ) {
+        refreshed.setAsDefault();
+        await this.repository.save(refreshed);
+      }
+    });
+
+    return image;
+  }
+
   async deleteImage(id: string): Promise<void> {
     const image = await this.repository.findById(id);
     if (!image) {
       throw new Error('Image not found');
     }
-    if (image.isBuiltIn) {
-      throw new Error('Cannot delete a built-in image');
-    }
     if (image.isDefault) {
       throw new Error(
         'Cannot delete the default image. Set another image as default first.',
       );
+    }
+
+    if (image.isBuiltIn) {
+      image.markAsNotPulled();
+      await this.repository.save(image);
+      this.tryRemoveLocalImage(image.image);
+      return;
     }
 
     await this.repository.delete(id);
@@ -106,47 +137,64 @@ export class DockerImageService {
     return image;
   }
 
-  private pullImageAsync(dockerImage: DockerImage): void {
+  private pullImageAsync(dockerImage: DockerImage): Promise<void> {
     this.logger.log(`Starting pull for image: ${dockerImage.image}`);
 
-    this.docker.pull(dockerImage.image, (err: any, stream: any) => {
-      if (err) {
-        this.logger.error(`Pull failed for ${dockerImage.image}`, err);
-        dockerImage.markAsError(err.message || 'Failed to pull image');
-        this.repository.save(dockerImage).catch((saveErr) => {
-          this.logger.error('Failed to save error status', saveErr);
-        });
-        return;
-      }
-
-      this.docker.modem.followProgress(
-        stream,
-        (progressErr: any) => {
-          if (progressErr) {
-            this.logger.error(
-              `Pull progress error for ${dockerImage.image}`,
-              progressErr,
-            );
-            dockerImage.markAsError(progressErr.message || 'Image pull failed');
-          } else {
-            this.logger.log(
-              `Pull completed successfully for ${dockerImage.image}`,
-            );
-            dockerImage.markAsAvailable();
-          }
-
+    return new Promise<void>((resolve) => {
+      this.docker.pull(dockerImage.image, (err: any, stream: any) => {
+        if (err) {
+          this.logger.error(`Pull failed for ${dockerImage.image}`, err);
+          dockerImage.markAsError(err.message || 'Failed to pull image');
           this.repository.save(dockerImage).catch((saveErr) => {
-            this.logger.error('Failed to save pull result', saveErr);
+            this.logger.error('Failed to save error status', saveErr);
           });
-        },
-        (event: any) => {
-          if (event.status) {
-            this.logger.debug(
-              `Pull ${dockerImage.image}: ${event.status} ${event.progress || ''}`,
-            );
-          }
-        },
-      );
+          resolve();
+          return;
+        }
+
+        this.docker.modem.followProgress(
+          stream,
+          (progressErr: any) => {
+            if (progressErr) {
+              this.logger.error(
+                `Pull progress error for ${dockerImage.image}`,
+                progressErr,
+              );
+              dockerImage.markAsError(
+                progressErr.message || 'Image pull failed',
+              );
+            } else {
+              this.logger.log(
+                `Pull completed successfully for ${dockerImage.image}`,
+              );
+              dockerImage.markAsAvailable();
+            }
+
+            this.repository.save(dockerImage).catch((saveErr) => {
+              this.logger.error('Failed to save pull result', saveErr);
+            });
+            resolve();
+          },
+          (event: any) => {
+            if (event.status) {
+              this.logger.debug(
+                `Pull ${dockerImage.image}: ${event.status} ${event.progress || ''}`,
+              );
+            }
+          },
+        );
+      });
     });
+  }
+
+  private tryRemoveLocalImage(imageName: string): void {
+    this.docker
+      .getImage(imageName)
+      .remove()
+      .catch((err: any) => {
+        this.logger.warn(
+          `Could not remove local image ${imageName}: ${err.message}`,
+        );
+      });
   }
 }

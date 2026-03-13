@@ -33,6 +33,13 @@ export const dockerImagesApi = {
     return response as unknown as DockerImage;
   },
 
+  async install(id: string): Promise<DockerImage> {
+    const response = await apiClient.post<DockerImage>(
+      `/docker/images/${id}/install`,
+    );
+    return response as unknown as DockerImage;
+  },
+
   async retry(id: string): Promise<DockerImage> {
     const response = await apiClient.post<DockerImage>(
       `/docker/images/${id}/retry`,

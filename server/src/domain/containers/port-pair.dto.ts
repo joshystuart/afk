@@ -1,13 +1,6 @@
 export class PortPairDto {
-  constructor(
-    public readonly claudePort: number,
-    public readonly manualPort: number,
-  ) {
-    this.validatePort(claudePort);
-    this.validatePort(manualPort);
-    if (claudePort === manualPort) {
-      throw new Error('Claude and manual ports must be different');
-    }
+  constructor(public readonly port: number) {
+    this.validatePort(port);
   }
 
   private validatePort(port: number): void {
@@ -18,8 +11,7 @@ export class PortPairDto {
 
   toJSON() {
     return {
-      claude: this.claudePort,
-      manual: this.manualPort,
+      port: this.port,
     };
   }
 }

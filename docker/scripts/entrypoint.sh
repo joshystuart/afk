@@ -1,14 +1,8 @@
 #!/bin/bash
 #
-# Integrated startup script for AFK containers
-# This script orchestrates git setup before launching Claude Code
-#
-# Flow:
-# 1. Setup SSH (if needed)
-# 2. Clone repository (if URL provided)
-# 3. Configure git identity
-# 4. cd to repository directory
-# 5. Start Claude Code via ttyd
+# Container entrypoint for AFK
+# Orchestrates git/SSH setup and starts ttyd for manual terminal access.
+# Claude Code is invoked on-demand via docker exec (not started here).
 #
 
 set -e  # Exit on error
@@ -42,8 +36,7 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 # Default values
 DEFAULT_WORKSPACE="/workspace"
-DEFAULT_CLAUDE_PORT="7681"
-DEFAULT_MANUAL_PORT="7682"
+DEFAULT_TERMINAL_PORT="7681"
 
 # Environment variables
 REPO_URL="${REPO_URL:-}"
@@ -52,34 +45,31 @@ SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY:-}"
 GIT_USER_NAME="${GIT_USER_NAME:-Claude User}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-claude@example.com}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$DEFAULT_WORKSPACE}"
-CLAUDE_PORT="${CLAUDE_PORT:-$DEFAULT_CLAUDE_PORT}"
-MANUAL_PORT="${MANUAL_PORT:-$DEFAULT_MANUAL_PORT}"
+TERMINAL_PORT="${TERMINAL_PORT:-$DEFAULT_TERMINAL_PORT}"
+SESSION_NAME="${SESSION_NAME:-}"
+IMAGE_NAME="${IMAGE_NAME:-}"
 
 # State tracking
 SSH_SETUP_DONE=false
 GIT_SETUP_DONE=false
 WORKING_DIR="$WORKSPACE_DIR"
 
-# Setup SSH if SSH key is provided
 setup_ssh() {
-    if [ -n "$SSH_PRIVATE_KEY" ]; then
-        log_step "Setting up SSH authentication"
-        
-        if [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
-            if bash "$SCRIPT_DIR/setup-ssh.sh"; then
+    log_step "Setting up SSH known hosts and configuration"
+    
+    if [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
+        if bash "$SCRIPT_DIR/setup-ssh.sh"; then
+            if [ -n "$SSH_PRIVATE_KEY" ]; then
                 SSH_SETUP_DONE=true
-                log_info "SSH setup completed successfully"
-            else
-                log_error "SSH setup failed"
-                return 1
             fi
+            log_info "SSH setup completed successfully"
         else
-            log_error "SSH setup script not found: $SCRIPT_DIR/setup-ssh.sh"
+            log_error "SSH setup failed"
             return 1
         fi
     else
-        log_info "No SSH key provided, skipping SSH setup"
-        log_info "Only public repositories will be accessible"
+        log_error "SSH setup script not found: $SCRIPT_DIR/setup-ssh.sh"
+        return 1
     fi
 }
 
@@ -126,7 +116,6 @@ setup_git() {
         fi
     else
         log_info "No repository URL provided, skipping git setup"
-        log_info "Starting Claude Code in workspace directory"
     fi
 }
 
@@ -150,98 +139,53 @@ configure_git_identity() {
 }
 
 
-# Dual TTY approach: Start two separate persistent screen sessions
-start_claude_dual_tty() {
-    log_step "Starting dual persistent tmux sessions - Claude and Manual"
+start_terminal() {
+    log_step "Starting terminal session"
     
-    # Ensure working directory exists
     if [ ! -d "$WORKING_DIR" ]; then
         log_warning "Working directory $WORKING_DIR doesn't exist, creating it"
         mkdir -p "$WORKING_DIR"
     fi
     
-    # Change to working directory
     cd "$WORKING_DIR"
     
-    log_info "Starting dual persistent sessions:"
-    log_info "  Claude session: http://localhost:$CLAUDE_PORT"
-    log_info "  Manual session: http://localhost:$MANUAL_PORT"
+    log_info "Starting terminal:"
+    log_info "  Terminal: http://localhost:$TERMINAL_PORT"
+    log_info "  Claude Code: available on-demand via docker exec"
     log_info "Working directory: $(pwd)"
     
-    # Force cleanup any existing manual session and start fresh
-    if tmux has-session -t manual-session 2>/dev/null; then
-        log_info "Killing existing manual-session"
-        tmux kill-session -t manual-session 2>/dev/null || true
+    if tmux has-session -t terminal 2>/dev/null; then
+        log_info "Killing existing terminal session"
+        tmux kill-session -t terminal 2>/dev/null || true
     fi
     
-    # Always create a new manual tmux session
-    log_info "Creating new tmux session 'manual-session' with bash"
-    # Configure tmux with better terminal settings
-    tmux -f /home/node/.tmux.conf new-session -d -s manual-session -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
+    log_info "Creating new tmux session 'terminal' with bash"
+    tmux -f "$HOME/.tmux.conf" new-session -d -s terminal -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
     sleep 1
     
-    # Verify the manual session is working
-    if ! tmux list-sessions | grep -q "manual-session"; then
-        log_error "Failed to create manual-session"
+    if ! tmux list-sessions | grep -q "terminal"; then
+        log_error "Failed to create terminal session"
         return 1
     fi
     
-    # Start ttyd for manual session in background with themed client options
-    ttyd \
-        --port "$MANUAL_PORT" \
-        --writable \
-        --interface 0.0.0.0 \
-        --terminal-type xterm-256color \
-        --client-option disableLeaveAlert=true \
-        --client-option disableResizeOverlay=true \
-        --client-option disableReconnect=true \
-        --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
-        --client-option fontSize=14 \
-        --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
-        --client-option cursorBlink=true \
-        --client-option cursorStyle='bar' \
-        --client-option bellStyle='none' \
-        --client-option scrollback=1000 \
-        --client-option tabStopWidth=4 \
-        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t manual-session" &
-
-    local manual_pid=$!
-    log_info "Manual ttyd session started (PID: $manual_pid) on port $MANUAL_PORT"
-
-    # Wait a moment for the first session to start
-    sleep 2
+    log_info "Starting ttyd on port $TERMINAL_PORT (foreground)"
     
-    # Force cleanup any existing claude session and start fresh
-    if tmux has-session -t claude-session 2>/dev/null; then
-        log_info "Killing existing claude-session"
-        tmux kill-session -t claude-session 2>/dev/null || true
+    local terminal_title="AFK"
+    if [ -n "$SESSION_NAME" ] && [ -n "$IMAGE_NAME" ]; then
+        terminal_title="$SESSION_NAME ($IMAGE_NAME)"
+    elif [ -n "$SESSION_NAME" ]; then
+        terminal_title="$SESSION_NAME"
     fi
-    
-    # Always create a new claude tmux session
-    log_info "Creating new tmux session 'claude-session' with Claude"
-    # Configure tmux with better terminal settings
-    tmux -f /home/node/.tmux.conf new-session -d -s claude-session -c "$WORKING_DIR" 'export TERM=xterm-256color; claude'
-    
-    # Wait for Claude to initialize properly
-    sleep 3
-    
-    # Verify the claude session is working
-    if ! tmux list-sessions | grep -q "claude-session"; then
-        log_error "Failed to create claude-session"
-        return 1
-    fi
-    
-    # Start Claude ttyd session in foreground (this will block)
-    log_info "Starting Claude ttyd session on port $CLAUDE_PORT"
     
     exec ttyd \
-        --port "$CLAUDE_PORT" \
+        --port "$TERMINAL_PORT" \
         --writable \
         --interface 0.0.0.0 \
         --terminal-type xterm-256color \
         --client-option disableLeaveAlert=true \
         --client-option disableResizeOverlay=true \
         --client-option disableReconnect=true \
+        --client-option titleFixed="$terminal_title" \
         --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
         --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \
@@ -250,25 +194,17 @@ start_claude_dual_tty() {
         --client-option bellStyle='none' \
         --client-option scrollback=1000 \
         --client-option tabStopWidth=4 \
-        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t claude-session"
+        bash -c "export TERM=xterm-256color; tmux -f \$HOME/.tmux.conf attach-session -t terminal"
 }
 
-# Cleanup function
 cleanup() {
-    log_info "Shutting down AFK terminal"
+    log_info "Shutting down AFK container"
     
-    # Clean up tmux sessions
-    if tmux has-session -t claude-session 2>/dev/null; then
-        log_info "Terminating claude-session tmux session"
-        tmux kill-session -t claude-session 2>/dev/null || true
+    if tmux has-session -t terminal 2>/dev/null; then
+        log_info "Terminating terminal tmux session"
+        tmux kill-session -t terminal 2>/dev/null || true
     fi
     
-    if tmux has-session -t manual-session 2>/dev/null; then
-        log_info "Terminating manual-session tmux session"
-        tmux kill-session -t manual-session 2>/dev/null || true
-    fi
-    
-    # SSH cleanup - source the setup script to access cleanup function
     if [ "$SSH_SETUP_DONE" = true ] && [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
         source "$SCRIPT_DIR/setup-ssh.sh"
         cleanup_ssh 2>/dev/null || true
@@ -280,61 +216,41 @@ cleanup() {
 # Register cleanup trap
 trap cleanup EXIT INT TERM
 
-# Enhanced health check function
 health_check() {
     local max_attempts=30
     local attempt=1
     
-    log_info "Performing comprehensive health check..."
+    log_info "Performing health check..."
     
     while [ $attempt -le $max_attempts ]; do
-        local ttyd_ok=false
-        local tmux_ok=false
+        local terminal_ok=false
         
-        # Check if ttyd is responding
-        if curl -s "http://localhost:$CLAUDE_PORT" >/dev/null 2>&1; then
-            ttyd_ok=true
-        fi
-        
-        # Check if tmux sessions are healthy
-        if tmux list-sessions 2>/dev/null | grep -q "claude-session" && tmux list-panes -t claude-session >/dev/null 2>&1; then
-            # Verify Claude is actually running in the session
-            if tmux capture-pane -t claude-session -p | grep -q "Claude Code" || tmux list-panes -t claude-session -F "#{pane_current_command}" | grep -q "claude\|node"; then
-                tmux_ok=true
+        if tmux list-sessions 2>/dev/null | grep -q "terminal" && tmux list-panes -t terminal >/dev/null 2>&1; then
+            if curl -s "http://localhost:$TERMINAL_PORT" >/dev/null 2>&1; then
+                terminal_ok=true
             fi
         fi
         
-        # Check manual session health
-        local manual_ok=false
-        if tmux list-sessions 2>/dev/null | grep -q "manual-session" && tmux list-panes -t manual-session >/dev/null 2>&1; then
-            if curl -s "http://localhost:$MANUAL_PORT" >/dev/null 2>&1; then
-                manual_ok=true
-            fi
-        fi
-        
-        if [ "$ttyd_ok" = true ] && [ "$tmux_ok" = true ] && [ "$manual_ok" = true ]; then
-            log_info "Health check passed - all services are healthy"
-            log_info "  - ttyd responding: ✓"
-            log_info "  - tmux sessions healthy: ✓"
-            log_info "  - manual session healthy: ✓"
+        if [ "$terminal_ok" = true ]; then
+            log_info "Health check passed"
+            log_info "  - terminal: healthy"
+            log_info "  - claude CLI: available on PATH"
             return 0
         fi
         
-        log_info "Health check attempt $attempt/$max_attempts - ttyd: $ttyd_ok, tmux: $tmux_ok, manual: $manual_ok"
+        log_info "Health check attempt $attempt/$max_attempts - terminal: $terminal_ok"
         sleep 2
         attempt=$((attempt + 1))
     done
     
     log_error "Health check failed after $max_attempts attempts"
-    log_error "Final status - ttyd: $ttyd_ok, tmux: $tmux_ok, manual: $manual_ok"
     return 1
 }
 
-# Print startup banner
 print_banner() {
     echo
     echo -e "${BLUE}╔══════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║          AFK Terminal Startup        ║${NC}"
+    echo -e "${BLUE}║                 AFK                  ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
     echo
     log_info "Repository URL: ${REPO_URL:-'Not provided'}"
@@ -342,8 +258,8 @@ print_banner() {
     log_info "Git User: $GIT_USER_NAME <$GIT_USER_EMAIL>"
     log_info "SSH Key: ${SSH_PRIVATE_KEY:+'Provided'}${SSH_PRIVATE_KEY:-'Not provided'}"
     log_info "Working Directory: $WORKING_DIR"
-    log_info "Claude Port: $CLAUDE_PORT"
-    log_info "Manual Port: $MANUAL_PORT"
+    log_info "Terminal Port: $TERMINAL_PORT"
+    log_info "Claude Code: on-demand via docker exec"
     echo
 }
 
@@ -395,18 +311,15 @@ main() {
     # Step 3: Configure git identity
     configure_git_identity
     
-    # Step 4: Start Claude Code terminal
-    log_step "Launching terminal interface"
+    log_step "Launching terminal"
     
-    # Run health check in background after a delay
     (
         sleep 5
         health_check || log_warning "Health check failed, but terminal may still be accessible"
     ) &
     
-    # Step 5: Start the terminal (this will block)
-    log_info "Starting dual mode - separate Claude and Manual sessions"
-    start_claude_dual_tty
+    log_info "Starting terminal (Claude available on-demand via docker exec)"
+    start_terminal
 }
 
 # Show usage information
@@ -420,8 +333,7 @@ usage() {
     echo "  GIT_USER_NAME     - Git user name (default: Claude User)"
     echo "  GIT_USER_EMAIL    - Git user email (default: claude@example.com)"
     echo "  WORKSPACE_DIR     - Workspace directory (default: /workspace)"
-    echo "  CLAUDE_PORT       - Claude session port (default: 7681)"
-    echo "  MANUAL_PORT       - Manual session port (default: 7682)"
+    echo "  TERMINAL_PORT     - Terminal port for ttyd (default: 7681)"
     echo
     echo "Examples:"
     echo "  # Start with public repository"

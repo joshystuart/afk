@@ -8,9 +8,8 @@ export const SessionStatus = {
 
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus];
 
-export interface PortPair {
-  host: number;
-  container: number;
+export interface SessionPort {
+  port: number;
 }
 
 export interface SessionConfigDto {
@@ -24,20 +23,17 @@ export interface Session {
   status: SessionStatus;
   repoUrl?: string;
   branch: string;
-  ports?: {
-    claude: number;
-    manual: number;
-  };
-  terminalUrls?: {
-    claude: string;
-    manual: string;
-  };
+  port?: number;
+  terminalUrl?: string;
+  imageId?: string;
+  imageName?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateSessionRequest {
   name?: string;
+  imageId: string;
   repoUrl?: string;
   branch?: string;
   gitUserName?: string;
@@ -131,4 +127,51 @@ export interface CommitAndPushRequest {
 export interface CommitAndPushResponse {
   success: boolean;
   message: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  streamEvents?: ChatStreamEvent[];
+  conversationId?: string;
+  isContinuation: boolean;
+  costUsd?: number;
+  durationMs?: number;
+  createdAt: string;
+}
+
+export interface ChatStreamEvent {
+  type: string;
+  [key: string]: any;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatMessage[];
+  isExecuting: boolean;
+  activeMessageId: string | null;
+}
+
+export type DockerImageStatus =
+  | 'NOT_PULLED'
+  | 'AVAILABLE'
+  | 'PULLING'
+  | 'ERROR';
+
+export interface DockerImage {
+  id: string;
+  name: string;
+  image: string;
+  isDefault: boolean;
+  isBuiltIn: boolean;
+  status: DockerImageStatus;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDockerImageRequest {
+  name: string;
+  image: string;
 }

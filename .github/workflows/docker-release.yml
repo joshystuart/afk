@@ -1,0 +1,45 @@
+name: Docker Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker/**'
+  workflow_dispatch:
+
+concurrency:
+  group: docker-release-main
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push AFK images
+        env:
+          DOCKERHUB_NAMESPACE: awayfromklaude
+        run: |
+          set -euo pipefail
+
+          # Build base first so language images can use FROM awayfromklaude/afk-base:latest.
+          docker build -t "${DOCKERHUB_NAMESPACE}/afk-base:latest" -f docker/base/Dockerfile docker
+          docker push "${DOCKERHUB_NAMESPACE}/afk-base:latest"
+
+          for image in node python go rust dotnet java; do
+            docker build -t "afk-${image}:latest" -f "docker/${image}/Dockerfile" docker
+            docker tag "afk-${image}:latest" "${DOCKERHUB_NAMESPACE}/afk-${image}:latest"
+            docker push "${DOCKERHUB_NAMESPACE}/afk-${image}:latest"
+          done

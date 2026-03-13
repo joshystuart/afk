@@ -11,7 +11,6 @@ import { SessionStatus } from './session-status.enum';
 import { SessionConfigDto } from './session-config.dto';
 import { PortPairDto } from '../containers/port-pair.dto';
 
-// Transformer to convert between PortPairDto and JSON
 const portPairTransformer: ValueTransformer = {
   to: (value: PortPairDto | null) => {
     return value ? value.toJSON() : null;
@@ -19,13 +18,15 @@ const portPairTransformer: ValueTransformer = {
   from: (value: any) => {
     if (!value) return null;
     if (value instanceof PortPairDto) return value;
-    // If it's a plain object from the database, convert it to PortPairDto
-    if (
-      typeof value === 'object' &&
-      value.claude !== undefined &&
-      value.manual !== undefined
-    ) {
-      return new PortPairDto(value.claude, value.manual);
+    if (typeof value === 'object') {
+      // New format: { port }
+      if (value.port !== undefined) {
+        return new PortPairDto(value.port);
+      }
+      // Legacy format: { claude, manual } - use manual port as the terminal port
+      if (value.manual !== undefined) {
+        return new PortPairDto(value.manual);
+      }
     }
     return value;
   },
@@ -55,6 +56,12 @@ export class Session {
   @Column('json', { nullable: true, transformer: portPairTransformer })
   ports: PortPairDto | null;
 
+  @Column('varchar', { length: 36, nullable: true })
+  imageId: string | null;
+
+  @Column('varchar', { length: 255, nullable: true })
+  imageName: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -74,6 +81,8 @@ export class Session {
     createdAt?: Date,
     updatedAt?: Date,
     lastAccessedAt?: Date | null,
+    imageId?: string | null,
+    imageName?: string | null,
   ) {
     if (id) {
       this.id = typeof id === 'string' ? id : id.toString();
@@ -86,6 +95,8 @@ export class Session {
     if (createdAt) this.createdAt = createdAt;
     if (updatedAt) this.updatedAt = updatedAt;
     if (lastAccessedAt !== undefined) this.lastAccessedAt = lastAccessedAt;
+    if (imageId !== undefined) this.imageId = imageId;
+    if (imageName !== undefined) this.imageName = imageName;
   }
 
   // Getter to maintain compatibility with existing SessionIdDto usage
@@ -138,14 +149,11 @@ export class Session {
     return this.status === SessionStatus.RUNNING;
   }
 
-  getTerminalUrls(baseUrl: string): { claude: string; manual: string } | null {
+  getTerminalUrl(baseUrl: string): string | null {
     if (!this.ports || this.status !== SessionStatus.RUNNING) {
       return null;
     }
 
-    return {
-      claude: `${baseUrl}:${this.ports.claudePort}`,
-      manual: `${baseUrl}:${this.ports.manualPort}`,
-    };
+    return `${baseUrl}:${this.ports.port}`;
   }
 }

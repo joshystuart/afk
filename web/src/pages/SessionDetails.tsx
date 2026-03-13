@@ -17,15 +17,11 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   Terminal as TerminalIcon,
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   FiberManualRecord as DotIcon,
@@ -39,9 +35,10 @@ import { useGitStatus } from '../hooks/useGitStatus';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
-import TerminalLoading from '../components/TerminalLoading';
 import ApprovalModal from '../components/ApprovalModal';
+import TerminalCursor from '../components/TerminalCursor';
 import CommitPushDialog from '../components/CommitPushDialog';
+import { ChatPanel } from '../components/chat/ChatPanel';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -49,11 +46,6 @@ const SessionDetails: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
-  const [isFullscreen, setIsFullscreen] = React.useState(false);
-  const [fullscreenTerminal, setFullscreenTerminal] = React.useState<
-    'claude' | 'manual' | null
-  >(null);
-  const [activeTab, setActiveTab] = React.useState(0);
 
   const {
     isLoading,
@@ -83,12 +75,12 @@ const SessionDetails: React.FC = () => {
   const sessionQuery = id ? getSession(id) : null;
   const session = sessionQuery?.data;
 
-  const shouldCheckHealth =
-    session?.status === SessionStatus.RUNNING && !!session?.terminalUrls;
+  const shouldCheckHealth = session?.status === SessionStatus.RUNNING;
   const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
 
   const isRunning = session?.status === SessionStatus.RUNNING;
-  const gitStatus = useGitStatus(id || null, isRunning ?? false);
+  const isReady = isRunning && healthCheck.allReady;
+  const gitStatus = useGitStatus(id || null, isReady);
 
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false);
@@ -213,6 +205,16 @@ const SessionDetails: React.FC = () => {
       }
     };
   }, [id, subscribeToSession, unsubscribeFromSession]);
+
+  React.useEffect(() => {
+    if (!session) return;
+    const name = session.name || session.id.slice(0, 8);
+    const image = session.imageName;
+    document.title = image ? `${name} (${image}) - AFK` : `${name} - AFK`;
+    return () => {
+      document.title = 'AFK';
+    };
+  }, [session?.name, session?.imageName, session?.id]);
 
   // Loading state
   if (isLoading || sessionQuery?.isLoading) {
@@ -354,12 +356,7 @@ const SessionDetails: React.FC = () => {
     </Dialog>
   );
 
-  // Session not running - show start interface
-  if (
-    !session ||
-    session.status !== SessionStatus.RUNNING ||
-    !session.terminalUrls
-  ) {
+  if (!session || session.status !== SessionStatus.RUNNING) {
     return (
       <>
         <Box
@@ -437,7 +434,7 @@ const SessionDetails: React.FC = () => {
               sx={{ color: afkColors.textSecondary, mb: 3 }}
             >
               {canStart
-                ? 'Start the session to access your terminals.'
+                ? 'Start the session to begin chatting with Claude.'
                 : session?.status === SessionStatus.ERROR
                   ? 'Session encountered an error.'
                   : 'Session is not ready yet.'}
@@ -490,7 +487,86 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  // Running terminal interface
+  if (session.status === SessionStatus.RUNNING && !healthCheck.allReady) {
+    return (
+      <>
+        <Box
+          sx={{
+            height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: afkColors.background,
+          }}
+        >
+          <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: afkColors.textPrimary,
+                mb: 3,
+              }}
+            >
+              {session.name || session.id.slice(0, 12)}
+            </Typography>
+
+            <Box sx={{ mb: 3 }}>
+              <TerminalCursor size="lg" />
+            </Box>
+
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                color: afkColors.textPrimary,
+                mb: 1,
+              }}
+            >
+              Initializing session...
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{ color: afkColors.textTertiary, mb: 4 }}
+            >
+              Setting up environment
+            </Typography>
+
+            <Button
+              size="small"
+              startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={handleStopSessionClick}
+              disabled={isStopping}
+              sx={{
+                fontSize: '0.75rem',
+                color: afkColors.warning,
+              }}
+            >
+              {isStopping ? 'Stopping...' : 'Stop'}
+            </Button>
+          </Box>
+        </Box>
+
+        <ApprovalModal
+          open={approvalModal.open}
+          onClose={handleModalClose}
+          onConfirm={handleModalConfirm}
+          type={approvalModal.type}
+          sessionName={approvalModal.sessionName}
+          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+        />
+      </>
+    );
+  }
+
+  const handleOpenTerminal = () => {
+    if (!session?.terminalUrl) return;
+    window.open(session.terminalUrl, '_blank', 'popup,width=960,height=640');
+  };
+
   return (
     <>
       <Box
@@ -501,7 +577,7 @@ const SessionDetails: React.FC = () => {
           bgcolor: afkColors.background,
         }}
       >
-        {/* Thin status bar */}
+        {/* Status bar */}
         <Box
           sx={{
             display: 'flex',
@@ -565,6 +641,23 @@ const SessionDetails: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Tooltip title="Open terminal in popup">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handleOpenTerminal}
+                  disabled={!healthCheck.terminalReady || isStopping}
+                  sx={{
+                    p: 0.5,
+                    color: afkColors.textTertiary,
+                    '&:hover': { color: afkColors.textSecondary },
+                  }}
+                >
+                  <TerminalIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+
             <Tooltip
               title={
                 gitStatus.hasChanges
@@ -627,193 +720,12 @@ const SessionDetails: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Terminal area */}
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-          }}
-        >
-          {isMobile ? (
-            /* Mobile Tabs */
-            <>
-              <Box
-                sx={{
-                  borderBottom: `1px solid ${afkColors.border}`,
-                  bgcolor: afkColors.surface,
-                }}
-              >
-                <Tabs
-                  value={activeTab}
-                  onChange={(_, v) => setActiveTab(v)}
-                  variant="fullWidth"
-                  sx={{ minHeight: 36 }}
-                >
-                  <Tab
-                    label="Claude"
-                    sx={{
-                      minHeight: 36,
-                      fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
-                    }}
-                  />
-                  <Tab
-                    label="Manual"
-                    sx={{
-                      minHeight: 36,
-                      fontSize: '0.75rem',
-                      fontFamily: '"JetBrains Mono", monospace',
-                    }}
-                  />
-                </Tabs>
-              </Box>
-
-              <Box
-                sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0,
-                }}
-              >
-                {activeTab === 0 ? (
-                  <TerminalPanel
-                    label="Claude"
-                    ready={healthCheck.claudeTerminalReady}
-                    url={session.terminalUrls.claude}
-                    isLoading={healthCheck.isLoading}
-                    isError={!!healthCheck.error}
-                    isStopping={isStopping}
-                    onRetry={
-                      healthCheck.error ? healthCheck.refetch : undefined
-                    }
-                    onFullscreen={() => {
-                      setIsFullscreen(true);
-                      setFullscreenTerminal('claude');
-                    }}
-                  />
-                ) : (
-                  <TerminalPanel
-                    label="Manual"
-                    ready={healthCheck.manualTerminalReady}
-                    url={session.terminalUrls.manual}
-                    isLoading={healthCheck.isLoading}
-                    isError={!!healthCheck.error}
-                    isStopping={isStopping}
-                    onRetry={
-                      healthCheck.error ? healthCheck.refetch : undefined
-                    }
-                    onFullscreen={() => {
-                      setIsFullscreen(true);
-                      setFullscreenTerminal('manual');
-                    }}
-                  />
-                )}
-              </Box>
-            </>
-          ) : (
-            /* Desktop Side-by-Side */
-            <Box sx={{ flex: 1, display: 'flex', minHeight: 0 }}>
-              <Box
-                sx={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRight: `1px solid ${afkColors.borderSubtle}`,
-                }}
-              >
-                <TerminalPanel
-                  label="Claude"
-                  ready={healthCheck.claudeTerminalReady}
-                  url={session.terminalUrls.claude}
-                  isLoading={healthCheck.isLoading}
-                  isError={!!healthCheck.error}
-                  isStopping={isStopping}
-                  onRetry={healthCheck.error ? healthCheck.refetch : undefined}
-                  onFullscreen={() => {
-                    setIsFullscreen(true);
-                    setFullscreenTerminal('claude');
-                  }}
-                />
-              </Box>
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <TerminalPanel
-                  label="Manual"
-                  ready={healthCheck.manualTerminalReady}
-                  url={session.terminalUrls.manual}
-                  isLoading={healthCheck.isLoading}
-                  isError={!!healthCheck.error}
-                  isStopping={isStopping}
-                  onRetry={healthCheck.error ? healthCheck.refetch : undefined}
-                  onFullscreen={() => {
-                    setIsFullscreen(true);
-                    setFullscreenTerminal('manual');
-                  }}
-                />
-              </Box>
-            </Box>
-          )}
+        {/* Chat area */}
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ChatPanel sessionId={session.id} />
         </Box>
       </Box>
 
-      {/* Fullscreen overlay */}
-      {isFullscreen && fullscreenTerminal && session.terminalUrls && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            bgcolor: afkColors.background,
-            zIndex: 9999,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <Box
-            component="iframe"
-            src={
-              fullscreenTerminal === 'claude'
-                ? session.terminalUrls.claude
-                : session.terminalUrls.manual
-            }
-            sx={{
-              width: '100%',
-              flex: 1,
-              border: 'none',
-              bgcolor: afkColors.background,
-            }}
-            title={`${fullscreenTerminal} Terminal Fullscreen`}
-          />
-          {/* Tiny exit button overlay */}
-          <IconButton
-            onClick={() => {
-              setIsFullscreen(false);
-              setFullscreenTerminal(null);
-            }}
-            sx={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              color: afkColors.textTertiary,
-              bgcolor: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(4px)',
-              '&:hover': {
-                bgcolor: 'rgba(0,0,0,0.8)',
-                color: afkColors.textPrimary,
-              },
-            }}
-            size="small"
-          >
-            <FullscreenExitIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      )}
-
-      {/* Approval Modal */}
       <ApprovalModal
         open={approvalModal.open}
         onClose={handleModalClose}
@@ -823,7 +735,6 @@ const SessionDetails: React.FC = () => {
         isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
       />
 
-      {/* Commit & Push Dialog */}
       <CommitPushDialog
         open={commitDialogOpen}
         onClose={() => {
@@ -843,7 +754,6 @@ const SessionDetails: React.FC = () => {
 
       {renameDialog}
 
-      {/* Success/Error Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
@@ -859,102 +769,6 @@ const SessionDetails: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </>
-  );
-};
-
-// Internal terminal panel component
-interface TerminalPanelProps {
-  label: string;
-  ready: boolean;
-  url: string;
-  isLoading: boolean;
-  isError: boolean;
-  isStopping?: boolean;
-  onRetry?: () => void;
-  onFullscreen: () => void;
-}
-
-const TerminalPanel: React.FC<TerminalPanelProps> = ({
-  label,
-  ready,
-  url,
-  isLoading: loading,
-  isError,
-  isStopping,
-  onRetry,
-  onFullscreen,
-}) => {
-  const showTerminal = ready && !isStopping;
-
-  return (
-    <>
-      {/* Terminal header */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 1.5,
-          py: 0.5,
-          borderBottom: `1px solid ${afkColors.borderSubtle}`,
-          bgcolor: afkColors.surface,
-          minHeight: 32,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <TerminalIcon sx={{ fontSize: 14, color: afkColors.textTertiary }} />
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.6875rem',
-              fontWeight: 500,
-              color: afkColors.textSecondary,
-            }}
-          >
-            {label}
-          </Typography>
-        </Box>
-        <IconButton
-          size="small"
-          onClick={onFullscreen}
-          sx={{
-            p: 0.5,
-            color: afkColors.textTertiary,
-            '&:hover': { color: afkColors.textSecondary },
-          }}
-        >
-          <FullscreenIcon sx={{ fontSize: 14 }} />
-        </IconButton>
-      </Box>
-
-      {/* Terminal content */}
-      {showTerminal ? (
-        <Box
-          component="iframe"
-          src={url}
-          sx={{
-            flex: 1,
-            border: 'none',
-            bgcolor: afkColors.background,
-            width: '100%',
-          }}
-          title={`${label} Terminal`}
-        />
-      ) : (
-        <TerminalLoading
-          title={`${label} Terminal`}
-          message={
-            isStopping
-              ? 'Stopping session...'
-              : loading
-                ? `Starting ${label.toLowerCase()} terminal...`
-                : 'Waiting for container...'
-          }
-          isError={isError}
-          onRetry={onRetry}
-        />
-      )}
     </>
   );
 };

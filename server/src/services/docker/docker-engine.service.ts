@@ -17,7 +17,6 @@ export class DockerEngineService {
   constructor(private readonly config: DockerConfig) {
     this.logger.log('DockerEngineService initializing', {
       socketPath: config.socketPath,
-      imageName: config.imageName,
     });
 
     const dockerOptions: DockerOptions = {};
@@ -45,18 +44,17 @@ export class DockerEngineService {
     try {
       // Verify Docker connectivity first
       await this.ping();
-
-      const imageName = this.config.imageName;
+      await this.ensureImageAvailable(options.imageName);
 
       const container = await this.docker.createContainer({
-        Image: imageName,
+        Image: options.imageName,
         Env: this.buildEnvironment(options),
         ExposedPorts: this.buildExposedPorts(options.ports),
         HostConfig: {
           PortBindings: this.buildPortBindings(options.ports),
           Binds: [
-            `afk-tmux-${options.sessionId}:/home/node/.tmux/resurrect`,
-            `afk-claude-${options.sessionId}:/home/node/.claude`,
+            `afk-tmux-${options.sessionId}:/home/afk/.tmux/resurrect`,
+            `afk-claude-${options.sessionId}:/home/afk/.claude`,
           ],
           RestartPolicy: { Name: 'unless-stopped' },
         },
@@ -96,6 +94,51 @@ export class DockerEngineService {
       this.logger.error('Failed to create container', error);
       throw new Error(`Container creation failed: ${error.message}`);
     }
+  }
+
+  private async ensureImageAvailable(imageName: string): Promise<void> {
+    try {
+      await this.docker.getImage(imageName).inspect();
+    } catch (error: any) {
+      if (error?.statusCode !== 404) {
+        throw error;
+      }
+
+      this.logger.log('Image not found locally, pulling', { imageName });
+      await this.pullImage(imageName);
+    }
+  }
+
+  private async pullImage(imageName: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      this.docker.pull(
+        imageName,
+        (pullError: any, stream: NodeJS.ReadableStream) => {
+          if (pullError) {
+            reject(pullError);
+            return;
+          }
+
+          this.docker.modem.followProgress(
+            stream,
+            (progressError: any) => {
+              if (progressError) {
+                reject(progressError);
+                return;
+              }
+
+              this.logger.log('Image pulled successfully', { imageName });
+              resolve();
+            },
+            (event: any) => {
+              if (event?.status) {
+                this.logger.debug(`Pull ${imageName}: ${event.status}`);
+              }
+            },
+          );
+        },
+      );
+    });
   }
 
   async stopContainer(containerId: string): Promise<void> {
@@ -326,8 +369,10 @@ export class DockerEngineService {
       `REPO_BRANCH=${options.branch || 'main'}`,
       `GIT_USER_NAME=${options.gitUserName}`,
       `GIT_USER_EMAIL=${options.gitUserEmail}`,
-      `CLAUDE_PORT=${options.ports.claudePort}`,
-      `MANUAL_PORT=${options.ports.manualPort}`,
+      `TERMINAL_PORT=${options.ports.port}`,
+      `SESSION_NAME=${options.sessionName}`,
+      `IMAGE_NAME=${options.imageName}`,
+      `CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1`,
     ];
 
     if (options.sshPrivateKey) {
@@ -347,8 +392,7 @@ export class DockerEngineService {
 
   private buildExposedPorts(ports: any): Record<string, {}> {
     return {
-      [`${ports.claudePort}/tcp`]: {},
-      [`${ports.manualPort}/tcp`]: {},
+      [`${ports.port}/tcp`]: {},
     };
   }
 
@@ -356,8 +400,7 @@ export class DockerEngineService {
     ports: any,
   ): Record<string, Array<{ HostPort: string }>> {
     return {
-      [`${ports.claudePort}/tcp`]: [{ HostPort: ports.claudePort.toString() }],
-      [`${ports.manualPort}/tcp`]: [{ HostPort: ports.manualPort.toString() }],
+      [`${ports.port}/tcp`]: [{ HostPort: ports.port.toString() }],
     };
   }
 

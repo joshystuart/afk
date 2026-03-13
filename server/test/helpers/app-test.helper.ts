@@ -3,11 +3,15 @@ import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import * as request from 'supertest';
+import { v4 as uuidv4 } from 'uuid';
 import { AppModule } from '../../src/app.module';
 import { ApplicationFactory } from '../../src/libs/app-factory/application.factory';
 import { DockerEngineService } from '../../src/services/docker/docker-engine.service';
 import { PortManagerService } from '../../src/services/docker/port-manager.service';
 import { AppConfig } from '../../src/libs/config/app.config';
+import { DockerImageRepository } from '../../src/domain/docker-images/docker-image.repository';
+import { DockerImage } from '../../src/domain/docker-images/docker-image.entity';
+import { DockerImageStatus } from '../../src/domain/docker-images/docker-image-status.enum';
 
 const TEST_ADMIN_USER = {
   username: 'admin',
@@ -35,7 +39,7 @@ export class AppTestHelper {
     process.env.DATABASE_TYPE = 'sqlite';
 
     // Use a unique in-memory database for each test helper instance
-    const testDbName = `:memory:?cache=shared&mode=memory&_busy_timeout=30000`;
+    const testDbName = `:memory:`;
     process.env.DB_DATABASE = testDbName;
 
     // Create a testing module using the actual AppModule with test config
@@ -85,9 +89,8 @@ export class AppTestHelper {
         isPortAvailable: jest.fn().mockResolvedValue(true),
         getRandomPort: jest.fn().mockReturnValue(8080),
         allocatePortPair: jest.fn().mockResolvedValue({
-          claudePort: 8080,
-          manualPort: 8081,
-          toJSON: () => ({ claude: 8080, manual: 8081 }),
+          port: 8080,
+          toJSON: () => ({ port: 8080 }),
         }),
         releasePortPair: jest.fn().mockResolvedValue(undefined),
       })
@@ -202,6 +205,30 @@ export class AppTestHelper {
       return this.authToken;
     }
     return this.login();
+  }
+
+  /**
+   * Seeds a test docker image into the database and returns its ID.
+   * Useful after clearDatabase() wipes seeded images.
+   */
+  async seedTestDockerImage(): Promise<string> {
+    if (!this.moduleFixture) {
+      throw new Error('App not initialized yet');
+    }
+
+    const repo = this.moduleFixture.get(DockerImageRepository);
+    const id = uuidv4();
+    const image = new DockerImage({
+      id,
+      name: 'Test Image',
+      image: 'afk-test:latest',
+      isDefault: true,
+      isBuiltIn: true,
+      status: DockerImageStatus.AVAILABLE,
+      errorMessage: null,
+    });
+    await repo.save(image);
+    return id;
   }
 
   /**

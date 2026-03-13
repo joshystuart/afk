@@ -7,6 +7,7 @@ import type {
   GitStatus,
   CommitAndPushRequest,
   CommitAndPushResponse,
+  ChatHistoryResponse,
 } from './types';
 
 export const sessionsApi = {
@@ -33,8 +34,10 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      ports: sessionData.ports,
-      terminalUrls: sessionData.terminalUrls,
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -53,8 +56,10 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      ports: sessionData.ports,
-      terminalUrls: sessionData.terminalUrls,
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -74,8 +79,10 @@ export const sessionsApi = {
       status: sessionData.status,
       repoUrl: sessionData.repoUrl,
       branch: sessionData.branch || 'main',
-      ports: sessionData.ports,
-      terminalUrls: sessionData.terminalUrls,
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -111,14 +118,12 @@ export const sessionsApi = {
   checkSessionHealth: async (
     sessionId: string,
   ): Promise<{
-    claudeTerminalReady: boolean;
-    manualTerminalReady: boolean;
+    terminalReady: boolean;
     allReady: boolean;
   }> => {
     const response = await apiClient.get(`/sessions/${sessionId}/health`);
     return response as unknown as {
-      claudeTerminalReady: boolean;
-      manualTerminalReady: boolean;
+      terminalReady: boolean;
       allReady: boolean;
     };
   },
@@ -139,5 +144,10 @@ export const sessionsApi = {
       request,
     );
     return response as unknown as CommitAndPushResponse;
+  },
+
+  getChatHistory: async (sessionId: string): Promise<ChatHistoryResponse> => {
+    const response = await apiClient.get(`/sessions/${sessionId}/messages`);
+    return response as unknown as ChatHistoryResponse;
   },
 };

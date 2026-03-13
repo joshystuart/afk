@@ -9,6 +9,8 @@ import { CreateSessionRequest } from './create-session-request.dto';
 import { Session } from '../../../domain/sessions/session.entity';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
+import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
+import { DockerImageStatus } from '../../../domain/docker-images/docker-image-status.enum';
 
 @Injectable()
 export class CreateSessionInteractor {
@@ -23,6 +25,7 @@ export class CreateSessionInteractor {
     private readonly sessionConfig: SessionConfig,
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
+    private readonly dockerImageRepository: DockerImageRepository,
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
@@ -62,10 +65,24 @@ export class CreateSessionInteractor {
           ? settings.githubAccessToken
           : undefined;
 
+      // Resolve Docker image by the requested imageId
+      const dockerImage = await this.dockerImageRepository.findById(
+        request.imageId,
+      );
+      if (!dockerImage) {
+        throw new Error(`Docker image not found: ${request.imageId}`);
+      }
+      if (dockerImage.status !== DockerImageStatus.AVAILABLE) {
+        throw new Error(
+          `Docker image "${dockerImage.name}" is not available (status: ${dockerImage.status})`,
+        );
+      }
+
       // Create container
       const container = await this.dockerEngine.createContainer({
         sessionId: session.id,
         sessionName: session.name,
+        imageName: dockerImage.image,
         repoUrl: sessionConfig.repoUrl || undefined,
         branch: sessionConfig.branch,
         gitUserName: sessionConfig.gitUserName,
@@ -75,6 +92,10 @@ export class CreateSessionInteractor {
         claudeToken: settings.claudeToken,
         githubToken,
       });
+
+      // Store image reference on the session
+      session.imageId = dockerImage.id;
+      session.imageName = dockerImage.image;
 
       // Update session with container info
       session.assignContainer(container.id, ports);

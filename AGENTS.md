@@ -1,10 +1,8 @@
 # AGENTS.md
 
-This file provides guidance to agents like claude, codex and cursor when working with code in this repository.
-
 ## Project Overview
 
-AFK (Away From Keyboard) is a remote terminal access service that enables running Claude Code in Docker containers with web-based terminal access. The project aims to provide dual terminal sessions (Claude + manual access), automatic git integration, and containerized development environments.
+AFK (Away From Keyboard) is a remote terminal access service that enables running Claude Code in Docker containers with a chat-based web interface. Each session provides a chat pane for interacting with Claude Code (invoked on-demand via `docker exec`) and a web terminal for manual shell access. Chat history is persisted and restored across session restarts.
 
 ## Libraries
 

@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { sessionsApi } from '../api/sessions.api';
 
 interface TerminalHealthStatus {
-  claudeTerminalReady: boolean;
-  manualTerminalReady: boolean;
+  terminalReady: boolean;
   allReady: boolean;
   isLoading: boolean;
   error: string | null;
@@ -14,8 +13,7 @@ export const useSessionHealth = (
   enabled: boolean = true,
 ) => {
   const [healthStatus, setHealthStatus] = useState<TerminalHealthStatus>({
-    claudeTerminalReady: false,
-    manualTerminalReady: false,
+    terminalReady: false,
     allReady: false,
     isLoading: false,
     error: null,
@@ -29,8 +27,7 @@ export const useSessionHealth = (
     try {
       const health = await sessionsApi.checkSessionHealth(sessionId);
       setHealthStatus({
-        claudeTerminalReady: health.claudeTerminalReady,
-        manualTerminalReady: health.manualTerminalReady,
+        terminalReady: health.terminalReady,
         allReady: health.allReady,
         isLoading: false,
         error: null,
@@ -50,10 +47,8 @@ export const useSessionHealth = (
   useEffect(() => {
     if (!sessionId || !enabled) return;
 
-    // Initial check
     checkHealth();
 
-    // Poll every 2 seconds until all terminals are ready
     const interval = setInterval(() => {
       checkHealth();
     }, 2000);
@@ -61,10 +56,8 @@ export const useSessionHealth = (
     return () => clearInterval(interval);
   }, [checkHealth, sessionId, enabled]);
 
-  // Stop polling when all terminals are ready
   useEffect(() => {
     if (healthStatus.allReady) {
-      // Add a small delay to ensure terminals are fully loaded
       const timeout = setTimeout(() => {
         setHealthStatus((prev) => ({ ...prev, isLoading: false }));
       }, 1000);

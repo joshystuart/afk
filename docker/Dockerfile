@@ -23,7 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   aggregate \
   jq \
   curl \
-  screen \
   tmux \
   ripgrep \
   inotify-tools \
@@ -40,9 +39,8 @@ ARG USERNAME=node
 RUN mkdir -p /workspace /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.local/bin /home/node/.local/share
 COPY .claude.json /home/node/.claude.json
 COPY scripts/ /home/node/scripts/
-COPY scripts/.screenrc /home/node/.screenrc
 COPY scripts/.tmux.conf /home/node/.tmux.conf
-RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.screenrc /home/node/.tmux.conf /home/node/.local && \
+RUN chown -R node:node /workspace /home/node/.claude.json /home/node/.claude /home/node/.ssh /home/node/.gitconfig.d /home/node/scripts /home/node/.tmux.conf /home/node/.local && \
     chmod 700 /home/node/.ssh && \
     chmod +x /home/node/scripts/*.sh
 
@@ -54,11 +52,12 @@ USER node
 # Add Claude Code binary location to PATH and disable auto-updates in containers
 ENV PATH="/home/node/.local/bin:$PATH"
 ENV DISABLE_AUTOUPDATER=1
+ENV CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1
 
 # Install Claude Code using native installer (replaces deprecated npm method)
 # See: https://code.claude.com/docs/en/setup#install-a-specific-version
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
     && claude --version
 
-CMD ["/home/node/scripts/start-claude.sh"]
+CMD ["/home/node/scripts/entrypoint.sh"]
 

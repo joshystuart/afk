@@ -45,3 +45,5 @@ docker/workspace/*
 
 server/src/config/.env.yaml
 server/.env.yaml
+server/:memory:*
+

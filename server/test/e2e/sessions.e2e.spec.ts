@@ -18,8 +18,9 @@ describe('Sessions E2E Tests', () => {
     // Clear database and reset mocks between tests
     await appTestHelper.clearDatabase();
     jest.clearAllMocks();
-    settingsSetup = false; // Reset settings flag
-    settingsPromise = null; // Reset promise
+    settingsSetup = false;
+    settingsPromise = null;
+    testImageId = null;
   });
 
   // Helper to make authenticated requests
@@ -43,9 +44,11 @@ describe('Sessions E2E Tests', () => {
       .delete(url)
       .set('Authorization', `Bearer ${authToken}`);
 
-  // Helper function to set up required settings for session creation
+  // Helper function to set up required settings and docker image for session creation
   let settingsSetup = false;
   let settingsPromise: Promise<void> | null = null;
+  let testImageId: string | null = null;
+
   const setupRequiredSettings = async () => {
     if (settingsSetup) {
       return;
@@ -67,6 +70,8 @@ describe('Sessions E2E Tests', () => {
             gitUserEmail: 'test@example.com',
           })
           .expect(200);
+
+        testImageId = await appTestHelper.seedTestDockerImage();
         settingsSetup = true;
       }
     })();
@@ -74,11 +79,11 @@ describe('Sessions E2E Tests', () => {
     await settingsPromise;
   };
 
-  // Helper function to create a session (with settings setup)
+  // Helper function to create a session (with settings + image setup)
   const createSession = async (sessionData: any, expectedStatus = 201) => {
     await setupRequiredSettings();
     return await authPost('/api/sessions')
-      .send(sessionData)
+      .send({ imageId: testImageId, ...sessionData })
       .expect(expectedStatus);
   };
 
@@ -342,8 +347,7 @@ describe('Sessions E2E Tests', () => {
       ).expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveProperty('claudeTerminalReady');
-      expect(response.body.data).toHaveProperty('manualTerminalReady');
+      expect(response.body.data).toHaveProperty('terminalReady');
       expect(response.body.data).toHaveProperty('allReady');
       expect(typeof response.body.data.allReady).toBe('boolean');
     });

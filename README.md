@@ -1,16 +1,16 @@
 # AFK - Away From Klaude
 
-AFK (Away From Klaude) lets you run multiple Claude Code sessions in isolated Docker environments for maximunm safety, security and efficiency.
+AFK (Away From Klaude) lets you run multiple Claude Code sessions in isolated Docker environments for maximum safety, security and efficiency. Each session provides a chat pane for interacting with Claude Code and a web terminal for manual shell access, with chat history persisted across restarts.
 
 ![afk-dashboard.png](docs/afk-dashboard.png)
 ![afk-session-details.png](docs/afk-session-details.png)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 24+
-- npm or yarn
+- npm
 - Docker (for container management)
 - Claude CLI (for OAuth token generation)
 
@@ -23,19 +23,22 @@ git clone https://github.com/joshystuart/afk.git
 cd afk
 ```
 
-2. Install dependencies:
+2. Install dependencies and build:
 
 ```bash
-npm run init
+npm run install:all
+npm run build
 ```
 
-This will:
+3. Build the Docker images:
 
-- Install dependencies for both the server and web client
-- Build the server and web client applications
-- Pull the Docker image to be able to run sessions
+```bash
+npm run docker:build
+```
 
-3. Configure environment variables:
+This builds a base image (`afk-base`) plus language-specific images for Node.js, Python, Go, Rust, .NET, and Java. See [docker/README.md](docker/README.md) for details.
+
+4. Configure environment variables:
 
 **Server Configuration:**
 
@@ -43,7 +46,9 @@ This will:
 # Copy one of the platform-specific config files
 cp server/src/config/.env.mac.yaml server/.env.yaml     # For macOS
 # or
-cp server/src/config/.env.test.yaml server/.env.yaml    # For testing/other platforms
+cp server/src/config/.env.windows.yaml server/.env.yaml  # For Windows
+# or
+cp server/src/config/.env.test.yaml server/.env.yaml     # For testing
 
 # Edit server/.env.yaml with your configuration
 ```
@@ -56,7 +61,7 @@ cp web/.env.example web/.env
 # Edit web/.env if you need to change API endpoints
 ```
 
-4. Start the application:
+5. Start the application:
 
 ```bash
 # Development mode (hot reload)
@@ -65,6 +70,7 @@ npm run start:dev
 
 - Web interface: [http://localhost:5173](http://localhost:5173)
 - Server API: [http://localhost:3001](http://localhost:3001)
+- Swagger API docs: [http://localhost:3001/api/docs](http://localhost:3001/api/docs)
 
 ```bash
 # Production-like mode (built frontend preview + server start)
@@ -157,12 +163,15 @@ Add your Claude token, Git identity, and (optionally) SSH key in the Settings pa
 
 #### Create a Session
 
-To create a new session, click the "Create Session" button in the web interface. You can configure the session name and repository:
+To create a new session, click the "Create Session" button in the web interface. You can configure the session name, repository, and Docker image:
 
 - **GitHub mode** (when connected): Browse your repositories with a searchable dropdown. Repos from previous sessions appear at the top under "Recent". Selecting a repo auto-fills the clone URL and default branch.
 - **Manual URL mode**: Enter any git repository URL (SSH or HTTPS) and branch manually.
+- **Docker image**: Choose from built-in language images (Node.js, Python, Go, Rust, .NET, Java) or any custom images you've registered.
 
 The session will automatically start a Docker container with the specified settings and clone the provided repository.
+
+![afk-create-session.png](docs/afk-create-session.png)
 
 #### Commit & Push from Session View
 
@@ -179,20 +188,90 @@ To commit and push from the UI:
 
 If no files have changed, the action is disabled automatically.
 
-![afk-create-session.png](docs/afk-create-session.png)
+## Features
 
-## 📁 Project Structure
+### Session Management
+
+- Create and manage containerized development sessions
+- Real-time session status updates via WebSocket
+- Start, stop, and delete sessions
+- Session lifecycle management with automatic cleanup
+- Per-session Docker volumes for tmux state and Claude project context
+
+### Docker Image Management
+
+- Six built-in language images: Node.js (default), Python, Go, Rust, .NET, and Java
+- Register custom Docker images through the API
+- Set any image as the default for new sessions
+- Image status tracking (available, pulling, error) with retry support
+- All images extend from a common base with Claude Code, ttyd, git, and essential tools pre-installed
+
+### Chat Interface
+
+- Single chat pane per session for interacting with Claude Code
+- Chat history persisted to the database and restored when sessions are restarted
+- Streaming responses with real-time token output
+- Tool call and thinking step visibility in the chat UI
+- Claude's project context (`.claude/`) stored in a Docker volume, surviving stop/start cycles
+- Cancel running Claude executions mid-stream
+- Continue conversations across session restarts via `--continue`
+- Web terminal available for manual shell access (opens in a new window)
+- Responsive design for desktop and mobile
+
+### GitHub Integration
+
+- Connect your GitHub account via OAuth
+- Browse and search your repositories from a searchable dropdown
+- Recent repos from past sessions surfaced at the top
+- Private repository access via HTTPS token (no SSH key required)
+- Auto-filled clone URLs and default branch names
+
+### Git Workflow
+
+- Real-time git status (branch + changed file count) in session view
+- One-click Commit & Push dialog from the session header
+- Git user name/email from Settings used as defaults for new sessions
+- Git operations run inside the isolated session container
+
+### Settings
+
+- Claude OAuth token management
+- Git identity (name and email)
+- SSH private key for non-GitHub repositories
+- GitHub OAuth connection
+
+## Project Structure
 
 ```
 afk/
-├── server/         # NestJS backend API
-├── web/            # React frontend application
-├── docker/         # Docker image
-├── docs/           # Project documentation
-└── package.json    # Root package with scripts
+├── server/             # NestJS backend API
+│   └── src/
+│       ├── config/     # Typed configuration with nest-typed-config
+│       ├── domain/     # Entities, repositories (sessions, chat, docker images, settings)
+│       ├── gateways/   # WebSocket gateway for real-time updates
+│       ├── interactors/ # Controllers and business logic
+│       └── services/   # Docker engine, Claude execution, git watcher
+├── web/                # React frontend application (Vite)
+│   └── src/
+│       ├── api/        # API client and types
+│       ├── components/ # Reusable UI components
+│       ├── hooks/      # Custom React hooks
+│       ├── pages/      # Route pages (login, dashboard, session, settings)
+│       └── stores/     # Zustand state stores
+├── docker/             # Docker images
+│   ├── base/           # Base image (Debian + Claude Code + ttyd + tools)
+│   ├── node/           # Node.js 24 + yarn + pnpm
+│   ├── python/         # Python 3.13 + pip + poetry
+│   ├── go/             # Go 1.26
+│   ├── rust/           # Rust (via rustup)
+│   ├── dotnet/         # .NET 10
+│   ├── java/           # Java 21 (Temurin) + Gradle 9.4 + Maven 3.9
+│   └── scripts/        # Container entrypoint and setup scripts
+├── docs/               # Screenshots and documentation assets
+└── package.json        # Root package with scripts
 ```
 
-## 🛠 Development
+## Development
 
 ### Available Scripts
 
@@ -201,10 +280,13 @@ From the root directory:
 - `npm run start:dev` - Start both server and web client in development mode
 - `npm run start` - Start both applications in production mode
 - `npm run install:all` - Install dependencies for all packages
+- `npm run build` - Build server and web client
+- `npm run docker:build` - Build all Docker images (base + language)
 - `npm run lint` - Run linting on both server and web
 - `npm run test` - Run server tests
 - `npm run format` - Format all files with Prettier
-- `npm run format:check` - Check if files are formatted correctly
+- `npm run format:check` - Check formatting without making changes
+- `npm run web:storybook` - Launch Storybook for web component development
 
 ### Server Scripts
 
@@ -225,6 +307,22 @@ npm run dev          # Development server
 npm run build        # Build for production
 npm run preview      # Preview production build
 npm run lint         # Run ESLint
+npm run storybook    # Component development with Storybook
+```
+
+### Docker Image Scripts
+
+```bash
+cd docker
+make all             # Build base + all language images
+make base            # Build the base image only
+make node            # Build afk-node image
+make python          # Build afk-python image
+make go              # Build afk-go image
+make rust            # Build afk-rust image
+make dotnet          # Build afk-dotnet image
+make java            # Build afk-java image
+make clean           # Remove all afk images
 ```
 
 ### Code Formatting
@@ -247,21 +345,20 @@ Prettier is configured with:
 - 80-character line width
 - Semicolons required
 
-## ⚙️ Configuration
+## Configuration
 
 ### Server Configuration
 
 Configure the server by creating `server/.env.yaml` from one of the provided templates:
 
 ```yaml
-# Example server/.env.yaml (based on .env.mac.yaml)
+# Example server/.env.yaml
 port: 3001
 nodeEnv: development
 baseUrl: http://localhost
 
 docker:
   socketPath: '${DOCKER_HOST:-/var/run/docker.sock}'
-  imageName: afk:latest
   startPort: 7681
   endPort: 7780
 
@@ -278,6 +375,9 @@ adminUser:
   username: '${ADMIN_USERNAME:-admin}'
   password: '${ADMIN_PASSWORD:-password123}'
 
+auth:
+  jwtSecret: '${JWT_SECRET:-afk-development-secret-key-change-in-production}'
+
 # Optional: GitHub OAuth for repository browsing
 github:
   clientId: '${GITHUB_CLIENT_ID:-}'
@@ -289,8 +389,9 @@ github:
 **Available template configurations:**
 
 - `server/src/config/.env.mac.yaml` - macOS-specific settings
-- `server/src/config/.env.test.yaml` - Test environment settings
 - `server/src/config/.env.windows.yaml` - Windows-specific settings
+- `server/src/config/.env.local-docker.yaml` - Local Docker settings
+- `server/src/config/.env.test.yaml` - Test environment settings
 
 You can use environment variables in the YAML file (e.g., `"${ADMIN_PASSWORD:-defaultvalue}"`).
 
@@ -306,52 +407,16 @@ VITE_WS_URL=http://localhost:3001
 
 The web client uses Vite, so all environment variables must be prefixed with `VITE_`.
 
-## 🏗 Architecture
+## Architecture
 
-- **Backend**: NestJS with TypeScript, SQLite database, WebSocket support
-- **Frontend**: React with TypeScript, Material-UI, React Query
-- **Container Management**: Docker integration for session containers
-- **Real-time Updates**: WebSocket connections for session status
+- **Backend**: NestJS 11 with TypeScript, SQLite database (TypeORM), WebSocket support (Socket.io)
+- **Frontend**: React 19 with TypeScript, Material-UI 7, TanStack React Query, Zustand, Framer Motion
+- **Container Management**: Dockerode for programmatic Docker integration, per-session containers with named volumes
+- **Real-time Updates**: WebSocket gateway for session status, chat streaming, container logs, and git status
+- **Authentication**: JWT-based single admin user authentication
+- **API Documentation**: Swagger/OpenAPI available at `/api/docs`
 
-## 📋 Features
-
-### Session Management
-
-- Create and manage containerized development sessions
-- Real-time session status updates via WebSocket
-- Start, stop, restart, and delete sessions
-- Session lifecycle management with automatic cleanup
-
-### GitHub Integration
-
-- Connect your GitHub account via OAuth
-- Browse and search your repositories from a searchable dropdown
-- Recent repos from past sessions surfaced at the top
-- Private repository access via HTTPS token (no SSH key required)
-- Auto-filled clone URLs and default branch names
-
-### Git Workflow in Session
-
-- Real-time git status (branch + changed file count) in session view
-- One-click Commit & Push dialog from the session header
-- Uses saved Git user name/email from Settings as defaults for new sessions
-- Runs git operations inside the same isolated session container
-
-### Terminal Access
-
-- Embedded terminal access in the browser
-- Dual terminal sessions (Claude + manual web terminal)
-- External terminal access in new windows
-- Responsive design for desktop and mobile
-
-### Web Interface
-
-- Modern React-based dashboard
-- Real-time session monitoring
-- Session creation and configuration
-- Settings management
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
@@ -362,10 +427,10 @@ The web client uses Vite, so all environment variables must be prefixed with `VI
 7. Push to the branch: `git push origin feature/my-feature`
 8. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🐛 Issues
+## Issues
 
 If you encounter any issues or have feature requests, please create an issue on GitHub.

@@ -5,9 +5,6 @@ export class DockerConfig {
   @IsString()
   public readonly socketPath!: string;
 
-  @IsString()
-  public readonly imageName!: string;
-
   @IsNumber()
   @Type(() => Number)
   public readonly startPort!: number;

@@ -19,6 +19,7 @@ import {
 import { SessionRepository } from '../services/repositories/session.repository';
 import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
+import { ChatService } from '../services/chat/chat.service';
 
 export interface SessionUpdate {
   type: 'status' | 'container' | 'logs';
@@ -46,6 +47,7 @@ export class SessionGateway
     private readonly gitWatcherService: GitWatcherService,
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
+    private readonly chatService: ChatService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -93,6 +95,15 @@ export class SessionGateway
           sessionId: data.sessionId,
           error: error.message,
         });
+      });
+
+      // Sync current chat execution state so reconnecting clients
+      // immediately know if Claude is mid-run
+      const executionInfo = this.chatService.getExecutionInfo(data.sessionId);
+      client.emit('chat.status', {
+        sessionId: data.sessionId,
+        status: executionInfo ? 'executing' : 'idle',
+        assistantMessageId: executionInfo?.assistantMessageId ?? null,
       });
 
       return {
@@ -214,6 +225,91 @@ export class SessionGateway
       ...data,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  @SubscribeMessage('chat.send')
+  async handleChatSend(
+    @MessageBody()
+    data: {
+      sessionId: string;
+      content: string;
+      continueConversation: boolean;
+      model?: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { sessionId, content, continueConversation, model } = data;
+    this.logger.log('Chat message received', {
+      sessionId,
+      continueConversation,
+    });
+
+    try {
+      const result = await this.chatService.sendMessage(
+        sessionId,
+        content,
+        { continueConversation, model },
+        (event) => {
+          this.server.to(`session:${sessionId}`).emit('chat.stream', {
+            sessionId,
+            messageId: result.assistantMessageId,
+            event,
+          });
+        },
+        (info) => {
+          this.server.to(`session:${sessionId}`).emit('chat.complete', {
+            sessionId,
+            messageId: info.assistantMessageId,
+            conversationId: info.conversationId,
+            costUsd: info.costUsd,
+            durationMs: info.durationMs,
+          });
+        },
+        (error) => {
+          this.server.to(`session:${sessionId}`).emit('chat.error', {
+            sessionId,
+            error: error.message,
+          });
+        },
+      );
+
+      return {
+        event: 'chat.started',
+        data: {
+          sessionId,
+          userMessageId: result.userMessageId,
+          assistantMessageId: result.assistantMessageId,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Failed to start chat execution', {
+        sessionId,
+        error: error.message,
+      });
+      return {
+        event: 'chat.error',
+        data: { sessionId, error: error.message },
+      };
+    }
+  }
+
+  @SubscribeMessage('chat.cancel')
+  async handleChatCancel(
+    @MessageBody() data: { sessionId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.chatService.cancelExecution(data.sessionId);
+      return {
+        event: 'chat.cancelled',
+        data: { sessionId: data.sessionId },
+      };
+    } catch (error) {
+      return {
+        event: 'chat.error',
+        data: { sessionId: data.sessionId, error: error.message },
+      };
+    }
   }
 
   private async startGitWatcherIfRunning(sessionId: string): Promise<void> {

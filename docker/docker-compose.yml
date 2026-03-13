@@ -1,23 +1,60 @@
 services:
-  afk-terminal:
+  afk-base:
     build:
       context: .
-      dockerfile: Dockerfile
-    ports:
-      - '${CLAUDE_PORT:-7681}:${CLAUDE_PORT:-7681}' # Claude session port
-      - '${MANUAL_PORT:-7682}:${MANUAL_PORT:-7682}' # Manual session port
-    environment:
-      - CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}
-      # Git Integration Environment Variables
-      - REPO_URL=${REPO_URL}
-      - REPO_BRANCH=${REPO_BRANCH:-main}
-      - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
-      - GIT_USER_NAME=${GIT_USER_NAME:-Claude User}
-      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-claude@example.com}
-      - GIT_SSH_HOST=${GIT_SSH_HOST}
-      - CLAUDE_PORT=${CLAUDE_PORT:-7681}
-      - MANUAL_PORT=${MANUAL_PORT:-7682}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    privileged: true
-    restart: unless-stopped
+      dockerfile: base/Dockerfile
+    image: awayfromklaude/afk-base:latest
+
+  afk-node:
+    build:
+      context: .
+      dockerfile: node/Dockerfile
+    image: afk-node:latest
+    depends_on:
+      afk-base:
+        condition: service_completed_successfully
+
+  afk-python:
+    build:
+      context: .
+      dockerfile: python/Dockerfile
+    image: afk-python:latest
+    depends_on:
+      afk-base:
+        condition: service_completed_successfully
+
+  afk-go:
+    build:
+      context: .
+      dockerfile: go/Dockerfile
+    image: afk-go:latest
+    depends_on:
+      afk-base:
+        condition: service_completed_successfully
+
+  afk-rust:
+    build:
+      context: .
+      dockerfile: rust/Dockerfile
+    image: afk-rust:latest
+    depends_on:
+      afk-base:
+        condition: service_completed_successfully
+
+  afk-dotnet:
+    build:
+      context: .
+      dockerfile: dotnet/Dockerfile
+    image: afk-dotnet:latest
+    depends_on:
+      afk-base:
+        condition: service_completed_successfully
+
+  afk-java:
+    build:
+      context: .
+      dockerfile: java/Dockerfile
+    image: afk-java:latest
+    depends_on:
+      afk-base:
+        condition: service_completed_successfully

@@ -1,11 +1,18 @@
 import { Module } from '@nestjs/common';
 import { DockerEngineService } from './docker-engine.service';
+import { DockerImageService } from './docker-image.service';
 import { PortManagerService } from './port-manager.service';
 import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factory';
-import { DockerConfig } from '../../libs/config/docker.config';
+import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 
 @Module({
-  providers: [DockerEngineService, PortManagerService, PortPairDtoFactory],
-  exports: [DockerEngineService, PortManagerService],
+  imports: [DockerImagesModule],
+  providers: [
+    DockerEngineService,
+    DockerImageService,
+    PortManagerService,
+    PortPairDtoFactory,
+  ],
+  exports: [DockerEngineService, DockerImageService, PortManagerService],
 })
 export class DockerModule {}

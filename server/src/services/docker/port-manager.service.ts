@@ -24,21 +24,12 @@ export class PortManagerService implements OnModuleInit {
   }
 
   async allocatePortPair(): Promise<PortPairDto> {
-    const claudePort = await this.allocatePort();
-
-    try {
-      const manualPort = await this.allocatePort();
-      return this.portPairFactory.create(claudePort, manualPort);
-    } catch (error) {
-      // Rollback claude port allocation if manual port fails
-      this.releasePort(claudePort);
-      throw error;
-    }
+    const port = await this.allocatePort();
+    return this.portPairFactory.create(port);
   }
 
   async releasePortPair(ports: PortPairDto): Promise<void> {
-    this.releasePort(ports.claudePort);
-    this.releasePort(ports.manualPort);
+    this.releasePort(ports.port);
   }
 
   getAvailablePortCount(): number {

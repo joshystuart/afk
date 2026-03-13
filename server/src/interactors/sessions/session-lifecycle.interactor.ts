@@ -4,6 +4,7 @@ import { ContainerNotFoundError } from '../../services/docker/container-not-foun
 import { SessionRepository } from '../../services/repositories/session.repository';
 import { PortManagerService } from '../../services/docker/port-manager.service';
 import { GitWatcherService } from '../../services/git-watcher/git-watcher.service';
+import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
 import * as http from 'http';
@@ -17,6 +18,7 @@ export class SessionLifecycleInteractor {
     private readonly sessionRepository: SessionRepository,
     private readonly portManager: PortManagerService,
     private readonly gitWatcherService: GitWatcherService,
+    private readonly dockerImageRepository: DockerImageRepository,
   ) {}
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
@@ -146,10 +148,18 @@ export class SessionLifecycleInteractor {
       }
     }
 
+    // Resolve image: use session's snapshot, fall back to default
+    let imageName = session.imageName;
+    if (!imageName) {
+      const defaultImage = await this.dockerImageRepository.findDefault();
+      imageName = defaultImage?.image ?? 'awayfromklaude/afk-node:latest';
+    }
+
     // Create new container with same configuration
     const container = await this.dockerEngine.createContainer({
       sessionId: session.id,
       sessionName: session.name,
+      imageName,
       repoUrl: session.config.repoUrl,
       branch: session.config.branch,
       gitUserName: session.config.gitUserName,
@@ -339,8 +349,7 @@ export class SessionLifecycleInteractor {
   }
 
   async checkTerminalHealth(sessionId: SessionIdDto): Promise<{
-    claudeTerminalReady: boolean;
-    manualTerminalReady: boolean;
+    terminalReady: boolean;
     allReady: boolean;
   }> {
     const session = await this.sessionRepository.findById(sessionId);
@@ -351,23 +360,16 @@ export class SessionLifecycleInteractor {
 
     if (session.status !== SessionStatus.RUNNING || !session.ports) {
       return {
-        claudeTerminalReady: false,
-        manualTerminalReady: false,
+        terminalReady: false,
         allReady: false,
       };
     }
 
-    const claudeReady = await this.checkTerminalEndpoint(
-      session.ports.claudePort,
-    );
-    const manualReady = await this.checkTerminalEndpoint(
-      session.ports.manualPort,
-    );
+    const terminalReady = await this.checkTerminalEndpoint(session.ports.port);
 
     return {
-      claudeTerminalReady: claudeReady,
-      manualTerminalReady: manualReady,
-      allReady: claudeReady && manualReady,
+      terminalReady,
+      allReady: terminalReady,
     };
   }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, LinearProgress } from '@mui/material';
 import { afkColors } from '../themes/afk';
+import TerminalCursor from './TerminalCursor';
 
 interface TerminalLoadingProps {
   title: string;
@@ -50,18 +51,9 @@ const TerminalLoading: React.FC<TerminalLoadingProps> = ({
       >
         {message}
         {!isError && (
-          <Box
-            component="span"
-            sx={{
-              display: 'inline-block',
-              width: '6px',
-              height: '12px',
-              bgcolor: afkColors.accent,
-              animation: 'blink 1s step-end infinite',
-              verticalAlign: 'middle',
-              ml: 0.5,
-            }}
-          />
+          <Box component="span" sx={{ ml: 0.5 }}>
+            <TerminalCursor size="sm" />
+          </Box>
         )}
       </Typography>
 

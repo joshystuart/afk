@@ -25,6 +25,7 @@ export interface ContainerStats {
 export interface ContainerCreateOptions {
   sessionId: string;
   sessionName: string;
+  imageName: string;
   repoUrl?: string;
   branch?: string;
   gitUserName: string;

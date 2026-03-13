@@ -13,13 +13,16 @@ import { StopSessionController } from './stop-session.controller';
 import { DeleteSessionController } from './delete-session.controller';
 import { GitStatusController } from './git-status.controller';
 import { GitCommitPushController } from './git-commit-push.controller';
+import { ChatMessagesController } from './chat-messages.controller';
 import { UpdateSessionController } from './update-session/update-session.controller';
 import { UpdateSessionInteractor } from './update-session/update-session.interactor';
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
+import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { SettingsModule } from '../settings/settings.module';
 import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
+import { ChatModule } from '../../services/chat/chat.module';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
 import { Session } from '../../domain/sessions/session.entity';
@@ -30,8 +33,10 @@ import { Session } from '../../domain/sessions/session.entity';
     DockerModule,
     RepositoriesModule,
     DomainModule,
+    DockerImagesModule,
     SettingsModule,
     GitWatcherModule,
+    ChatModule,
   ],
   controllers: [
     CreateSessionController,
@@ -43,6 +48,7 @@ import { Session } from '../../domain/sessions/session.entity';
     DeleteSessionController,
     GitStatusController,
     GitCommitPushController,
+    ChatMessagesController,
     UpdateSessionController,
   ],
   providers: [

@@ -31,18 +31,58 @@ export class DockerImageService implements OnModuleInit {
 
   private async reconcileImageStatuses(): Promise<void> {
     const allImages = await this.repository.findAll();
-    const availableImages = allImages.filter(
-      (img) => img.status === DockerImageStatus.AVAILABLE,
-    );
+    let changed = false;
 
-    for (const image of availableImages) {
+    for (const image of allImages) {
+      if (image.status === DockerImageStatus.PULLING) {
+        continue;
+      }
+
       const existsLocally = await this.imageExistsLocally(image.image);
-      if (!existsLocally) {
-        this.logger.warn(
-          `Image "${image.image}" marked as AVAILABLE but not found locally — resetting to NOT_PULLED`,
-        );
-        image.markAsNotPulled();
+
+      if (image.status === DockerImageStatus.AVAILABLE && !existsLocally) {
+        if (image.isBuiltIn) {
+          this.logger.warn(
+            `Built-in image "${image.image}" no longer found locally — resetting to NOT_PULLED`,
+          );
+          image.markAsNotPulled();
+        } else {
+          this.logger.warn(
+            `Custom image "${image.image}" no longer found locally — marking as ERROR`,
+          );
+          image.markAsError(
+            'Image was removed outside of AFK. Re-install or delete this entry.',
+          );
+        }
         await this.repository.save(image);
+        changed = true;
+      } else if (
+        image.status === DockerImageStatus.NOT_PULLED &&
+        existsLocally
+      ) {
+        this.logger.log(
+          `Image "${image.image}" found locally — marking as AVAILABLE`,
+        );
+        image.markAsAvailable();
+        await this.repository.save(image);
+        changed = true;
+      }
+    }
+
+    if (changed || !(await this.repository.findDefault())) {
+      const refreshed = await this.repository.findAll();
+      const hasDefault = refreshed.some((img) => img.isDefault);
+      if (!hasDefault) {
+        const firstAvailable = refreshed.find(
+          (img) => img.status === DockerImageStatus.AVAILABLE,
+        );
+        if (firstAvailable) {
+          this.logger.log(
+            `No default image set — defaulting to "${firstAvailable.image}"`,
+          );
+          firstAvailable.setAsDefault();
+          await this.repository.save(firstAvailable);
+        }
       }
     }
   }
@@ -57,6 +97,7 @@ export class DockerImageService implements OnModuleInit {
   }
 
   async listAll(): Promise<DockerImage[]> {
+    await this.reconcileImageStatuses();
     return this.repository.findAll();
   }
 
@@ -111,6 +152,18 @@ export class DockerImageService implements OnModuleInit {
     }
     if (image.status !== DockerImageStatus.NOT_PULLED) {
       throw new Error('Image is already installed or being pulled');
+    }
+
+    if (await this.imageExistsLocally(image.image)) {
+      this.logger.log(
+        `Image "${image.image}" already exists locally — skipping pull`,
+      );
+      image.markAsAvailable();
+      if (!(await this.repository.findDefault())) {
+        image.setAsDefault();
+      }
+      await this.repository.save(image);
+      return image;
     }
 
     image.markAsPulling();

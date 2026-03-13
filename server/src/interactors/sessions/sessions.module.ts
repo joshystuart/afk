@@ -19,6 +19,7 @@ import { UpdateSessionInteractor } from './update-session/update-session.interac
 import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
+import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { SettingsModule } from '../settings/settings.module';
 import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
 import { ChatModule } from '../../services/chat/chat.module';
@@ -32,6 +33,7 @@ import { Session } from '../../domain/sessions/session.entity';
     DockerModule,
     RepositoriesModule,
     DomainModule,
+    DockerImagesModule,
     SettingsModule,
     GitWatcherModule,
     ChatModule,

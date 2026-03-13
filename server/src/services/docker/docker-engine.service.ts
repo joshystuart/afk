@@ -17,7 +17,6 @@ export class DockerEngineService {
   constructor(private readonly config: DockerConfig) {
     this.logger.log('DockerEngineService initializing', {
       socketPath: config.socketPath,
-      imageName: config.imageName,
     });
 
     const dockerOptions: DockerOptions = {};
@@ -46,17 +45,15 @@ export class DockerEngineService {
       // Verify Docker connectivity first
       await this.ping();
 
-      const imageName = this.config.imageName;
-
       const container = await this.docker.createContainer({
-        Image: imageName,
+        Image: options.imageName,
         Env: this.buildEnvironment(options),
         ExposedPorts: this.buildExposedPorts(options.ports),
         HostConfig: {
           PortBindings: this.buildPortBindings(options.ports),
           Binds: [
-            `afk-tmux-${options.sessionId}:/home/node/.tmux/resurrect`,
-            `afk-claude-${options.sessionId}:/home/node/.claude`,
+            `afk-tmux-${options.sessionId}:/home/afk/.tmux/resurrect`,
+            `afk-claude-${options.sessionId}:/home/afk/.claude`,
           ],
           RestartPolicy: { Name: 'unless-stopped' },
         },

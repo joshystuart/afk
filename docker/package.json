@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "description": "AFK - Away From Keyboard - Docker image",
   "scripts": {
-    "build": "docker build -t afk .",
-    "pull": "docker pull --platform linux/arm64 crimsonronin/afk:latest",
-    "rebuild": "docker build --no-cache -t afk .",
-    "build:force": "docker build --no-cache --pull -t afk .",
-    "run": "docker run -it --rm afk /bin/bash"
+    "build": "make all",
+    "build:base": "make base",
+    "build:node": "make node",
+    "build:python": "make python",
+    "build:go": "make go",
+    "build:rust": "make rust",
+    "build:dotnet": "make dotnet",
+    "build:java": "make java",
+    "clean": "make clean"
   },
   "author": "joshstuartx+afk@gmail.com",
   "license": "MIT",

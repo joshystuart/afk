@@ -56,6 +56,12 @@ export class Session {
   @Column('json', { nullable: true, transformer: portPairTransformer })
   ports: PortPairDto | null;
 
+  @Column('varchar', { length: 36, nullable: true })
+  imageId: string | null;
+
+  @Column('varchar', { length: 255, nullable: true })
+  imageName: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -75,6 +81,8 @@ export class Session {
     createdAt?: Date,
     updatedAt?: Date,
     lastAccessedAt?: Date | null,
+    imageId?: string | null,
+    imageName?: string | null,
   ) {
     if (id) {
       this.id = typeof id === 'string' ? id : id.toString();
@@ -87,6 +95,8 @@ export class Session {
     if (createdAt) this.createdAt = createdAt;
     if (updatedAt) this.updatedAt = updatedAt;
     if (lastAccessedAt !== undefined) this.lastAccessedAt = lastAccessedAt;
+    if (imageId !== undefined) this.imageId = imageId;
+    if (imageName !== undefined) this.imageName = imageName;
   }
 
   // Getter to maintain compatibility with existing SessionIdDto usage

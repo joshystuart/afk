@@ -162,7 +162,7 @@ start_terminal() {
     fi
     
     log_info "Creating new tmux session 'terminal' with bash"
-    tmux -f /home/node/.tmux.conf new-session -d -s terminal -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
+    tmux -f "$HOME/.tmux.conf" new-session -d -s terminal -c "$WORKING_DIR" 'export TERM=xterm-256color; exec bash'
     sleep 1
     
     if ! tmux list-sessions | grep -q "terminal"; then
@@ -188,7 +188,7 @@ start_terminal() {
         --client-option bellStyle='none' \
         --client-option scrollback=1000 \
         --client-option tabStopWidth=4 \
-        bash -c "export TERM=xterm-256color; tmux -f /home/node/.tmux.conf attach-session -t terminal"
+        bash -c "export TERM=xterm-256color; tmux -f \$HOME/.tmux.conf attach-session -t terminal"
 }
 
 cleanup() {

@@ -229,9 +229,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               userSelect: 'none',
               cursor: 'pointer',
             }}
-            onClick={() =>
-              !isProcessing && setContinueConversation((v) => !v)
-            }
+            onClick={() => !isProcessing && setContinueConversation((v) => !v)}
           >
             Continue
           </Typography>

@@ -36,6 +36,7 @@ import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 import ApprovalModal from '../components/ApprovalModal';
+import TerminalCursor from '../components/TerminalCursor';
 import CommitPushDialog from '../components/CommitPushDialog';
 import { ChatPanel } from '../components/chat/ChatPanel';
 
@@ -501,33 +502,21 @@ const SessionDetails: React.FC = () => {
               {session.name || session.id.slice(0, 12)}
             </Typography>
 
-            <Box
+            <Box sx={{ mb: 3 }}>
+              <TerminalCursor size="lg" />
+            </Box>
+
+            <Typography
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 1.5,
-                mb: 1.5,
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                color: afkColors.textPrimary,
+                mb: 1,
               }}
             >
-              <DotIcon
-                sx={{
-                  fontSize: 10,
-                  color: afkColors.accent,
-                  animation: 'pulse-dot 2s ease-in-out infinite',
-                }}
-              />
-              <Typography
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.8125rem',
-                  fontWeight: 500,
-                  color: afkColors.textPrimary,
-                }}
-              >
-                Initializing session...
-              </Typography>
-            </Box>
+              Initializing session...
+            </Typography>
 
             <Typography
               variant="body2"

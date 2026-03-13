@@ -21,6 +21,7 @@ import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 import ApprovalModal from '../components/ApprovalModal';
+import TerminalCursor from '../components/TerminalCursor';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -206,26 +207,7 @@ const Dashboard: React.FC = () => {
           >
             No sessions yet
           </Typography>
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.875rem',
-              color: afkColors.textTertiary,
-            }}
-          >
-            <Box
-              component="span"
-              sx={{
-                display: 'inline-block',
-                width: '8px',
-                height: '16px',
-                bgcolor: afkColors.accent,
-                animation: 'blink 1s step-end infinite',
-                verticalAlign: 'middle',
-                ml: 0.5,
-              }}
-            />
-          </Typography>
+          <TerminalCursor />
           <Button
             component={Link}
             to={ROUTES.CREATE_SESSION}

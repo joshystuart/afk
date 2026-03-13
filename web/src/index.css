@@ -109,6 +109,22 @@ a:hover {
   }
 }
 
+/* Terminal cursor - spin with circle morph */
+@keyframes cursor-spin {
+  0% {
+    transform: rotate(0deg);
+    border-radius: 1px;
+  }
+  50% {
+    transform: rotate(180deg);
+    border-radius: 50%;
+  }
+  100% {
+    transform: rotate(360deg);
+    border-radius: 1px;
+  }
+}
+
 /* Typing effect */
 @keyframes typing {
   from {

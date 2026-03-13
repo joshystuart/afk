@@ -10,6 +10,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   CircularProgress,
+  MenuItem,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -25,12 +26,14 @@ import { useGitHub } from '../hooks/useGitHub';
 import { type CreateSessionRequest, type GitHubRepo } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { useSettingsStore } from '../stores/settings.store';
+import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
 
 type RepoSource = 'github' | 'manual';
 
 interface CreateSessionForm {
   name?: string;
+  imageId: string;
   repoUrl?: string;
   branch?: string;
 }
@@ -41,6 +44,7 @@ const CreateSession: React.FC = () => {
   const { settings, fetchSettings } = useSettingsStore();
   const { isConnected, useRepos } = useGitHub();
   const { sessions } = useSession();
+  const { images, fetchImages } = useDockerImagesStore();
 
   const [repoSource, setRepoSource] = useState<RepoSource>(
     isConnected ? 'github' : 'manual',
@@ -56,7 +60,21 @@ const CreateSession: React.FC = () => {
 
   useEffect(() => {
     fetchSettings();
-  }, [fetchSettings]);
+    fetchImages();
+  }, [fetchSettings, fetchImages]);
+
+  const availableImages = useMemo(
+    () =>
+      images
+        .filter((img) => img.status === 'AVAILABLE')
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [images],
+  );
+
+  const defaultImage = useMemo(
+    () => availableImages.find((img) => img.isDefault),
+    [availableImages],
+  );
 
   // Update repo source when connection status changes
   useEffect(() => {
@@ -104,12 +122,13 @@ const CreateSession: React.FC = () => {
   const missingSettings = useMemo(() => {
     if (!settings) return true;
     if (!settings.hasClaudeToken) return true;
+    if (availableImages.length === 0) return true;
     // If using GitHub mode, no SSH key needed
     if (repoSource === 'github' && isConnected) return false;
     // If manual mode, SSH key needed for SSH URLs only
     // But we still allow creation without SSH key for HTTPS URLs
     return false;
-  }, [settings, repoSource, isConnected]);
+  }, [settings, repoSource, isConnected, availableImages]);
 
   const {
     control,
@@ -119,10 +138,18 @@ const CreateSession: React.FC = () => {
   } = useForm<CreateSessionForm>({
     defaultValues: {
       name: '',
+      imageId: '',
       repoUrl: '',
       branch: 'main',
     },
   });
+
+  // Set imageId to default image once loaded
+  useEffect(() => {
+    if (defaultImage) {
+      setValue('imageId', defaultImage.id);
+    }
+  }, [defaultImage, setValue]);
 
   const handleRepoSourceChange = (
     _: React.MouseEvent<HTMLElement>,
@@ -172,6 +199,7 @@ const CreateSession: React.FC = () => {
       clearError();
       const request: CreateSessionRequest = {
         name: data.name?.trim() || undefined,
+        imageId: data.imageId,
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
       };
@@ -216,6 +244,86 @@ const CreateSession: React.FC = () => {
       )}
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+        {/* Environment section */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              Environment
+            </Typography>
+          </Box>
+
+          <Controller
+            name="imageId"
+            control={control}
+            rules={{ required: 'Please select a Docker image' }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                fullWidth
+                label="Docker Image"
+                helperText={
+                  errors.imageId?.message ||
+                  'Select the environment for this session'
+                }
+                error={!!errors.imageId}
+                disabled={availableImages.length === 0}
+              >
+                {availableImages.map((img) => (
+                  <MenuItem key={img.id} value={img.id}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        width: '100%',
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          color: afkColors.textPrimary,
+                        }}
+                      >
+                        {img.name}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: '0.75rem',
+                          color: afkColors.textTertiary,
+                          fontFamily: '"JetBrains Mono", monospace',
+                        }}
+                      >
+                        {img.image}
+                      </Typography>
+                      {img.isDefault && (
+                        <Chip
+                          label="default"
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: '0.625rem',
+                            ml: 'auto',
+                            bgcolor: afkColors.accentMuted,
+                            color: afkColors.accent,
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+        </Box>
+
         {/* Repository section */}
         <Box sx={{ mb: 4 }}>
           <Box

@@ -9,6 +9,8 @@ export class CreateSessionResponseDto {
   branch!: string;
   port?: number;
   terminalUrl?: string;
+  imageId?: string;
+  imageName?: string;
   createdAt!: string;
   updatedAt!: string;
 
@@ -22,6 +24,8 @@ export class CreateSessionResponseDto {
     dto.status = session.status;
     dto.repoUrl = session.config.repoUrl || undefined;
     dto.branch = session.config.branch;
+    dto.imageId = session.imageId || undefined;
+    dto.imageName = session.imageName || undefined;
     dto.createdAt = session.createdAt.toISOString();
     dto.updatedAt = session.updatedAt.toISOString();
 

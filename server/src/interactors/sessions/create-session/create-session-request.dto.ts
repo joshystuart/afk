@@ -2,6 +2,7 @@ import {
   IsString,
   IsOptional,
   IsEmail,
+  IsUUID,
   MinLength,
   MaxLength,
   Allow,
@@ -14,6 +15,10 @@ export class CreateSessionRequest {
   @MinLength(3)
   @MaxLength(50)
   name?: string;
+
+  @IsString()
+  @IsUUID('4')
+  imageId!: string;
 
   @IsOptional()
   @IsGitUrl()

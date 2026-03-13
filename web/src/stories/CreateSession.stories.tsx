@@ -4,7 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CreateSession from '../pages/CreateSession';
 import { useSettingsStore } from '../stores/settings.store';
-import type { Settings } from '../api/types';
+import { useDockerImagesStore } from '../stores/docker-images.store';
+import type { Settings, DockerImage } from '../api/types';
 
 // ---------------------------------------------------------------------------
 // Mock settings data
@@ -49,6 +50,17 @@ const missingClaudeTokenOnly: Settings = {
 };
 
 // ---------------------------------------------------------------------------
+// Mock docker images
+// ---------------------------------------------------------------------------
+
+const mockDockerImages: DockerImage[] = [
+  { id: '11111111-1111-4111-8111-111111111111', name: 'Node.js', image: 'afk-node:latest', isDefault: true, isBuiltIn: true, status: 'AVAILABLE', errorMessage: null, createdAt: now, updatedAt: now },
+  { id: '22222222-2222-4222-8222-222222222222', name: 'Python', image: 'afk-python:latest', isDefault: false, isBuiltIn: true, status: 'AVAILABLE', errorMessage: null, createdAt: now, updatedAt: now },
+  { id: '33333333-3333-4333-8333-333333333333', name: 'Go', image: 'afk-go:latest', isDefault: false, isBuiltIn: true, status: 'AVAILABLE', errorMessage: null, createdAt: now, updatedAt: now },
+  { id: '44444444-4444-4444-8444-444444444444', name: '.NET', image: 'afk-dotnet:latest', isDefault: false, isBuiltIn: true, status: 'AVAILABLE', errorMessage: null, createdAt: now, updatedAt: now },
+];
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -89,6 +101,13 @@ const withCreateSessionContext = (config: StoryConfig = {}) => {
       loading: false,
       error: null,
       fetchSettings: noop,
+    });
+
+    useDockerImagesStore.setState({
+      images: mockDockerImages,
+      loading: false,
+      error: null,
+      fetchImages: noop,
     });
 
     return (

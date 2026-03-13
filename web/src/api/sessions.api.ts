@@ -36,6 +36,8 @@ export const sessionsApi = {
       branch: sessionData.branch || 'main',
       port: sessionData.port,
       terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -56,6 +58,8 @@ export const sessionsApi = {
       branch: sessionData.branch || 'main',
       port: sessionData.port,
       terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -77,6 +81,8 @@ export const sessionsApi = {
       branch: sessionData.branch || 'main',
       port: sessionData.port,
       terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;

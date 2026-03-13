@@ -304,6 +304,21 @@ const Dashboard: React.FC = () => {
                       {session.repoUrl.split('/').pop()?.replace('.git', '')}
                     </Typography>
                   )}
+                  {session.imageName && (
+                    <Typography
+                      sx={{
+                        fontSize: '0.6875rem',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        color: afkColors.textTertiary,
+                        mt: 0.5,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {session.imageName}
+                    </Typography>
+                  )}
                 </Box>
 
                 {/* Status dot + text */}

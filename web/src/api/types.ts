@@ -25,12 +25,15 @@ export interface Session {
   branch: string;
   port?: number;
   terminalUrl?: string;
+  imageId?: string;
+  imageName?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateSessionRequest {
   name?: string;
+  imageId: string;
   repoUrl?: string;
   branch?: string;
   gitUserName?: string;

@@ -44,6 +44,7 @@ export class DockerEngineService {
     try {
       // Verify Docker connectivity first
       await this.ping();
+      await this.ensureImageAvailable(options.imageName);
 
       const container = await this.docker.createContainer({
         Image: options.imageName,
@@ -93,6 +94,51 @@ export class DockerEngineService {
       this.logger.error('Failed to create container', error);
       throw new Error(`Container creation failed: ${error.message}`);
     }
+  }
+
+  private async ensureImageAvailable(imageName: string): Promise<void> {
+    try {
+      await this.docker.getImage(imageName).inspect();
+    } catch (error: any) {
+      if (error?.statusCode !== 404) {
+        throw error;
+      }
+
+      this.logger.log('Image not found locally, pulling', { imageName });
+      await this.pullImage(imageName);
+    }
+  }
+
+  private async pullImage(imageName: string): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      this.docker.pull(
+        imageName,
+        (pullError: any, stream: NodeJS.ReadableStream) => {
+          if (pullError) {
+            reject(pullError);
+            return;
+          }
+
+          this.docker.modem.followProgress(
+            stream,
+            (progressError: any) => {
+              if (progressError) {
+                reject(progressError);
+                return;
+              }
+
+              this.logger.log('Image pulled successfully', { imageName });
+              resolve();
+            },
+            (event: any) => {
+              if (event?.status) {
+                this.logger.debug(`Pull ${imageName}: ${event.status}`);
+              }
+            },
+          );
+        },
+      );
+    });
   }
 
   async stopContainer(containerId: string): Promise<void> {

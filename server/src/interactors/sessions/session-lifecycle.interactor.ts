@@ -152,7 +152,7 @@ export class SessionLifecycleInteractor {
     let imageName = session.imageName;
     if (!imageName) {
       const defaultImage = await this.dockerImageRepository.findDefault();
-      imageName = defaultImage?.image ?? 'afk-node:latest';
+      imageName = defaultImage?.image ?? 'awayfromklaude/afk-node:latest';
     }
 
     // Create new container with same configuration

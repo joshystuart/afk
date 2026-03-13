@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and push AFK images
         env:
-          DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_NAMESPACE: awayfromklaude
         run: |
           set -euo pipefail
 

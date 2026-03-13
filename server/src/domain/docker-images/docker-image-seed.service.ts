@@ -8,15 +8,46 @@ interface BuiltInImage {
   name: string;
   image: string;
   isDefault: boolean;
+  legacyImage: string;
 }
 
 const BUILT_IN_IMAGES: BuiltInImage[] = [
-  { name: 'Node.js v24', image: 'afk-node:latest', isDefault: true },
-  { name: 'Python v3.13', image: 'afk-python:latest', isDefault: false },
-  { name: 'Go v1.26', image: 'afk-go:latest', isDefault: false },
-  { name: 'Rust', image: 'afk-rust:latest', isDefault: false },
-  { name: '.NET v10', image: 'afk-dotnet:latest', isDefault: false },
-  { name: 'Java v21', image: 'afk-java:latest', isDefault: false },
+  {
+    name: 'Node.js v24',
+    image: 'awayfromklaude/afk-node:latest',
+    isDefault: true,
+    legacyImage: 'afk-node:latest',
+  },
+  {
+    name: 'Python v3.13',
+    image: 'awayfromklaude/afk-python:latest',
+    isDefault: false,
+    legacyImage: 'afk-python:latest',
+  },
+  {
+    name: 'Go v1.26',
+    image: 'awayfromklaude/afk-go:latest',
+    isDefault: false,
+    legacyImage: 'afk-go:latest',
+  },
+  {
+    name: 'Rust',
+    image: 'awayfromklaude/afk-rust:latest',
+    isDefault: false,
+    legacyImage: 'afk-rust:latest',
+  },
+  {
+    name: '.NET v10',
+    image: 'awayfromklaude/afk-dotnet:latest',
+    isDefault: false,
+    legacyImage: 'afk-dotnet:latest',
+  },
+  {
+    name: 'Java v21',
+    image: 'awayfromklaude/afk-java:latest',
+    isDefault: false,
+    legacyImage: 'afk-java:latest',
+  },
 ];
 
 @Injectable()
@@ -31,13 +62,22 @@ export class DockerImageSeedService implements OnModuleInit {
 
   private async seedBuiltInImages(): Promise<void> {
     for (const entry of BUILT_IN_IMAGES) {
-      const existing = await this.repository.findByImage(entry.image);
+      const existing =
+        (await this.repository.findByImage(entry.image)) ||
+        (await this.repository.findByImage(entry.legacyImage));
       if (existing) {
-        if (existing.name !== entry.name) {
+        const hasChanges =
+          existing.name !== entry.name ||
+          existing.image !== entry.image ||
+          existing.isBuiltIn !== true;
+
+        if (hasChanges) {
           existing.name = entry.name;
+          existing.image = entry.image;
+          existing.isBuiltIn = true;
           await this.repository.save(existing);
           this.logger.log(
-            `Updated built-in image name: ${entry.name} (${entry.image})`,
+            `Updated built-in image metadata: ${entry.name} (${entry.image})`,
           );
         }
         continue;

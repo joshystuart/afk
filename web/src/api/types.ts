@@ -149,3 +149,22 @@ export interface ChatHistoryResponse {
   isExecuting: boolean;
   activeMessageId: string | null;
 }
+
+export type DockerImageStatus = 'AVAILABLE' | 'PULLING' | 'ERROR';
+
+export interface DockerImage {
+  id: string;
+  name: string;
+  image: string;
+  isDefault: boolean;
+  isBuiltIn: boolean;
+  status: DockerImageStatus;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDockerImageRequest {
+  name: string;
+  image: string;
+}

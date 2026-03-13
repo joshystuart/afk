@@ -13,6 +13,7 @@ import { LoggerModule } from './libs/logger/logger.module';
 import { GitHubModule } from './libs/github/github.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DockerImagesModule } from './domain/docker-images/docker-images.module';
+import { DockerImagesInteractorModule } from './interactors/docker-images/docker-images.module';
 
 @Module({})
 export class AppModule {
@@ -31,6 +32,7 @@ export class AppModule {
         HealthModule,
         GitHubModule,
         DockerImagesModule,
+        DockerImagesInteractorModule,
       ],
       controllers: [],
       providers: [ResponseService, HttpExceptionFilter],

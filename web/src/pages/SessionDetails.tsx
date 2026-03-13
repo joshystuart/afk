@@ -78,7 +78,8 @@ const SessionDetails: React.FC = () => {
   const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
 
   const isRunning = session?.status === SessionStatus.RUNNING;
-  const gitStatus = useGitStatus(id || null, isRunning ?? false);
+  const isReady = isRunning && healthCheck.allReady;
+  const gitStatus = useGitStatus(id || null, isReady);
 
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false);
@@ -471,6 +472,93 @@ const SessionDetails: React.FC = () => {
           isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
         />
         {renameDialog}
+      </>
+    );
+  }
+
+  if (session.status === SessionStatus.RUNNING && !healthCheck.allReady) {
+    return (
+      <>
+        <Box
+          sx={{
+            height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: afkColors.background,
+          }}
+        >
+          <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '1rem',
+                fontWeight: 600,
+                color: afkColors.textPrimary,
+                mb: 3,
+              }}
+            >
+              {session.name || session.id.slice(0, 12)}
+            </Typography>
+
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.5,
+                mb: 1.5,
+              }}
+            >
+              <DotIcon
+                sx={{
+                  fontSize: 10,
+                  color: afkColors.accent,
+                  animation: 'pulse-dot 2s ease-in-out infinite',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  color: afkColors.textPrimary,
+                }}
+              >
+                Initializing session...
+              </Typography>
+            </Box>
+
+            <Typography
+              variant="body2"
+              sx={{ color: afkColors.textTertiary, mb: 4 }}
+            >
+              Setting up environment
+            </Typography>
+
+            <Button
+              size="small"
+              startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
+              onClick={handleStopSessionClick}
+              disabled={isStopping}
+              sx={{
+                fontSize: '0.75rem',
+                color: afkColors.warning,
+              }}
+            >
+              {isStopping ? 'Stopping...' : 'Stop'}
+            </Button>
+          </Box>
+        </Box>
+
+        <ApprovalModal
+          open={approvalModal.open}
+          onClose={handleModalClose}
+          onConfirm={handleModalConfirm}
+          type={approvalModal.type}
+          sessionName={approvalModal.sessionName}
+          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+        />
       </>
     );
   }

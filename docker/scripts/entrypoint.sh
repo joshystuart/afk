@@ -52,26 +52,22 @@ SSH_SETUP_DONE=false
 GIT_SETUP_DONE=false
 WORKING_DIR="$WORKSPACE_DIR"
 
-# Setup SSH if SSH key is provided
 setup_ssh() {
-    if [ -n "$SSH_PRIVATE_KEY" ]; then
-        log_step "Setting up SSH authentication"
-        
-        if [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
-            if bash "$SCRIPT_DIR/setup-ssh.sh"; then
+    log_step "Setting up SSH known hosts and configuration"
+    
+    if [ -f "$SCRIPT_DIR/setup-ssh.sh" ]; then
+        if bash "$SCRIPT_DIR/setup-ssh.sh"; then
+            if [ -n "$SSH_PRIVATE_KEY" ]; then
                 SSH_SETUP_DONE=true
-                log_info "SSH setup completed successfully"
-            else
-                log_error "SSH setup failed"
-                return 1
             fi
+            log_info "SSH setup completed successfully"
         else
-            log_error "SSH setup script not found: $SCRIPT_DIR/setup-ssh.sh"
+            log_error "SSH setup failed"
             return 1
         fi
     else
-        log_info "No SSH key provided, skipping SSH setup"
-        log_info "Only public repositories will be accessible"
+        log_error "SSH setup script not found: $SCRIPT_DIR/setup-ssh.sh"
+        return 1
     fi
 }
 

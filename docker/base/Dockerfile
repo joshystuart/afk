@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ripgrep \
   inotify-tools \
   ca-certificates \
+  make \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN TTYD_VERSION=$(curl -s https://api.github.com/repos/tsl0922/ttyd/releases/latest | grep tag_name | cut -d '"' -f 4) && \

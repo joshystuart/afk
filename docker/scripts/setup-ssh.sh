@@ -200,20 +200,8 @@ main() {
     # Create SSH directory
     setup_ssh_directory
     
-    # Check if SSH key is provided
-    if [ -z "$ssh_key" ]; then
-        log_warning "No SSH_PRIVATE_KEY provided, skipping SSH setup"
-        log_info "Only public repositories will be accessible"
-        return 0
-    fi
-    
-    # Install SSH key
-    if ! install_ssh_key "$ssh_key"; then
-        log_error "Failed to install SSH key"
-        return 1
-    fi
-    
-    # Setup known hosts
+    # Always set up known hosts and SSH config so host key verification
+    # doesn't block connections (needed even when keys are mounted via volumes)
     setup_known_hosts
     
     # Add custom host if provided
@@ -223,8 +211,20 @@ main() {
             log_warning "Failed to add custom host to known hosts"
     fi
     
-    # Configure SSH client
     configure_ssh_client
+    
+    # Check if SSH key is provided
+    if [ -z "$ssh_key" ]; then
+        log_warning "No SSH_PRIVATE_KEY provided, skipping key installation"
+        log_info "SSH host keys configured, but authentication requires a private key"
+        return 0
+    fi
+    
+    # Install SSH key
+    if ! install_ssh_key "$ssh_key"; then
+        log_error "Failed to install SSH key"
+        return 1
+    fi
     
     # Start SSH agent
     start_ssh_agent

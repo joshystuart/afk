@@ -134,6 +134,7 @@ const CreateSession: React.FC = () => {
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateSessionForm>({
     defaultValues: {
@@ -143,6 +144,15 @@ const CreateSession: React.FC = () => {
       branch: 'main',
     },
   });
+
+  const repoUrlValue = watch('repoUrl');
+
+  const isSshUrlWithoutKey = useMemo(() => {
+    if (!repoUrlValue) return false;
+    const isSsh =
+      repoUrlValue.startsWith('git@') || repoUrlValue.startsWith('ssh://');
+    return isSsh && !settings?.hasSshPrivateKey;
+  }, [repoUrlValue, settings?.hasSshPrivateKey]);
 
   // Set imageId to default image once loaded
   useEffect(() => {
@@ -597,6 +607,20 @@ const CreateSession: React.FC = () => {
                     />
                   )}
                 />
+
+                {isSshUrlWithoutKey && (
+                  <Alert severity="warning" sx={{ mt: -0.5 }}>
+                    <Typography variant="body2">
+                      SSH URLs require an SSH private key to authenticate. Add
+                      one in{' '}
+                      <Link to={ROUTES.SETTINGS} style={{ color: 'inherit', fontWeight: 600 }}>
+                        Settings
+                      </Link>
+                      , or use an HTTPS URL instead (e.g.{' '}
+                      <code>https://github.com/...</code>).
+                    </Typography>
+                  </Alert>
+                )}
 
                 <Controller
                   name="branch"

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
 import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
 import { DockerImage } from '../../domain/docker-images/docker-image.entity';
@@ -8,7 +8,7 @@ import { DockerOptions } from 'dockerode';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
-export class DockerImageService {
+export class DockerImageService implements OnModuleInit {
   private docker: Dockerode;
   private readonly logger = new Logger(DockerImageService.name);
 
@@ -23,6 +23,37 @@ export class DockerImageService {
       dockerOptions.socketPath = config.socketPath;
     }
     this.docker = new Dockerode(dockerOptions);
+  }
+
+  async onModuleInit(): Promise<void> {
+    await this.reconcileImageStatuses();
+  }
+
+  private async reconcileImageStatuses(): Promise<void> {
+    const allImages = await this.repository.findAll();
+    const availableImages = allImages.filter(
+      (img) => img.status === DockerImageStatus.AVAILABLE,
+    );
+
+    for (const image of availableImages) {
+      const existsLocally = await this.imageExistsLocally(image.image);
+      if (!existsLocally) {
+        this.logger.warn(
+          `Image "${image.image}" marked as AVAILABLE but not found locally — resetting to NOT_PULLED`,
+        );
+        image.markAsNotPulled();
+        await this.repository.save(image);
+      }
+    }
+  }
+
+  private async imageExistsLocally(imageName: string): Promise<boolean> {
+    try {
+      await this.docker.getImage(imageName).inspect();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async listAll(): Promise<DockerImage[]> {

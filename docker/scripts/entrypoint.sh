@@ -46,6 +46,8 @@ GIT_USER_NAME="${GIT_USER_NAME:-Claude User}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-claude@example.com}"
 WORKSPACE_DIR="${WORKSPACE_DIR:-$DEFAULT_WORKSPACE}"
 TERMINAL_PORT="${TERMINAL_PORT:-$DEFAULT_TERMINAL_PORT}"
+SESSION_NAME="${SESSION_NAME:-}"
+IMAGE_NAME="${IMAGE_NAME:-}"
 
 # State tracking
 SSH_SETUP_DONE=false
@@ -168,6 +170,13 @@ start_terminal() {
     
     log_info "Starting ttyd on port $TERMINAL_PORT (foreground)"
     
+    local terminal_title="AFK"
+    if [ -n "$SESSION_NAME" ] && [ -n "$IMAGE_NAME" ]; then
+        terminal_title="$SESSION_NAME ($IMAGE_NAME)"
+    elif [ -n "$SESSION_NAME" ]; then
+        terminal_title="$SESSION_NAME"
+    fi
+    
     exec ttyd \
         --port "$TERMINAL_PORT" \
         --writable \
@@ -176,6 +185,7 @@ start_terminal() {
         --client-option disableLeaveAlert=true \
         --client-option disableResizeOverlay=true \
         --client-option disableReconnect=true \
+        --client-option titleFixed="$terminal_title" \
         --client-option theme='{"background":"#09090b","foreground":"#fafafa","cursor":"#10b981","cursorAccent":"#09090b","selectionBackground":"#18181b","selectionForeground":"#fafafa","black":"#09090b","red":"#ef4444","green":"#10b981","yellow":"#f59e0b","blue":"#3b82f6","magenta":"#8b5cf6","cyan":"#06b6d4","white":"#fafafa","brightBlack":"#52525b","brightRed":"#f87171","brightGreen":"#34d399","brightYellow":"#fbbf24","brightBlue":"#60a5fa","brightMagenta":"#a78bfa","brightCyan":"#22d3ee","brightWhite":"#ffffff"}' \
         --client-option fontSize=14 \
         --client-option fontFamily="'Menlo', 'Cascadia Code', 'Consolas', 'Ubuntu Mono', 'DejaVu Sans Mono', monospace" \

@@ -11,12 +11,12 @@ interface BuiltInImage {
 }
 
 const BUILT_IN_IMAGES: BuiltInImage[] = [
-  { name: 'Node.js', image: 'afk-node:latest', isDefault: true },
-  { name: 'Python', image: 'afk-python:latest', isDefault: false },
-  { name: 'Go', image: 'afk-go:latest', isDefault: false },
+  { name: 'Node.js v24', image: 'afk-node:latest', isDefault: true },
+  { name: 'Python v3.13', image: 'afk-python:latest', isDefault: false },
+  { name: 'Go v1.26', image: 'afk-go:latest', isDefault: false },
   { name: 'Rust', image: 'afk-rust:latest', isDefault: false },
-  { name: '.NET', image: 'afk-dotnet:latest', isDefault: false },
-  { name: 'Java', image: 'afk-java:latest', isDefault: false },
+  { name: '.NET v10', image: 'afk-dotnet:latest', isDefault: false },
+  { name: 'Java v21', image: 'afk-java:latest', isDefault: false },
 ];
 
 @Injectable()
@@ -33,6 +33,13 @@ export class DockerImageSeedService implements OnModuleInit {
     for (const entry of BUILT_IN_IMAGES) {
       const existing = await this.repository.findByImage(entry.image);
       if (existing) {
+        if (existing.name !== entry.name) {
+          existing.name = entry.name;
+          await this.repository.save(existing);
+          this.logger.log(
+            `Updated built-in image name: ${entry.name} (${entry.image})`,
+          );
+        }
         continue;
       }
 

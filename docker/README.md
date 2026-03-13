@@ -1,51 +1,115 @@
-# AFK Docker Container
+# AFK Docker Images
 
-AFK (Away From Keyboard) runs Claude Code sessions in isolated Docker containers. Each container provides a chat-based interface to Claude Code and a web terminal for manual access, with automatic git integration.
+AFK uses a layered Docker image architecture. A **base image** provides Claude Code, ttyd (web terminal), git, and essential tools. **Language images** extend the base with specific runtimes and package managers.
 
-## Features
+## Image Architecture
 
-- **Chat-based Claude Code**: Interact with Claude Code through the web UI chat pane -- no terminal required
-- **Web Terminal**: Access a shell inside the container via ttyd for manual operations
-- **Automatic Git Integration**: Clone repositories on container startup
-- **SSH Authentication**: Support for private repositories with SSH keys
-- **Persistent Chat History**: Conversations are stored and restored when sessions are stopped and restarted
-- **Persistent Claude State**: Claude's project context (`.claude/`) is stored in a Docker volume so it survives restarts
-
-## Quick Start
-
-### 1. Basic Usage (No Git Repository)
-
-Start a container:
-
-```bash
-docker-compose up
+```
+afk-base:latest        (Debian Bookworm Slim + Claude Code + ttyd + tools)
+├── afk-node:latest    (Node.js 24 + yarn + pnpm)
+├── afk-python:latest  (Python 3.13 + pip + poetry)
+├── afk-go:latest      (Go 1.26)
+├── afk-rust:latest    (Rust via rustup)
+├── afk-dotnet:latest  (.NET 10)
+└── afk-java:latest    (Java 21 Temurin + Gradle 9.4 + Maven 3.9)
 ```
 
-Access the terminal at: http://localhost:7681
+### Base Image
 
-### 2. With Public Repository
+The base image (`afk-base:latest`) includes:
 
-Clone a public repository on startup:
+- **Debian Bookworm Slim** as the OS
+- **Claude Code CLI** (configurable version, default 2.1.42)
+- **ttyd** for web terminal access
+- **Git**, SSH client, tmux, ripgrep, fzf, gh (GitHub CLI), jq, curl, make
+- **inotify-tools** for file-system watching (used by git status tracking)
+- **iptables/ipset/iproute2** for network configuration
+- Non-root user `afk` (UID/GID 1000)
+- Entrypoint script that handles SSH setup, git clone, git config, and tmux + ttyd startup
+
+### Language Images
+
+Each language image extends `afk-base` and adds:
+
+| Image        | Runtime                              | Package Managers      |
+| ------------ | ------------------------------------ | --------------------- |
+| `afk-node`   | Node.js 24                           | npm, yarn, pnpm       |
+| `afk-python` | Python 3.13.3 (compiled from source) | pip, poetry           |
+| `afk-go`     | Go 1.26.1                            | go modules            |
+| `afk-rust`   | Rust (latest stable via rustup)      | cargo                 |
+| `afk-dotnet` | .NET 10                              | dotnet CLI            |
+| `afk-java`   | Java 21 (Eclipse Temurin)            | Gradle 9.4, Maven 3.9 |
+
+## Building Images
+
+### Using Make (recommended)
 
 ```bash
-REPO_URL=https://github.com/username/repository.git docker-compose up
+cd docker
+
+# Build everything (base + all language images)
+make all
+
+# Build the base image only
+make base
+
+# Build a specific language image (automatically builds base first)
+make node
+make python
+make go
+make rust
+make dotnet
+make java
+
+# Remove all afk images
+make clean
 ```
 
-### 3. With Private Repository (SSH)
-
-For private repositories, provide an SSH private key:
+### Using npm
 
 ```bash
-REPO_URL=git@github.com:username/private-repo.git \
-SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" \
-docker-compose up
+cd docker
+
+# Build all images
+npm run build
+
+# Build specific images
+npm run build:base
+npm run build:node
+npm run build:python
+npm run build:go
+npm run build:rust
+npm run build:dotnet
+npm run build:java
+
+# Clean up
+npm run clean
 ```
+
+### Using Docker Compose
+
+```bash
+cd docker
+
+# Build all images via compose
+docker compose build
+```
+
+## How Containers Work
+
+Each AFK session runs in its own Docker container managed by the server. The container lifecycle:
+
+1. **Startup**: The entrypoint script runs SSH setup (if configured), clones the repository, configures git identity, and starts tmux + ttyd
+2. **Claude Code**: Invoked on-demand via `docker exec` when you send chat messages -- it does not run persistently in the container
+3. **Chat history**: Stored in the AFK server database, so conversations survive session stop/start cycles
+4. **Claude state**: The `.claude/` directory is stored in a named Docker volume (`afk-claude-{sessionId}`), preserving project context across restarts
+5. **Tmux state**: Stored in a separate named volume (`afk-tmux-{sessionId}`) for terminal session persistence
 
 ## Environment Variables
 
 ### Required
 
-- `CLAUDE_CODE_OAUTH_TOKEN` - Your Claude Code OAuth token
+- `CLAUDE_CODE_OAUTH_TOKEN` - Your Claude Code OAuth token (set via the AFK Settings page)
 
 ### Git Integration (Optional)
 
@@ -61,126 +125,86 @@ docker-compose up
 - `WORKSPACE_DIR` - Working directory inside container (default: `/workspace`)
 - `TERMINAL_PORT` - Port for the web terminal (default: `7681`)
 
-## How It Works
+These are set automatically by the AFK server when creating sessions. You normally don't need to set them manually.
 
-Each AFK session runs in its own Docker container. The container:
+## Custom Images
 
-1. **On startup**: Sets up SSH (if configured), clones the repository, configures git identity, and starts a web terminal via ttyd
-2. **Claude Code**: Is invoked on-demand via `docker exec` when you send messages through the chat UI -- it does not run persistently
-3. **Chat history**: Is stored in the AFK server database, so conversations survive session stop/start cycles
-4. **Claude state**: The `.claude/` directory is stored in a named Docker volume (`afk-claude-{sessionId}`), preserving project context across restarts
+You can register custom Docker images through the AFK server API or web interface. Custom images should ideally extend `afk-base:latest` to include Claude Code and the entrypoint scripts, but any image that provides a compatible environment will work.
 
-## Usage Examples
-
-### Public GitHub Repository
-
-```bash
-REPO_URL=https://github.com/facebook/react.git \
-REPO_BRANCH=main \
-GIT_USER_NAME="Your Name" \
-GIT_USER_EMAIL="your.email@example.com" \
-docker-compose up
-```
-
-### Private Repository with SSH
-
-```bash
-export SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)"
-
-REPO_URL=git@github.com:your-org/private-repo.git \
-SSH_PRIVATE_KEY=$SSH_PRIVATE_KEY \
-GIT_USER_NAME="Your Name" \
-GIT_USER_EMAIL="your.email@example.com" \
-docker-compose up
-```
-
-### Custom Git Host (GitLab/Bitbucket)
-
-```bash
-# GitLab
-REPO_URL=git@gitlab.com:username/repo.git \
-GIT_SSH_HOST=gitlab.com \
-SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" \
-docker-compose up
-
-# Bitbucket
-REPO_URL=git@bitbucket.org:username/repo.git \
-GIT_SSH_HOST=bitbucket.org \
-SSH_PRIVATE_KEY="$(cat ~/.ssh/id_ed25519)" \
-docker-compose up
-```
-
-## Development
-
-### Building the Image
-
-```bash
-docker-compose build
-```
-
-### Debugging
-
-View container logs:
-
-```bash
-docker-compose logs -f
-```
-
-Access container shell:
-
-```bash
-docker-compose exec afk-terminal bash
-```
+Built-in images (Node.js, Python, Go, Rust, .NET, Java) are seeded automatically on server startup. Node.js is the default image for new sessions.
 
 ## File Structure
 
 ```
 docker/
-   Dockerfile              # Container definition
-   docker-compose.yml      # Service configuration
-   scripts/
-      init-git.sh         # Git repository initialization
-      setup-ssh.sh        # SSH key management
-      entrypoint.sh       # Container entrypoint and startup orchestration
-      .tmux.conf          # Tmux configuration for the terminal session
-   README.md              # This file
+├── base/
+│   └── Dockerfile          # Base image (Debian + Claude Code + ttyd + tools)
+├── node/
+│   └── Dockerfile          # Node.js language image
+├── python/
+│   └── Dockerfile          # Python language image
+├── go/
+│   └── Dockerfile          # Go language image
+├── rust/
+│   └── Dockerfile          # Rust language image
+├── dotnet/
+│   └── Dockerfile          # .NET language image
+├── java/
+│   └── Dockerfile          # Java language image
+├── scripts/
+│   ├── entrypoint.sh       # Container entrypoint and startup orchestration
+│   ├── init-git.sh         # Git repository initialization
+│   ├── setup-ssh.sh        # SSH key management
+│   └── .tmux.conf          # Tmux configuration
+├── .claude.json            # Claude Code project configuration
+├── Dockerfile              # Legacy single image (Node.js-based, deprecated)
+├── docker-compose.yml      # Compose definitions for all images
+├── Makefile                # Build targets for all images
+├── package.json            # npm scripts wrapping Make targets
+└── README.md               # This file
 ```
 
 ## Security Considerations
 
 ### SSH Key Management
 
-- SSH keys are securely handled via environment variables
-- Keys are automatically cleaned up on container exit
-- Keys are stored only in memory and `~/.ssh/`
-- Never commit encoded keys to version control
+- SSH keys are passed via environment variables and set up in `~/.ssh/`
+- Keys are configured with proper permissions (700 for `.ssh/`, 600 for key files)
+- Never commit SSH keys to version control
+
+### Container Isolation
+
+- Each session runs in its own container with a non-root user (`afk`)
+- Containers have their own filesystem, network, and process namespace
+- Named volumes persist only Claude state and tmux sessions between restarts
+- Workspace content is ephemeral unless committed and pushed via git
 
 ### Best Practices
 
-1. **Use Environment Files**: Create a `.env` file for local development:
-
-   ```bash
-   CLAUDE_CODE_OAUTH_TOKEN=your_token_here
-   REPO_URL=git@github.com:username/repo.git
-   SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)"
-   GIT_USER_NAME=Your Name
-   GIT_USER_EMAIL=your.email@example.com
-   ```
-
-2. **Key Rotation**: Regularly rotate SSH keys and update the environment variable
-
-3. **Minimal Permissions**: Use deploy keys or SSH keys with minimal required permissions
+1. **Use GitHub OAuth**: Prefer connecting GitHub over SSH keys for simpler and more secure repository access
+2. **Separate SSH Keys**: If using SSH, generate a dedicated key for AFK containers
+3. **Key Rotation**: Regularly rotate SSH keys and OAuth tokens
+4. **Minimal Permissions**: Use deploy keys or tokens with minimal required permissions
 
 ## Troubleshooting
 
 ### Container Won't Start
 
-- Check that `CLAUDE_CODE_OAUTH_TOKEN` is set
-- Verify Docker and Docker Compose are installed
-- Check port 7681 is not already in use
+- Check that Docker images are built (`make all` in the `docker/` directory)
+- Verify Docker is running and accessible
+- Check the port range (default 7681-7780) is not already in use
+- Review server logs for container creation errors
 
 ### Git Clone Fails
 
-- Verify `REPO_URL` is correct and accessible
-- For SSH repos, ensure `SSH_PRIVATE_KEY` is set correctly
-- Check the container logs: `docker-compose logs -f`
+- Verify the repository URL is correct and accessible
+- For SSH repos, ensure an SSH private key is configured in Settings
+- For GitHub repos via OAuth, ensure your GitHub account is connected in Settings
+- Check container logs via the session log viewer in the web interface
+
+### Claude Code Not Responding
+
+- Verify your Claude OAuth token is set in Settings
+- Check the container is in `RUNNING` state
+- Review chat error messages for specific issues
+- Try cancelling any stuck execution and sending a new message

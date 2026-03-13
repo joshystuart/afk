@@ -206,6 +206,16 @@ const SessionDetails: React.FC = () => {
     };
   }, [id, subscribeToSession, unsubscribeFromSession]);
 
+  React.useEffect(() => {
+    if (!session) return;
+    const name = session.name || session.id.slice(0, 8);
+    const image = session.imageName;
+    document.title = image ? `${name} (${image}) - AFK` : `${name} - AFK`;
+    return () => {
+      document.title = 'AFK';
+    };
+  }, [session?.name, session?.imageName, session?.id]);
+
   // Loading state
   if (isLoading || sessionQuery?.isLoading) {
     return (

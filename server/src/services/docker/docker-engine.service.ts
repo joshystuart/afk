@@ -324,6 +324,8 @@ export class DockerEngineService {
       `GIT_USER_NAME=${options.gitUserName}`,
       `GIT_USER_EMAIL=${options.gitUserEmail}`,
       `TERMINAL_PORT=${options.ports.port}`,
+      `SESSION_NAME=${options.sessionName}`,
+      `IMAGE_NAME=${options.imageName}`,
       `CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1`,
     ];
 

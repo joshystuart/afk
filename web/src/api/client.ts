@@ -32,6 +32,10 @@ apiClient.interceptors.response.use(
       useAuthStore.getState().logout();
       window.location.href = '/login';
     }
+    const serverMessage = error.response?.data?.error?.message;
+    if (serverMessage) {
+      error.message = serverMessage;
+    }
     return Promise.reject(error);
   },
 );

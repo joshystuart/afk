@@ -557,22 +557,26 @@ const SessionDetails: React.FC = () => {
                   : 'Session is not ready yet.'}
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
               {canStart && (
                 <Button
                   variant="contained"
-                  startIcon={<PlayIcon />}
+                  size="small"
+                  startIcon={<PlayIcon sx={{ fontSize: '16px !important' }} />}
                   onClick={() => startSession(session!.id)}
                   disabled={isStarting}
+                  sx={{ fontSize: '0.8125rem' }}
                 >
-                  {isStarting ? 'Starting...' : 'Start Session'}
+                  {isStarting ? 'Starting...' : 'Start'}
                 </Button>
               )}
 
               <Button
                 variant="outlined"
-                startIcon={<DuplicateIcon />}
+                size="small"
+                startIcon={<DuplicateIcon sx={{ fontSize: '16px !important' }} />}
                 onClick={handleDuplicateSession}
+                sx={{ fontSize: '0.8125rem' }}
               >
                 Duplicate
               </Button>
@@ -580,10 +584,12 @@ const SessionDetails: React.FC = () => {
               {canDelete && (
                 <Button
                   variant="outlined"
-                  startIcon={<DeleteIcon />}
+                  size="small"
+                  startIcon={<DeleteIcon sx={{ fontSize: '16px !important' }} />}
                   onClick={handleDeleteSessionClick}
                   disabled={isDeleting}
                   sx={{
+                    fontSize: '0.8125rem',
                     borderColor: afkColors.danger,
                     color: afkColors.danger,
                     '&:hover': {

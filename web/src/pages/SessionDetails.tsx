@@ -24,6 +24,7 @@ import {
   Terminal as TerminalIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  ContentCopy as DuplicateIcon,
   FiberManualRecord as DotIcon,
   CloudUpload as PushIcon,
 } from '@mui/icons-material';
@@ -126,6 +127,21 @@ const SessionDetails: React.FC = () => {
       type: 'delete',
       sessionId: session.id,
       sessionName: session.name || session.id.slice(0, 12),
+    });
+  };
+
+  const handleDuplicateSession = () => {
+    if (!session) return;
+    navigate(ROUTES.CREATE_SESSION, {
+      state: {
+        duplicateFrom: {
+          name: session.name,
+          imageId: session.imageId,
+          repoUrl: session.repoUrl,
+          branch: session.branch,
+          hostMountPath: session.hostMountPath,
+        },
+      },
     });
   };
 
@@ -553,6 +569,14 @@ const SessionDetails: React.FC = () => {
                 </Button>
               )}
 
+              <Button
+                variant="outlined"
+                startIcon={<DuplicateIcon />}
+                onClick={handleDuplicateSession}
+              >
+                Duplicate
+              </Button>
+
               {canDelete && (
                 <Button
                   variant="outlined"
@@ -784,6 +808,22 @@ const SessionDetails: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Tooltip title="Duplicate session">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handleDuplicateSession}
+                  sx={{
+                    p: 0.5,
+                    color: afkColors.textTertiary,
+                    '&:hover': { color: afkColors.textSecondary },
+                  }}
+                >
+                  <DuplicateIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+
             <Tooltip title="Open terminal in popup">
               <span>
                 <IconButton

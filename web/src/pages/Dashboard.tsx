@@ -13,6 +13,7 @@ import {
   Stop as StopIcon,
   Visibility as ViewIcon,
   Delete as DeleteIcon,
+  ContentCopy as DuplicateIcon,
   FiberManualRecord as DotIcon,
 } from '@mui/icons-material';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -57,6 +58,22 @@ const Dashboard: React.FC = () => {
 
   const handleViewSession = (sessionId: string) => {
     navigate(ROUTES.getSessionDetails(sessionId));
+  };
+
+  const handleDuplicateSession = (sessionId: string) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+    navigate(ROUTES.CREATE_SESSION, {
+      state: {
+        duplicateFrom: {
+          name: session.name,
+          imageId: session.imageId,
+          repoUrl: session.repoUrl,
+          branch: session.branch,
+          hostMountPath: session.hostMountPath,
+        },
+      },
+    });
   };
 
   const handleStopSessionClick = (sessionId: string) => {
@@ -453,6 +470,21 @@ const Dashboard: React.FC = () => {
                         <DeleteIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     )}
+
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDuplicateSession(session.id);
+                      }}
+                      title="Duplicate"
+                      sx={{
+                        color: afkColors.textTertiary,
+                        '&:hover': { color: afkColors.textSecondary },
+                      }}
+                    >
+                      <DuplicateIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
 
                     <IconButton
                       size="small"

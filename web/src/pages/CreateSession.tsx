@@ -23,14 +23,33 @@ import {
   FolderOpen as FolderOpenIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { useGitHub } from '../hooks/useGitHub';
-import { type CreateSessionRequest, type GitHubRepo } from '../api/types';
+import {
+  type CreateSessionRequest,
+  type GitHubRepo,
+  type Session,
+} from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
+
+interface DuplicateFromState {
+  duplicateFrom: Pick<
+    Session,
+    'name' | 'imageId' | 'repoUrl' | 'branch' | 'hostMountPath'
+  >;
+}
+
+function makeDuplicateName(name: string | undefined): string {
+  if (!name) return '';
+  const suffix = ' (copy)';
+  const maxLen = 50;
+  if (name.length + suffix.length <= maxLen) return `${name}${suffix}`;
+  return `${name.slice(0, maxLen - suffix.length)}${suffix}`;
+}
 
 type RepoSource = 'github' | 'manual';
 
@@ -43,19 +62,30 @@ interface CreateSessionForm {
 
 const CreateSession: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const duplicateFrom = (location.state as DuplicateFromState | null)
+    ?.duplicateFrom;
+
   const { createSession, isCreating, createError, clearError } = useSession();
   const { settings, fetchSettings } = useSettingsStore();
   const { isConnected, useRepos } = useGitHub();
   const { sessions } = useSession();
   const { images, fetchImages } = useDockerImagesStore();
 
+  const hasDuplicateRepo = !!duplicateFrom?.repoUrl;
   const [repoSource, setRepoSource] = useState<RepoSource>(
     isConnected ? 'github' : 'manual',
   );
   const [searchInput, setSearchInput] = useState('');
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
-  const [mountToHost, setMountToHost] = useState(false);
-  const [hostMountPathOverride, setHostMountPathOverride] = useState('');
+  const [mountToHost, setMountToHost] = useState(
+    !!duplicateFrom?.hostMountPath,
+  );
+  const [hostMountPathOverride, setHostMountPathOverride] = useState(
+    duplicateFrom?.hostMountPath
+      ? `${duplicateFrom.hostMountPath}-copy`
+      : '',
+  );
   const [cleanupOnDelete, setCleanupOnDelete] = useState(true);
 
   // Fetch repos when connected
@@ -84,9 +114,7 @@ const CreateSession: React.FC = () => {
 
   // Update repo source when connection status changes
   useEffect(() => {
-    if (isConnected && repoSource === 'manual') {
-      setRepoSource('github');
-    } else if (!isConnected && repoSource === 'github') {
+    if (!isConnected && repoSource === 'github') {
       setRepoSource('manual');
     }
   }, [isConnected]);
@@ -111,6 +139,20 @@ const CreateSession: React.FC = () => {
       return 0;
     });
   }, [repos, recentRepoUrls]);
+
+  // When duplicating with a repo URL, auto-select the matching GitHub repo
+  useEffect(() => {
+    if (!hasDuplicateRepo || !repos || selectedRepo) return;
+    const url = duplicateFrom!.repoUrl!;
+    const match = repos.find(
+      (r) => r.clone_url === url || r.ssh_url === url,
+    );
+    if (match) {
+      setSelectedRepo(match);
+    } else {
+      setRepoSource('manual');
+    }
+  }, [repos, hasDuplicateRepo, duplicateFrom, selectedRepo]);
 
   // Filter repos based on search input
   const filteredRepos = useMemo(() => {
@@ -144,10 +186,12 @@ const CreateSession: React.FC = () => {
     formState: { errors },
   } = useForm<CreateSessionForm>({
     defaultValues: {
-      name: '',
-      imageId: '',
-      repoUrl: '',
-      branch: 'main',
+      name: duplicateFrom?.hostMountPath
+        ? makeDuplicateName(duplicateFrom.name)
+        : duplicateFrom?.name || '',
+      imageId: duplicateFrom?.imageId || '',
+      repoUrl: duplicateFrom?.repoUrl || '',
+      branch: duplicateFrom?.branch || 'main',
     },
   });
 
@@ -186,12 +230,12 @@ const CreateSession: React.FC = () => {
     return `${baseDir}/${repoName}`;
   }, [hasMountDirectory, settings?.defaultMountDirectory, repoUrlValue]);
 
-  // Set imageId to default image once loaded
+  // Set imageId to default image once loaded (skip if duplicating with a known image)
   useEffect(() => {
-    if (defaultImage) {
+    if (defaultImage && !duplicateFrom?.imageId) {
       setValue('imageId', defaultImage.id);
     }
-  }, [defaultImage, setValue]);
+  }, [defaultImage, setValue, duplicateFrom?.imageId]);
 
   const handleRepoSourceChange = (
     _: React.MouseEvent<HTMLElement>,
@@ -271,7 +315,9 @@ const CreateSession: React.FC = () => {
         >
           Back
         </Button>
-        <Typography variant="h3">New Session</Typography>
+        <Typography variant="h3">
+          {duplicateFrom ? 'Duplicate Session' : 'New Session'}
+        </Typography>
       </Box>
 
       {createError && (

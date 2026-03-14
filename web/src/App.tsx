@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { useAuth } from './hooks/useAuth';
-import { useWebSocket } from './hooks/useWebSocket';
+import { WebSocketProvider } from './hooks/useWebSocket';
 import { ROUTES } from './utils/constants';
 
 // Pages
@@ -45,62 +45,60 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Main App component with WebSocket connection
 const AppContent = () => {
-  // Initialize WebSocket connection for authenticated users
-  useWebSocket();
-
   return (
-    <Router>
-      <Routes>
-        <Route path={ROUTES.LOGIN} element={<Login />} />
-        <Route
-          path={ROUTES.HOME}
-          element={<Navigate to={ROUTES.DASHBOARD} replace />}
-        />
-        {/* All authenticated routes use Layout */}
-        <Route
-          path={ROUTES.DASHBOARD}
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Dashboard />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.CREATE_SESSION}
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <CreateSession />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.SETTINGS}
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Settings />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path={ROUTES.SESSION_DETAILS}
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <SessionDetails />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Router>
+    <WebSocketProvider>
+      <Router>
+        <Routes>
+          <Route path={ROUTES.LOGIN} element={<Login />} />
+          <Route
+            path={ROUTES.HOME}
+            element={<Navigate to={ROUTES.DASHBOARD} replace />}
+          />
+          {/* All authenticated routes use Layout */}
+          <Route
+            path={ROUTES.DASHBOARD}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.CREATE_SESSION}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateSession />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.SETTINGS}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Settings />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.SESSION_DETAILS}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SessionDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </WebSocketProvider>
   );
 };
 

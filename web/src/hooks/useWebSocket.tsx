@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../stores/session.store';
@@ -8,7 +8,16 @@ import type { GitStatus, Session } from '../api/types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
-export const useWebSocket = () => {
+interface WebSocketContextValue {
+  socketRef: React.RefObject<Socket | null>;
+  subscribeToSession: (sessionId: string) => void;
+  subscribeToSessionLogs: (sessionId: string) => void;
+  unsubscribeFromSession: (sessionId: string) => void;
+}
+
+const WebSocketContext = createContext<WebSocketContextValue | null>(null);
+
+export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const socketRef = useRef<Socket | null>(null);
   const { isAuthenticated, token } = useAuthStore();
   const {
@@ -114,31 +123,47 @@ export const useWebSocket = () => {
     queryClient,
   ]);
 
-  // Subscribe to session updates
-  const subscribeToSession = (sessionId: string) => {
+  const subscribeToSession = useCallback((sessionId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('subscribe.session', { sessionId });
     }
-  };
+  }, []);
 
-  // Subscribe to session logs
-  const subscribeToSessionLogs = (sessionId: string) => {
+  const subscribeToSessionLogs = useCallback((sessionId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('subscribe.logs', { sessionId });
     }
-  };
+  }, []);
 
-  // Unsubscribe from session updates
-  const unsubscribeFromSession = (sessionId: string) => {
+  const unsubscribeFromSession = useCallback((sessionId: string) => {
     if (socketRef.current) {
       socketRef.current.emit('unsubscribe.session', { sessionId });
     }
-  };
+  }, []);
 
-  return {
-    socket: socketRef.current,
+  const value: WebSocketContextValue = {
+    socketRef,
     subscribeToSession,
     subscribeToSessionLogs,
     unsubscribeFromSession,
+  };
+
+  return (
+    <WebSocketContext.Provider value={value}>
+      {children}
+    </WebSocketContext.Provider>
+  );
+};
+
+export const useWebSocket = () => {
+  const context = useContext(WebSocketContext);
+  if (!context) {
+    throw new Error('useWebSocket must be used within a WebSocketProvider');
+  }
+  return {
+    socket: context.socketRef.current,
+    subscribeToSession: context.subscribeToSession,
+    subscribeToSessionLogs: context.subscribeToSessionLogs,
+    unsubscribeFromSession: context.unsubscribeFromSession,
   };
 };

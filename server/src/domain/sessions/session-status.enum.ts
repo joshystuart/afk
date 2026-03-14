@@ -3,5 +3,6 @@ export enum SessionStatus {
   STARTING = 'STARTING',
   RUNNING = 'RUNNING',
   STOPPED = 'STOPPED',
+  DELETING = 'DELETING',
   ERROR = 'ERROR',
 }

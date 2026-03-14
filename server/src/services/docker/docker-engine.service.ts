@@ -202,10 +202,7 @@ export class DockerEngineService {
 
   async removeSessionVolumes(sessionId: string): Promise<void> {
     const volumeNames = [`afk-tmux-${sessionId}`, `afk-claude-${sessionId}`];
-
-    for (const volumeName of volumeNames) {
-      await this.removeVolume(volumeName);
-    }
+    await Promise.all(volumeNames.map((name) => this.removeVolume(name)));
   }
 
   async getContainerInfo(containerId: string): Promise<ContainerInfo> {

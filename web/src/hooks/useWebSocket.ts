@@ -11,12 +11,16 @@ const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 export const useWebSocket = () => {
   const socketRef = useRef<Socket | null>(null);
   const { isAuthenticated, token } = useAuthStore();
-  const { handleSessionStatusChange } = useSessionStore();
+  const {
+    handleSessionStatusChange,
+    handleDeleteProgress,
+    handleDeleteCompleted,
+    handleDeleteFailed,
+  } = useSessionStore();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
-      // Disconnect if not authenticated
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -24,7 +28,6 @@ export const useWebSocket = () => {
       return;
     }
 
-    // Create socket connection to the /sessions namespace
     const socket = io(`${WS_URL}/sessions`, {
       auth: {
         token,
@@ -34,7 +37,6 @@ export const useWebSocket = () => {
 
     socketRef.current = socket;
 
-    // Connection event handlers
     socket.on('connect', () => {
       console.log('WebSocket connected');
     });
@@ -47,7 +49,6 @@ export const useWebSocket = () => {
       console.error('WebSocket connection error:', error);
     });
 
-    // Session status updates
     socket.on(
       'session.status',
       (data: { sessionId: string; status: SessionStatus }) => {
@@ -55,13 +56,10 @@ export const useWebSocket = () => {
       },
     );
 
-    // Session logs
     socket.on('session.logs', (data: { sessionId: string; logs: string[] }) => {
-      // Handle log updates (could be stored in a separate store)
       console.log('Session logs:', data);
     });
 
-    // Reactive git status updates
     socket.on(
       'session.git.status',
       (data: {
@@ -79,12 +77,40 @@ export const useWebSocket = () => {
       },
     );
 
-    // Cleanup on unmount
+    socket.on(
+      'session.delete.progress',
+      (data: { sessionId: string; message: string }) => {
+        handleDeleteProgress(data.sessionId, data.message);
+      },
+    );
+
+    socket.on('session.deleted', (data: { sessionId: string }) => {
+      handleDeleteCompleted(data.sessionId);
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.removeQueries({ queryKey: ['session', data.sessionId] });
+    });
+
+    socket.on(
+      'session.delete.failed',
+      (data: { sessionId: string; error: string }) => {
+        handleDeleteFailed(data.sessionId, data.error);
+        queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      },
+    );
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [isAuthenticated, token, handleSessionStatusChange, queryClient]);
+  }, [
+    isAuthenticated,
+    token,
+    handleSessionStatusChange,
+    handleDeleteProgress,
+    handleDeleteCompleted,
+    handleDeleteFailed,
+    queryClient,
+  ]);
 
   // Subscribe to session updates
   const subscribeToSession = (sessionId: string) => {

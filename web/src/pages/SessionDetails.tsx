@@ -34,6 +34,7 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
 import { useGitStatus } from '../hooks/useGitStatus';
 import { SessionStatus } from '../api/types';
+import { useSessionStore } from '../stores/session.store';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 import ApprovalModal from '../components/ApprovalModal';
@@ -82,6 +83,8 @@ const SessionDetails: React.FC = () => {
   const isRunning = session?.status === SessionStatus.RUNNING;
   const isReady = isRunning && healthCheck.allReady;
   const gitStatus = useGitStatus(id || null, isReady);
+
+  const { deleteProgress } = useSessionStore();
 
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false);
@@ -186,13 +189,15 @@ const SessionDetails: React.FC = () => {
     try {
       if (approvalModal.type === 'stop') {
         await stopSession(session.id);
+        handleModalClose();
       } else {
         await deleteSession(session.id);
+        handleModalClose();
         navigate(ROUTES.DASHBOARD);
       }
-      handleModalClose();
     } catch (error) {
       console.error(`Failed to ${approvalModal.type} session:`, error);
+      handleModalClose();
     }
   };
 
@@ -357,6 +362,99 @@ const SessionDetails: React.FC = () => {
     </Dialog>
   );
 
+  if (session?.status === SessionStatus.DELETING) {
+    const progressMsg =
+      deleteProgress?.sessionId === session.id
+        ? deleteProgress.message
+        : 'Preparing to delete...';
+
+    return (
+      <Box
+        sx={{
+          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '1rem',
+              fontWeight: 600,
+              color: afkColors.textPrimary,
+              mb: 1,
+            }}
+          >
+            {session.name || session.id.slice(0, 12)}
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              mb: 3,
+            }}
+          >
+            <DotIcon
+              sx={{
+                fontSize: 8,
+                color: afkColors.warning,
+                animation: 'pulse-dot 2s ease-in-out infinite',
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.6875rem',
+                fontWeight: 500,
+                color: afkColors.warning,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Deleting
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                border: `2px solid ${afkColors.textTertiary}`,
+                borderTopColor: afkColors.warning,
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                color: afkColors.textSecondary,
+              }}
+            >
+              {progressMsg}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   if (!session || session.status !== SessionStatus.RUNNING) {
     return (
       <>
@@ -481,7 +579,17 @@ const SessionDetails: React.FC = () => {
           onConfirm={handleModalConfirm}
           type={approvalModal.type}
           sessionName={approvalModal.sessionName}
-          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+          isLoading={
+            approvalModal.type === 'stop'
+              ? isStopping
+              : isDeleting ||
+                deleteProgress?.sessionId === approvalModal.sessionId
+          }
+          deleteProgressMessage={
+            deleteProgress?.sessionId === approvalModal.sessionId
+              ? deleteProgress.message
+              : null
+          }
         />
         {renameDialog}
       </>
@@ -579,7 +687,17 @@ const SessionDetails: React.FC = () => {
           onConfirm={handleModalConfirm}
           type={approvalModal.type}
           sessionName={approvalModal.sessionName}
-          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+          isLoading={
+            approvalModal.type === 'stop'
+              ? isStopping
+              : isDeleting ||
+                deleteProgress?.sessionId === approvalModal.sessionId
+          }
+          deleteProgressMessage={
+            deleteProgress?.sessionId === approvalModal.sessionId
+              ? deleteProgress.message
+              : null
+          }
         />
       </>
     );
@@ -755,7 +873,17 @@ const SessionDetails: React.FC = () => {
         onConfirm={handleModalConfirm}
         type={approvalModal.type}
         sessionName={approvalModal.sessionName}
-        isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+        isLoading={
+          approvalModal.type === 'stop'
+            ? isStopping
+            : isDeleting ||
+              deleteProgress?.sessionId === approvalModal.sessionId
+        }
+        deleteProgressMessage={
+          deleteProgress?.sessionId === approvalModal.sessionId
+            ? deleteProgress.message
+            : null
+        }
       />
 
       <CommitPushDialog

@@ -1,11 +1,17 @@
 import { create } from 'zustand';
 import type { Session, SessionStatus } from '../api/types';
 
+interface DeleteProgress {
+  sessionId: string;
+  message: string;
+}
+
 interface SessionState {
   sessions: Session[];
   currentSession: Session | null;
   isLoading: boolean;
   error: string | null;
+  deleteProgress: DeleteProgress | null;
 
   // Actions
   setSessions: (sessions: Session[]) => void;
@@ -18,6 +24,10 @@ interface SessionState {
 
   // WebSocket updates
   handleSessionStatusChange: (sessionId: string, status: SessionStatus) => void;
+  handleDeleteProgress: (sessionId: string, message: string) => void;
+  handleDeleteCompleted: (sessionId: string) => void;
+  handleDeleteFailed: (sessionId: string, error: string) => void;
+  clearDeleteProgress: () => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -25,6 +35,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   currentSession: null,
   isLoading: false,
   error: null,
+  deleteProgress: null,
 
   setSessions: (sessions: Session[]) => {
     set({ sessions, error: null });
@@ -83,5 +94,26 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   handleSessionStatusChange: (sessionId: string, status: SessionStatus) => {
     get().updateSession(sessionId, { status });
+  },
+
+  handleDeleteProgress: (sessionId: string, message: string) => {
+    set({ deleteProgress: { sessionId, message } });
+  },
+
+  handleDeleteCompleted: (sessionId: string) => {
+    get().removeSession(sessionId);
+    set({ deleteProgress: null });
+  },
+
+  handleDeleteFailed: (sessionId: string, error: string) => {
+    set({
+      deleteProgress: null,
+      error: `Failed to delete session: ${error}`,
+    });
+    get().updateSession(sessionId, { status: 'ERROR' as SessionStatus });
+  },
+
+  clearDeleteProgress: () => {
+    set({ deleteProgress: null });
   },
 }));

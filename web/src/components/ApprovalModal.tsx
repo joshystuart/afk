@@ -6,6 +6,7 @@ import {
   Typography,
   Button,
   Box,
+  CircularProgress,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -18,6 +19,7 @@ export interface ApprovalModalProps {
   type: 'stop' | 'delete';
   sessionName?: string;
   isLoading?: boolean;
+  deleteProgressMessage?: string | null;
 }
 
 const ApprovalModal: React.FC<ApprovalModalProps> = ({
@@ -27,12 +29,18 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   type,
   sessionName,
   isLoading = false,
+  deleteProgressMessage,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const isStopAction = type === 'stop';
-  const title = isStopAction ? 'Stop session?' : 'Delete session?';
+  const isDeleting = !isStopAction && isLoading;
+  const title = isStopAction
+    ? 'Stop session?'
+    : isDeleting
+      ? 'Deleting session...'
+      : 'Delete session?';
 
   const description = isStopAction
     ? 'This will terminate all running processes and close terminal connections.'
@@ -49,7 +57,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={isDeleting ? undefined : onClose}
       maxWidth="xs"
       fullWidth
       fullScreen={isMobile}
@@ -91,38 +99,65 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </Box>
         )}
 
-        <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
-          {description}
-        </Typography>
+        {isDeleting && deleteProgressMessage ? (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              mt: 1,
+            }}
+          >
+            <CircularProgress
+              size={16}
+              sx={{ color: afkColors.textTertiary }}
+            />
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                color: afkColors.textSecondary,
+              }}
+            >
+              {deleteProgressMessage}
+            </Typography>
+          </Box>
+        ) : (
+          <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
+            {description}
+          </Typography>
+        )}
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          size="small"
-          disabled={isLoading}
-          sx={{ flex: isMobile ? 1 : 'none' }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={onConfirm}
-          variant="contained"
-          size="small"
-          disabled={isLoading}
-          sx={{
-            flex: isMobile ? 1 : 'none',
-            bgcolor: isStopAction ? afkColors.warning : afkColors.danger,
-            color: isStopAction ? '#000' : '#fff',
-            '&:hover': {
-              bgcolor: isStopAction ? '#d97706' : '#dc2626',
-            },
-          }}
-        >
-          {confirmButtonText}
-        </Button>
-      </DialogActions>
+      {!isDeleting && (
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            size="small"
+            disabled={isLoading}
+            sx={{ flex: isMobile ? 1 : 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onConfirm}
+            variant="contained"
+            size="small"
+            disabled={isLoading}
+            sx={{
+              flex: isMobile ? 1 : 'none',
+              bgcolor: isStopAction ? afkColors.warning : afkColors.danger,
+              color: isStopAction ? '#000' : '#fff',
+              '&:hover': {
+                bgcolor: isStopAction ? '#d97706' : '#dc2626',
+              },
+            }}
+          >
+            {confirmButtonText}
+          </Button>
+        </DialogActions>
+      )}
     </Dialog>
   );
 };

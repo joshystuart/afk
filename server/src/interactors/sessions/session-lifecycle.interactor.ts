@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DockerEngineService } from '../../services/docker/docker-engine.service';
 import { ContainerNotFoundError } from '../../services/docker/container-not-found.error';
 import { SessionRepository } from '../../services/repositories/session.repository';
 import { PortManagerService } from '../../services/docker/port-manager.service';
 import { GitWatcherService } from '../../services/git-watcher/git-watcher.service';
 import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
+import { ChatMessageRepository } from '../../domain/chat/chat-message.repository';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
 import * as http from 'http';
@@ -20,6 +22,8 @@ export class SessionLifecycleInteractor {
     private readonly portManager: PortManagerService,
     private readonly gitWatcherService: GitWatcherService,
     private readonly dockerImageRepository: DockerImageRepository,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly chatMessageRepository: ChatMessageRepository,
   ) {}
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
@@ -273,52 +277,76 @@ export class SessionLifecycleInteractor {
       throw new Error('Session must be stopped before deletion');
     }
 
+    session.markAsDeleting();
+    await this.sessionRepository.save(session);
+
+    this.emitDeleteProgress(sessionId.toString(), 'Preparing to delete...');
+
+    this.performDeletion(sessionId, session).catch((error) => {
+      this.logger.error('Background deletion failed', {
+        sessionId: sessionId.toString(),
+        error: error.message,
+      });
+    });
+  }
+
+  private emitDeleteProgress(sessionId: string, message: string): void {
+    this.eventEmitter.emit('session.delete.progress', { sessionId, message });
+  }
+
+  private async performDeletion(
+    sessionId: SessionIdDto,
+    session: any,
+  ): Promise<void> {
+    const sid = sessionId.toString();
+
     try {
-      // Stop git watcher if still active
-      await this.gitWatcherService.stopWatching(sessionId.toString());
+      await this.gitWatcherService.stopWatching(sid);
 
-      // Remove container (if it still exists - may have been removed manually)
-      if (session.containerId) {
-        try {
-          await this.dockerEngine.removeContainer(session.containerId);
-        } catch (containerError) {
-          if (containerError instanceof ContainerNotFoundError) {
-            this.logger.warn('Container already removed, continuing cleanup', {
-              sessionId: sessionId.toString(),
-              containerId: session.containerId,
-            });
-          } else {
-            throw containerError;
-          }
-        }
-      }
+      this.emitDeleteProgress(sid, 'Removing container and volumes...');
 
-      // Clean up named volumes (tmux state, Claude data)
-      try {
-        await this.dockerEngine.removeSessionVolumes(session.id);
-      } catch (volumeError) {
-        this.logger.warn('Failed to remove session volumes, continuing', {
-          sessionId: sessionId.toString(),
-          error: volumeError.message,
+      const containerRemoval = session.containerId
+        ? this.dockerEngine
+            .removeContainer(session.containerId)
+            .catch((err) => {
+              if (err instanceof ContainerNotFoundError) {
+                this.logger.warn('Container already removed, continuing', {
+                  sessionId: sid,
+                  containerId: session.containerId,
+                });
+              } else {
+                throw err;
+              }
+            })
+        : Promise.resolve();
+
+      const volumeRemoval = this.dockerEngine
+        .removeSessionVolumes(session.id)
+        .catch((volumeError) => {
+          this.logger.warn('Failed to remove session volumes, continuing', {
+            sessionId: sid,
+            error: volumeError.message,
+          });
         });
-      }
 
-      // Clean up host mount directory if configured
+      await Promise.all([containerRemoval, volumeRemoval]);
+
       if (session.config?.cleanupOnDelete && session.config?.hostMountPath) {
+        this.emitDeleteProgress(sid, 'Cleaning up workspace files...');
         try {
-          fs.rmSync(session.config.hostMountPath, {
+          await fs.rm(session.config.hostMountPath, {
             recursive: true,
             force: true,
           });
           this.logger.log('Cleaned up host mount directory', {
-            sessionId: sessionId.toString(),
+            sessionId: sid,
             hostMountPath: session.config.hostMountPath,
           });
         } catch (cleanupError) {
           this.logger.warn(
             'Failed to clean up host mount directory, continuing',
             {
-              sessionId: sessionId.toString(),
+              sessionId: sid,
               hostMountPath: session.config.hostMountPath,
               error: cleanupError.message,
             },
@@ -326,18 +354,31 @@ export class SessionLifecycleInteractor {
         }
       }
 
-      // Release ports
+      this.emitDeleteProgress(sid, 'Finalizing...');
+
       if (session.ports) {
         await this.portManager.releasePortPair(session.ports);
       }
 
-      // Delete from repository
+      await this.chatMessageRepository.deleteBySessionId(sid);
       await this.sessionRepository.delete(sessionId);
 
-      this.logger.log('Session deleted', { sessionId: sessionId.toString() });
+      this.logger.log('Session deleted', { sessionId: sid });
+      this.eventEmitter.emit('session.deleted', { sessionId: sid });
     } catch (error) {
       this.logger.error('Failed to delete session', error);
-      throw error;
+
+      try {
+        session.markAsError();
+        await this.sessionRepository.save(session);
+      } catch (saveError) {
+        this.logger.error('Failed to revert session status', saveError);
+      }
+
+      this.eventEmitter.emit('session.delete.failed', {
+        sessionId: sid,
+        error: error.message,
+      });
     }
   }
 

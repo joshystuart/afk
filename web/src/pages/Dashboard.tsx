@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
+import { useSessionStore } from '../stores/session.store';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
@@ -37,6 +38,8 @@ const Dashboard: React.FC = () => {
     stoppingSessionId,
     deletingSessionId,
   } = useSession();
+
+  const { deleteProgress } = useSessionStore();
 
   // Approval modal state
   const [approvalModal, setApprovalModal] = React.useState<{
@@ -83,14 +86,23 @@ const Dashboard: React.FC = () => {
     try {
       if (approvalModal.type === 'stop') {
         await stopSession(approvalModal.sessionId);
+        handleModalClose();
       } else {
         await deleteSession(approvalModal.sessionId);
       }
-      handleModalClose();
     } catch (error) {
       console.error(`Failed to ${approvalModal.type} session:`, error);
+      handleModalClose();
     }
   };
+
+  React.useEffect(() => {
+    if (!approvalModal.open || approvalModal.type !== 'delete') return;
+    const session = sessions.find((s) => s.id === approvalModal.sessionId);
+    if (!session) {
+      handleModalClose();
+    }
+  }, [sessions, approvalModal]);
 
   const getStatusColor = (status: SessionStatus) => {
     switch (status) {
@@ -98,6 +110,8 @@ const Dashboard: React.FC = () => {
         return afkColors.accent;
       case SessionStatus.STOPPED:
         return afkColors.textTertiary;
+      case SessionStatus.DELETING:
+        return afkColors.warning;
       case SessionStatus.ERROR:
         return afkColors.danger;
       default:
@@ -111,6 +125,8 @@ const Dashboard: React.FC = () => {
         return 'Running';
       case SessionStatus.STOPPED:
         return 'Stopped';
+      case SessionStatus.DELETING:
+        return 'Deleting';
       case SessionStatus.ERROR:
         return 'Error';
       default:
@@ -317,7 +333,8 @@ const Dashboard: React.FC = () => {
                     sx={{
                       fontSize: 8,
                       color: getStatusColor(session.status),
-                      ...(session.status === SessionStatus.RUNNING && {
+                      ...((session.status === SessionStatus.RUNNING ||
+                        session.status === SessionStatus.DELETING) && {
                         animation: 'pulse-dot 2s ease-in-out infinite',
                       }),
                     }}
@@ -442,7 +459,13 @@ const Dashboard: React.FC = () => {
         isLoading={
           approvalModal.type === 'stop'
             ? stoppingSessionId === approvalModal.sessionId
-            : deletingSessionId === approvalModal.sessionId
+            : deletingSessionId === approvalModal.sessionId ||
+              deleteProgress?.sessionId === approvalModal.sessionId
+        }
+        deleteProgressMessage={
+          deleteProgress?.sessionId === approvalModal.sessionId
+            ? deleteProgress.message
+            : null
         }
       />
     </Box>

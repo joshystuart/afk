@@ -26,6 +26,20 @@ export interface SessionUpdate {
   data: any;
 }
 
+export interface DeleteProgressPayload {
+  sessionId: string;
+  message: string;
+}
+
+export interface DeleteCompletedPayload {
+  sessionId: string;
+}
+
+export interface DeleteFailedPayload {
+  sessionId: string;
+  error: string;
+}
+
 @WebSocketGateway({
   namespace: '/sessions',
   cors: {
@@ -319,6 +333,53 @@ export class SessionGateway
         data: { sessionId: data.sessionId, error: error.message },
       };
     }
+  }
+
+  @OnEvent('session.delete.progress')
+  handleDeleteProgress(payload: DeleteProgressPayload) {
+    this.server
+      .to(`session:${payload.sessionId}`)
+      .emit('session.delete.progress', {
+        sessionId: payload.sessionId,
+        message: payload.message,
+        timestamp: new Date().toISOString(),
+      });
+
+    this.server.emit('session.delete.progress', {
+      sessionId: payload.sessionId,
+      message: payload.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @OnEvent('session.deleted')
+  handleSessionDeleted(payload: DeleteCompletedPayload) {
+    this.server.to(`session:${payload.sessionId}`).emit('session.deleted', {
+      sessionId: payload.sessionId,
+      timestamp: new Date().toISOString(),
+    });
+
+    this.server.emit('session.deleted', {
+      sessionId: payload.sessionId,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @OnEvent('session.delete.failed')
+  handleDeleteFailed(payload: DeleteFailedPayload) {
+    this.server
+      .to(`session:${payload.sessionId}`)
+      .emit('session.delete.failed', {
+        sessionId: payload.sessionId,
+        error: payload.error,
+        timestamp: new Date().toISOString(),
+      });
+
+    this.server.emit('session.delete.failed', {
+      sessionId: payload.sessionId,
+      error: payload.error,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   private async startGitWatcherIfRunning(sessionId: string): Promise<void> {

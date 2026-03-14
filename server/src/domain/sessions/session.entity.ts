@@ -141,6 +141,11 @@ export class Session {
     this.updatedAt = new Date();
   }
 
+  markAsDeleting(): void {
+    this.status = SessionStatus.DELETING;
+    this.updatedAt = new Date();
+  }
+
   canBeDeleted(): boolean {
     return [SessionStatus.STOPPED, SessionStatus.ERROR].includes(this.status);
   }

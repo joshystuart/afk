@@ -10,6 +10,7 @@ import { DockerImageRepository } from '../../domain/docker-images/docker-image.r
 import { ChatMessageRepository } from '../../domain/chat/chat-message.repository';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { MountPathValidator } from '../../libs/validators/mount-path.validator';
 import * as http from 'http';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class SessionLifecycleInteractor {
     private readonly dockerImageRepository: DockerImageRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly chatMessageRepository: ChatMessageRepository,
+    private readonly mountPathValidator: MountPathValidator,
   ) {}
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
@@ -334,13 +336,13 @@ export class SessionLifecycleInteractor {
       if (session.config?.cleanupOnDelete && session.config?.hostMountPath) {
         this.emitDeleteProgress(sid, 'Cleaning up workspace files...');
         try {
-          await fs.rm(session.config.hostMountPath, {
-            recursive: true,
-            force: true,
-          });
+          const safePath = this.mountPathValidator.validateReal(
+            session.config.hostMountPath,
+          );
+          await fs.rm(safePath, { recursive: true, force: true });
           this.logger.log('Cleaned up host mount directory', {
             sessionId: sid,
-            hostMountPath: session.config.hostMountPath,
+            hostMountPath: safePath,
           });
         } catch (cleanupError) {
           this.logger.warn(

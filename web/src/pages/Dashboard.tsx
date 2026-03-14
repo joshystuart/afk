@@ -15,6 +15,7 @@ import {
   Delete as DeleteIcon,
   FiberManualRecord as DotIcon,
 } from '@mui/icons-material';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSession } from '../hooks/useSession';
 import { useSessionStore } from '../stores/session.store';
@@ -247,205 +248,228 @@ const Dashboard: React.FC = () => {
             gap: 2,
           }}
         >
-          {sessions.map((session) => (
-            <Box
-              key={session.id}
-              sx={{
-                border: `1px solid ${afkColors.border}`,
-                borderRadius: '8px',
-                bgcolor: afkColors.surface,
-                p: 2.5,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                transition: 'border-color 150ms ease',
-                cursor: 'pointer',
-                '&:hover': {
-                  borderColor: afkColors.textTertiary,
-                },
-              }}
-              onClick={() => handleViewSession(session.id)}
-            >
-              {/* Top: Name + Status */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
+          <AnimatePresence mode="popLayout">
+            {sessions.map((session) => (
+              <motion.div
+                key={session.id}
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, filter: 'blur(4px)' }}
+                transition={{
+                  layout: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+                  opacity: { duration: 0.2 },
+                  scale: { duration: 0.2 },
+                  filter: { duration: 0.2 },
                 }}
               >
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: '0.875rem',
-                      fontWeight: 600,
-                      color: afkColors.textPrimary,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {session.name || session.id.slice(0, 12)}
-                  </Typography>
-                  {session.repoUrl && (
-                    <Typography
-                      sx={{
-                        fontSize: '0.75rem',
-                        color: afkColors.textTertiary,
-                        mt: 0.5,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {session.repoUrl.split('/').pop()?.replace('.git', '')}
-                    </Typography>
-                  )}
-                  {session.imageName && (
-                    <Typography
-                      sx={{
-                        fontSize: '0.6875rem',
-                        fontFamily: '"JetBrains Mono", monospace',
-                        color: afkColors.textTertiary,
-                        mt: 0.5,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {session.imageName}
-                    </Typography>
-                  )}
-                </Box>
-
-                {/* Status dot + text */}
                 <Box
                   sx={{
+                    border: `1px solid ${afkColors.border}`,
+                    borderRadius: '8px',
+                    bgcolor: afkColors.surface,
+                    p: 2.5,
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.75,
-                    flexShrink: 0,
-                    ml: 1,
+                    flexDirection: 'column',
+                    gap: 2,
+                    transition: 'border-color 150ms ease',
+                    cursor: 'pointer',
+                    height: '100%',
+                    '&:hover': {
+                      borderColor: afkColors.textTertiary,
+                    },
                   }}
+                  onClick={() => handleViewSession(session.id)}
                 >
-                  <DotIcon
+                  {/* Top: Name + Status */}
+                  <Box
                     sx={{
-                      fontSize: 8,
-                      color: getStatusColor(session.status),
-                      ...((session.status === SessionStatus.RUNNING ||
-                        session.status === SessionStatus.DELETING) && {
-                        animation: 'pulse-dot 2s ease-in-out infinite',
-                      }),
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: '0.6875rem',
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontWeight: 500,
-                      color: getStatusColor(session.status),
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    {getStatusText(session.status)}
-                  </Typography>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography
+                        sx={{
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          color: afkColors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {session.name || session.id.slice(0, 12)}
+                      </Typography>
+                      {session.repoUrl && (
+                        <Typography
+                          sx={{
+                            fontSize: '0.75rem',
+                            color: afkColors.textTertiary,
+                            mt: 0.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {session.repoUrl
+                            .split('/')
+                            .pop()
+                            ?.replace('.git', '')}
+                        </Typography>
+                      )}
+                      {session.imageName && (
+                        <Typography
+                          sx={{
+                            fontSize: '0.6875rem',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            color: afkColors.textTertiary,
+                            mt: 0.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {session.imageName}
+                        </Typography>
+                      )}
+                    </Box>
+
+                    {/* Status dot + text */}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        flexShrink: 0,
+                        ml: 1,
+                      }}
+                    >
+                      <DotIcon
+                        sx={{
+                          fontSize: 8,
+                          color: getStatusColor(session.status),
+                          ...((session.status === SessionStatus.RUNNING ||
+                            session.status === SessionStatus.DELETING) && {
+                            animation: 'pulse-dot 2s ease-in-out infinite',
+                          }),
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: '0.6875rem',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontWeight: 500,
+                          color: getStatusColor(session.status),
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {getStatusText(session.status)}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Actions row */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      mt: 'auto',
+                      pt: 1,
+                      borderTop: `1px solid ${afkColors.border}`,
+                    }}
+                  >
+                    {session.status === SessionStatus.STOPPED && (
+                      <Button
+                        variant="text"
+                        size="small"
+                        startIcon={
+                          <PlayIcon sx={{ fontSize: '16px !important' }} />
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startSession(session.id);
+                        }}
+                        disabled={startingSessionId === session.id}
+                        sx={{
+                          fontSize: '0.75rem',
+                          color: afkColors.accent,
+                          px: 1,
+                          minWidth: 'auto',
+                        }}
+                      >
+                        {startingSessionId === session.id
+                          ? 'Starting...'
+                          : 'Start'}
+                      </Button>
+                    )}
+
+                    {session.status === SessionStatus.RUNNING && (
+                      <Button
+                        variant="text"
+                        size="small"
+                        startIcon={
+                          <StopIcon sx={{ fontSize: '16px !important' }} />
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStopSessionClick(session.id);
+                        }}
+                        disabled={stoppingSessionId === session.id}
+                        sx={{
+                          fontSize: '0.75rem',
+                          color: afkColors.warning,
+                          px: 1,
+                          minWidth: 'auto',
+                        }}
+                      >
+                        {stoppingSessionId === session.id
+                          ? 'Stopping...'
+                          : 'Stop'}
+                      </Button>
+                    )}
+
+                    <Box sx={{ flex: 1 }} />
+
+                    {(session.status === SessionStatus.STOPPED ||
+                      session.status === SessionStatus.ERROR) && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSessionClick(session.id);
+                        }}
+                        disabled={deletingSessionId === session.id}
+                        title="Delete"
+                        sx={{
+                          color: afkColors.textTertiary,
+                          '&:hover': { color: afkColors.danger },
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    )}
+
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewSession(session.id);
+                      }}
+                      title="View Details"
+                      sx={{ color: afkColors.textTertiary }}
+                    >
+                      <ViewIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Box>
                 </Box>
-              </Box>
-
-              {/* Actions row */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  mt: 'auto',
-                  pt: 1,
-                  borderTop: `1px solid ${afkColors.border}`,
-                }}
-              >
-                {session.status === SessionStatus.STOPPED && (
-                  <Button
-                    variant="text"
-                    size="small"
-                    startIcon={
-                      <PlayIcon sx={{ fontSize: '16px !important' }} />
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      startSession(session.id);
-                    }}
-                    disabled={startingSessionId === session.id}
-                    sx={{
-                      fontSize: '0.75rem',
-                      color: afkColors.accent,
-                      px: 1,
-                      minWidth: 'auto',
-                    }}
-                  >
-                    {startingSessionId === session.id ? 'Starting...' : 'Start'}
-                  </Button>
-                )}
-
-                {session.status === SessionStatus.RUNNING && (
-                  <Button
-                    variant="text"
-                    size="small"
-                    startIcon={
-                      <StopIcon sx={{ fontSize: '16px !important' }} />
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStopSessionClick(session.id);
-                    }}
-                    disabled={stoppingSessionId === session.id}
-                    sx={{
-                      fontSize: '0.75rem',
-                      color: afkColors.warning,
-                      px: 1,
-                      minWidth: 'auto',
-                    }}
-                  >
-                    {stoppingSessionId === session.id ? 'Stopping...' : 'Stop'}
-                  </Button>
-                )}
-
-                <Box sx={{ flex: 1 }} />
-
-                {(session.status === SessionStatus.STOPPED ||
-                  session.status === SessionStatus.ERROR) && (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSessionClick(session.id);
-                    }}
-                    disabled={deletingSessionId === session.id}
-                    title="Delete"
-                    sx={{
-                      color: afkColors.textTertiary,
-                      '&:hover': { color: afkColors.danger },
-                    }}
-                  >
-                    <DeleteIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
-                )}
-
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewSession(session.id);
-                  }}
-                  title="View Details"
-                  sx={{ color: afkColors.textTertiary }}
-                >
-                  <ViewIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Box>
-            </Box>
-          ))}
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </Box>
       )}
 

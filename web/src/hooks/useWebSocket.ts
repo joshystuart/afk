@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../stores/session.store';
 import { useAuthStore } from '../stores/auth.store';
 import { SessionStatus } from '../api/types';
-import type { GitStatus } from '../api/types';
+import type { GitStatus, Session } from '../api/types';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
@@ -86,7 +86,9 @@ export const useWebSocket = () => {
 
     socket.on('session.deleted', (data: { sessionId: string }) => {
       handleDeleteCompleted(data.sessionId);
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.setQueryData<Session[]>(['sessions'], (old) =>
+        old ? old.filter((s) => s.id !== data.sessionId) : [],
+      );
       queryClient.removeQueries({ queryKey: ['session', data.sessionId] });
     });
 

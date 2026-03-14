@@ -191,9 +191,11 @@ const SessionDetails: React.FC = () => {
         await stopSession(session.id);
         handleModalClose();
       } else {
-        await deleteSession(session.id);
         handleModalClose();
         navigate(ROUTES.DASHBOARD);
+        deleteSession(session.id).catch((err) =>
+          console.error('Failed to delete session:', err),
+        );
       }
     } catch (error) {
       console.error(`Failed to ${approvalModal.type} session:`, error);

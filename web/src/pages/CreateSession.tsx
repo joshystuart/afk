@@ -56,7 +56,7 @@ const CreateSession: React.FC = () => {
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
   const [mountToHost, setMountToHost] = useState(false);
   const [hostMountPathOverride, setHostMountPathOverride] = useState('');
-  const [cleanupOnDelete, setCleanupOnDelete] = useState(false);
+  const [cleanupOnDelete, setCleanupOnDelete] = useState(true);
 
   // Fetch repos when connected
   const { data: repos, isLoading: reposLoading } = useRepos(

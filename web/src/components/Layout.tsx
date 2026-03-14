@@ -15,6 +15,7 @@ import {
   Logout as LogoutIcon,
   FiberManualRecord as DotIcon,
 } from '@mui/icons-material';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
 import { useAuthStore } from '../stores/auth.store';
@@ -179,60 +180,70 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               Sessions
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-              {runningSessions.map((session) => {
-                const sessionUrl = ROUTES.getSessionDetails(session.id);
-                const isSelected = location.pathname === sessionUrl;
+              <AnimatePresence initial={false}>
+                {runningSessions.map((session) => {
+                  const sessionUrl = ROUTES.getSessionDetails(session.id);
+                  const isSelected = location.pathname === sessionUrl;
 
-                return (
-                  <Box
-                    key={session.id}
-                    component={Link}
-                    to={sessionUrl}
-                    onClick={() => isMobile && setMobileOpen(false)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      px: 1.5,
-                      py: 0.75,
-                      borderRadius: '6px',
-                      textDecoration: 'none',
-                      fontSize: '0.8125rem',
-                      fontWeight: isSelected ? 500 : 400,
-                      color: isSelected
-                        ? afkColors.textPrimary
-                        : afkColors.textSecondary,
-                      transition: 'color 150ms ease',
-                      overflow: 'hidden',
-                      '&:hover': {
-                        color: afkColors.textPrimary,
-                      },
-                    }}
-                  >
-                    <DotIcon
-                      sx={{
-                        fontSize: 8,
-                        color: afkColors.accent,
-                        animation: 'pulse-dot 2s ease-in-out infinite',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        fontSize: '0.8125rem',
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontWeight: 'inherit',
-                        color: 'inherit',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
+                  return (
+                    <motion.div
+                      key={session.id}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                      style={{ overflow: 'hidden' }}
                     >
-                      {session.name || session.id.slice(0, 8)}
-                    </Typography>
-                  </Box>
-                );
-              })}
+                      <Box
+                        component={Link}
+                        to={sessionUrl}
+                        onClick={() => isMobile && setMobileOpen(false)}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          px: 1.5,
+                          py: 0.75,
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '0.8125rem',
+                          fontWeight: isSelected ? 500 : 400,
+                          color: isSelected
+                            ? afkColors.textPrimary
+                            : afkColors.textSecondary,
+                          transition: 'color 150ms ease',
+                          overflow: 'hidden',
+                          '&:hover': {
+                            color: afkColors.textPrimary,
+                          },
+                        }}
+                      >
+                        <DotIcon
+                          sx={{
+                            fontSize: 8,
+                            color: afkColors.accent,
+                            animation: 'pulse-dot 2s ease-in-out infinite',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontSize: '0.8125rem',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontWeight: 'inherit',
+                            color: 'inherit',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {session.name || session.id.slice(0, 8)}
+                        </Typography>
+                      </Box>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </Box>
           </Box>
         )}

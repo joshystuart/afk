@@ -112,11 +112,28 @@ clone_repository() {
                 
                 # Check for uncommitted changes before attempting pull
                 if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet HEAD 2>/dev/null; then
-                    log_info "Working tree is clean, pulling latest changes"
-                    if git pull --rebase 2>&1; then
-                        log_info "Repository updated successfully"
+                    local current_branch
+                    current_branch=$(git branch --show-current 2>/dev/null || echo "")
+                    local has_upstream
+                    has_upstream=$(git rev-parse --abbrev-ref "@{upstream}" 2>/dev/null || echo "")
+                    
+                    if [ -n "$has_upstream" ]; then
+                        log_info "Working tree is clean, pulling latest changes"
+                        if git pull --rebase 2>&1; then
+                            log_info "Repository updated successfully"
+                        else
+                            log_warning "Git pull failed, continuing with existing state"
+                        fi
+                    elif [ -n "$current_branch" ] && git show-ref --verify --quiet "refs/remotes/origin/$current_branch"; then
+                        log_info "Setting upstream and pulling latest changes"
+                        git branch --set-upstream-to="origin/$current_branch" "$current_branch" 2>/dev/null || true
+                        if git pull --rebase 2>&1; then
+                            log_info "Repository updated successfully"
+                        else
+                            log_warning "Git pull failed, continuing with existing state"
+                        fi
                     else
-                        log_warning "Git pull failed, continuing with existing state"
+                        log_info "No remote tracking branch found, skipping pull"
                     fi
                 else
                     log_info "Uncommitted changes detected, skipping pull to preserve local work"
@@ -165,12 +182,22 @@ checkout_branch() {
     
     cd "$repo_dir"
     
-    # Check if branch exists on remote
-    if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
-        log_info "Checking out existing branch: $branch"
+    local current_branch
+    current_branch=$(git branch --show-current 2>/dev/null || echo "")
+    
+    if [ "$current_branch" = "$branch" ]; then
+        log_info "Already on branch: $branch"
+        return 0
+    fi
+    
+    if git show-ref --verify --quiet "refs/heads/$branch"; then
+        log_info "Checking out existing local branch: $branch"
+        git checkout "$branch"
+    elif git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        log_info "Checking out remote branch: $branch"
         git checkout "$branch"
     else
-        log_info "Branch '$branch' not found on remote, creating new branch"
+        log_info "Branch '$branch' not found locally or on remote, creating new branch"
         git checkout -b "$branch"
     fi
 }

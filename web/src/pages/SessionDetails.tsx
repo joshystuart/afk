@@ -24,15 +24,18 @@ import {
   Terminal as TerminalIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
+  ContentCopy as DuplicateIcon,
   FiberManualRecord as DotIcon,
   CloudUpload as PushIcon,
 } from '@mui/icons-material';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { DockerLogsExpander } from '../components/DockerLogsExpander';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
 import { useGitStatus } from '../hooks/useGitStatus';
 import { SessionStatus } from '../api/types';
+import { useSessionStore } from '../stores/session.store';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 import ApprovalModal from '../components/ApprovalModal';
@@ -82,6 +85,8 @@ const SessionDetails: React.FC = () => {
   const isReady = isRunning && healthCheck.allReady;
   const gitStatus = useGitStatus(id || null, isReady);
 
+  const { deleteProgress } = useSessionStore();
+
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false);
   const [renameInput, setRenameInput] = React.useState('');
@@ -122,6 +127,21 @@ const SessionDetails: React.FC = () => {
       type: 'delete',
       sessionId: session.id,
       sessionName: session.name || session.id.slice(0, 12),
+    });
+  };
+
+  const handleDuplicateSession = () => {
+    if (!session) return;
+    navigate(ROUTES.CREATE_SESSION, {
+      state: {
+        duplicateFrom: {
+          name: session.name,
+          imageId: session.imageId,
+          repoUrl: session.repoUrl,
+          branch: session.branch,
+          hostMountPath: session.hostMountPath,
+        },
+      },
     });
   };
 
@@ -185,13 +205,17 @@ const SessionDetails: React.FC = () => {
     try {
       if (approvalModal.type === 'stop') {
         await stopSession(session.id);
+        handleModalClose();
       } else {
-        await deleteSession(session.id);
+        handleModalClose();
         navigate(ROUTES.DASHBOARD);
+        deleteSession(session.id).catch((err) =>
+          console.error('Failed to delete session:', err),
+        );
       }
-      handleModalClose();
     } catch (error) {
       console.error(`Failed to ${approvalModal.type} session:`, error);
+      handleModalClose();
     }
   };
 
@@ -356,6 +380,99 @@ const SessionDetails: React.FC = () => {
     </Dialog>
   );
 
+  if (session?.status === SessionStatus.DELETING) {
+    const progressMsg =
+      deleteProgress?.sessionId === session.id
+        ? deleteProgress.message
+        : 'Preparing to delete...';
+
+    return (
+      <Box
+        sx={{
+          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '1rem',
+              fontWeight: 600,
+              color: afkColors.textPrimary,
+              mb: 1,
+            }}
+          >
+            {session.name || session.id.slice(0, 12)}
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              mb: 3,
+            }}
+          >
+            <DotIcon
+              sx={{
+                fontSize: 8,
+                color: afkColors.warning,
+                animation: 'pulse-dot 2s ease-in-out infinite',
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.6875rem',
+                fontWeight: 500,
+                color: afkColors.warning,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              Deleting
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                border: `2px solid ${afkColors.textTertiary}`,
+                borderTopColor: afkColors.warning,
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                },
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: '0.75rem',
+                color: afkColors.textSecondary,
+              }}
+            >
+              {progressMsg}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
   if (!session || session.status !== SessionStatus.RUNNING) {
     return (
       <>
@@ -440,25 +557,43 @@ const SessionDetails: React.FC = () => {
                   : 'Session is not ready yet.'}
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
               {canStart && (
                 <Button
                   variant="contained"
-                  startIcon={<PlayIcon />}
+                  size="small"
+                  startIcon={<PlayIcon sx={{ fontSize: '16px !important' }} />}
                   onClick={() => startSession(session!.id)}
                   disabled={isStarting}
+                  sx={{ fontSize: '0.8125rem' }}
                 >
-                  {isStarting ? 'Starting...' : 'Start Session'}
+                  {isStarting ? 'Starting...' : 'Start'}
                 </Button>
               )}
+
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
+                  <DuplicateIcon sx={{ fontSize: '16px !important' }} />
+                }
+                onClick={handleDuplicateSession}
+                sx={{ fontSize: '0.8125rem' }}
+              >
+                Duplicate
+              </Button>
 
               {canDelete && (
                 <Button
                   variant="outlined"
-                  startIcon={<DeleteIcon />}
+                  size="small"
+                  startIcon={
+                    <DeleteIcon sx={{ fontSize: '16px !important' }} />
+                  }
                   onClick={handleDeleteSessionClick}
                   disabled={isDeleting}
                   sx={{
+                    fontSize: '0.8125rem',
                     borderColor: afkColors.danger,
                     color: afkColors.danger,
                     '&:hover': {
@@ -480,7 +615,17 @@ const SessionDetails: React.FC = () => {
           onConfirm={handleModalConfirm}
           type={approvalModal.type}
           sessionName={approvalModal.sessionName}
-          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+          isLoading={
+            approvalModal.type === 'stop'
+              ? isStopping
+              : isDeleting ||
+                deleteProgress?.sessionId === approvalModal.sessionId
+          }
+          deleteProgressMessage={
+            deleteProgress?.sessionId === approvalModal.sessionId
+              ? deleteProgress.message
+              : null
+          }
         />
         {renameDialog}
       </>
@@ -494,59 +639,81 @@ const SessionDetails: React.FC = () => {
           sx={{
             height: isMobile ? 'calc(100vh - 48px)' : '100vh',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            flexDirection: 'column',
             bgcolor: afkColors.background,
           }}
         >
-          <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: afkColors.textPrimary,
-                mb: 3,
-              }}
-            >
-              {session.name || session.id.slice(0, 12)}
-            </Typography>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 0,
+            }}
+          >
+            <Box sx={{ textAlign: 'center', px: 3 }}>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  color: afkColors.textPrimary,
+                  mb: 3,
+                }}
+              >
+                {session.name || session.id.slice(0, 12)}
+              </Typography>
 
-            <Box sx={{ mb: 3 }}>
-              <TerminalCursor size="lg" />
+              <Box sx={{ mb: 3 }}>
+                <TerminalCursor size="lg" />
+              </Box>
+
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  color: afkColors.textPrimary,
+                  mb: 1,
+                }}
+              >
+                Initializing session...
+              </Typography>
+
+              <Typography
+                variant="body2"
+                sx={{ color: afkColors.textTertiary, mb: 4 }}
+              >
+                Setting up environment
+              </Typography>
+
+              <Button
+                size="small"
+                startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
+                onClick={handleStopSessionClick}
+                disabled={isStopping}
+                sx={{
+                  fontSize: '0.75rem',
+                  color: afkColors.warning,
+                }}
+              >
+                {isStopping ? 'Stopping...' : 'Stop'}
+              </Button>
             </Box>
+          </Box>
 
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '0.8125rem',
-                fontWeight: 500,
-                color: afkColors.textPrimary,
-                mb: 1,
-              }}
-            >
-              Initializing session...
-            </Typography>
-
-            <Typography
-              variant="body2"
-              sx={{ color: afkColors.textTertiary, mb: 4 }}
-            >
-              Setting up environment
-            </Typography>
-
-            <Button
-              size="small"
-              startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
-              onClick={handleStopSessionClick}
-              disabled={isStopping}
-              sx={{
-                fontSize: '0.75rem',
-                color: afkColors.warning,
-              }}
-            >
-              {isStopping ? 'Stopping...' : 'Stop'}
-            </Button>
+          <Box
+            sx={{
+              flexShrink: 0,
+              px: 3,
+              pb: 3,
+              mx: 'auto',
+              width: '100%',
+              maxWidth: 600,
+            }}
+          >
+            <DockerLogsExpander sessionId={session.id} />
           </Box>
         </Box>
 
@@ -556,7 +723,17 @@ const SessionDetails: React.FC = () => {
           onConfirm={handleModalConfirm}
           type={approvalModal.type}
           sessionName={approvalModal.sessionName}
-          isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+          isLoading={
+            approvalModal.type === 'stop'
+              ? isStopping
+              : isDeleting ||
+                deleteProgress?.sessionId === approvalModal.sessionId
+          }
+          deleteProgressMessage={
+            deleteProgress?.sessionId === approvalModal.sessionId
+              ? deleteProgress.message
+              : null
+          }
         />
       </>
     );
@@ -641,6 +818,22 @@ const SessionDetails: React.FC = () => {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Tooltip title="Duplicate session">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handleDuplicateSession}
+                  sx={{
+                    p: 0.5,
+                    color: afkColors.textTertiary,
+                    '&:hover': { color: afkColors.textSecondary },
+                  }}
+                >
+                  <DuplicateIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+
             <Tooltip title="Open terminal in popup">
               <span>
                 <IconButton
@@ -732,7 +925,17 @@ const SessionDetails: React.FC = () => {
         onConfirm={handleModalConfirm}
         type={approvalModal.type}
         sessionName={approvalModal.sessionName}
-        isLoading={approvalModal.type === 'stop' ? isStopping : isDeleting}
+        isLoading={
+          approvalModal.type === 'stop'
+            ? isStopping
+            : isDeleting ||
+              deleteProgress?.sessionId === approvalModal.sessionId
+        }
+        deleteProgressMessage={
+          deleteProgress?.sessionId === approvalModal.sessionId
+            ? deleteProgress.message
+            : null
+        }
       />
 
       <CommitPushDialog

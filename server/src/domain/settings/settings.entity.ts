@@ -23,6 +23,9 @@ export class Settings {
   @Column('varchar', { length: 255, nullable: true })
   githubUsername?: string | null;
 
+  @Column('varchar', { length: 500, nullable: true })
+  defaultMountDirectory?: string | null;
+
   @UpdateDateColumn()
   updatedAt: Date;
 
@@ -80,6 +83,9 @@ export class Settings {
     }
     if (data.gitUserEmail !== undefined) {
       this.gitUserEmail = data.gitUserEmail;
+    }
+    if (data.defaultMountDirectory !== undefined) {
+      this.defaultMountDirectory = data.defaultMountDirectory;
     }
     this.updatedAt = new Date();
   }

@@ -38,6 +38,7 @@ export const sessionsApi = {
       terminalUrl: sessionData.terminalUrl,
       imageId: sessionData.imageId,
       imageName: sessionData.imageName,
+      hostMountPath: sessionData.hostMountPath,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -49,7 +50,6 @@ export const sessionsApi = {
     // The response now should be properly formatted from the backend
     const sessionData = response as any;
 
-    // Transform the backend session structure to frontend format
     return {
       id: sessionData.id,
       name: sessionData.name,
@@ -60,6 +60,7 @@ export const sessionsApi = {
       terminalUrl: sessionData.terminalUrl,
       imageId: sessionData.imageId,
       imageName: sessionData.imageName,
+      hostMountPath: sessionData.hostMountPath,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -83,6 +84,7 @@ export const sessionsApi = {
       terminalUrl: sessionData.terminalUrl,
       imageId: sessionData.imageId,
       imageName: sessionData.imageName,
+      hostMountPath: sessionData.hostMountPath,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;

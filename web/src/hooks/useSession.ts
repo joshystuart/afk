@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sessionsApi } from '../api/sessions.api';
 import { useSessionStore } from '../stores/session.store';
-import type { CreateSessionRequest, UpdateSessionRequest } from '../api/types';
+import type {
+  CreateSessionRequest,
+  UpdateSessionRequest,
+  Session,
+} from '../api/types';
 import { useEffect } from 'react';
 
 export const useSession = () => {
@@ -93,11 +97,33 @@ export const useSession = () => {
     },
   });
 
-  // Delete session mutation
+  // Delete session mutation with optimistic removal
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: string) => sessionsApi.deleteSession(sessionId),
-    onSuccess: () => {
+    onMutate: async (sessionId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['sessions'] });
+      await queryClient.cancelQueries({ queryKey: ['session', sessionId] });
+
+      const previousSessions = queryClient.getQueryData<Session[]>([
+        'sessions',
+      ]);
+
+      queryClient.setQueryData<Session[]>(['sessions'], (old) =>
+        old ? old.filter((s) => s.id !== sessionId) : [],
+      );
+      queryClient.removeQueries({ queryKey: ['session', sessionId] });
+
+      useSessionStore.getState().removeSession(sessionId);
+
+      return { previousSessions };
+    },
+    onError: (_err, sessionId, context) => {
+      if (context?.previousSessions) {
+        queryClient.setQueryData(['sessions'], context.previousSessions);
+        useSessionStore.getState().setSessions(context.previousSessions);
+      }
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
     },
   });
 

@@ -26,6 +26,9 @@ export class GetSettingsResponseDto {
   @ApiProperty({ required: false, description: 'Connected GitHub username' })
   githubUsername?: string;
 
+  @ApiProperty({ required: false, nullable: true })
+  defaultMountDirectory?: string | null;
+
   @ApiProperty()
   updatedAt!: string;
 
@@ -52,6 +55,7 @@ export class GetSettingsResponseDto {
     dto.gitUserEmail = settings.gitUserEmail ?? null;
     dto.hasGitHubToken = !!settings.githubAccessToken;
     dto.githubUsername = settings.githubUsername ?? undefined;
+    dto.defaultMountDirectory = settings.defaultMountDirectory ?? null;
     dto.updatedAt = settings.updatedAt.toISOString();
     return dto;
   }

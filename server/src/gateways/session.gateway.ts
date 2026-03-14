@@ -21,9 +21,62 @@ import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
 import { ChatService } from '../services/chat/chat.service';
 
+const ROOM_PREFIX = 'session:';
+
+const SOCKET_EVENTS = {
+  subscribeSession: 'subscribe.session',
+  unsubscribeSession: 'unsubscribe.session',
+  subscribeLogs: 'subscribe.logs',
+  unsubscribeLogs: 'unsubscribe.logs',
+  chatSend: 'chat.send',
+  chatCancel: 'chat.cancel',
+  chatStatus: 'chat.status',
+  chatStarted: 'chat.started',
+  chatStream: 'chat.stream',
+  chatComplete: 'chat.complete',
+  chatError: 'chat.error',
+  chatCancelled: 'chat.cancelled',
+  logData: 'log.data',
+  logsError: 'logs.error',
+  logsSubscribed: 'logs.subscribed',
+  logsUnsubscribed: 'logs.unsubscribed',
+  subscriptionSuccess: 'subscription.success',
+  subscriptionError: 'subscription.error',
+  unsubscriptionSuccess: 'unsubscription.success',
+  sessionGitStatus: 'session.git.status',
+  sessionUpdated: 'session.updated',
+  sessionStatusChanged: 'session.status.changed',
+  sessionDeleteProgress: 'session.delete.progress',
+  sessionDeleted: 'session.deleted',
+  sessionDeleteFailed: 'session.delete.failed',
+} as const;
+
+const CHAT_STATUS = {
+  executing: 'executing',
+  idle: 'idle',
+} as const;
+
+const GATEWAY_EVENTS = {
+  gitStatusChanged: 'git.status.changed',
+} as const;
+
 export interface SessionUpdate {
   type: 'status' | 'container' | 'logs';
   data: any;
+}
+
+export interface DeleteProgressPayload {
+  sessionId: string;
+  message: string;
+}
+
+export interface DeleteCompletedPayload {
+  sessionId: string;
+}
+
+export interface DeleteFailedPayload {
+  sessionId: string;
+  error: string;
 }
 
 @WebSocketGateway({
@@ -49,6 +102,14 @@ export class SessionGateway
     private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly chatService: ChatService,
   ) {}
+
+  private getSessionRoom(sessionId: string): string {
+    return `${ROOM_PREFIX}${sessionId}`;
+  }
+
+  private nowIso(): string {
+    return new Date().toISOString();
+  }
 
   async handleConnection(client: Socket) {
     this.logger.log('Client connected', {
@@ -76,7 +137,7 @@ export class SessionGateway
     this.logger.log('Client disconnected', { clientId: client.id });
   }
 
-  @SubscribeMessage('subscribe.session')
+  @SubscribeMessage(SOCKET_EVENTS.subscribeSession)
   async handleSessionSubscription(
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
@@ -87,7 +148,7 @@ export class SessionGateway
         data.sessionId,
       );
 
-      client.join(`session:${data.sessionId}`);
+      client.join(this.getSessionRoom(data.sessionId));
 
       // Start git watcher if session is running
       this.startGitWatcherIfRunning(data.sessionId).catch((error) => {
@@ -100,25 +161,25 @@ export class SessionGateway
       // Sync current chat execution state so reconnecting clients
       // immediately know if Claude is mid-run
       const executionInfo = this.chatService.getExecutionInfo(data.sessionId);
-      client.emit('chat.status', {
+      client.emit(SOCKET_EVENTS.chatStatus, {
         sessionId: data.sessionId,
-        status: executionInfo ? 'executing' : 'idle',
+        status: executionInfo ? CHAT_STATUS.executing : CHAT_STATUS.idle,
         assistantMessageId: executionInfo?.assistantMessageId ?? null,
       });
 
       return {
-        event: 'subscription.success',
+        event: SOCKET_EVENTS.subscriptionSuccess,
         data: { sessionId: data.sessionId },
       };
     } catch (error) {
       return {
-        event: 'subscription.error',
+        event: SOCKET_EVENTS.subscriptionError,
         data: { error: error.message },
       };
     }
   }
 
-  @SubscribeMessage('unsubscribe.session')
+  @SubscribeMessage(SOCKET_EVENTS.unsubscribeSession)
   async handleSessionUnsubscription(
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
@@ -127,7 +188,7 @@ export class SessionGateway
       client.id,
       data.sessionId,
     );
-    client.leave(`session:${data.sessionId}`);
+    client.leave(this.getSessionRoom(data.sessionId));
 
     // Stop watcher if no subscribers remain
     const remaining = this.sessionSubscriptionService.getSubscribersForSession(
@@ -138,45 +199,54 @@ export class SessionGateway
     }
 
     return {
-      event: 'unsubscription.success',
+      event: SOCKET_EVENTS.unsubscriptionSuccess,
       data: { sessionId: data.sessionId },
     };
   }
 
-  @SubscribeMessage('subscribe.logs')
+  @SubscribeMessage(SOCKET_EVENTS.subscribeLogs)
   async handleLogSubscription(
-    @MessageBody() data: { sessionId: string; containerId: string },
+    @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      // Start streaming logs
+      const session = await this.sessionRepository.findById(
+        this.sessionIdFactory.fromString(data.sessionId),
+      );
+
+      if (!session?.containerId) {
+        return {
+          event: SOCKET_EVENTS.logsError,
+          data: { error: 'No container found for session' },
+        };
+      }
+
       const stream = await this.dockerEngine.streamContainerLogs(
-        data.containerId,
+        session.containerId,
         (log: string) => {
-          client.emit('log.data', {
+          client.emit(SOCKET_EVENTS.logData, {
             sessionId: data.sessionId,
             log,
-            timestamp: new Date().toISOString(),
+            timestamp: this.nowIso(),
           });
         },
       );
 
-      // Store stream reference for cleanup
       (client as any).logStream = stream;
 
       return {
-        event: 'logs.subscribed',
+        event: SOCKET_EVENTS.logsSubscribed,
         data: { sessionId: data.sessionId },
       };
     } catch (error) {
       return {
-        event: 'logs.error',
+        event: SOCKET_EVENTS.logsError,
         data: { error: error.message },
       };
     }
   }
 
-  @SubscribeMessage('unsubscribe.logs')
+  @SubscribeMessage(SOCKET_EVENTS.unsubscribeLogs)
   async handleLogUnsubscription(@ConnectedSocket() client: Socket) {
     const stream = (client as any).logStream;
     if (stream) {
@@ -185,49 +255,55 @@ export class SessionGateway
     }
 
     return {
-      event: 'logs.unsubscribed',
+      event: SOCKET_EVENTS.logsUnsubscribed,
       data: {},
     };
   }
 
   // Listen for git status changes from GitWatcherService
-  @OnEvent('git.status.changed')
+  @OnEvent(GATEWAY_EVENTS.gitStatusChanged)
   handleGitStatusChanged(payload: {
     sessionId: string;
     status: GitStatusResult;
   }) {
-    this.server.to(`session:${payload.sessionId}`).emit('session.git.status', {
-      sessionId: payload.sessionId,
-      ...payload.status,
-      timestamp: new Date().toISOString(),
-    });
+    this.server
+      .to(this.getSessionRoom(payload.sessionId))
+      .emit(SOCKET_EVENTS.sessionGitStatus, {
+        sessionId: payload.sessionId,
+        ...payload.status,
+        timestamp: this.nowIso(),
+      });
   }
 
   // Emit session status updates
   emitSessionUpdate(sessionId: string, update: SessionUpdate) {
-    this.server.to(`session:${sessionId}`).emit('session.updated', {
-      sessionId,
-      update,
-      timestamp: new Date().toISOString(),
-    });
+    this.server
+      .to(this.getSessionRoom(sessionId))
+      .emit(SOCKET_EVENTS.sessionUpdated, {
+        sessionId,
+        update,
+        timestamp: this.nowIso(),
+      });
   }
 
   emitSessionStatusChange(sessionId: string, status: SessionStatus) {
-    this.server.to(`session:${sessionId}`).emit('session.status.changed', {
-      sessionId,
-      status,
-      timestamp: new Date().toISOString(),
-    });
+    this.server
+      .to(this.getSessionRoom(sessionId))
+      .emit(SOCKET_EVENTS.sessionStatusChanged, {
+        sessionId,
+        status,
+        timestamp: this.nowIso(),
+      });
   }
 
   emitGlobalUpdate(event: string, data: any) {
     this.server.emit(event, {
       ...data,
-      timestamp: new Date().toISOString(),
+      timestamp: this.nowIso(),
     });
   }
 
-  @SubscribeMessage('chat.send')
+  @SubscribeMessage(SOCKET_EVENTS.chatSend)
   async handleChatSend(
     @MessageBody()
     data: {
@@ -250,31 +326,37 @@ export class SessionGateway
         content,
         { continueConversation, model },
         (event) => {
-          this.server.to(`session:${sessionId}`).emit('chat.stream', {
-            sessionId,
-            messageId: result.assistantMessageId,
-            event,
-          });
+          this.server
+            .to(this.getSessionRoom(sessionId))
+            .emit(SOCKET_EVENTS.chatStream, {
+              sessionId,
+              messageId: result.assistantMessageId,
+              event,
+            });
         },
         (info) => {
-          this.server.to(`session:${sessionId}`).emit('chat.complete', {
-            sessionId,
-            messageId: info.assistantMessageId,
-            conversationId: info.conversationId,
-            costUsd: info.costUsd,
-            durationMs: info.durationMs,
-          });
+          this.server
+            .to(this.getSessionRoom(sessionId))
+            .emit(SOCKET_EVENTS.chatComplete, {
+              sessionId,
+              messageId: info.assistantMessageId,
+              conversationId: info.conversationId,
+              costUsd: info.costUsd,
+              durationMs: info.durationMs,
+            });
         },
         (error) => {
-          this.server.to(`session:${sessionId}`).emit('chat.error', {
-            sessionId,
-            error: error.message,
-          });
+          this.server
+            .to(this.getSessionRoom(sessionId))
+            .emit(SOCKET_EVENTS.chatError, {
+              sessionId,
+              error: error.message,
+            });
         },
       );
 
       return {
-        event: 'chat.started',
+        event: SOCKET_EVENTS.chatStarted,
         data: {
           sessionId,
           userMessageId: result.userMessageId,
@@ -287,13 +369,13 @@ export class SessionGateway
         error: error.message,
       });
       return {
-        event: 'chat.error',
+        event: SOCKET_EVENTS.chatError,
         data: { sessionId, error: error.message },
       };
     }
   }
 
-  @SubscribeMessage('chat.cancel')
+  @SubscribeMessage(SOCKET_EVENTS.chatCancel)
   async handleChatCancel(
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
@@ -301,15 +383,64 @@ export class SessionGateway
     try {
       await this.chatService.cancelExecution(data.sessionId);
       return {
-        event: 'chat.cancelled',
+        event: SOCKET_EVENTS.chatCancelled,
         data: { sessionId: data.sessionId },
       };
     } catch (error) {
       return {
-        event: 'chat.error',
+        event: SOCKET_EVENTS.chatError,
         data: { sessionId: data.sessionId, error: error.message },
       };
     }
+  }
+
+  @OnEvent(SOCKET_EVENTS.sessionDeleteProgress)
+  handleDeleteProgress(payload: DeleteProgressPayload) {
+    this.server
+      .to(this.getSessionRoom(payload.sessionId))
+      .emit(SOCKET_EVENTS.sessionDeleteProgress, {
+        sessionId: payload.sessionId,
+        message: payload.message,
+        timestamp: this.nowIso(),
+      });
+
+    this.server.emit(SOCKET_EVENTS.sessionDeleteProgress, {
+      sessionId: payload.sessionId,
+      message: payload.message,
+      timestamp: this.nowIso(),
+    });
+  }
+
+  @OnEvent(SOCKET_EVENTS.sessionDeleted)
+  handleSessionDeleted(payload: DeleteCompletedPayload) {
+    this.server
+      .to(this.getSessionRoom(payload.sessionId))
+      .emit(SOCKET_EVENTS.sessionDeleted, {
+        sessionId: payload.sessionId,
+        timestamp: this.nowIso(),
+      });
+
+    this.server.emit(SOCKET_EVENTS.sessionDeleted, {
+      sessionId: payload.sessionId,
+      timestamp: this.nowIso(),
+    });
+  }
+
+  @OnEvent(SOCKET_EVENTS.sessionDeleteFailed)
+  handleDeleteFailed(payload: DeleteFailedPayload) {
+    this.server
+      .to(this.getSessionRoom(payload.sessionId))
+      .emit(SOCKET_EVENTS.sessionDeleteFailed, {
+        sessionId: payload.sessionId,
+        error: payload.error,
+        timestamp: this.nowIso(),
+      });
+
+    this.server.emit(SOCKET_EVENTS.sessionDeleteFailed, {
+      sessionId: payload.sessionId,
+      error: payload.error,
+      timestamp: this.nowIso(),
+    });
   }
 
   private async startGitWatcherIfRunning(sessionId: string): Promise<void> {

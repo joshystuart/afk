@@ -12,52 +12,50 @@ import {
 } from '@mui/material';
 import { afkColors } from '../themes/afk';
 
-export interface ApprovalModalProps {
+export interface BulkActionModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  type: 'stop' | 'delete';
-  sessionName?: string;
+  type: 'stop-all' | 'delete-all';
+  count: number;
   isLoading?: boolean;
-  deleteProgressMessage?: string | null;
+  progress?: { current: number; total: number } | null;
 }
 
-const ApprovalModal: React.FC<ApprovalModalProps> = ({
+const BulkActionModal: React.FC<BulkActionModalProps> = ({
   open,
   onClose,
   onConfirm,
   type,
-  sessionName,
+  count,
   isLoading = false,
-  deleteProgressMessage,
+  progress,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const isStopAction = type === 'stop';
-  const isDeleting = !isStopAction && isLoading;
-  const title = isStopAction
-    ? 'Stop session?'
-    : isDeleting
-      ? 'Deleting session...'
-      : 'Delete session?';
+  const isStop = type === 'stop-all';
 
-  const description = isStopAction
-    ? 'This will terminate all running processes and close terminal connections.'
-    : 'This will permanently remove the container and all its data.';
-
-  const confirmButtonText = isStopAction
+  const title = isStop
     ? isLoading
-      ? 'Stopping...'
-      : 'Stop Session'
+      ? 'Stopping sessions...'
+      : 'Stop all running sessions?'
     : isLoading
-      ? 'Deleting...'
-      : 'Delete Session';
+      ? 'Deleting sessions...'
+      : 'Delete all stopped/errored sessions?';
+
+  const description = isStop
+    ? `This will stop ${count} running session${count !== 1 ? 's' : ''}. All processes and terminal connections will be terminated.`
+    : `This will permanently delete ${count} stopped/errored session${count !== 1 ? 's' : ''} and all their data.`;
+
+  const confirmText = isStop
+    ? `Stop ${count} Session${count !== 1 ? 's' : ''}`
+    : `Delete ${count} Session${count !== 1 ? 's' : ''}`;
 
   return (
     <Dialog
       open={open}
-      onClose={isDeleting ? undefined : onClose}
+      onClose={isLoading ? undefined : onClose}
       maxWidth="xs"
       fullWidth
       fullScreen={isMobile}
@@ -81,25 +79,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
           {title}
         </Typography>
 
-        {sessionName && (
-          <Box
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.8125rem',
-              color: afkColors.accent,
-              bgcolor: afkColors.accentMuted,
-              borderRadius: '4px',
-              px: 1.5,
-              py: 0.75,
-              mb: 2,
-              display: 'inline-block',
-            }}
-          >
-            {sessionName}
-          </Box>
-        )}
-
-        {isDeleting && deleteProgressMessage ? (
+        {isLoading && progress ? (
           <Box
             sx={{
               display: 'flex',
@@ -119,7 +99,8 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
                 color: afkColors.textSecondary,
               }}
             >
-              {deleteProgressMessage}
+              {isStop ? 'Stopping' : 'Deleting'} {progress.current} of{' '}
+              {progress.total}...
             </Typography>
           </Box>
         ) : (
@@ -129,13 +110,12 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
         )}
       </DialogContent>
 
-      {!isDeleting && (
+      {!isLoading && (
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
           <Button
             onClick={onClose}
             variant="outlined"
             size="small"
-            disabled={isLoading}
             sx={{ flex: isMobile ? 1 : 'none' }}
           >
             Cancel
@@ -144,17 +124,16 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
             onClick={onConfirm}
             variant="contained"
             size="small"
-            disabled={isLoading}
             sx={{
               flex: isMobile ? 1 : 'none',
-              bgcolor: isStopAction ? afkColors.warning : afkColors.danger,
-              color: isStopAction ? '#000' : '#fff',
+              bgcolor: isStop ? afkColors.warning : afkColors.danger,
+              color: isStop ? '#000' : '#fff',
               '&:hover': {
-                bgcolor: isStopAction ? '#d97706' : '#dc2626',
+                bgcolor: isStop ? '#d97706' : '#dc2626',
               },
             }}
           >
-            {confirmButtonText}
+            {confirmText}
           </Button>
         </DialogActions>
       )}
@@ -162,4 +141,4 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   );
 };
 
-export default ApprovalModal;
+export default BulkActionModal;

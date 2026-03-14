@@ -1,4 +1,5 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
+import * as fs from 'fs';
 import { DockerEngineService } from '../../../services/docker/docker-engine.service';
 import { PortManagerService } from '../../../services/docker/port-manager.service';
 import { SessionRepository } from '../../../services/repositories/session.repository';
@@ -7,14 +8,18 @@ import { SessionConfigDtoFactory } from '../../../domain/sessions/session-config
 import { SessionConfig } from '../../../libs/config/session.config';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { Session } from '../../../domain/sessions/session.entity';
+import { SessionStatus } from '../../../domain/sessions/session-status.enum';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
 import { DockerImageStatus } from '../../../domain/docker-images/docker-image-status.enum';
+import { MountPathValidator } from '../../../libs/validators/mount-path.validator';
+import { MountPathValidationError } from '../../../libs/validators/mount-path-validation.error';
 
 @Injectable()
 export class CreateSessionInteractor {
   private readonly logger = new Logger(CreateSessionInteractor.name);
+  private readonly creationLock = new Map<string, Promise<void>>();
 
   constructor(
     private readonly dockerEngine: DockerEngineService,
@@ -26,6 +31,7 @@ export class CreateSessionInteractor {
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
     private readonly dockerImageRepository: DockerImageRepository,
+    private readonly mountPathValidator: MountPathValidator,
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
@@ -48,7 +54,51 @@ export class CreateSessionInteractor {
       gitUserName: request.gitUserName || settings.gitUserName,
       gitUserEmail: request.gitUserEmail || settings.gitUserEmail,
       hasSSHKey: !!settings.sshPrivateKey,
+      mountToHost: request.mountToHost,
+      hostMountPathOverride: request.hostMountPath,
+      defaultMountDirectory: settings.defaultMountDirectory ?? undefined,
+      cleanupOnDelete: request.cleanupOnDelete,
     });
+
+    // Validate and prepare mount path if specified
+    if (sessionConfig.hostMountPath) {
+      try {
+        this.mountPathValidator.validate(sessionConfig.hostMountPath);
+      } catch (error) {
+        if (error instanceof MountPathValidationError) {
+          throw new Error(error.message);
+        }
+        throw error;
+      }
+
+      // Serialize mount-path setup per resolved path to prevent race conditions
+      // where concurrent requests could pass the conflict check simultaneously
+      await this.withMountPathLock(sessionConfig.hostMountPath, async () => {
+        await this.checkMountPathConflict(
+          sessionConfig.hostMountPath!,
+          sessionName,
+        );
+
+        fs.mkdirSync(sessionConfig.hostMountPath!, { recursive: true });
+
+        // Re-validate after creation by resolving symlinks to prevent
+        // path traversal via symlinked intermediate directories
+        try {
+          this.mountPathValidator.validateReal(sessionConfig.hostMountPath!);
+        } catch (error) {
+          if (error instanceof MountPathValidationError) {
+            throw new Error(
+              `Mount path resolved to a forbidden location after following symlinks: ${error.message}`,
+            );
+          }
+          throw error;
+        }
+      });
+
+      this.logger.log('Ensured host mount directory exists', {
+        hostMountPath: sessionConfig.hostMountPath,
+      });
+    }
 
     const session = this.sessionFactory.create(sessionName, sessionConfig);
 
@@ -91,6 +141,7 @@ export class CreateSessionInteractor {
         ports,
         claudeToken: settings.claudeToken,
         githubToken,
+        hostMountPath: sessionConfig.hostMountPath || undefined,
       });
 
       // Store image reference on the session
@@ -133,6 +184,48 @@ export class CreateSessionInteractor {
 
       this.logger.error('Failed to create session', error);
       throw new Error(`Session creation failed: ${error.message}`);
+    }
+  }
+
+  private async withMountPathLock<T>(
+    mountPath: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    // Wait for any existing operation on this mount path to finish
+    while (this.creationLock.has(mountPath)) {
+      await this.creationLock.get(mountPath);
+    }
+
+    let resolve!: () => void;
+    const lockPromise = new Promise<void>((r) => (resolve = r));
+    this.creationLock.set(mountPath, lockPromise);
+
+    try {
+      return await fn();
+    } finally {
+      this.creationLock.delete(mountPath);
+      resolve();
+    }
+  }
+
+  private async checkMountPathConflict(
+    hostMountPath: string,
+    sessionName: string,
+  ): Promise<void> {
+    const allSessions = await this.sessionRepository.findAll({});
+    const activeSessions = allSessions.filter(
+      (s) =>
+        s.status !== SessionStatus.STOPPED && s.status !== SessionStatus.ERROR,
+    );
+
+    const conflict = activeSessions.find(
+      (s) => s.config?.hostMountPath === hostMountPath,
+    );
+
+    if (conflict) {
+      throw new Error(
+        `Mount path '${hostMountPath}' is already in use by session '${conflict.name}'. Use a custom path override or stop the other session.`,
+      );
     }
   }
 

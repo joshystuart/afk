@@ -19,6 +19,7 @@ export class UpdateSettingsInteractor {
       claudeToken: request.claudeToken,
       gitUserName: request.gitUserName,
       gitUserEmail: request.gitUserEmail,
+      defaultMountDirectory: request.defaultMountDirectory,
     });
 
     return await this.settingsRepository.save(currentSettings);

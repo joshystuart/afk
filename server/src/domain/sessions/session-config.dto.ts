@@ -5,5 +5,7 @@ export class SessionConfigDto {
     public readonly gitUserName: string,
     public readonly gitUserEmail: string,
     public readonly hasSSHKey: boolean,
+    public readonly hostMountPath: string | null = null,
+    public readonly cleanupOnDelete: boolean = false,
   ) {}
 }

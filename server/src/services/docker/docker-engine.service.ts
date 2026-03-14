@@ -9,6 +9,10 @@ import {
 } from '../../domain/containers/container.entity';
 import { DockerConfig } from '../../libs/config/docker.config';
 
+const WORKSPACE_BASE_PATH = '/workspace';
+const DEFAULT_REPO_NAME = 'workspace';
+const DEFAULT_EXEC_WORKING_DIR = `${WORKSPACE_BASE_PATH}/repo`;
+
 @Injectable()
 export class DockerEngineService {
   private docker: Dockerode;
@@ -55,6 +59,11 @@ export class DockerEngineService {
           Binds: [
             `afk-tmux-${options.sessionId}:/home/afk/.tmux/resurrect`,
             `afk-claude-${options.sessionId}:/home/afk/.claude`,
+            ...(options.hostMountPath
+              ? [
+                  `${options.hostMountPath}:${this.getContainerMountTarget(options.repoUrl)}:rw`,
+                ]
+              : []),
           ],
           RestartPolicy: { Name: 'unless-stopped' },
         },
@@ -193,10 +202,7 @@ export class DockerEngineService {
 
   async removeSessionVolumes(sessionId: string): Promise<void> {
     const volumeNames = [`afk-tmux-${sessionId}`, `afk-claude-${sessionId}`];
-
-    for (const volumeName of volumeNames) {
-      await this.removeVolume(volumeName);
-    }
+    await Promise.all(volumeNames.map((name) => this.removeVolume(name)));
   }
 
   async getContainerInfo(containerId: string): Promise<ContainerInfo> {
@@ -257,7 +263,7 @@ export class DockerEngineService {
   async execInContainer(
     containerId: string,
     cmd: string[],
-    workingDir = '/workspace/repo',
+    workingDir = DEFAULT_EXEC_WORKING_DIR,
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     const container = this.docker.getContainer(containerId);
 
@@ -309,7 +315,7 @@ export class DockerEngineService {
     containerId: string,
     cmd: string[],
     onData: (data: string) => void,
-    workingDir = '/workspace/repo',
+    workingDir = DEFAULT_EXEC_WORKING_DIR,
   ): Promise<{ stream: NodeJS.ReadableStream; kill: () => Promise<void> }> {
     const container = this.docker.getContainer(containerId);
 
@@ -454,5 +460,19 @@ export class DockerEngineService {
       rx: stats.networks?.eth0?.rx_bytes || 0,
       tx: stats.networks?.eth0?.tx_bytes || 0,
     };
+  }
+
+  private getContainerMountTarget(repoUrl?: string): string {
+    if (!repoUrl) {
+      return WORKSPACE_BASE_PATH;
+    }
+
+    const repoName = this.extractRepoName(repoUrl);
+    return `${WORKSPACE_BASE_PATH}/${repoName}`;
+  }
+
+  private extractRepoName(repoUrl: string): string {
+    const lastSegment = repoUrl.split(/[/:]/).pop() || DEFAULT_REPO_NAME;
+    return lastSegment.replace(/\.git$/, '') || DEFAULT_REPO_NAME;
   }
 }

@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsEmail,
   IsUUID,
+  IsBoolean,
   MinLength,
   MaxLength,
   Allow,
@@ -35,6 +36,18 @@ export class CreateSessionRequest {
   @IsOptional()
   @IsEmail()
   gitUserEmail?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  mountToHost?: boolean;
+
+  @IsOptional()
+  @IsString()
+  hostMountPath?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  cleanupOnDelete?: boolean;
 
   // This would be populated from authentication context
   @Allow()

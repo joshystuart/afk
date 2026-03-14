@@ -24,4 +24,12 @@ export class UpdateSettingsRequest {
   @IsEmail()
   @ApiProperty({ required: false, description: 'Git user email' })
   gitUserEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'Base directory on the host for mounting session workspaces',
+  })
+  defaultMountDirectory?: string;
 }

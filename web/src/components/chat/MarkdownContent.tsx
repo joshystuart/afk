@@ -147,7 +147,10 @@ const components: Components = {
     </Box>
   ),
   strong: ({ children }) => (
-    <Box component="strong" sx={{ fontWeight: 600, color: afkColors.textPrimary }}>
+    <Box
+      component="strong"
+      sx={{ fontWeight: 600, color: afkColors.textPrimary }}
+    >
       {children}
     </Box>
   ),

@@ -28,6 +28,7 @@ import {
   CloudUpload as PushIcon,
 } from '@mui/icons-material';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { DockerLogsExpander } from '../components/DockerLogsExpander';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
@@ -494,59 +495,81 @@ const SessionDetails: React.FC = () => {
           sx={{
             height: isMobile ? 'calc(100vh - 48px)' : '100vh',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            flexDirection: 'column',
             bgcolor: afkColors.background,
           }}
         >
-          <Box sx={{ textAlign: 'center', maxWidth: 400, px: 3 }}>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '1rem',
-                fontWeight: 600,
-                color: afkColors.textPrimary,
-                mb: 3,
-              }}
-            >
-              {session.name || session.id.slice(0, 12)}
-            </Typography>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 0,
+            }}
+          >
+            <Box sx={{ textAlign: 'center', px: 3 }}>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  color: afkColors.textPrimary,
+                  mb: 3,
+                }}
+              >
+                {session.name || session.id.slice(0, 12)}
+              </Typography>
 
-            <Box sx={{ mb: 3 }}>
-              <TerminalCursor size="lg" />
+              <Box sx={{ mb: 3 }}>
+                <TerminalCursor size="lg" />
+              </Box>
+
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  color: afkColors.textPrimary,
+                  mb: 1,
+                }}
+              >
+                Initializing session...
+              </Typography>
+
+              <Typography
+                variant="body2"
+                sx={{ color: afkColors.textTertiary, mb: 4 }}
+              >
+                Setting up environment
+              </Typography>
+
+              <Button
+                size="small"
+                startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
+                onClick={handleStopSessionClick}
+                disabled={isStopping}
+                sx={{
+                  fontSize: '0.75rem',
+                  color: afkColors.warning,
+                }}
+              >
+                {isStopping ? 'Stopping...' : 'Stop'}
+              </Button>
             </Box>
+          </Box>
 
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '0.8125rem',
-                fontWeight: 500,
-                color: afkColors.textPrimary,
-                mb: 1,
-              }}
-            >
-              Initializing session...
-            </Typography>
-
-            <Typography
-              variant="body2"
-              sx={{ color: afkColors.textTertiary, mb: 4 }}
-            >
-              Setting up environment
-            </Typography>
-
-            <Button
-              size="small"
-              startIcon={<StopIcon sx={{ fontSize: '14px !important' }} />}
-              onClick={handleStopSessionClick}
-              disabled={isStopping}
-              sx={{
-                fontSize: '0.75rem',
-                color: afkColors.warning,
-              }}
-            >
-              {isStopping ? 'Stopping...' : 'Stop'}
-            </Button>
+          <Box
+            sx={{
+              flexShrink: 0,
+              px: 3,
+              pb: 3,
+              mx: 'auto',
+              width: '100%',
+              maxWidth: 600,
+            }}
+          >
+            <DockerLogsExpander sessionId={session.id} />
           </Box>
         </Box>
 

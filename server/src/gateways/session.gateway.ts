@@ -145,13 +145,23 @@ export class SessionGateway
 
   @SubscribeMessage('subscribe.logs')
   async handleLogSubscription(
-    @MessageBody() data: { sessionId: string; containerId: string },
+    @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      // Start streaming logs
+      const session = await this.sessionRepository.findById(
+        this.sessionIdFactory.fromString(data.sessionId),
+      );
+
+      if (!session?.containerId) {
+        return {
+          event: 'logs.error',
+          data: { error: 'No container found for session' },
+        };
+      }
+
       const stream = await this.dockerEngine.streamContainerLogs(
-        data.containerId,
+        session.containerId,
         (log: string) => {
           client.emit('log.data', {
             sessionId: data.sessionId,
@@ -161,7 +171,6 @@ export class SessionGateway
         },
       );
 
-      // Store stream reference for cleanup
       (client as any).logStream = stream;
 
       return {

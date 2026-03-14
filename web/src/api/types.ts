@@ -27,6 +27,7 @@ export interface Session {
   terminalUrl?: string;
   imageId?: string;
   imageName?: string;
+  hostMountPath?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +39,9 @@ export interface CreateSessionRequest {
   branch?: string;
   gitUserName?: string;
   gitUserEmail?: string;
+  mountToHost?: boolean;
+  hostMountPath?: string;
+  cleanupOnDelete?: boolean;
 }
 
 export interface UpdateSessionRequest {
@@ -69,6 +73,7 @@ export interface Settings {
   gitUserEmail?: string;
   hasGitHubToken: boolean;
   githubUsername?: string;
+  defaultMountDirectory?: string | null;
   updatedAt: string;
 }
 
@@ -102,6 +107,7 @@ export interface UpdateSettingsRequest {
   claudeToken?: string;
   gitUserName?: string;
   gitUserEmail?: string;
+  defaultMountDirectory?: string;
 }
 
 export interface ApiError {

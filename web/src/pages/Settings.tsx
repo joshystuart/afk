@@ -53,6 +53,7 @@ const Settings: React.FC = () => {
     claudeToken: '',
     gitUserName: '',
     gitUserEmail: '',
+    defaultMountDirectory: '',
   });
 
   const [saveLoading, setSaveLoading] = useState(false);
@@ -183,6 +184,7 @@ const Settings: React.FC = () => {
         claudeToken: '',
         gitUserName: settings.gitUserName || '',
         gitUserEmail: settings.gitUserEmail || '',
+        defaultMountDirectory: settings.defaultMountDirectory || '',
       });
       setIsEditingSshKey(false);
       setSshKeyModified(false);
@@ -303,6 +305,30 @@ const Settings: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit}>
+            {/* Workspace */}
+            <Box sx={{ mb: 4 }}>
+              <Box
+                sx={{
+                  borderLeft: `2px solid ${afkColors.accent}`,
+                  pl: 2,
+                  mb: 2.5,
+                }}
+              >
+                <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+                  Workspace
+                </Typography>
+              </Box>
+
+              <TextField
+                fullWidth
+                label="Default Mount Directory"
+                value={formData.defaultMountDirectory}
+                onChange={handleInputChange('defaultMountDirectory')}
+                placeholder="/Users/josh/afk-workspaces"
+                helperText="Base directory on the host for mounting session workspaces. When set, sessions can bind-mount their workspace to this directory."
+              />
+            </Box>
+
             {/* Git Configuration */}
             <Box sx={{ mb: 4 }}>
               <Box

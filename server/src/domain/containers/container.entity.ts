@@ -34,4 +34,5 @@ export interface ContainerCreateOptions {
   ports: PortPairDto;
   claudeToken?: string;
   githubToken?: string;
+  hostMountPath?: string;
 }

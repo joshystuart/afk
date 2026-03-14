@@ -55,6 +55,9 @@ export class DockerEngineService {
           Binds: [
             `afk-tmux-${options.sessionId}:/home/afk/.tmux/resurrect`,
             `afk-claude-${options.sessionId}:/home/afk/.claude`,
+            ...(options.hostMountPath
+              ? [`${options.hostMountPath}:/workspace:rw`]
+              : []),
           ],
           RestartPolicy: { Name: 'unless-stopped' },
         },

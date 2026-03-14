@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import * as fs from 'fs';
 import { DockerEngineService } from '../../services/docker/docker-engine.service';
 import { ContainerNotFoundError } from '../../services/docker/container-not-found.error';
 import { SessionRepository } from '../../services/repositories/session.repository';
@@ -167,6 +168,7 @@ export class SessionLifecycleInteractor {
       sshPrivateKey: session.config.sshPrivateKey,
       claudeToken: session.config.claudeToken,
       ports: session.ports,
+      hostMountPath: session.config.hostMountPath || undefined,
     });
 
     // Update session with new container ID
@@ -299,6 +301,32 @@ export class SessionLifecycleInteractor {
           sessionId: sessionId.toString(),
           error: volumeError.message,
         });
+      }
+
+      // Clean up host mount directory if configured
+      if (
+        session.config?.cleanupOnDelete &&
+        session.config?.hostMountPath
+      ) {
+        try {
+          fs.rmSync(session.config.hostMountPath, {
+            recursive: true,
+            force: true,
+          });
+          this.logger.log('Cleaned up host mount directory', {
+            sessionId: sessionId.toString(),
+            hostMountPath: session.config.hostMountPath,
+          });
+        } catch (cleanupError) {
+          this.logger.warn(
+            'Failed to clean up host mount directory, continuing',
+            {
+              sessionId: sessionId.toString(),
+              hostMountPath: session.config.hostMountPath,
+              error: cleanupError.message,
+            },
+          );
+        }
       }
 
       // Release ports

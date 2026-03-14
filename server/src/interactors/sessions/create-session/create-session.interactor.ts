@@ -1,4 +1,5 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
+import * as fs from 'fs';
 import { DockerEngineService } from '../../../services/docker/docker-engine.service';
 import { PortManagerService } from '../../../services/docker/port-manager.service';
 import { SessionRepository } from '../../../services/repositories/session.repository';
@@ -7,10 +8,15 @@ import { SessionConfigDtoFactory } from '../../../domain/sessions/session-config
 import { SessionConfig } from '../../../libs/config/session.config';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { Session } from '../../../domain/sessions/session.entity';
+import { SessionStatus } from '../../../domain/sessions/session-status.enum';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
 import { DockerImageStatus } from '../../../domain/docker-images/docker-image-status.enum';
+import {
+  validateMountPath,
+  MountPathValidationError,
+} from '../../../libs/validators/mount-path.validator';
 
 @Injectable()
 export class CreateSessionInteractor {
@@ -48,7 +54,35 @@ export class CreateSessionInteractor {
       gitUserName: request.gitUserName || settings.gitUserName,
       gitUserEmail: request.gitUserEmail || settings.gitUserEmail,
       hasSSHKey: !!settings.sshPrivateKey,
+      mountToHost: request.mountToHost,
+      hostMountPathOverride: request.hostMountPath,
+      defaultMountDirectory: settings.defaultMountDirectory ?? undefined,
+      cleanupOnDelete: request.cleanupOnDelete,
     });
+
+    // Validate and prepare mount path if specified
+    if (sessionConfig.hostMountPath) {
+      try {
+        validateMountPath(sessionConfig.hostMountPath);
+      } catch (error) {
+        if (error instanceof MountPathValidationError) {
+          throw new Error(error.message);
+        }
+        throw error;
+      }
+
+      // Check for mount path conflicts with active sessions
+      await this.checkMountPathConflict(
+        sessionConfig.hostMountPath,
+        sessionName,
+      );
+
+      // Create the host directory if it doesn't exist
+      fs.mkdirSync(sessionConfig.hostMountPath, { recursive: true });
+      this.logger.log('Ensured host mount directory exists', {
+        hostMountPath: sessionConfig.hostMountPath,
+      });
+    }
 
     const session = this.sessionFactory.create(sessionName, sessionConfig);
 
@@ -91,6 +125,7 @@ export class CreateSessionInteractor {
         ports,
         claudeToken: settings.claudeToken,
         githubToken,
+        hostMountPath: sessionConfig.hostMountPath || undefined,
       });
 
       // Store image reference on the session
@@ -133,6 +168,27 @@ export class CreateSessionInteractor {
 
       this.logger.error('Failed to create session', error);
       throw new Error(`Session creation failed: ${error.message}`);
+    }
+  }
+
+  private async checkMountPathConflict(
+    hostMountPath: string,
+    sessionName: string,
+  ): Promise<void> {
+    const allSessions = await this.sessionRepository.findAll({});
+    const activeSessions = allSessions.filter(
+      (s) =>
+        s.status !== SessionStatus.STOPPED && s.status !== SessionStatus.ERROR,
+    );
+
+    const conflict = activeSessions.find(
+      (s) => s.config?.hostMountPath === hostMountPath,
+    );
+
+    if (conflict) {
+      throw new Error(
+        `Mount path '${hostMountPath}' is already in use by session '${conflict.name}'. Use a custom path override or stop the other session.`,
+      );
     }
   }
 

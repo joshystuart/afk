@@ -11,6 +11,8 @@ import {
   ToggleButton,
   CircularProgress,
   MenuItem,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -18,6 +20,7 @@ import {
   Link as LinkIcon,
   Lock as LockIcon,
   LockOpen as LockOpenIcon,
+  FolderOpen as FolderOpenIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -51,6 +54,9 @@ const CreateSession: React.FC = () => {
   );
   const [searchInput, setSearchInput] = useState('');
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
+  const [mountToHost, setMountToHost] = useState(false);
+  const [hostMountPathOverride, setHostMountPathOverride] = useState('');
+  const [cleanupOnDelete, setCleanupOnDelete] = useState(false);
 
   // Fetch repos when connected
   const { data: repos, isLoading: reposLoading } = useRepos(
@@ -154,6 +160,30 @@ const CreateSession: React.FC = () => {
     return isSsh && !settings?.hasSshPrivateKey;
   }, [repoUrlValue, settings?.hasSshPrivateKey]);
 
+  const hasMountDirectory = !!settings?.defaultMountDirectory;
+
+  const derivedMountPath = useMemo(() => {
+    if (!hasMountDirectory) return '';
+    const baseDir = settings!.defaultMountDirectory!;
+    const url = repoUrlValue || '';
+    let repoName = 'workspace';
+    if (url) {
+      try {
+        const sshMatch = url.match(/[:/]([^/]+?)(?:\.git)?$/);
+        if (sshMatch) {
+          repoName = sshMatch[1];
+        } else {
+          repoName = url.split('/').pop()?.replace(/\.git$/, '') || 'workspace';
+        }
+      } catch {
+        repoName = 'workspace';
+      }
+    }
+    return `${baseDir}/${repoName}`;
+  }, [hasMountDirectory, settings?.defaultMountDirectory, repoUrlValue]);
+
+  const effectiveMountPath = hostMountPathOverride || derivedMountPath;
+
   // Set imageId to default image once loaded
   useEffect(() => {
     if (defaultImage) {
@@ -212,6 +242,11 @@ const CreateSession: React.FC = () => {
         imageId: data.imageId,
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
+        mountToHost: mountToHost || undefined,
+        hostMountPath: mountToHost && hostMountPathOverride
+          ? hostMountPathOverride
+          : undefined,
+        cleanupOnDelete: mountToHost && cleanupOnDelete ? true : undefined,
       };
 
       await createSession(request);
@@ -652,6 +687,111 @@ const CreateSession: React.FC = () => {
                       error={!!errors.branch}
                     />
                   )}
+                />
+              </>
+            )}
+          </Box>
+        </Box>
+
+        {/* Workspace Mount */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              Workspace
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={mountToHost}
+                  onChange={(e) => setMountToHost(e.target.checked)}
+                  disabled={!hasMountDirectory}
+                  size="small"
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: afkColors.textPrimary }}>
+                  Mount workspace to host
+                </Typography>
+              }
+            />
+
+            {!hasMountDirectory && (
+              <Typography
+                variant="caption"
+                sx={{ color: afkColors.textTertiary, mt: -1 }}
+              >
+                Set a{' '}
+                <Link to={ROUTES.SETTINGS} style={{ color: afkColors.accent }}>
+                  Default Mount Directory
+                </Link>{' '}
+                in Settings to enable host mounting
+              </Typography>
+            )}
+
+            {mountToHost && (
+              <>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 1.5,
+                    border: `1px solid ${afkColors.border}`,
+                    borderRadius: 1,
+                    bgcolor: afkColors.surfaceElevated,
+                  }}
+                >
+                  <FolderOpenIcon
+                    sx={{ fontSize: 18, color: afkColors.accent, flexShrink: 0 }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: afkColors.textSecondary,
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: '0.8125rem',
+                      wordBreak: 'break-all',
+                    }}
+                  >
+                    {effectiveMountPath || 'No path computed'}
+                  </Typography>
+                </Box>
+
+                <TextField
+                  fullWidth
+                  label="Override path"
+                  value={hostMountPathOverride}
+                  onChange={(e) => setHostMountPathOverride(e.target.value)}
+                  placeholder={derivedMountPath}
+                  helperText="Optional. Fully replaces the computed mount path"
+                  size="small"
+                />
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={cleanupOnDelete}
+                      onChange={(e) => setCleanupOnDelete(e.target.checked)}
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography
+                      variant="body2"
+                      sx={{ color: afkColors.textPrimary }}
+                    >
+                      Clean up files on session delete
+                    </Typography>
+                  }
                 />
               </>
             )}

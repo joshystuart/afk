@@ -64,6 +64,7 @@ export class AppTestHelper {
         startContainer: jest.fn().mockResolvedValue(undefined),
         stopContainer: jest.fn().mockResolvedValue(undefined),
         removeContainer: jest.fn().mockResolvedValue(undefined),
+        removeSessionVolumes: jest.fn().mockResolvedValue(undefined),
         getContainerInfo: jest.fn().mockResolvedValue({
           id: 'test-container-id',
           name: 'test-container',

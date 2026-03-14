@@ -4,6 +4,8 @@ import { useAuthStore } from '../stores/auth.store';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 const MAX_LOG_LINES = 500;
+const CONNECTION_TIMEOUT_MS = 10_000;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
 interface UseDockerLogsReturn {
   logs: string[];
@@ -16,6 +18,7 @@ export const useDockerLogs = (
   enabled: boolean,
 ): UseDockerLogsReturn => {
   const socketRef = useRef<Socket | null>(null);
+  const cleanedUpRef = useRef(false);
   const { token } = useAuthStore();
   const [logs, setLogs] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -25,23 +28,46 @@ export const useDockerLogs = (
   useEffect(() => {
     if (!enabled || !token || !sessionId) return;
 
+    cleanedUpRef.current = false;
+
     const socket = io(`${WS_URL}/sessions`, {
       auth: { token },
       transports: ['websocket'],
+      timeout: CONNECTION_TIMEOUT_MS,
+      reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
     socketRef.current = socket;
 
+    const connectionTimer = setTimeout(() => {
+      if (!socket.connected && !cleanedUpRef.current) {
+        socket.disconnect();
+      }
+    }, CONNECTION_TIMEOUT_MS);
+
     socket.on('connect', () => {
-      setIsConnected(true);
-      socket.emit('subscribe.logs', { sessionId });
+      clearTimeout(connectionTimer);
+      if (!cleanedUpRef.current) {
+        setIsConnected(true);
+        socket.emit('subscribe.logs', { sessionId });
+      }
     });
 
     socket.on('disconnect', () => {
-      setIsConnected(false);
+      if (!cleanedUpRef.current) {
+        setIsConnected(false);
+      }
+    });
+
+    socket.on('connect_error', () => {
+      if (!cleanedUpRef.current) {
+        setIsConnected(false);
+      }
     });
 
     socket.on('log.data', (data: { sessionId: string; log: string }) => {
-      if (data.sessionId !== sessionId) return;
+      if (cleanedUpRef.current || data.sessionId !== sessionId) return;
 
       const lines = data.log
         .split('\n')
@@ -59,7 +85,12 @@ export const useDockerLogs = (
     });
 
     return () => {
-      socket.emit('unsubscribe.logs');
+      cleanedUpRef.current = true;
+      clearTimeout(connectionTimer);
+      socket.removeAllListeners();
+      if (socket.connected) {
+        socket.emit('unsubscribe.logs');
+      }
       socket.disconnect();
       socketRef.current = null;
     };

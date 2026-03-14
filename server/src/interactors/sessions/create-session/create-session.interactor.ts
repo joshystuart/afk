@@ -13,14 +13,13 @@ import { SettingsRepository } from '../../../domain/settings/settings.repository
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
 import { DockerImageStatus } from '../../../domain/docker-images/docker-image-status.enum';
-import {
-  validateMountPath,
-  MountPathValidationError,
-} from '../../../libs/validators/mount-path.validator';
+import { MountPathValidator } from '../../../libs/validators/mount-path.validator';
+import { MountPathValidationError } from '../../../libs/validators/mount-path-validation.error';
 
 @Injectable()
 export class CreateSessionInteractor {
   private readonly logger = new Logger(CreateSessionInteractor.name);
+  private readonly creationLock = new Map<string, Promise<void>>();
 
   constructor(
     private readonly dockerEngine: DockerEngineService,
@@ -32,6 +31,7 @@ export class CreateSessionInteractor {
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
     private readonly dockerImageRepository: DockerImageRepository,
+    private readonly mountPathValidator: MountPathValidator,
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
@@ -63,7 +63,7 @@ export class CreateSessionInteractor {
     // Validate and prepare mount path if specified
     if (sessionConfig.hostMountPath) {
       try {
-        validateMountPath(sessionConfig.hostMountPath);
+        this.mountPathValidator.validate(sessionConfig.hostMountPath);
       } catch (error) {
         if (error instanceof MountPathValidationError) {
           throw new Error(error.message);
@@ -71,14 +71,30 @@ export class CreateSessionInteractor {
         throw error;
       }
 
-      // Check for mount path conflicts with active sessions
-      await this.checkMountPathConflict(
-        sessionConfig.hostMountPath,
-        sessionName,
-      );
+      // Serialize mount-path setup per resolved path to prevent race conditions
+      // where concurrent requests could pass the conflict check simultaneously
+      await this.withMountPathLock(sessionConfig.hostMountPath, async () => {
+        await this.checkMountPathConflict(
+          sessionConfig.hostMountPath!,
+          sessionName,
+        );
 
-      // Create the host directory if it doesn't exist
-      fs.mkdirSync(sessionConfig.hostMountPath, { recursive: true });
+        fs.mkdirSync(sessionConfig.hostMountPath!, { recursive: true });
+
+        // Re-validate after creation by resolving symlinks to prevent
+        // path traversal via symlinked intermediate directories
+        try {
+          this.mountPathValidator.validateReal(sessionConfig.hostMountPath!);
+        } catch (error) {
+          if (error instanceof MountPathValidationError) {
+            throw new Error(
+              `Mount path resolved to a forbidden location after following symlinks: ${error.message}`,
+            );
+          }
+          throw error;
+        }
+      });
+
       this.logger.log('Ensured host mount directory exists', {
         hostMountPath: sessionConfig.hostMountPath,
       });
@@ -168,6 +184,27 @@ export class CreateSessionInteractor {
 
       this.logger.error('Failed to create session', error);
       throw new Error(`Session creation failed: ${error.message}`);
+    }
+  }
+
+  private async withMountPathLock<T>(
+    mountPath: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    // Wait for any existing operation on this mount path to finish
+    while (this.creationLock.has(mountPath)) {
+      await this.creationLock.get(mountPath);
+    }
+
+    let resolve!: () => void;
+    const lockPromise = new Promise<void>((r) => (resolve = r));
+    this.creationLock.set(mountPath, lockPromise);
+
+    try {
+      return await fn();
+    } finally {
+      this.creationLock.delete(mountPath);
+      resolve();
     }
   }
 

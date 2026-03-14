@@ -25,6 +25,7 @@ import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module'
 import { ChatModule } from '../../services/chat/chat.module';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
+import { MountPathValidator } from '../../libs/validators/mount-path.validator';
 import { Session } from '../../domain/sessions/session.entity';
 
 @Module({
@@ -59,6 +60,7 @@ import { Session } from '../../domain/sessions/session.entity';
     UpdateSessionInteractor,
     SessionConfig,
     ResponseService,
+    MountPathValidator,
   ],
   exports: [
     CreateSessionInteractor,

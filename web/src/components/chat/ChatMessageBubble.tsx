@@ -4,6 +4,7 @@ import { afkColors } from '../../themes/afk';
 import { ThinkingBlock } from './ThinkingBlock';
 import { ToolCallBlock } from './ToolCallBlock';
 import { StreamingIndicator } from './StreamingIndicator';
+import { MarkdownContent } from './MarkdownContent';
 import type { ChatStreamEvent } from '../../api/types';
 
 interface ChatMessageBubbleProps {
@@ -66,12 +67,7 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
         ) : isStreaming ? (
           <StreamingIndicator />
         ) : (
-          <Typography
-            variant="body2"
-            sx={{ color: afkColors.textPrimary, whiteSpace: 'pre-wrap' }}
-          >
-            {content}
-          </Typography>
+          <MarkdownContent content={content} />
         )}
 
         {!isStreaming && (costUsd != null || durationMs != null) && (
@@ -255,20 +251,7 @@ const AssistantEventList: React.FC<{
         }
 
         if (block.type === 'text') {
-          return (
-            <Typography
-              key={index}
-              variant="body2"
-              sx={{
-                color: afkColors.textPrimary,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                py: 0.25,
-              }}
-            >
-              {block.content}
-            </Typography>
-          );
+          return <MarkdownContent key={index} content={block.content} />;
         }
 
         if (block.type === 'tool_use') {

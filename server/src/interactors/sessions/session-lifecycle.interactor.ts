@@ -304,10 +304,7 @@ export class SessionLifecycleInteractor {
       }
 
       // Clean up host mount directory if configured
-      if (
-        session.config?.cleanupOnDelete &&
-        session.config?.hostMountPath
-      ) {
+      if (session.config?.cleanupOnDelete && session.config?.hostMountPath) {
         try {
           fs.rmSync(session.config.hostMountPath, {
             recursive: true,

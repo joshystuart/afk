@@ -29,8 +29,7 @@ export class UpdateSettingsRequest {
   @IsString()
   @ApiProperty({
     required: false,
-    description:
-      'Base directory on the host for mounting session workspaces',
+    description: 'Base directory on the host for mounting session workspaces',
   })
   defaultMountDirectory?: string;
 }

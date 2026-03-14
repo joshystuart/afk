@@ -173,7 +173,11 @@ const CreateSession: React.FC = () => {
         if (sshMatch) {
           repoName = sshMatch[1];
         } else {
-          repoName = url.split('/').pop()?.replace(/\.git$/, '') || 'workspace';
+          repoName =
+            url
+              .split('/')
+              .pop()
+              ?.replace(/\.git$/, '') || 'workspace';
         }
       } catch {
         repoName = 'workspace';
@@ -181,8 +185,6 @@ const CreateSession: React.FC = () => {
     }
     return `${baseDir}/${repoName}`;
   }, [hasMountDirectory, settings?.defaultMountDirectory, repoUrlValue]);
-
-  const effectiveMountPath = hostMountPathOverride || derivedMountPath;
 
   // Set imageId to default image once loaded
   useEffect(() => {
@@ -243,8 +245,8 @@ const CreateSession: React.FC = () => {
         repoUrl: data.repoUrl || undefined,
         branch: data.branch || undefined,
         mountToHost: mountToHost || undefined,
-        hostMountPath: mountToHost && hostMountPathOverride
-          ? hostMountPathOverride
+        hostMountPath: mountToHost
+          ? hostMountPathOverride || derivedMountPath || undefined
           : undefined,
         cleanupOnDelete: mountToHost && cleanupOnDelete ? true : undefined,
       };
@@ -712,13 +714,25 @@ const CreateSession: React.FC = () => {
               control={
                 <Switch
                   checked={mountToHost}
-                  onChange={(e) => setMountToHost(e.target.checked)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setMountToHost(checked);
+                    if (checked) {
+                      setHostMountPathOverride(derivedMountPath);
+                    } else {
+                      setHostMountPathOverride('');
+                      setCleanupOnDelete(false);
+                    }
+                  }}
                   disabled={!hasMountDirectory}
                   size="small"
                 />
               }
               label={
-                <Typography variant="body2" sx={{ color: afkColors.textPrimary }}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: afkColors.textPrimary }}
+                >
                   Mount workspace to host
                 </Typography>
               }
@@ -739,41 +753,31 @@ const CreateSession: React.FC = () => {
 
             {mountToHost && (
               <>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    p: 1.5,
-                    border: `1px solid ${afkColors.border}`,
-                    borderRadius: 1,
-                    bgcolor: afkColors.surfaceElevated,
-                  }}
-                >
-                  <FolderOpenIcon
-                    sx={{ fontSize: 18, color: afkColors.accent, flexShrink: 0 }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: afkColors.textSecondary,
-                      fontFamily: '"JetBrains Mono", monospace',
-                      fontSize: '0.8125rem',
-                      wordBreak: 'break-all',
-                    }}
-                  >
-                    {effectiveMountPath || 'No path computed'}
-                  </Typography>
-                </Box>
-
                 <TextField
                   fullWidth
-                  label="Override path"
+                  label="Host mount path"
                   value={hostMountPathOverride}
                   onChange={(e) => setHostMountPathOverride(e.target.value)}
                   placeholder={derivedMountPath}
-                  helperText="Optional. Fully replaces the computed mount path"
                   size="small"
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <FolderOpenIcon
+                          sx={{
+                            fontSize: 18,
+                            color: afkColors.accent,
+                            mr: 1,
+                            flexShrink: 0,
+                          }}
+                        />
+                      ),
+                      sx: {
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.8125rem',
+                      },
+                    },
+                  }}
                 />
 
                 <FormControlLabel

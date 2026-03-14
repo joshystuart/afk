@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSessionStore } from '../stores/session.store';
@@ -17,7 +23,11 @@ interface WebSocketContextValue {
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null);
 
-export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
+export const WebSocketProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const socketRef = useRef<Socket | null>(null);
   const { isAuthenticated, token } = useAuthStore();
   const {

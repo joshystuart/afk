@@ -269,19 +269,21 @@ export class SessionGateway
     this.server
       .to(this.getSessionRoom(payload.sessionId))
       .emit(SOCKET_EVENTS.sessionGitStatus, {
-      sessionId: payload.sessionId,
-      ...payload.status,
-      timestamp: this.nowIso(),
-    });
+        sessionId: payload.sessionId,
+        ...payload.status,
+        timestamp: this.nowIso(),
+      });
   }
 
   // Emit session status updates
   emitSessionUpdate(sessionId: string, update: SessionUpdate) {
-    this.server.to(this.getSessionRoom(sessionId)).emit(SOCKET_EVENTS.sessionUpdated, {
-      sessionId,
-      update,
-      timestamp: this.nowIso(),
-    });
+    this.server
+      .to(this.getSessionRoom(sessionId))
+      .emit(SOCKET_EVENTS.sessionUpdated, {
+        sessionId,
+        update,
+        timestamp: this.nowIso(),
+      });
   }
 
   emitSessionStatusChange(sessionId: string, status: SessionStatus) {
@@ -324,11 +326,13 @@ export class SessionGateway
         content,
         { continueConversation, model },
         (event) => {
-          this.server.to(this.getSessionRoom(sessionId)).emit(SOCKET_EVENTS.chatStream, {
-            sessionId,
-            messageId: result.assistantMessageId,
-            event,
-          });
+          this.server
+            .to(this.getSessionRoom(sessionId))
+            .emit(SOCKET_EVENTS.chatStream, {
+              sessionId,
+              messageId: result.assistantMessageId,
+              event,
+            });
         },
         (info) => {
           this.server
@@ -342,10 +346,12 @@ export class SessionGateway
             });
         },
         (error) => {
-          this.server.to(this.getSessionRoom(sessionId)).emit(SOCKET_EVENTS.chatError, {
-            sessionId,
-            error: error.message,
-          });
+          this.server
+            .to(this.getSessionRoom(sessionId))
+            .emit(SOCKET_EVENTS.chatError, {
+              sessionId,
+              error: error.message,
+            });
         },
       );
 

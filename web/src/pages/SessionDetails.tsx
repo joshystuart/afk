@@ -574,7 +574,9 @@ const SessionDetails: React.FC = () => {
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<DuplicateIcon sx={{ fontSize: '16px !important' }} />}
+                startIcon={
+                  <DuplicateIcon sx={{ fontSize: '16px !important' }} />
+                }
                 onClick={handleDuplicateSession}
                 sx={{ fontSize: '0.8125rem' }}
               >
@@ -585,7 +587,9 @@ const SessionDetails: React.FC = () => {
                 <Button
                   variant="outlined"
                   size="small"
-                  startIcon={<DeleteIcon sx={{ fontSize: '16px !important' }} />}
+                  startIcon={
+                    <DeleteIcon sx={{ fontSize: '16px !important' }} />
+                  }
                   onClick={handleDeleteSessionClick}
                   disabled={isDeleting}
                   sx={{

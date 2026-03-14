@@ -145,9 +145,7 @@ const Dashboard: React.FC = () => {
   }, [sessions, approvalModal]);
 
   const handleStartAll = async () => {
-    const targets = sessions.filter(
-      (s) => s.status === SessionStatus.STOPPED,
-    );
+    const targets = sessions.filter((s) => s.status === SessionStatus.STOPPED);
     if (targets.length === 0) return;
     setIsBulkStarting(true);
     for (const session of targets) {
@@ -278,7 +276,14 @@ const Dashboard: React.FC = () => {
         }}
       >
         <Typography variant="h3">Sessions</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
           {sessions.length > 0 && (
             <>
               <Button
@@ -326,9 +331,7 @@ const Dashboard: React.FC = () => {
                 startIcon={
                   <DeleteSweepIcon sx={{ fontSize: '16px !important' }} />
                 }
-                onClick={() =>
-                  setBulkModal({ open: true, type: 'delete-all' })
-                }
+                onClick={() => setBulkModal({ open: true, type: 'delete-all' })}
                 disabled={
                   stoppedSessions.length === 0 ||
                   isBulkStarting ||

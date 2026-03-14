@@ -82,9 +82,7 @@ const CreateSession: React.FC = () => {
     !!duplicateFrom?.hostMountPath,
   );
   const [hostMountPathOverride, setHostMountPathOverride] = useState(
-    duplicateFrom?.hostMountPath
-      ? `${duplicateFrom.hostMountPath}-copy`
-      : '',
+    duplicateFrom?.hostMountPath ? `${duplicateFrom.hostMountPath}-copy` : '',
   );
   const [cleanupOnDelete, setCleanupOnDelete] = useState(true);
 
@@ -144,9 +142,7 @@ const CreateSession: React.FC = () => {
   useEffect(() => {
     if (!hasDuplicateRepo || !repos || selectedRepo) return;
     const url = duplicateFrom!.repoUrl!;
-    const match = repos.find(
-      (r) => r.clone_url === url || r.ssh_url === url,
-    );
+    const match = repos.find((r) => r.clone_url === url || r.ssh_url === url);
     if (match) {
       setSelectedRepo(match);
     } else {

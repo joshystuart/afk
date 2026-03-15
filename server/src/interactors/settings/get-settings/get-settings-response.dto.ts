@@ -29,14 +29,14 @@ export class GetSettingsResponseDto {
   @ApiProperty({ required: false, nullable: true })
   defaultMountDirectory?: string | null;
 
-  @ApiProperty({ required: false, nullable: true })
-  dockerSocketPath?: string | null;
+  @ApiProperty({ description: 'Docker socket path' })
+  dockerSocketPath!: string;
 
-  @ApiProperty({ required: false, nullable: true })
-  dockerStartPort?: number | null;
+  @ApiProperty({ description: 'Start of port range for Docker containers' })
+  dockerStartPort!: number;
 
-  @ApiProperty({ required: false, nullable: true })
-  dockerEndPort?: number | null;
+  @ApiProperty({ description: 'End of port range for Docker containers' })
+  dockerEndPort!: number;
 
   @ApiProperty({ required: false, nullable: true })
   githubClientId?: string | null;
@@ -48,11 +48,11 @@ export class GetSettingsResponseDto {
   })
   hasGithubClientSecret!: boolean;
 
-  @ApiProperty({ required: false, nullable: true })
-  githubCallbackUrl?: string | null;
+  @ApiProperty({ description: 'GitHub OAuth callback URL' })
+  githubCallbackUrl!: string;
 
-  @ApiProperty({ required: false, nullable: true })
-  githubFrontendRedirectUrl?: string | null;
+  @ApiProperty({ description: 'Frontend redirect URL after GitHub OAuth' })
+  githubFrontendRedirectUrl!: string;
 
   @ApiProperty()
   updatedAt!: string;
@@ -81,13 +81,13 @@ export class GetSettingsResponseDto {
     dto.hasGitHubToken = !!settings.githubAccessToken;
     dto.githubUsername = settings.githubUsername ?? undefined;
     dto.defaultMountDirectory = settings.defaultMountDirectory ?? null;
-    dto.dockerSocketPath = settings.dockerSocketPath ?? null;
-    dto.dockerStartPort = settings.dockerStartPort ?? null;
-    dto.dockerEndPort = settings.dockerEndPort ?? null;
+    dto.dockerSocketPath = settings.dockerSocketPath;
+    dto.dockerStartPort = settings.dockerStartPort;
+    dto.dockerEndPort = settings.dockerEndPort;
     dto.githubClientId = settings.githubClientId ?? null;
     dto.hasGithubClientSecret = !!settings.githubClientSecret;
-    dto.githubCallbackUrl = settings.githubCallbackUrl ?? null;
-    dto.githubFrontendRedirectUrl = settings.githubFrontendRedirectUrl ?? null;
+    dto.githubCallbackUrl = settings.githubCallbackUrl;
+    dto.githubFrontendRedirectUrl = settings.githubFrontendRedirectUrl;
     dto.updatedAt = settings.updatedAt.toISOString();
     return dto;
   }

@@ -6,9 +6,6 @@ import { DockerEngineService } from './docker-engine.service';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 
-const DEFAULT_START_PORT = 7681;
-const DEFAULT_END_PORT = 7780;
-
 @Injectable()
 export class PortManagerService implements OnModuleInit {
   private allocatedPorts: Set<number> = new Set();
@@ -85,8 +82,8 @@ export class PortManagerService implements OnModuleInit {
 
   private async initializePortPool(): Promise<void> {
     const settings = await this.settingsRepository.get();
-    const startPort = settings.dockerStartPort ?? DEFAULT_START_PORT;
-    const endPort = settings.dockerEndPort ?? DEFAULT_END_PORT;
+    const startPort = settings.dockerStartPort;
+    const endPort = settings.dockerEndPort;
 
     for (let port = startPort; port <= endPort; port++) {
       this.portPool.push(port);

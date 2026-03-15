@@ -8,8 +8,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 
-const DEFAULT_SOCKET_PATH = '/var/run/docker.sock';
-
 @Injectable()
 export class DockerImageService implements OnModuleInit {
   private docker!: Dockerode;
@@ -23,7 +21,7 @@ export class DockerImageService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     const settings = await this.settingsRepository.get();
-    const socketPath = settings.dockerSocketPath || DEFAULT_SOCKET_PATH;
+    const socketPath = settings.dockerSocketPath;
     this.docker = this.createDockerClient(socketPath);
     await this.reconcileImageStatuses();
   }

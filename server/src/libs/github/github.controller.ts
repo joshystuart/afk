@@ -77,8 +77,8 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     return {
       clientId: settings.githubClientId || '',
       clientSecret: settings.githubClientSecret || '',
-      callbackUrl: settings.githubCallbackUrl || '',
-      frontendRedirectUrl: settings.githubFrontendRedirectUrl || '',
+      callbackUrl: settings.githubCallbackUrl,
+      frontendRedirectUrl: settings.githubFrontendRedirectUrl,
     };
   }
 

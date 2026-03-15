@@ -2,6 +2,14 @@ import { Entity, Column, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('settings')
 export class Settings {
+  static readonly DEFAULT_DOCKER_SOCKET_PATH = '/var/run/docker.sock';
+  static readonly DEFAULT_DOCKER_START_PORT = 7681;
+  static readonly DEFAULT_DOCKER_END_PORT = 7780;
+  static readonly DEFAULT_GITHUB_CALLBACK_URL =
+    'http://localhost:3001/api/github/callback';
+  static readonly DEFAULT_GITHUB_FRONTEND_REDIRECT_URL =
+    'http://localhost:5173/settings';
+
   @PrimaryColumn('varchar', { length: 10, default: 'default' })
   id: string = 'default';
 
@@ -26,14 +34,21 @@ export class Settings {
   @Column('varchar', { length: 500, nullable: true })
   defaultMountDirectory?: string | null;
 
-  @Column('varchar', { length: 500, nullable: true })
-  dockerSocketPath?: string | null;
+  @Column('varchar', {
+    length: 500,
+    nullable: true,
+    default: Settings.DEFAULT_DOCKER_SOCKET_PATH,
+  })
+  dockerSocketPath: string = Settings.DEFAULT_DOCKER_SOCKET_PATH;
 
-  @Column('int', { nullable: true })
-  dockerStartPort?: number | null;
+  @Column('int', {
+    nullable: true,
+    default: Settings.DEFAULT_DOCKER_START_PORT,
+  })
+  dockerStartPort: number = Settings.DEFAULT_DOCKER_START_PORT;
 
-  @Column('int', { nullable: true })
-  dockerEndPort?: number | null;
+  @Column('int', { nullable: true, default: Settings.DEFAULT_DOCKER_END_PORT })
+  dockerEndPort: number = Settings.DEFAULT_DOCKER_END_PORT;
 
   @Column('varchar', { length: 255, nullable: true })
   githubClientId?: string | null;
@@ -41,11 +56,20 @@ export class Settings {
   @Column('text', { nullable: true })
   githubClientSecret?: string | null;
 
-  @Column('varchar', { length: 500, nullable: true })
-  githubCallbackUrl?: string | null;
+  @Column('varchar', {
+    length: 500,
+    nullable: true,
+    default: Settings.DEFAULT_GITHUB_CALLBACK_URL,
+  })
+  githubCallbackUrl: string = Settings.DEFAULT_GITHUB_CALLBACK_URL;
 
-  @Column('varchar', { length: 500, nullable: true })
-  githubFrontendRedirectUrl?: string | null;
+  @Column('varchar', {
+    length: 500,
+    nullable: true,
+    default: Settings.DEFAULT_GITHUB_FRONTEND_REDIRECT_URL,
+  })
+  githubFrontendRedirectUrl: string =
+    Settings.DEFAULT_GITHUB_FRONTEND_REDIRECT_URL;
 
   @UpdateDateColumn()
   updatedAt: Date;
@@ -64,6 +88,20 @@ export class Settings {
     if (updatedAt) {
       this.updatedAt = updatedAt;
     }
+  }
+
+  /**
+   * Fills in default values for any null fields that have known defaults.
+   * Handles existing DB records that were created before defaults were added.
+   */
+  applyDefaults(): this {
+    this.dockerSocketPath ??= Settings.DEFAULT_DOCKER_SOCKET_PATH;
+    this.dockerStartPort ??= Settings.DEFAULT_DOCKER_START_PORT;
+    this.dockerEndPort ??= Settings.DEFAULT_DOCKER_END_PORT;
+    this.githubCallbackUrl ??= Settings.DEFAULT_GITHUB_CALLBACK_URL;
+    this.githubFrontendRedirectUrl ??=
+      Settings.DEFAULT_GITHUB_FRONTEND_REDIRECT_URL;
+    return this;
   }
 
   updateSshPrivateKey(sshPrivateKey: string | undefined): void {

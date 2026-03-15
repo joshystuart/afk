@@ -13,7 +13,6 @@ import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 const WORKSPACE_BASE_PATH = '/workspace';
 const DEFAULT_REPO_NAME = 'workspace';
 const DEFAULT_EXEC_WORKING_DIR = `${WORKSPACE_BASE_PATH}/repo`;
-const DEFAULT_SOCKET_PATH = '/var/run/docker.sock';
 
 @Injectable()
 export class DockerEngineService implements OnModuleInit {
@@ -27,7 +26,7 @@ export class DockerEngineService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     const settings = await this.settingsRepository.get();
-    const socketPath = settings.dockerSocketPath || DEFAULT_SOCKET_PATH;
+    const socketPath = settings.dockerSocketPath;
     this.docker = this.createDockerClient(socketPath);
   }
 

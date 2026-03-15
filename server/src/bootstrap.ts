@@ -14,6 +14,7 @@ export interface BootstrapOptions {
 export async function bootstrapServer(
   options?: BootstrapOptions,
 ): Promise<INestApplication> {
+  console.log('Bootstrapping server with options:', options);
   const app = await NestFactory.create(
     AppModule.forRoot({
       configPath: options?.configPath,

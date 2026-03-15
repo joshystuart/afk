@@ -3,6 +3,7 @@ import { Box, TextField, Button, Typography, Alert } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type LoginCredentials } from '../hooks/useAuth';
+import { useIsElectronMac } from '../hooks/useElectron';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 
@@ -10,6 +11,7 @@ const Login: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
+  const isElectronMac = useIsElectronMac();
 
   const {
     control,
@@ -45,6 +47,21 @@ const Login: React.FC = () => {
         overflow: 'hidden',
       }}
     >
+      {/* Electron Mac drag region */}
+      {isElectronMac && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 38,
+            WebkitAppRegion: 'drag',
+            zIndex: 2,
+          }}
+        />
+      )}
+
       {/* Dot grid background */}
       <Box
         sx={{

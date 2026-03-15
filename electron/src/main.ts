@@ -89,6 +89,7 @@ async function startServer(): Promise<void> {
 
   serverApp = await bootstrapServer({
     port: SERVER_PORT,
+    configPath: path.join(serverDistPath, 'config'),
     staticAssetsPath: webDistPath,
   });
 }

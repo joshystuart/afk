@@ -9,7 +9,7 @@ import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './libs/auth/auth.module';
 import { createTypeOrmOptions } from './database/database.config';
-import { DatabaseConfig } from './libs/config/database.config';
+import { DatabaseConfig } from './libs/config/database/database.config';
 import { LoggerModule } from './libs/logger/logger.module';
 import { GitHubModule } from './libs/github/github.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';

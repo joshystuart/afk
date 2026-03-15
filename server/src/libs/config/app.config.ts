@@ -4,7 +4,7 @@ import { SessionConfig } from './session.config';
 import { LoggerConfig } from './logger.config';
 import { AdminUserConfig } from './admin-user.config';
 import { AuthConfig } from '../auth/auth.config';
-import { DatabaseConfig } from './database.config';
+import { DatabaseConfig } from './database/database.config';
 
 export class AppConfig {
   @IsNumber()

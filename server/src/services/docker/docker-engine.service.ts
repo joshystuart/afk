@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
 import { ContainerNotFoundError } from './container-not-found.error';
 import { DockerOptions } from 'dockerode';
@@ -7,31 +7,39 @@ import {
   ContainerInfo,
   ContainerStats,
 } from '../../domain/containers/container.entity';
-import { DockerConfig } from '../../libs/config/docker.config';
+import { SettingsRepository } from '../../domain/settings/settings.repository';
+import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 
 const WORKSPACE_BASE_PATH = '/workspace';
 const DEFAULT_REPO_NAME = 'workspace';
 const DEFAULT_EXEC_WORKING_DIR = `${WORKSPACE_BASE_PATH}/repo`;
+const DEFAULT_SOCKET_PATH = '/var/run/docker.sock';
 
 @Injectable()
-export class DockerEngineService {
-  private docker: Dockerode;
+export class DockerEngineService implements OnModuleInit {
+  private docker!: Dockerode;
   private readonly logger = new Logger(DockerEngineService.name);
 
-  constructor(private readonly config: DockerConfig) {
-    this.logger.log('DockerEngineService initializing', {
-      socketPath: config.socketPath,
-    });
+  constructor(
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
+  async onModuleInit(): Promise<void> {
+    const settings = await this.settingsRepository.get();
+    const socketPath = settings.dockerSocketPath || DEFAULT_SOCKET_PATH;
+    this.docker = this.createDockerClient(socketPath);
+  }
+
+  private createDockerClient(socketPath: string): Dockerode {
+    this.logger.log('Initializing Docker client', { socketPath });
     const dockerOptions: DockerOptions = {};
-    if (config.socketPath.startsWith('unix://')) {
-      dockerOptions.socketPath = config.socketPath.replace('unix://', '');
+    if (socketPath.startsWith('unix://')) {
+      dockerOptions.socketPath = socketPath.replace('unix://', '');
     } else {
-      dockerOptions.socketPath = config.socketPath;
+      dockerOptions.socketPath = socketPath;
     }
-
-    this.docker = new Dockerode(dockerOptions);
-    this.logger.log('Docker client initialized', { options: dockerOptions });
+    return new Dockerode(dockerOptions);
   }
 
   async createContainer(

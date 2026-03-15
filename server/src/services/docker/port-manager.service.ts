@@ -1,9 +1,13 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import * as net from 'net';
-import { AppConfig } from '../../libs/config/app.config';
 import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factory';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 import { DockerEngineService } from './docker-engine.service';
+import { SettingsRepository } from '../../domain/settings/settings.repository';
+import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
+
+const DEFAULT_START_PORT = 7681;
+const DEFAULT_END_PORT = 7780;
 
 @Injectable()
 export class PortManagerService implements OnModuleInit {
@@ -12,14 +16,14 @@ export class PortManagerService implements OnModuleInit {
   private readonly logger = new Logger(PortManagerService.name);
 
   constructor(
-    private readonly config: AppConfig,
     private readonly portPairFactory: PortPairDtoFactory,
     private readonly dockerEngine: DockerEngineService,
-  ) {
-    this.initializePortPool();
-  }
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
   async onModuleInit() {
+    await this.initializePortPool();
     await this.syncWithRunningContainers();
   }
 
@@ -79,12 +83,12 @@ export class PortManagerService implements OnModuleInit {
     });
   }
 
-  private initializePortPool(): void {
-    for (
-      let port = this.config.docker.startPort;
-      port <= this.config.docker.endPort;
-      port++
-    ) {
+  private async initializePortPool(): Promise<void> {
+    const settings = await this.settingsRepository.get();
+    const startPort = settings.dockerStartPort ?? DEFAULT_START_PORT;
+    const endPort = settings.dockerEndPort ?? DEFAULT_END_PORT;
+
+    for (let port = startPort; port <= endPort; port++) {
       this.portPool.push(port);
     }
     this.logger.log(`Initialized port pool with ${this.portPool.length} ports`);

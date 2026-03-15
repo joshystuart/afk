@@ -29,10 +29,35 @@ export class GetSettingsResponseDto {
   @ApiProperty({ required: false, nullable: true })
   defaultMountDirectory?: string | null;
 
+  @ApiProperty({ required: false, nullable: true })
+  dockerSocketPath?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  dockerStartPort?: number | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  dockerEndPort?: number | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  githubClientId?: string | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Whether a GitHub client secret is configured',
+  })
+  hasGithubClientSecret!: boolean;
+
+  @ApiProperty({ required: false, nullable: true })
+  githubCallbackUrl?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  githubFrontendRedirectUrl?: string | null;
+
   @ApiProperty()
   updatedAt!: string;
 
-  static obfuscateToken(token?: string): string | null {
+  static obfuscateToken(token?: string | null): string | null {
     if (!token) return null;
 
     if (token.length <= 8) {
@@ -56,6 +81,13 @@ export class GetSettingsResponseDto {
     dto.hasGitHubToken = !!settings.githubAccessToken;
     dto.githubUsername = settings.githubUsername ?? undefined;
     dto.defaultMountDirectory = settings.defaultMountDirectory ?? null;
+    dto.dockerSocketPath = settings.dockerSocketPath ?? null;
+    dto.dockerStartPort = settings.dockerStartPort ?? null;
+    dto.dockerEndPort = settings.dockerEndPort ?? null;
+    dto.githubClientId = settings.githubClientId ?? null;
+    dto.hasGithubClientSecret = !!settings.githubClientSecret;
+    dto.githubCallbackUrl = settings.githubCallbackUrl ?? null;
+    dto.githubFrontendRedirectUrl = settings.githubFrontendRedirectUrl ?? null;
     dto.updatedAt = settings.updatedAt.toISOString();
     return dto;
   }

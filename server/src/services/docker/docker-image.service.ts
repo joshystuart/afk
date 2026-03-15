@@ -1,32 +1,41 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
 import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
 import { DockerImage } from '../../domain/docker-images/docker-image.entity';
 import { DockerImageStatus } from '../../domain/docker-images/docker-image-status.enum';
-import { DockerConfig } from '../../libs/config/docker.config';
 import { DockerOptions } from 'dockerode';
 import { v4 as uuidv4 } from 'uuid';
+import { SettingsRepository } from '../../domain/settings/settings.repository';
+import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
+
+const DEFAULT_SOCKET_PATH = '/var/run/docker.sock';
 
 @Injectable()
 export class DockerImageService implements OnModuleInit {
-  private docker: Dockerode;
+  private docker!: Dockerode;
   private readonly logger = new Logger(DockerImageService.name);
 
   constructor(
     private readonly repository: DockerImageRepository,
-    private readonly config: DockerConfig,
-  ) {
-    const dockerOptions: DockerOptions = {};
-    if (config.socketPath.startsWith('unix://')) {
-      dockerOptions.socketPath = config.socketPath.replace('unix://', '');
-    } else {
-      dockerOptions.socketPath = config.socketPath;
-    }
-    this.docker = new Dockerode(dockerOptions);
-  }
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
   async onModuleInit(): Promise<void> {
+    const settings = await this.settingsRepository.get();
+    const socketPath = settings.dockerSocketPath || DEFAULT_SOCKET_PATH;
+    this.docker = this.createDockerClient(socketPath);
     await this.reconcileImageStatuses();
+  }
+
+  private createDockerClient(socketPath: string): Dockerode {
+    const dockerOptions: DockerOptions = {};
+    if (socketPath.startsWith('unix://')) {
+      dockerOptions.socketPath = socketPath.replace('unix://', '');
+    } else {
+      dockerOptions.socketPath = socketPath;
+    }
+    return new Dockerode(dockerOptions);
   }
 
   private async reconcileImageStatuses(): Promise<void> {

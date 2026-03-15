@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 @Entity('settings')
 export class Settings {
   @PrimaryColumn('varchar', { length: 10, default: 'default' })
-  id: string = 'default'; // Single settings record
+  id: string = 'default';
 
   @Column('text', { nullable: true })
   sshPrivateKey?: string;
@@ -25,6 +25,27 @@ export class Settings {
 
   @Column('varchar', { length: 500, nullable: true })
   defaultMountDirectory?: string | null;
+
+  @Column('varchar', { length: 500, nullable: true })
+  dockerSocketPath?: string | null;
+
+  @Column('int', { nullable: true })
+  dockerStartPort?: number | null;
+
+  @Column('int', { nullable: true })
+  dockerEndPort?: number | null;
+
+  @Column('varchar', { length: 255, nullable: true })
+  githubClientId?: string | null;
+
+  @Column('text', { nullable: true })
+  githubClientSecret?: string | null;
+
+  @Column('varchar', { length: 500, nullable: true })
+  githubCallbackUrl?: string | null;
+
+  @Column('varchar', { length: 500, nullable: true })
+  githubFrontendRedirectUrl?: string | null;
 
   @UpdateDateColumn()
   updatedAt: Date;
@@ -86,6 +107,27 @@ export class Settings {
     }
     if (data.defaultMountDirectory !== undefined) {
       this.defaultMountDirectory = data.defaultMountDirectory;
+    }
+    if (data.dockerSocketPath !== undefined) {
+      this.dockerSocketPath = data.dockerSocketPath;
+    }
+    if (data.dockerStartPort !== undefined) {
+      this.dockerStartPort = data.dockerStartPort;
+    }
+    if (data.dockerEndPort !== undefined) {
+      this.dockerEndPort = data.dockerEndPort;
+    }
+    if (data.githubClientId !== undefined) {
+      this.githubClientId = data.githubClientId;
+    }
+    if (data.githubClientSecret !== undefined) {
+      this.githubClientSecret = data.githubClientSecret;
+    }
+    if (data.githubCallbackUrl !== undefined) {
+      this.githubCallbackUrl = data.githubCallbackUrl;
+    }
+    if (data.githubFrontendRedirectUrl !== undefined) {
+      this.githubFrontendRedirectUrl = data.githubFrontendRedirectUrl;
     }
     this.updatedAt = new Date();
   }

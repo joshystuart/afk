@@ -13,40 +13,46 @@ import type { Settings, DockerImage } from '../api/types';
 
 const now = new Date().toISOString();
 
+const baseSettings: Settings = {
+  hasSshPrivateKey: false,
+  hasClaudeToken: false,
+  hasGitHubToken: false,
+  hasGithubClientSecret: false,
+  dockerSocketPath: null,
+  dockerStartPort: null,
+  dockerEndPort: null,
+  githubClientId: null,
+  githubCallbackUrl: null,
+  githubFrontendRedirectUrl: null,
+  updatedAt: now,
+};
+
 const configuredSettings: Settings = {
+  ...baseSettings,
   hasSshPrivateKey: true,
   hasClaudeToken: true,
-  hasGitHubToken: false,
   claudeToken: 'sk-a••••••••••••oken',
   gitUserName: 'dev-user',
   gitUserEmail: 'dev@example.com',
-  updatedAt: now,
 };
 
 const missingAllSettings: Settings = {
-  hasSshPrivateKey: false,
-  hasClaudeToken: false,
-  hasGitHubToken: false,
-  updatedAt: now,
+  ...baseSettings,
 };
 
 const missingSshKeyOnly: Settings = {
-  hasSshPrivateKey: false,
+  ...baseSettings,
   hasClaudeToken: true,
-  hasGitHubToken: false,
   claudeToken: 'sk-a••••••••••••oken',
   gitUserName: 'dev-user',
   gitUserEmail: 'dev@example.com',
-  updatedAt: now,
 };
 
 const missingClaudeTokenOnly: Settings = {
+  ...baseSettings,
   hasSshPrivateKey: true,
-  hasClaudeToken: false,
-  hasGitHubToken: false,
   gitUserName: 'dev-user',
   gitUserEmail: 'dev@example.com',
-  updatedAt: now,
 };
 
 // ---------------------------------------------------------------------------

@@ -20,6 +20,13 @@ export class UpdateSettingsInteractor {
       gitUserName: request.gitUserName,
       gitUserEmail: request.gitUserEmail,
       defaultMountDirectory: request.defaultMountDirectory,
+      dockerSocketPath: request.dockerSocketPath,
+      dockerStartPort: request.dockerStartPort,
+      dockerEndPort: request.dockerEndPort,
+      githubClientId: request.githubClientId,
+      githubClientSecret: request.githubClientSecret,
+      githubCallbackUrl: request.githubCallbackUrl,
+      githubFrontendRedirectUrl: request.githubFrontendRedirectUrl,
     });
 
     return await this.settingsRepository.save(currentSettings);

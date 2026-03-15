@@ -14,7 +14,6 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 import { GitHubService } from './github.service';
-import { GitHubConfig } from './github.config';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 import {
@@ -35,7 +34,6 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly githubService: GitHubService,
-    private readonly githubConfig: GitHubConfig,
     private readonly responseService: ResponseService,
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
@@ -69,14 +67,31 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     return now - createdAt > GitHubController.OAUTH_STATE_TTL_MS;
   }
 
+  private async resolveOAuthConfig(): Promise<{
+    clientId: string;
+    clientSecret: string;
+    callbackUrl: string;
+    frontendRedirectUrl: string;
+  }> {
+    const settings = await this.settingsRepository.get();
+    return {
+      clientId: settings.githubClientId || '',
+      clientSecret: settings.githubClientSecret || '',
+      callbackUrl: settings.githubCallbackUrl || '',
+      frontendRedirectUrl: settings.githubFrontendRedirectUrl || '',
+    };
+  }
+
   @Public()
   @Get('auth')
   @ApiOperation({ summary: 'Start GitHub OAuth flow' })
   @ApiResponse({ status: 302, description: 'Redirects to GitHub OAuth' })
   async auth(@Res() res: Response): Promise<void> {
-    if (!this.githubConfig.clientId || !this.githubConfig.clientSecret) {
+    const oauth = await this.resolveOAuthConfig();
+
+    if (!oauth.clientId || !oauth.clientSecret) {
       throw new HttpException(
-        'GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.',
+        'GitHub OAuth is not configured. Set GitHub Client ID and Client Secret in Settings.',
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
@@ -86,8 +101,8 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     this.cleanupExpiredOauthStates();
 
     const authUrl = this.githubService.getAuthUrl(
-      this.githubConfig.clientId,
-      this.githubConfig.callbackUrl,
+      oauth.clientId,
+      oauth.callbackUrl,
       state,
     );
 
@@ -103,9 +118,9 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     @Query('state') state: string,
     @Res() res: Response,
   ): Promise<void> {
-    const redirectUrl = this.githubConfig.frontendRedirectUrl;
+    const oauth = await this.resolveOAuthConfig();
+    const redirectUrl = oauth.frontendRedirectUrl;
 
-    // Validate state
     const storedState = this.oauthStates.get(state);
     if (!storedState) {
       this.logger.warn('Invalid OAuth state received');
@@ -121,17 +136,14 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     this.oauthStates.delete(state);
 
     try {
-      // Exchange code for token
       const token = await this.githubService.exchangeCodeForToken(
-        this.githubConfig.clientId,
-        this.githubConfig.clientSecret,
+        oauth.clientId,
+        oauth.clientSecret,
         code,
       );
 
-      // Get GitHub user info
       const user = await this.githubService.getUser(token);
 
-      // Save to settings
       const settings = await this.settingsRepository.get();
       settings.updateGitHubToken(token, user.login);
       await this.settingsRepository.save(settings);

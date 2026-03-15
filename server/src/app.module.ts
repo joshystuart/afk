@@ -8,7 +8,8 @@ import { SettingsModule } from './interactors/settings/settings.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './libs/auth/auth.module';
-import { getDatabaseConfig } from './database/database.config';
+import { createTypeOrmOptions } from './database/database.config';
+import { DatabaseConfig } from './libs/config/database/database.config';
 import { LoggerModule } from './libs/logger/logger.module';
 import { GitHubModule } from './libs/github/github.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -22,7 +23,11 @@ export class AppModule {
       module: AppModule,
       imports: [
         ConfigModule.forRoot({ path: options?.configPath }),
-        TypeOrmModule.forRoot(getDatabaseConfig()),
+        TypeOrmModule.forRootAsync({
+          inject: [DatabaseConfig],
+          useFactory: (databaseConfig: DatabaseConfig) =>
+            createTypeOrmOptions(databaseConfig),
+        }),
         EventEmitterModule.forRoot(),
         LoggerModule.forRootAsync(),
         AuthModule,

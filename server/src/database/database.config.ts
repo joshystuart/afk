@@ -3,47 +3,51 @@ import { Session } from '../domain/sessions/session.entity';
 import { Settings } from '../domain/settings/settings.entity';
 import { ChatMessage } from '../domain/chat/chat-message.entity';
 import { DockerImage } from '../domain/docker-images/docker-image.entity';
+import { DatabaseConfig } from '../libs/config/database/database.config';
 
-export const databaseConfig: TypeOrmModuleOptions = {
-  type: 'sqlite',
-  database: process.env.DB_DATABASE || 'afk.sqlite',
-  entities: [Session, Settings, ChatMessage, DockerImage],
-  synchronize: true, // Only for development - use migrations in production
-  logging: process.env.NODE_ENV === 'development',
-};
+const entities = [Session, Settings, ChatMessage, DockerImage];
 
-// Alternative configuration for PostgreSQL (for easy swapping)
-export const postgresConfig: TypeOrmModuleOptions = {
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'afk',
-  password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'afk',
-  entities: [Session, Settings, ChatMessage, DockerImage],
-  synchronize: process.env.NODE_ENV === 'development',
-  logging: process.env.NODE_ENV === 'development',
-};
+export const createTypeOrmOptions = (
+  databaseConfig: DatabaseConfig,
+): TypeOrmModuleOptions => {
+  const { type } = databaseConfig;
 
-// Export the configuration to use (can be changed via environment variable)
-export const getDatabaseConfig = (): TypeOrmModuleOptions => {
-  const dbType = process.env.DATABASE_TYPE || 'sqlite';
-
-  switch (dbType) {
-    case 'postgres':
+  switch (type) {
+    case 'postgres': {
+      const postgresConfig = databaseConfig.postgres;
+      if (!postgresConfig) {
+        throw new Error(
+          'PostgreSQL configuration is missing. Please configure database.postgres in your YAML config.',
+        );
+      }
       return {
-        ...postgresConfig,
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432'),
-        username: process.env.DB_USERNAME || 'afk',
-        password: process.env.DB_PASSWORD || 'password',
-        database: process.env.DB_NAME || 'afk',
+        type: 'postgres',
+        host: postgresConfig.host,
+        port: postgresConfig.port,
+        username: postgresConfig.username,
+        password: postgresConfig.password,
+        database: postgresConfig.database,
+        entities,
+        synchronize: postgresConfig.synchronize ?? false,
+        logging: postgresConfig.logging ?? false,
       };
-    case 'sqlite':
+    }
+    case 'sqlite': {
+      const sqliteConfig = databaseConfig.sqlite;
+      if (!sqliteConfig) {
+        throw new Error(
+          'SQLite configuration is missing. Please configure database.sqlite in your YAML config.',
+        );
+      }
+      return {
+        type: 'sqlite',
+        database: sqliteConfig.database,
+        entities,
+        synchronize: sqliteConfig.synchronize ?? true,
+        logging: sqliteConfig.logging ?? false,
+      };
+    }
     default:
-      return {
-        ...databaseConfig,
-        database: process.env.DB_DATABASE || 'afk.sqlite',
-      };
+      throw new Error(`Unsupported database type: ${type}`);
   }
 };

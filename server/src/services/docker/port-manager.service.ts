@@ -82,8 +82,8 @@ export class PortManagerService implements OnModuleInit {
 
   private async initializePortPool(): Promise<void> {
     const settings = await this.settingsRepository.get();
-    const startPort = settings.dockerStartPort;
-    const endPort = settings.dockerEndPort;
+    const startPort = settings.docker.startPort;
+    const endPort = settings.docker.endPort;
 
     for (let port = startPort; port <= endPort; port++) {
       this.portPool.push(port);

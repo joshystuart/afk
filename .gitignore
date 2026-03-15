@@ -42,6 +42,7 @@ storybook-static
 .serena
 docker/workspace/*
 *.sqlite
+*.sqlite-journal
 
 server/src/config/.env.yaml
 server/.env.yaml

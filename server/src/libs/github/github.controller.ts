@@ -75,10 +75,10 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
   }> {
     const settings = await this.settingsRepository.get();
     return {
-      clientId: settings.githubClientId || '',
-      clientSecret: settings.githubClientSecret || '',
-      callbackUrl: settings.githubCallbackUrl,
-      frontendRedirectUrl: settings.githubFrontendRedirectUrl,
+      clientId: settings.git.githubClientId || '',
+      clientSecret: settings.git.githubClientSecret || '',
+      callbackUrl: settings.git.githubCallbackUrl,
+      frontendRedirectUrl: settings.git.githubFrontendRedirectUrl,
     };
   }
 
@@ -145,7 +145,7 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
       const user = await this.githubService.getUser(token);
 
       const settings = await this.settingsRepository.get();
-      settings.updateGitHubToken(token, user.login);
+      settings.git.updateGitHubToken(token, user.login);
       await this.settingsRepository.save(settings);
 
       this.logger.log(`GitHub connected for user: ${user.login}`);
@@ -166,8 +166,8 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     const settings = await this.settingsRepository.get();
 
     return this.responseService.success({
-      connected: !!settings.githubAccessToken,
-      username: settings.githubUsername ?? undefined,
+      connected: !!settings.git.githubAccessToken,
+      username: settings.git.githubUsername ?? undefined,
     });
   }
 
@@ -182,7 +182,7 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
   ): Promise<ApiResponseType<any>> {
     const settings = await this.settingsRepository.get();
 
-    if (!settings.githubAccessToken) {
+    if (!settings.git.githubAccessToken) {
       throw new HttpException(
         'GitHub is not connected. Connect GitHub in Settings first.',
         HttpStatus.BAD_REQUEST,
@@ -191,7 +191,7 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
 
     try {
       const repos = await this.githubService.listRepos(
-        settings.githubAccessToken,
+        settings.git.githubAccessToken!,
         {
           search,
           sort: sort || 'pushed',
@@ -215,7 +215,7 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
   @ApiResponse({ status: 200, description: 'GitHub disconnected' })
   async disconnect(): Promise<ApiResponseType<{ disconnected: boolean }>> {
     const settings = await this.settingsRepository.get();
-    settings.updateGitHubToken(null, null);
+    settings.git.updateGitHubToken(null, null);
     await this.settingsRepository.save(settings);
 
     this.logger.log('GitHub disconnected');

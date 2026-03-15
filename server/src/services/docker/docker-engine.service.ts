@@ -26,7 +26,7 @@ export class DockerEngineService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     const settings = await this.settingsRepository.get();
-    const socketPath = settings.dockerSocketPath;
+    const socketPath = settings.docker.socketPath;
     this.docker = this.createDockerClient(socketPath);
   }
 

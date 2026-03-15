@@ -1,23 +1,22 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import * as net from 'net';
-import { AppConfig } from '../../libs/config/app.config';
 import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factory';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 import { DockerEngineService } from './docker-engine.service';
+import { SettingsRepository } from '../../domain/settings/settings.repository';
+import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 
 @Injectable()
 export class PortManagerService implements OnModuleInit {
-  private allocatedPorts: Set<number> = new Set();
-  private portPool: number[] = [];
+  private readonly allocatedPorts: Set<number> = new Set();
   private readonly logger = new Logger(PortManagerService.name);
 
   constructor(
-    private readonly config: AppConfig,
     private readonly portPairFactory: PortPairDtoFactory,
     private readonly dockerEngine: DockerEngineService,
-  ) {
-    this.initializePortPool();
-  }
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
   async onModuleInit() {
     await this.syncWithRunningContainers();
@@ -32,16 +31,41 @@ export class PortManagerService implements OnModuleInit {
     this.releasePort(ports.port);
   }
 
-  getAvailablePortCount(): number {
-    return this.portPool.length - this.allocatedPorts.size;
+  async getAvailablePortCount(): Promise<number> {
+    const range = await this.getPortRange();
+    return range.length - this.allocatedPorts.size;
   }
 
-  isPortAvailable(port: number): boolean {
-    return this.portPool.includes(port) && !this.allocatedPorts.has(port);
+  async isPortAvailable(port: number): Promise<boolean> {
+    const { startPort, endPort } = await this.getPortRangeBounds();
+    return (
+      port >= startPort && port <= endPort && !this.allocatedPorts.has(port)
+    );
+  }
+
+  private async getPortRangeBounds(): Promise<{
+    startPort: number;
+    endPort: number;
+  }> {
+    const settings = await this.settingsRepository.get();
+    return {
+      startPort: settings.docker.startPort,
+      endPort: settings.docker.endPort,
+    };
+  }
+
+  private async getPortRange(): Promise<number[]> {
+    const { startPort, endPort } = await this.getPortRangeBounds();
+    const ports: number[] = [];
+    for (let port = startPort; port <= endPort; port++) {
+      ports.push(port);
+    }
+    return ports;
   }
 
   private async allocatePort(): Promise<number> {
-    const availablePorts = this.portPool.filter(
+    const range = await this.getPortRange();
+    const availablePorts = range.filter(
       (port) => !this.allocatedPorts.has(port),
     );
 
@@ -49,7 +73,6 @@ export class PortManagerService implements OnModuleInit {
       throw new Error('No available ports in pool');
     }
 
-    // Try each candidate port and verify it's actually free on the host
     for (const port of availablePorts) {
       const isFree = await this.isPortFreeOnHost(port);
       if (isFree) {
@@ -79,17 +102,6 @@ export class PortManagerService implements OnModuleInit {
     });
   }
 
-  private initializePortPool(): void {
-    for (
-      let port = this.config.docker.startPort;
-      port <= this.config.docker.endPort;
-      port++
-    ) {
-      this.portPool.push(port);
-    }
-    this.logger.log(`Initialized port pool with ${this.portPool.length} ports`);
-  }
-
   /**
    * Syncs the in-memory allocated ports set with ports actually in use
    * by running AFK-managed Docker containers. This handles the case where
@@ -97,6 +109,7 @@ export class PortManagerService implements OnModuleInit {
    */
   private async syncWithRunningContainers(): Promise<void> {
     try {
+      const { startPort, endPort } = await this.getPortRangeBounds();
       const containers = await this.dockerEngine.listAFKContainers();
       let syncedPorts = 0;
 
@@ -108,7 +121,8 @@ export class PortManagerService implements OnModuleInit {
 
           for (const port of hostPorts) {
             if (
-              this.portPool.includes(port) &&
+              port >= startPort &&
+              port <= endPort &&
               !this.allocatedPorts.has(port)
             ) {
               this.allocatedPorts.add(port);

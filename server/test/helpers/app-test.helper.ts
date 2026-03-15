@@ -12,6 +12,8 @@ import { AppConfig } from '../../src/libs/config/app.config';
 import { DockerImageRepository } from '../../src/domain/docker-images/docker-image.repository';
 import { DockerImage } from '../../src/domain/docker-images/docker-image.entity';
 import { DockerImageStatus } from '../../src/domain/docker-images/docker-image-status.enum';
+import { SETTINGS_REPOSITORY } from '../../src/domain/settings/settings.tokens';
+import { SettingsRepositoryImpl } from '../../src/services/repositories/settings.repository';
 
 const TEST_ADMIN_USER = {
   username: 'admin',
@@ -168,6 +170,18 @@ export class AppTestHelper {
         console.log('Note: Could not clear database, might be first test run');
       }
     }
+
+    await this.seedDefaults();
+  }
+
+  /**
+   * Re-seeds default data that would normally be created by onModuleInit hooks.
+   * Must be called after clearDatabase() since dropping the schema wipes seeded rows.
+   */
+  private async seedDefaults(): Promise<void> {
+    const settingsRepo =
+      this.moduleFixture!.get<SettingsRepositoryImpl>(SETTINGS_REPOSITORY);
+    await settingsRepo.onModuleInit();
   }
 
   /**

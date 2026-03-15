@@ -75,6 +75,13 @@ export interface Settings {
   hasGitHubToken: boolean;
   githubUsername?: string;
   defaultMountDirectory?: string | null;
+  dockerSocketPath?: string | null;
+  dockerStartPort?: number | null;
+  dockerEndPort?: number | null;
+  githubClientId?: string | null;
+  hasGithubClientSecret: boolean;
+  githubCallbackUrl?: string | null;
+  githubFrontendRedirectUrl?: string | null;
   updatedAt: string;
 }
 
@@ -109,6 +116,13 @@ export interface UpdateSettingsRequest {
   gitUserName?: string;
   gitUserEmail?: string;
   defaultMountDirectory?: string;
+  dockerSocketPath?: string;
+  dockerStartPort?: number;
+  dockerEndPort?: number;
+  githubClientId?: string;
+  githubClientSecret?: string;
+  githubCallbackUrl?: string;
+  githubFrontendRedirectUrl?: string;
 }
 
 export interface ApiError {

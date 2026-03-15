@@ -11,39 +11,48 @@ import type { Settings as SettingsType } from '../api/types';
 
 const now = new Date().toISOString();
 
+const baseSettings: SettingsType = {
+  hasSshPrivateKey: false,
+  hasClaudeToken: false,
+  hasGitHubToken: false,
+  hasGithubClientSecret: false,
+  gitUserName: '',
+  gitUserEmail: '',
+  dockerSocketPath: null,
+  dockerStartPort: null,
+  dockerEndPort: null,
+  githubClientId: null,
+  githubCallbackUrl: null,
+  githubFrontendRedirectUrl: null,
+  updatedAt: now,
+};
+
 const mockSettings = {
-  empty: {
-    hasSshPrivateKey: false,
-    hasClaudeToken: false,
-    hasGitHubToken: false,
-    gitUserName: '',
-    gitUserEmail: '',
-    updatedAt: now,
-  },
+  empty: { ...baseSettings },
   partial: {
-    hasSshPrivateKey: false,
-    hasClaudeToken: false,
-    hasGitHubToken: false,
+    ...baseSettings,
     gitUserName: 'Jane Doe',
     gitUserEmail: 'jane@example.com',
-    updatedAt: now,
   },
   fullyConfigured: {
+    ...baseSettings,
     hasSshPrivateKey: true,
     hasClaudeToken: true,
     hasGitHubToken: true,
+    hasGithubClientSecret: true,
     claudeToken: 'sk-a••••••••••••••••3xyz',
     gitUserName: 'Jane Doe',
     gitUserEmail: 'jane@example.com',
-    updatedAt: now,
+    dockerSocketPath: '/var/run/docker.sock',
+    dockerStartPort: 7681,
+    dockerEndPort: 7780,
+    githubClientId: 'Ov23liXXXXXXXXXX',
+    githubCallbackUrl: 'http://localhost:3001/api/github/callback',
+    githubFrontendRedirectUrl: 'http://localhost:5173/settings',
   },
   withSshKeyOnly: {
+    ...baseSettings,
     hasSshPrivateKey: true,
-    hasClaudeToken: false,
-    hasGitHubToken: false,
-    gitUserName: '',
-    gitUserEmail: '',
-    updatedAt: now,
   },
 } satisfies Record<string, SettingsType>;
 

@@ -1,32 +1,48 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
 import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
 import { DockerImage } from '../../domain/docker-images/docker-image.entity';
 import { DockerImageStatus } from '../../domain/docker-images/docker-image-status.enum';
-import { DockerConfig } from '../../libs/config/docker.config';
 import { DockerOptions } from 'dockerode';
 import { v4 as uuidv4 } from 'uuid';
+import { SettingsRepository } from '../../domain/settings/settings.repository';
+import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 
 @Injectable()
 export class DockerImageService implements OnModuleInit {
-  private docker: Dockerode;
+  private docker!: Dockerode;
+  private currentSocketPath!: string;
   private readonly logger = new Logger(DockerImageService.name);
 
   constructor(
     private readonly repository: DockerImageRepository,
-    private readonly config: DockerConfig,
-  ) {
-    const dockerOptions: DockerOptions = {};
-    if (config.socketPath.startsWith('unix://')) {
-      dockerOptions.socketPath = config.socketPath.replace('unix://', '');
-    } else {
-      dockerOptions.socketPath = config.socketPath;
-    }
-    this.docker = new Dockerode(dockerOptions);
-  }
+    @Inject(SETTINGS_REPOSITORY)
+    private readonly settingsRepository: SettingsRepository,
+  ) {}
 
   async onModuleInit(): Promise<void> {
+    await this.getDockerClient();
     await this.reconcileImageStatuses();
+  }
+
+  private async getDockerClient(): Promise<Dockerode> {
+    const settings = await this.settingsRepository.get();
+    const socketPath = settings.docker.socketPath;
+    if (!this.docker || socketPath !== this.currentSocketPath) {
+      this.docker = this.createDockerClient(socketPath);
+      this.currentSocketPath = socketPath;
+    }
+    return this.docker;
+  }
+
+  private createDockerClient(socketPath: string): Dockerode {
+    const dockerOptions: DockerOptions = {};
+    if (socketPath.startsWith('unix://')) {
+      dockerOptions.socketPath = socketPath.replace('unix://', '');
+    } else {
+      dockerOptions.socketPath = socketPath;
+    }
+    return new Dockerode(dockerOptions);
   }
 
   private async reconcileImageStatuses(): Promise<void> {
@@ -89,7 +105,8 @@ export class DockerImageService implements OnModuleInit {
 
   private async imageExistsLocally(imageName: string): Promise<boolean> {
     try {
-      await this.docker.getImage(imageName).inspect();
+      const docker = await this.getDockerClient();
+      await docker.getImage(imageName).inspect();
       return true;
     } catch {
       return false;
@@ -221,11 +238,12 @@ export class DockerImageService implements OnModuleInit {
     return image;
   }
 
-  private pullImageAsync(dockerImage: DockerImage): Promise<void> {
+  private async pullImageAsync(dockerImage: DockerImage): Promise<void> {
     this.logger.log(`Starting pull for image: ${dockerImage.image}`);
 
+    const docker = await this.getDockerClient();
     return new Promise<void>((resolve) => {
-      this.docker.pull(dockerImage.image, (err: any, stream: any) => {
+      docker.pull(dockerImage.image, (err: any, stream: any) => {
         if (err) {
           this.logger.error(`Pull failed for ${dockerImage.image}`, err);
           dockerImage.markAsError(err.message || 'Failed to pull image');
@@ -236,7 +254,7 @@ export class DockerImageService implements OnModuleInit {
           return;
         }
 
-        this.docker.modem.followProgress(
+        docker.modem.followProgress(
           stream,
           (progressErr: any) => {
             if (progressErr) {
@@ -272,9 +290,8 @@ export class DockerImageService implements OnModuleInit {
   }
 
   private tryRemoveLocalImage(imageName: string): void {
-    this.docker
-      .getImage(imageName)
-      .remove()
+    this.getDockerClient()
+      .then((docker) => docker.getImage(imageName).remove())
       .catch((err: any) => {
         this.logger.warn(
           `Could not remove local image ${imageName}: ${err.message}`,

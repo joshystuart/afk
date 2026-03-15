@@ -1,5 +1,6 @@
-import { IsString, IsEmail, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class UpdateSettingsRequest {
   @IsOptional()
@@ -32,4 +33,62 @@ export class UpdateSettingsRequest {
     description: 'Base directory on the host for mounting session workspaces',
   })
   defaultMountDirectory?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'Docker socket path (e.g. /var/run/docker.sock)',
+  })
+  dockerSocketPath?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @ApiProperty({
+    required: false,
+    description: 'Start of the port range for Docker containers',
+  })
+  dockerStartPort?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @ApiProperty({
+    required: false,
+    description: 'End of the port range for Docker containers',
+  })
+  dockerEndPort?: number;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'GitHub OAuth App client ID',
+  })
+  githubClientId?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'GitHub OAuth App client secret',
+  })
+  githubClientSecret?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'GitHub OAuth callback URL',
+  })
+  githubCallbackUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'Frontend redirect URL after GitHub OAuth',
+  })
+  githubFrontendRedirectUrl?: string;
 }

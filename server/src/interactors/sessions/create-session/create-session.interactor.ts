@@ -9,6 +9,7 @@ import { SessionConfig } from '../../../libs/config/session.config';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { Session } from '../../../domain/sessions/session.entity';
 import { SessionStatus } from '../../../domain/sessions/session-status.enum';
+import { Settings } from '../../../domain/settings/settings.entity';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
@@ -45,18 +46,19 @@ export class CreateSessionInteractor {
     const settings = await this.settingsRepository.get();
 
     // Validate request
-    await this.validateRequest(request);
+    await this.validateRequest(request, settings);
 
     // Create domain entity using global settings as defaults
     const sessionConfig = this.sessionConfigFactory.create({
       repoUrl: request.repoUrl,
       branch: request.branch,
-      gitUserName: request.gitUserName || settings.gitUserName,
-      gitUserEmail: request.gitUserEmail || settings.gitUserEmail,
-      hasSSHKey: !!settings.sshPrivateKey,
+      gitUserName: request.gitUserName || settings.git.userName,
+      gitUserEmail: request.gitUserEmail || settings.git.userEmail,
+      hasSSHKey: !!settings.git.sshPrivateKey,
       mountToHost: request.mountToHost,
       hostMountPathOverride: request.hostMountPath,
-      defaultMountDirectory: settings.defaultMountDirectory ?? undefined,
+      defaultMountDirectory:
+        settings.general.defaultMountDirectory ?? undefined,
       cleanupOnDelete: request.cleanupOnDelete,
     });
 
@@ -111,8 +113,8 @@ export class CreateSessionInteractor {
         sessionConfig.repoUrl &&
         sessionConfig.repoUrl.startsWith('https://github.com');
       const githubToken =
-        isGitHubHttpsUrl && settings.githubAccessToken
-          ? settings.githubAccessToken
+        isGitHubHttpsUrl && settings.git.githubAccessToken
+          ? settings.git.githubAccessToken
           : undefined;
 
       // Resolve Docker image by the requested imageId
@@ -137,9 +139,9 @@ export class CreateSessionInteractor {
         branch: sessionConfig.branch,
         gitUserName: sessionConfig.gitUserName,
         gitUserEmail: sessionConfig.gitUserEmail,
-        sshPrivateKey: settings.sshPrivateKey,
+        sshPrivateKey: settings.git.sshPrivateKey,
         ports,
-        claudeToken: settings.claudeToken,
+        claudeToken: settings.general.claudeToken,
         githubToken,
         hostMountPath: sessionConfig.hostMountPath || undefined,
       });
@@ -229,26 +231,29 @@ export class CreateSessionInteractor {
     }
   }
 
-  private async validateRequest(request: CreateSessionRequest): Promise<void> {
-    // Get settings for validation
-    const settings = await this.settingsRepository.get();
-
+  private async validateRequest(
+    request: CreateSessionRequest,
+    settings: Settings,
+  ): Promise<void> {
     // SSH key is required unless GitHub is connected or no repo URL needs SSH
-    const hasGitHub = !!settings.githubAccessToken;
+    const hasGitHub = !!settings.git.githubAccessToken;
     const isHttpsUrl =
       request.repoUrl && request.repoUrl.startsWith('https://');
     const needsSshKey = !hasGitHub && !isHttpsUrl;
 
     if (
       needsSshKey &&
-      (!settings.sshPrivateKey || settings.sshPrivateKey.trim() === '')
+      (!settings.git.sshPrivateKey || settings.git.sshPrivateKey.trim() === '')
     ) {
       throw new Error(
         'SSH Private Key is required for SSH repository URLs. Please configure it in Settings or connect GitHub for HTTPS access.',
       );
     }
 
-    if (!settings.claudeToken || settings.claudeToken.trim() === '') {
+    if (
+      !settings.general.claudeToken ||
+      settings.general.claudeToken.trim() === ''
+    ) {
       throw new Error(
         'Claude Token is required. Please configure it in Settings before creating a session.',
       );

@@ -30,20 +30,17 @@ So first search for libraries, then if there's some border line decisions, ask m
 We use https://www.npmjs.com/package/nest-typed-config which automatically binds the hierachical .env.yaml structure to classes / DTOs eg.
 
 ```yaml
-docker:
-  socketPath: '${DOCKER_HOST:-/var/run/docker.sock}'
-  imageName: afk
-  startPort: 7681
-  endPort: 7780
+session:
+  maxSessionsPerUser: 10
 ```
 
-Will map `docker.config.ts`:
+Will map `session.config.ts`:
 
 ```typescript
-export class AppConfig {
-  @ValidateNested()
-  @Type(() => DockerConfig)
-  public readonly docker!: DockerConfig;
+export class SessionConfig {
+  @IsNumber()
+  @Type(() => Number)
+  public readonly maxSessionsPerUser!: number;
 }
 ```
 
@@ -52,8 +49,8 @@ Which is mapped from the root `app.config.ts`
 ```typescript
 export class AppConfig {
   @ValidateNested()
-  @Type(() => DockerConfig)
-  public readonly docker!: DockerConfig;
+  @Type(() => SessionConfig)
+  public readonly session!: SessionConfig;
 }
 ```
 
@@ -61,7 +58,9 @@ These configs are automatically available via DI and can be injected directly in
 
 ```typescript
 @Injectable()
-export class DockerEngineService {
-  constructor(private readonly config: DockerConfig) {}
+export class SessionManagerService {
+  constructor(private readonly config: SessionConfig) {}
 }
 ```
+
+Note: User-configurable settings (Docker socket path, port range, GitHub OAuth, etc.) are stored in the database via the `Settings` entity, not in YAML config. YAML config is only for server infrastructure settings (port, logging, auth, etc.).

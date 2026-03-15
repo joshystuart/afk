@@ -11,6 +11,7 @@ import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 @Injectable()
 export class DockerImageService implements OnModuleInit {
   private docker!: Dockerode;
+  private currentSocketPath!: string;
   private readonly logger = new Logger(DockerImageService.name);
 
   constructor(
@@ -20,10 +21,18 @@ export class DockerImageService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    await this.getDockerClient();
+    await this.reconcileImageStatuses();
+  }
+
+  private async getDockerClient(): Promise<Dockerode> {
     const settings = await this.settingsRepository.get();
     const socketPath = settings.docker.socketPath;
-    this.docker = this.createDockerClient(socketPath);
-    await this.reconcileImageStatuses();
+    if (!this.docker || socketPath !== this.currentSocketPath) {
+      this.docker = this.createDockerClient(socketPath);
+      this.currentSocketPath = socketPath;
+    }
+    return this.docker;
   }
 
   private createDockerClient(socketPath: string): Dockerode {
@@ -96,7 +105,8 @@ export class DockerImageService implements OnModuleInit {
 
   private async imageExistsLocally(imageName: string): Promise<boolean> {
     try {
-      await this.docker.getImage(imageName).inspect();
+      const docker = await this.getDockerClient();
+      await docker.getImage(imageName).inspect();
       return true;
     } catch {
       return false;
@@ -228,11 +238,12 @@ export class DockerImageService implements OnModuleInit {
     return image;
   }
 
-  private pullImageAsync(dockerImage: DockerImage): Promise<void> {
+  private async pullImageAsync(dockerImage: DockerImage): Promise<void> {
     this.logger.log(`Starting pull for image: ${dockerImage.image}`);
 
+    const docker = await this.getDockerClient();
     return new Promise<void>((resolve) => {
-      this.docker.pull(dockerImage.image, (err: any, stream: any) => {
+      docker.pull(dockerImage.image, (err: any, stream: any) => {
         if (err) {
           this.logger.error(`Pull failed for ${dockerImage.image}`, err);
           dockerImage.markAsError(err.message || 'Failed to pull image');
@@ -243,7 +254,7 @@ export class DockerImageService implements OnModuleInit {
           return;
         }
 
-        this.docker.modem.followProgress(
+        docker.modem.followProgress(
           stream,
           (progressErr: any) => {
             if (progressErr) {
@@ -279,9 +290,8 @@ export class DockerImageService implements OnModuleInit {
   }
 
   private tryRemoveLocalImage(imageName: string): void {
-    this.docker
-      .getImage(imageName)
-      .remove()
+    this.getDockerClient()
+      .then((docker) => docker.getImage(imageName).remove())
       .catch((err: any) => {
         this.logger.warn(
           `Could not remove local image ${imageName}: ${err.message}`,

@@ -179,9 +179,7 @@ const DockerSettings: React.FC = () => {
           : undefined,
       };
       await updateSettings(submitData);
-      setSuccessMessage(
-        'Docker settings saved. Restart the server for connection changes to take effect.',
-      );
+      setSuccessMessage('Docker settings saved.');
     } catch {
       // Error handled by store
     } finally {
@@ -218,7 +216,7 @@ const DockerSettings: React.FC = () => {
             value={formData.dockerSocketPath}
             onChange={handleInputChange('dockerSocketPath')}
             placeholder="/var/run/docker.sock"
-            helperText="Path to the Docker daemon socket. Changes require a server restart."
+            helperText="Path to the Docker daemon socket."
             sx={{
               mb: 2,
               '& .MuiInputBase-input': {
@@ -239,8 +237,7 @@ const DockerSettings: React.FC = () => {
               display: 'block',
             }}
           >
-            Range of host ports allocated to Docker containers. Changes require
-            a server restart.
+            Range of host ports allocated to Docker containers.
           </Typography>
           <Box
             sx={{

@@ -9,6 +9,7 @@ import { SessionConfig } from '../../../libs/config/session.config';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { Session } from '../../../domain/sessions/session.entity';
 import { SessionStatus } from '../../../domain/sessions/session-status.enum';
+import { Settings } from '../../../domain/settings/settings.entity';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
@@ -45,7 +46,7 @@ export class CreateSessionInteractor {
     const settings = await this.settingsRepository.get();
 
     // Validate request
-    await this.validateRequest(request);
+    await this.validateRequest(request, settings);
 
     // Create domain entity using global settings as defaults
     const sessionConfig = this.sessionConfigFactory.create({
@@ -230,10 +231,10 @@ export class CreateSessionInteractor {
     }
   }
 
-  private async validateRequest(request: CreateSessionRequest): Promise<void> {
-    // Get settings for validation
-    const settings = await this.settingsRepository.get();
-
+  private async validateRequest(
+    request: CreateSessionRequest,
+    settings: Settings,
+  ): Promise<void> {
     // SSH key is required unless GitHub is connected or no repo URL needs SSH
     const hasGitHub = !!settings.git.githubAccessToken;
     const isHttpsUrl =

@@ -9,6 +9,7 @@ export class SettingsRepositoryImpl
   implements SettingsRepository, OnModuleInit
 {
   private static readonly DEFAULT_ID = 'default';
+  private cached: Settings | null = null;
 
   constructor(
     @InjectRepository(Settings)
@@ -23,22 +24,31 @@ export class SettingsRepositoryImpl
   }
 
   async get(): Promise<Settings> {
+    if (this.cached) {
+      return this.cached;
+    }
+
     const settings = await this.repository.findOneByOrFail({
       id: SettingsRepositoryImpl.DEFAULT_ID,
     });
     settings.applyDefaults();
+    this.cached = settings;
     return settings;
   }
 
   async save(settings: Settings): Promise<Settings> {
     settings.id = SettingsRepositoryImpl.DEFAULT_ID;
-    return await this.repository.save(settings);
+    const saved = await this.repository.save(settings);
+    this.cached = null;
+    return saved;
   }
 
   async reset(): Promise<Settings> {
     await this.repository.clear();
     const settings = new Settings();
     settings.id = SettingsRepositoryImpl.DEFAULT_ID;
-    return await this.repository.save(settings);
+    const saved = await this.repository.save(settings);
+    this.cached = null;
+    return saved;
   }
 }

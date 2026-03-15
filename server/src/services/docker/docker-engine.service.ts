@@ -17,6 +17,7 @@ const DEFAULT_EXEC_WORKING_DIR = `${WORKSPACE_BASE_PATH}/repo`;
 @Injectable()
 export class DockerEngineService implements OnModuleInit {
   private docker!: Dockerode;
+  private currentSocketPath!: string;
   private readonly logger = new Logger(DockerEngineService.name);
 
   constructor(
@@ -25,9 +26,17 @@ export class DockerEngineService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    await this.getDockerClient();
+  }
+
+  private async getDockerClient(): Promise<Dockerode> {
     const settings = await this.settingsRepository.get();
     const socketPath = settings.docker.socketPath;
-    this.docker = this.createDockerClient(socketPath);
+    if (!this.docker || socketPath !== this.currentSocketPath) {
+      this.docker = this.createDockerClient(socketPath);
+      this.currentSocketPath = socketPath;
+    }
+    return this.docker;
   }
 
   private createDockerClient(socketPath: string): Dockerode {
@@ -57,7 +66,8 @@ export class DockerEngineService implements OnModuleInit {
       await this.ping();
       await this.ensureImageAvailable(options.imageName);
 
-      const container = await this.docker.createContainer({
+      const docker = await this.getDockerClient();
+      const container = await docker.createContainer({
         Image: options.imageName,
         Env: this.buildEnvironment(options),
         ExposedPorts: this.buildExposedPorts(options.ports),
@@ -114,7 +124,8 @@ export class DockerEngineService implements OnModuleInit {
 
   private async ensureImageAvailable(imageName: string): Promise<void> {
     try {
-      await this.docker.getImage(imageName).inspect();
+      const docker = await this.getDockerClient();
+      await docker.getImage(imageName).inspect();
     } catch (error: any) {
       if (error?.statusCode !== 404) {
         throw error;
@@ -126,8 +137,9 @@ export class DockerEngineService implements OnModuleInit {
   }
 
   private async pullImage(imageName: string): Promise<void> {
+    const docker = await this.getDockerClient();
     await new Promise<void>((resolve, reject) => {
-      this.docker.pull(
+      docker.pull(
         imageName,
         (pullError: any, stream: NodeJS.ReadableStream) => {
           if (pullError) {
@@ -135,7 +147,7 @@ export class DockerEngineService implements OnModuleInit {
             return;
           }
 
-          this.docker.modem.followProgress(
+          docker.modem.followProgress(
             stream,
             (progressError: any) => {
               if (progressError) {
@@ -159,7 +171,8 @@ export class DockerEngineService implements OnModuleInit {
 
   async stopContainer(containerId: string): Promise<void> {
     try {
-      const container = this.docker.getContainer(containerId);
+      const docker = await this.getDockerClient();
+      const container = docker.getContainer(containerId);
       await container.stop({ t: 10 });
     } catch (error) {
       if (error.statusCode !== 304) {
@@ -171,7 +184,8 @@ export class DockerEngineService implements OnModuleInit {
 
   async startContainer(containerId: string): Promise<void> {
     try {
-      const container = this.docker.getContainer(containerId);
+      const docker = await this.getDockerClient();
+      const container = docker.getContainer(containerId);
       await container.start();
     } catch (error) {
       if (error.statusCode !== 304) {
@@ -183,7 +197,8 @@ export class DockerEngineService implements OnModuleInit {
 
   async removeContainer(containerId: string): Promise<void> {
     try {
-      const container = this.docker.getContainer(containerId);
+      const docker = await this.getDockerClient();
+      const container = docker.getContainer(containerId);
       await container.remove({ force: true });
     } catch (error: any) {
       if (error?.statusCode === 404 && error?.reason === 'no such container') {
@@ -195,7 +210,8 @@ export class DockerEngineService implements OnModuleInit {
 
   async removeVolume(volumeName: string): Promise<void> {
     try {
-      const volume = this.docker.getVolume(volumeName);
+      const docker = await this.getDockerClient();
+      const volume = docker.getVolume(volumeName);
       await volume.remove();
       this.logger.log(`Volume removed: ${volumeName}`);
     } catch (error: any) {
@@ -213,7 +229,8 @@ export class DockerEngineService implements OnModuleInit {
   }
 
   async getContainerInfo(containerId: string): Promise<ContainerInfo> {
-    const container = this.docker.getContainer(containerId);
+    const docker = await this.getDockerClient();
+    const container = docker.getContainer(containerId);
     const info = await container.inspect();
 
     return {
@@ -227,7 +244,8 @@ export class DockerEngineService implements OnModuleInit {
   }
 
   async listAFKContainers(): Promise<ContainerInfo[]> {
-    const containers = await this.docker.listContainers({
+    const docker = await this.getDockerClient();
+    const containers = await docker.listContainers({
       all: true,
       filters: {
         label: ['afk.managed=true'],
@@ -238,7 +256,8 @@ export class DockerEngineService implements OnModuleInit {
   }
 
   async getContainerStats(containerId: string): Promise<ContainerStats> {
-    const container = this.docker.getContainer(containerId);
+    const docker = await this.getDockerClient();
+    const container = docker.getContainer(containerId);
     const stream = await container.stats({ stream: false });
 
     return {
@@ -252,7 +271,8 @@ export class DockerEngineService implements OnModuleInit {
     containerId: string,
     onData: (log: string) => void,
   ): Promise<NodeJS.ReadableStream> {
-    const container = this.docker.getContainer(containerId);
+    const docker = await this.getDockerClient();
+    const container = docker.getContainer(containerId);
     const stream = await container.logs({
       stdout: true,
       stderr: true,
@@ -272,7 +292,8 @@ export class DockerEngineService implements OnModuleInit {
     cmd: string[],
     workingDir = DEFAULT_EXEC_WORKING_DIR,
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-    const container = this.docker.getContainer(containerId);
+    const docker = await this.getDockerClient();
+    const container = docker.getContainer(containerId);
 
     const exec = await container.exec({
       Cmd: cmd,
@@ -324,7 +345,8 @@ export class DockerEngineService implements OnModuleInit {
     onData: (data: string) => void,
     workingDir = DEFAULT_EXEC_WORKING_DIR,
   ): Promise<{ stream: NodeJS.ReadableStream; kill: () => Promise<void> }> {
-    const container = this.docker.getContainer(containerId);
+    const docker = await this.getDockerClient();
+    const container = docker.getContainer(containerId);
 
     const exec = await container.exec({
       Cmd: cmd,
@@ -366,7 +388,8 @@ export class DockerEngineService implements OnModuleInit {
 
   async ping(): Promise<void> {
     try {
-      await this.docker.ping();
+      const docker = await this.getDockerClient();
+      await docker.ping();
     } catch (error) {
       this.logger.error('Docker ping failed', error);
       throw new Error(`Cannot connect to Docker daemon: ${error.message}`);

@@ -23,7 +23,9 @@ describe('GetSettingsResponseDto', () => {
     });
 
     it('should show prefix and suffix for tokens longer than 8 characters', () => {
-      const result = GetSettingsResponseDto.obfuscateToken('sk-abcdefghijklmnop');
+      const result = GetSettingsResponseDto.obfuscateToken(
+        'sk-abcdefghijklmnop',
+      );
       expect(result).toMatch(/^sk-a•+mnop$/);
     });
 

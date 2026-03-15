@@ -10,7 +10,13 @@ Always follow NestJS best practices eg. DI first (dont fall back to using single
 
 We should also be DRY and use SOLID principles. This is important to maintain our code quality and long term maintainability.
 
+### Splitting files
+
 If a single file is approaching 500 lines of code, it might be a good idea to split it up into multiple classes/files. This helps maintain your context window and keep coherence.
+
+### Utils
+
+After each change run `npm run format` to ensure that we conform to prettier standards.
 
 ## Libraries
 

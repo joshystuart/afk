@@ -147,9 +147,7 @@ describe('Settings', () => {
       expect(settings.updatedAt.getTime()).toBeGreaterThanOrEqual(
         before.getTime(),
       );
-      expect(settings.updatedAt.getTime()).toBeLessThanOrEqual(
-        after.getTime(),
-      );
+      expect(settings.updatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
     });
 
     it('should initialize null embedded entities defensively', () => {

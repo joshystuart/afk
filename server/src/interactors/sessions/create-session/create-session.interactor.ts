@@ -56,7 +56,8 @@ export class CreateSessionInteractor {
       hasSSHKey: !!settings.git.sshPrivateKey,
       mountToHost: request.mountToHost,
       hostMountPathOverride: request.hostMountPath,
-      defaultMountDirectory: settings.general.defaultMountDirectory ?? undefined,
+      defaultMountDirectory:
+        settings.general.defaultMountDirectory ?? undefined,
       cleanupOnDelete: request.cleanupOnDelete,
     });
 
@@ -248,7 +249,10 @@ export class CreateSessionInteractor {
       );
     }
 
-    if (!settings.general.claudeToken || settings.general.claudeToken.trim() === '') {
+    if (
+      !settings.general.claudeToken ||
+      settings.general.claudeToken.trim() === ''
+    ) {
       throw new Error(
         'Claude Token is required. Please configure it in Settings before creating a session.',
       );

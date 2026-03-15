@@ -48,3 +48,8 @@ server/src/config/.env.yaml
 server/.env.yaml
 server/:memory:*
 
+# Electron
+electron/dist/
+electron/release/
+electron/node_modules/
+

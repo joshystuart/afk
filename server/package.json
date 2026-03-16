@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "db:reset": "ts-node -r tsconfig-paths/register src/scripts/reset-database.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -15,8 +16,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest --config ./test/jest-e2e.json",
     "test:watch": "jest --config ./test/jest-e2e.json --watch",
-    "test:cov": "jest --config ./test/jest-e2e.json --coverage",
-    "db:reset": "ts-node -r tsconfig-paths/register src/scripts/reset-database.ts"
+    "test:cov": "jest --config ./test/jest-e2e.json --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

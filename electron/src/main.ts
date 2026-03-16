@@ -101,6 +101,7 @@ function createWindow(): void {
     minWidth: 800,
     minHeight: 600,
     title: 'AFK',
+    icon: getResourcePath('electron', 'build', 'icon.png'),
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {

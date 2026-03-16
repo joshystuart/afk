@@ -29,6 +29,10 @@ module.exports = {
       to: 'web/dist',
       filter: ['**/*'],
     },
+    {
+      from: 'build/icon.png',
+      to: 'electron/build/icon.png',
+    },
   ],
   mac: {
     category: 'public.app-category.developer-tools',

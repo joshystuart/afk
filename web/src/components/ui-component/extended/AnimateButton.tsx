@@ -106,4 +106,4 @@ const AnimateButton = forwardRef<HTMLDivElement, AnimateButtonProps>(
 
 AnimateButton.displayName = 'AnimateButton';
 
-export default AnimateButton;
+export { AnimateButton };

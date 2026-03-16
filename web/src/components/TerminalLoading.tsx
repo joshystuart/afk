@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, LinearProgress } from '@mui/material';
 import { afkColors } from '../themes/afk';
-import TerminalCursor from './TerminalCursor';
+import { TerminalCursor } from './TerminalCursor';
 
 interface TerminalLoadingProps {
   title: string;
@@ -96,4 +96,4 @@ const TerminalLoading: React.FC<TerminalLoadingProps> = ({
   );
 };
 
-export default TerminalLoading;
+export { TerminalLoading };

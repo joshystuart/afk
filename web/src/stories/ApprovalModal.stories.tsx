@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import ApprovalModal from '../components/ApprovalModal';
+import { ApprovalModal } from '../components/ApprovalModal';
 
 const meta = {
   title: 'Components/ApprovalModal',

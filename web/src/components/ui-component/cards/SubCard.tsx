@@ -90,4 +90,4 @@ const SubCard = forwardRef<HTMLDivElement, SubCardProps>(
 
 SubCard.displayName = 'SubCard';
 
-export default SubCard;
+export { SubCard };

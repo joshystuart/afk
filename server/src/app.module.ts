@@ -48,7 +48,7 @@ export class AppModule {
       imports.push(
         ServeStaticModule.forRoot({
           rootPath: options.staticAssetsPath,
-          exclude: ['/api/(.*)', '/socket.io/(.*)'],
+          exclude: ['/api/{*path}', '/socket.io/{*path}'],
         }),
       );
     }

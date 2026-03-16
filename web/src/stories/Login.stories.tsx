@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Login from '../pages/Login';
+import { Login } from '../pages/Login';
 
 const queryClient = new QueryClient();
 

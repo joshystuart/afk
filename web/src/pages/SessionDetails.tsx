@@ -36,9 +36,9 @@ import { SessionStatus } from '../api/types';
 import { useSessionStore } from '../stores/session.store';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
-import ApprovalModal from '../components/ApprovalModal';
-import TerminalCursor from '../components/TerminalCursor';
-import CommitPushDialog from '../components/CommitPushDialog';
+import { ApprovalModal } from '../components/ApprovalModal';
+import { TerminalCursor } from '../components/TerminalCursor';
+import { CommitPushDialog } from '../components/CommitPushDialog';
 import { ChatPanel } from '../components/chat/ChatPanel';
 
 const CONTENT_HEIGHT = 'calc(100vh - 48px)';
@@ -974,4 +974,4 @@ const SessionDetails: React.FC = () => {
   );
 };
 
-export default SessionDetails;
+export { SessionDetails };

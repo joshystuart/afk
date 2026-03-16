@@ -483,4 +483,4 @@ const GitSettings: React.FC = () => {
   );
 };
 
-export default GitSettings;
+export { GitSettings };

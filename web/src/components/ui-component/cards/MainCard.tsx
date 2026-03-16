@@ -126,4 +126,4 @@ const MainCard = forwardRef<HTMLDivElement, MainCardProps>(
 
 MainCard.displayName = 'MainCard';
 
-export default MainCard;
+export { MainCard };

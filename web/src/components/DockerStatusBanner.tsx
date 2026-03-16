@@ -68,4 +68,4 @@ const DockerStatusBanner: React.FC = () => {
   );
 };
 
-export default DockerStatusBanner;
+export { DockerStatusBanner };

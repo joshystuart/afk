@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
-import Settings from '../pages/Settings';
+import { Settings } from '../pages/Settings';
 import { useSettingsStore } from '../stores/settings.store';
 import type { Settings as SettingsType } from '../api/types';
 

@@ -3,7 +3,6 @@ import axios from 'axios';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const SERVER_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -23,12 +22,12 @@ export const useDockerHealth = () => {
 
   const checkHealth = useCallback(async () => {
     try {
-      const response = await axios.get(`${SERVER_BASE_URL}/health/ready`, {
+      const response = await axios.get(`${API_BASE_URL}/health/ready`, {
         timeout: 10_000,
       });
       if (!mountedRef.current) return;
       setState({
-        isAvailable: response.data?.status === 'ok',
+        isAvailable: response.data?.data?.status === 'ok',
         isLoading: false,
         error: null,
       });

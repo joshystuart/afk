@@ -176,4 +176,4 @@ const CommitPushDialog: React.FC<CommitPushDialogProps> = ({
   );
 };
 
-export default CommitPushDialog;
+export { CommitPushDialog };

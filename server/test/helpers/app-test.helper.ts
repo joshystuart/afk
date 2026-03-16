@@ -42,7 +42,7 @@ export class AppTestHelper {
 
     // Use a unique in-memory database for each test helper instance
     const testDbName = `:memory:`;
-    process.env.DB_DATABASE = testDbName;
+    process.env.DB_SQLITE_DATABASE = testDbName;
 
     // Create a testing module using the actual AppModule with test config
     const testConfigPath =

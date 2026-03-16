@@ -30,6 +30,10 @@ module.exports = {
       filter: ['**/*'],
     },
     {
+      from: 'config/.env.yaml',
+      to: 'server/dist/config/.env.yaml',
+    },
+    {
       from: 'build/icon.png',
       to: 'electron/build/icon.png',
     },

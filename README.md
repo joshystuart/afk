@@ -374,7 +374,7 @@ adminUser:
   password: '${ADMIN_PASSWORD:-password123}'
 
 auth:
-  jwtSecret: '${JWT_SECRET:-afk-development-secret-key-change-in-production}'
+  jwtSecret: '${AUTH_JWT_SECRET:-afk-development-secret-key-change-in-production}'
 
 # Optional: GitHub OAuth for repository browsing
 github:

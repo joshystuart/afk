@@ -34,6 +34,7 @@ module.exports = {
       to: 'electron/build/icon.png',
     },
   ],
+  afterPack: './scripts/afterPack.js',
   mac: {
     category: 'public.app-category.developer-tools',
     icon: 'build/icon.icns',
@@ -48,8 +49,9 @@ module.exports = {
       },
     ],
     darkModeSupport: true,
-    hardenedRuntime: true,
+    hardenedRuntime: false,
     gatekeeperAssess: false,
+    identity: null,
     entitlements: 'build/entitlements.mac.plist',
     entitlementsInherit: 'build/entitlements.mac.plist',
   },

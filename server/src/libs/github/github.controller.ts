@@ -29,7 +29,10 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(GitHubController.name);
   private static readonly OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
   private static readonly OAUTH_STATE_CLEANUP_INTERVAL_MS = 60 * 1000;
-  private readonly oauthStates = new Map<string, { createdAt: number }>();
+  private readonly oauthStates = new Map<
+    string,
+    { createdAt: number; source?: string }
+  >();
   private oauthStateCleanupTimer?: NodeJS.Timeout;
 
   constructor(
@@ -86,7 +89,10 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
   @Get('auth')
   @ApiOperation({ summary: 'Start GitHub OAuth flow' })
   @ApiResponse({ status: 302, description: 'Redirects to GitHub OAuth' })
-  async auth(@Res() res: Response): Promise<void> {
+  async auth(
+    @Query('source') source: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
     const oauth = await this.resolveOAuthConfig();
 
     if (!oauth.clientId || !oauth.clientSecret) {
@@ -97,7 +103,7 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
     }
 
     const state = crypto.randomBytes(16).toString('hex');
-    this.oauthStates.set(state, { createdAt: Date.now() });
+    this.oauthStates.set(state, { createdAt: Date.now(), source });
     this.cleanupExpiredOauthStates();
 
     const authUrl = this.githubService.getAuthUrl(
@@ -127,10 +133,17 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
       res.redirect(`${redirectUrl}?github=error&reason=invalid_state`);
       return;
     }
+
+    const isElectron = storedState.source === 'electron';
+
     if (this.isStateExpired(storedState.createdAt)) {
       this.oauthStates.delete(state);
       this.logger.warn('Expired OAuth state received');
-      res.redirect(`${redirectUrl}?github=error&reason=invalid_state`);
+      if (isElectron) {
+        this.sendElectronHtml(res, false, 'OAuth state has expired.');
+      } else {
+        res.redirect(`${redirectUrl}?github=error&reason=invalid_state`);
+      }
       return;
     }
     this.oauthStates.delete(state);
@@ -150,11 +163,41 @@ export class GitHubController implements OnModuleInit, OnModuleDestroy {
 
       this.logger.log(`GitHub connected for user: ${user.login}`);
 
-      res.redirect(`${redirectUrl}?github=connected`);
+      if (isElectron) {
+        this.sendElectronHtml(
+          res,
+          true,
+          `Connected as ${user.login}. You can close this tab.`,
+        );
+      } else {
+        res.redirect(`${redirectUrl}?github=connected`);
+      }
     } catch (error) {
       this.logger.error('GitHub OAuth callback failed', error);
-      res.redirect(`${redirectUrl}?github=error&reason=token_exchange_failed`);
+      if (isElectron) {
+        this.sendElectronHtml(res, false, 'Failed to connect GitHub account.');
+      } else {
+        res.redirect(
+          `${redirectUrl}?github=error&reason=token_exchange_failed`,
+        );
+      }
     }
+  }
+
+  private sendElectronHtml(
+    res: Response,
+    success: boolean,
+    message: string,
+  ): void {
+    const color = success ? '#22c55e' : '#ef4444';
+    const title = success ? 'GitHub Connected' : 'GitHub Connection Failed';
+    res.type('html').send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>${title}</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0a0a0a;color:#e5e5e5}
+.card{text-align:center;padding:2rem}.icon{font-size:3rem;margin-bottom:1rem}
+h1{font-size:1.25rem;margin:0 0 .5rem;color:${color}}p{margin:0;color:#a3a3a3;font-size:.875rem}</style></head>
+<body><div class="card"><div class="icon">${success ? '&#10003;' : '&#10007;'}</div>
+<h1>${title}</h1><p>${message}</p></div></body></html>`);
   }
 
   @Get('status')

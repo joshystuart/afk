@@ -1,9 +1,13 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import { isDev, getResourcePath } from './paths';
 import { getLoadingURL } from './loading-screen';
 
 let mainWindow: BrowserWindow | null = null;
+
+ipcMain.handle('open-external', (_event, url: string) => {
+  return shell.openExternal(url);
+});
 
 export function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -25,6 +29,16 @@ export function createWindow(): void {
   });
 
   mainWindow.loadURL(getLoadingURL());
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url.includes('/api/github/auth')) {
+      event.preventDefault();
+      const electronUrl = url.includes('?')
+        ? `${url}&source=electron`
+        : `${url}?source=electron`;
+      shell.openExternal(electronUrl);
+    }
+  });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();

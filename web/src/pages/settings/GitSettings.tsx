@@ -36,8 +36,17 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 
 const GitSettings: React.FC = () => {
   const { settings, error, updateSettings, clearError } = useSettingsStore();
-  const { isConnected, username, authUrl, disconnect, isDisconnecting } =
-    useGitHub();
+  const {
+    isConnected,
+    username,
+    isElectron,
+    authUrl,
+    startAuth,
+    isAuthenticating,
+    cancelAuth,
+    disconnect,
+    isDisconnecting,
+  } = useGitHub();
 
   const [formData, setFormData] = useState({
     gitUserName: '',
@@ -431,21 +440,58 @@ const GitSettings: React.FC = () => {
             </Box>
           ) : (
             <Box>
-              <Button
-                variant="outlined"
-                startIcon={<GitHubIcon />}
-                href={authUrl}
-                sx={{
-                  borderColor: afkColors.border,
-                  color: afkColors.textPrimary,
-                  '&:hover': {
-                    borderColor: afkColors.textSecondary,
-                    bgcolor: 'rgba(255, 255, 255, 0.04)',
-                  },
-                }}
-              >
-                Connect GitHub
-              </Button>
+              {isAuthenticating ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 2,
+                    border: `1px solid ${afkColors.border}`,
+                    borderRadius: 1,
+                    bgcolor: afkColors.surfaceElevated,
+                  }}
+                >
+                  <CircularProgress
+                    size={18}
+                    sx={{ color: afkColors.accent }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ color: afkColors.textSecondary, flex: 1 }}
+                  >
+                    Waiting for GitHub authorization&hellip;
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={cancelAuth}
+                    sx={{
+                      fontSize: '0.75rem',
+                      color: afkColors.textTertiary,
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  startIcon={<GitHubIcon />}
+                  {...(isElectron
+                    ? { onClick: () => startAuth() }
+                    : { href: authUrl })}
+                  sx={{
+                    borderColor: afkColors.border,
+                    color: afkColors.textPrimary,
+                    '&:hover': {
+                      borderColor: afkColors.textSecondary,
+                      bgcolor: 'rgba(255, 255, 255, 0.04)',
+                    },
+                  }}
+                >
+                  Connect GitHub
+                </Button>
+              )}
               <Typography
                 variant="caption"
                 sx={{

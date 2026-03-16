@@ -96,8 +96,8 @@ electron/
 ## How It Works
 
 1. **Environment setup** — configures the SQLite database path inside the Electron `userData` directory.
-2. **Server boot** — requires the bundled NestJS server and calls `bootstrapServer()` on port 3001.
-3. **Window creation** — opens a `BrowserWindow` pointed at `http://localhost:3001` with a hidden title bar (macOS inset traffic lights).
+2. **Server boot** — requires the bundled NestJS server and calls `bootstrapServer()` on port 4919.
+3. **Window creation** — opens a `BrowserWindow` pointed at `http://localhost:4919` with a hidden title bar (macOS inset traffic lights).
 4. **Docker health** — Docker availability is checked by the web UI via the server's `/health/ready` endpoint. A warning banner appears in the layout when Docker is unreachable.
 5. **Shutdown** — gracefully closes the NestJS app on quit.
 

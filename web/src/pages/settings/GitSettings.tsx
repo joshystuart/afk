@@ -7,6 +7,9 @@ import {
   Alert,
   CircularProgress,
   Chip,
+  IconButton,
+  InputAdornment,
+  Tooltip,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -14,6 +17,7 @@ import {
   Lock as LockIcon,
   GitHub as GitHubIcon,
   LinkOff as LinkOffIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { useSettingsStore } from '../../stores/settings.store';
 import { useGitHub } from '../../hooks/useGitHub';
@@ -349,8 +353,32 @@ const GitSettings: React.FC = () => {
               label="Callback URL"
               value={formData.githubCallbackUrl}
               onChange={handleInputChange('githubCallbackUrl')}
-              placeholder="http://localhost:3001/api/github/callback"
+              placeholder="http://localhost:4919/api/github/callback"
               helperText="OAuth callback URL (must match your GitHub OAuth App settings)"
+              slotProps={{
+                input: {
+                  readOnly: isElectron,
+                  ...(isElectron && {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip title="Copy to clipboard">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                formData.githubCallbackUrl,
+                              )
+                            }
+                            edge="end"
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  }),
+                },
+              }}
               sx={{
                 '& .MuiInputBase-input': {
                   fontFamily: '"JetBrains Mono", monospace',
@@ -358,20 +386,22 @@ const GitSettings: React.FC = () => {
                 },
               }}
             />
-            <TextField
-              fullWidth
-              label="Frontend Redirect URL"
-              value={formData.githubFrontendRedirectUrl}
-              onChange={handleInputChange('githubFrontendRedirectUrl')}
-              placeholder="http://localhost:5173/settings"
-              helperText="Where to redirect after OAuth completes"
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.8125rem',
-                },
-              }}
-            />
+            {!isElectron && (
+              <TextField
+                fullWidth
+                label="Frontend Redirect URL"
+                value={formData.githubFrontendRedirectUrl}
+                onChange={handleInputChange('githubFrontendRedirectUrl')}
+                placeholder="http://localhost:5173/settings"
+                helperText="Where to redirect after OAuth completes"
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.8125rem',
+                  },
+                }}
+              />
+            )}
           </Box>
         </Box>
 

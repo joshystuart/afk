@@ -2,7 +2,7 @@ import { app } from 'electron';
 import * as path from 'path';
 
 export const isDev = !app.isPackaged;
-export const SERVER_PORT = 3001;
+export const SERVER_PORT = 4919;
 
 export function getResourcePath(...segments: string[]): string {
   if (isDev) {

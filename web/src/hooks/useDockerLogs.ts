@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../stores/auth.store';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 const MAX_LOG_LINES = 500;
 const CONNECTION_TIMEOUT_MS = 10_000;
 const MAX_RECONNECT_ATTEMPTS = 5;

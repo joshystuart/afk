@@ -42,7 +42,7 @@ describe('Settings', () => {
       settings.applyDefaults();
 
       expect(settings.git.githubCallbackUrl).toBe(
-        'http://localhost:3001/api/github/callback',
+        'http://localhost:4919/api/github/callback',
       );
       expect(settings.git.githubFrontendRedirectUrl).toBe(
         'http://localhost:5173/settings',

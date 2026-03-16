@@ -100,7 +100,7 @@ export class AppTestHelper {
       // Override AppConfig for testing (but keep most settings the same)
       .overrideProvider(AppConfig)
       .useValue({
-        port: 3001,
+        port: 4919,
         nodeEnv: 'test',
         baseUrl: 'http://localhost',
         defaultWorkingDirectory: '/workspace',

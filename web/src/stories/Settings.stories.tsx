@@ -47,7 +47,7 @@ const mockSettings = {
     dockerStartPort: 7681,
     dockerEndPort: 7780,
     githubClientId: 'Ov23liXXXXXXXXXX',
-    githubCallbackUrl: 'http://localhost:3001/api/github/callback',
+    githubCallbackUrl: 'http://localhost:4919/api/github/callback',
     githubFrontendRedirectUrl: 'http://localhost:5173/settings',
   },
   withSshKeyOnly: {

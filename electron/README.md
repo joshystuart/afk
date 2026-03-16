@@ -1,11 +1,11 @@
 # AFK Desktop (Electron)
 
-Electron wrapper that bundles the AFK server and web client into a standalone desktop application. On launch it boots an embedded NestJS server, opens a BrowserWindow pointed at it, and checks that Docker Desktop is available.
+Electron wrapper that bundles the AFK server and web client into a standalone desktop application. On launch it boots an embedded NestJS server and opens a BrowserWindow pointed at it.
 
 ## Prerequisites
 
 - Node.js >= 24
-- Docker Desktop installed and running (the app checks at startup)
+- Docker Desktop installed and running (required for session operations; the web UI shows a warning banner when unavailable)
 - The **server** and **web** projects must be built before packaging
 
 ## Development
@@ -95,10 +95,10 @@ electron/
 
 ## How It Works
 
-1. **Docker check** — on startup the app verifies Docker is installed and running; prompts the user if not.
-2. **Environment setup** — configures the SQLite database path inside the Electron `userData` directory.
-3. **Server boot** — requires the bundled NestJS server and calls `bootstrapServer()` on port 3001.
-4. **Window creation** — opens a `BrowserWindow` pointed at `http://localhost:3001` with a hidden title bar (macOS inset traffic lights).
+1. **Environment setup** — configures the SQLite database path inside the Electron `userData` directory.
+2. **Server boot** — requires the bundled NestJS server and calls `bootstrapServer()` on port 3001.
+3. **Window creation** — opens a `BrowserWindow` pointed at `http://localhost:3001` with a hidden title bar (macOS inset traffic lights).
+4. **Docker health** — Docker availability is checked by the web UI via the server's `/health/ready` endpoint. A warning banner appears in the layout when Docker is unreachable.
 5. **Shutdown** — gracefully closes the NestJS app on quit.
 
 ## macOS Notes

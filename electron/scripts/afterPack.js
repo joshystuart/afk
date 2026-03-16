@@ -18,7 +18,12 @@ exports.default = async function afterPack(context) {
 
   console.log(`Re-signing app bundle: ${appPath}`);
 
-  const entitlements = path.join(__dirname, '..', 'build', 'entitlements.mac.plist');
+  const entitlements = path.join(
+    __dirname,
+    '..',
+    'build',
+    'entitlements.mac.plist',
+  );
 
   execSync(
     `codesign --force --deep --sign - --entitlements "${entitlements}" "${appPath}"`,

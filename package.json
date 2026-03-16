@@ -5,6 +5,7 @@
   "scripts": {
     "init": "npm run install:all && npm run build && npm run docker:pull",
     "build": "npm run server:build && npm run web:build && npm run electron:build",
+    "package": "npm run build && npm run electron:package",
     "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
     "start:web:dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
     "start:electron:dev": "npm run build && npm run electron:start",

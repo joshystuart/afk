@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "tsc && electron .",
     "build": "tsc",
-    "package": "tsc && electron-builder --config electron-builder.config.js",
-    "package:dir": "tsc && electron-builder --config electron-builder.config.js --dir"
+    "package": "node scripts/package.js",
+    "package:dir": "node scripts/package.js --dir"
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.1",

@@ -23,6 +23,7 @@ import { useSession } from '../hooks/useSession';
 import { useIsElectronMac } from '../hooks/useElectron';
 import { SessionStatus } from '../api/types';
 import { afkColors } from '../themes/afk';
+import DockerStatusBanner from './DockerStatusBanner';
 
 const TRAFFIC_LIGHT_WIDTH = 78;
 export const TOP_BAR_HEIGHT = 48;
@@ -322,6 +323,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           AFK
         </Typography>
       </Box>
+
+      <DockerStatusBanner />
 
       {/* Body: sidebar + content */}
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>

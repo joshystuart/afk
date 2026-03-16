@@ -18,12 +18,18 @@ export class UpdateSessionInteractor {
       throw new Error('Session not found');
     }
 
-    const trimmedName = request.name?.trim();
-    if (!trimmedName) {
-      throw new Error('Session name is required');
+    if (request.name !== undefined) {
+      const trimmedName = request.name?.trim();
+      if (!trimmedName) {
+        throw new Error('Session name is required');
+      }
+      session.name = trimmedName;
     }
 
-    session.name = trimmedName;
+    if (request.model !== undefined) {
+      session.model = request.model;
+    }
+
     await this.sessionRepository.save(session);
 
     const updatedSession = await this.sessionRepository.findById(sessionId);

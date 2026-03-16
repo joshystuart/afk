@@ -12,6 +12,7 @@ export class CreateSessionResponseDto {
   imageId?: string;
   imageName?: string;
   hostMountPath?: string;
+  model?: string;
   createdAt!: string;
   updatedAt!: string;
 
@@ -28,6 +29,7 @@ export class CreateSessionResponseDto {
     dto.imageId = session.imageId || undefined;
     dto.imageName = session.imageName || undefined;
     dto.hostMountPath = session.config.hostMountPath || undefined;
+    dto.model = session.model || undefined;
     dto.createdAt = session.createdAt.toISOString();
     dto.updatedAt = session.updatedAt.toISOString();
 

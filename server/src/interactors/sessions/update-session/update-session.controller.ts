@@ -36,12 +36,12 @@ export class UpdateSessionController {
   ) {}
 
   @Put(SessionRoutes.ITEM)
-  @ApiOperation({ summary: 'Rename session' })
+  @ApiOperation({ summary: 'Update session' })
   @ApiParam({ name: SessionRouteParams.ITEM_ID, description: 'Session ID' })
   @ApiBody({ type: UpdateSessionRequest })
   @ApiResponse({
     status: 200,
-    description: 'Session renamed successfully',
+    description: 'Session updated successfully',
     type: CreateSessionResponseDto,
   })
   @ApiResponse({
@@ -72,7 +72,7 @@ export class UpdateSessionController {
       return this.responseService.success(response);
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : 'Failed to rename session';
+        error instanceof Error ? error.message : 'Failed to update session';
       if (message === 'Session not found') {
         throw new NotFoundException(message);
       }

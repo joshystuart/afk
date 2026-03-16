@@ -9,6 +9,7 @@
     "start": "concurrently \"npm run server:start\" \"npm run web:start\"",
     "start:web:dev": "concurrently \"npm run server:dev\" \"npm run web:dev\"",
     "start:electron:dev": "npm run build && npm run electron:start",
+    "db:reset": "cd server && npm run db:reset",
     "docker:pull": "cd docker && npm run pull",
     "docker:build": "cd docker && npm run build",
     "docker:rebuild": "cd docker && npm run rebuild",

@@ -40,6 +40,13 @@ export function createWindow(): void {
     }
   });
 
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
   });

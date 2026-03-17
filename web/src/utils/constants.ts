@@ -4,8 +4,12 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   CREATE_SESSION: '/sessions/create',
   SESSION_DETAILS: '/sessions/:id',
+  SCHEDULED_JOBS: '/jobs',
+  CREATE_SCHEDULED_JOB: '/jobs/create',
+  SCHEDULED_JOB_DETAILS: '/jobs/:id',
   SETTINGS: '/settings',
   getSessionDetails: (id: string) => `/sessions/${id}`,
+  getScheduledJobDetails: (id: string) => `/jobs/${id}`,
 } as const;
 
 export const SESSION_STATUS_COLORS = {

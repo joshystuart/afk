@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import { isDev, getResourcePath } from './paths';
 import { getLoadingURL } from './loading-screen';
+import { getIsQuitting } from './tray';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -71,6 +72,14 @@ export function createWindow(): void {
   if (isDev) {
     mainWindow.webContents.openDevTools();
   }
+
+  mainWindow.on('close', (event) => {
+    if (!getIsQuitting()) {
+      event.preventDefault();
+      mainWindow?.hide();
+      return;
+    }
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;

@@ -11,6 +11,7 @@ import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   Add as AddIcon,
+  Schedule as ScheduleIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   FiberManualRecord as DotIcon,
@@ -71,6 +72,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: AddIcon,
     },
     {
+      id: 'scheduled-jobs',
+      title: 'Scheduled Jobs',
+      url: ROUTES.SCHEDULED_JOBS,
+      icon: ScheduleIcon,
+    },
+    {
       id: 'settings',
       title: 'Settings',
       url: ROUTES.SETTINGS,
@@ -98,7 +105,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           {menuItems.map((item) => {
-            const isSelected = location.pathname === item.url;
+            const isSelected =
+              location.pathname === item.url ||
+              location.pathname.startsWith(item.url + '/');
 
             return (
               <Box

@@ -1,3 +1,5 @@
+const isCodeSigned = !!process.env.CSC_LINK;
+
 /**
  * @type {import('electron-builder').Configuration}
  */
@@ -39,7 +41,8 @@ module.exports = {
     },
   ],
   publish: null,
-  afterPack: './scripts/afterPack.js',
+  afterPack: isCodeSigned ? undefined : './scripts/afterPack.js',
+  afterSign: isCodeSigned ? './scripts/notarize.js' : undefined,
   mac: {
     category: 'public.app-category.developer-tools',
     icon: 'build/icon.icns',
@@ -54,9 +57,9 @@ module.exports = {
       },
     ],
     darkModeSupport: true,
-    hardenedRuntime: false,
+    hardenedRuntime: isCodeSigned,
     gatekeeperAssess: false,
-    identity: null,
+    identity: isCodeSigned ? undefined : null,
     entitlements: 'build/entitlements.mac.plist',
     entitlementsInherit: 'build/entitlements.mac.plist',
   },

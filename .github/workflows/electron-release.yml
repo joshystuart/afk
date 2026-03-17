@@ -2,17 +2,17 @@ name: Electron Release
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'electron/**'
-      - 'server/**'
-      - 'web/**'
-      - 'package.json'
+    tags:
+      - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to rebuild and release
+        required: true
+        type: string
 
 concurrency:
-  group: electron-release-main
+  group: electron-release-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -24,18 +24,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
-      - name: Read version from package.json
-        id: version
+      - name: Resolve release tag
+        id: release
         run: |
-          VERSION=$(node -p "require('./electron/package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -83,8 +88,8 @@ jobs:
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: AFK ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: AFK ${{ steps.release.outputs.tag }}
           generate_release_notes: true
           make_latest: true
           files: |

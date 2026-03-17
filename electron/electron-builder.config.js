@@ -38,6 +38,7 @@ module.exports = {
       to: 'electron/build/icon.png',
     },
   ],
+  publish: null,
   afterPack: './scripts/afterPack.js',
   mac: {
     category: 'public.app-category.developer-tools',

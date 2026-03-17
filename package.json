@@ -1,6 +1,6 @@
 {
   "name": "afk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AFK - Away From Keyboard - Remote terminal access service",
   "scripts": {
     "init": "npm run install:all && npm run build && npm run docker:pull",

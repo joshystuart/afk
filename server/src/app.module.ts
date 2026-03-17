@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { ResponseService } from './libs/response/response.service';
 import { HttpExceptionFilter } from './libs/common/filters/http-exception.filter';
 import { ConfigModule } from './libs/config/config.module';
@@ -16,29 +17,45 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DockerImagesModule } from './domain/docker-images/docker-images.module';
 import { DockerImagesInteractorModule } from './interactors/docker-images/docker-images.module';
 
+export interface AppModuleOptions {
+  configPath?: string;
+  staticAssetsPath?: string;
+}
+
 @Module({})
 export class AppModule {
-  static forRoot(options?: { configPath?: string }) {
+  static forRoot(options?: AppModuleOptions): DynamicModule {
+    const imports: DynamicModule['imports'] = [
+      ConfigModule.forRoot({ path: options?.configPath }),
+      TypeOrmModule.forRootAsync({
+        inject: [DatabaseConfig],
+        useFactory: (databaseConfig: DatabaseConfig) =>
+          createTypeOrmOptions(databaseConfig),
+      }),
+      EventEmitterModule.forRoot(),
+      LoggerModule.forRootAsync(),
+      AuthModule,
+      SessionsModule,
+      SettingsModule,
+      GatewaysModule,
+      HealthModule,
+      GitHubModule,
+      DockerImagesModule,
+      DockerImagesInteractorModule,
+    ];
+
+    if (options?.staticAssetsPath) {
+      imports.push(
+        ServeStaticModule.forRoot({
+          rootPath: options.staticAssetsPath,
+          exclude: ['/api/{*path}', '/socket.io/{*path}'],
+        }),
+      );
+    }
+
     return {
       module: AppModule,
-      imports: [
-        ConfigModule.forRoot({ path: options?.configPath }),
-        TypeOrmModule.forRootAsync({
-          inject: [DatabaseConfig],
-          useFactory: (databaseConfig: DatabaseConfig) =>
-            createTypeOrmOptions(databaseConfig),
-        }),
-        EventEmitterModule.forRoot(),
-        LoggerModule.forRootAsync(),
-        AuthModule,
-        SessionsModule,
-        SettingsModule,
-        GatewaysModule,
-        HealthModule,
-        GitHubModule,
-        DockerImagesModule,
-        DockerImagesInteractorModule,
-      ],
+      imports,
       controllers: [],
       providers: [ResponseService, HttpExceptionFilter],
     };

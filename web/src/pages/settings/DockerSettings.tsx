@@ -697,4 +697,4 @@ const DockerSettings: React.FC = () => {
   );
 };
 
-export default DockerSettings;
+export { DockerSettings };

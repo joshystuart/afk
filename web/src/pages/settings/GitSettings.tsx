@@ -7,6 +7,9 @@ import {
   Alert,
   CircularProgress,
   Chip,
+  IconButton,
+  InputAdornment,
+  Tooltip,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -14,6 +17,7 @@ import {
   Lock as LockIcon,
   GitHub as GitHubIcon,
   LinkOff as LinkOffIcon,
+  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { useSettingsStore } from '../../stores/settings.store';
 import { useGitHub } from '../../hooks/useGitHub';
@@ -36,8 +40,17 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 
 const GitSettings: React.FC = () => {
   const { settings, error, updateSettings, clearError } = useSettingsStore();
-  const { isConnected, username, authUrl, disconnect, isDisconnecting } =
-    useGitHub();
+  const {
+    isConnected,
+    username,
+    isElectron,
+    authUrl,
+    startAuth,
+    isAuthenticating,
+    cancelAuth,
+    disconnect,
+    isDisconnecting,
+  } = useGitHub();
 
   const [formData, setFormData] = useState({
     gitUserName: '',
@@ -340,8 +353,32 @@ const GitSettings: React.FC = () => {
               label="Callback URL"
               value={formData.githubCallbackUrl}
               onChange={handleInputChange('githubCallbackUrl')}
-              placeholder="http://localhost:3001/api/github/callback"
+              placeholder="http://localhost:4919/api/github/callback"
               helperText="OAuth callback URL (must match your GitHub OAuth App settings)"
+              slotProps={{
+                input: {
+                  readOnly: isElectron,
+                  ...(isElectron && {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip title="Copy to clipboard">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                formData.githubCallbackUrl,
+                              )
+                            }
+                            edge="end"
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  }),
+                },
+              }}
               sx={{
                 '& .MuiInputBase-input': {
                   fontFamily: '"JetBrains Mono", monospace',
@@ -349,20 +386,22 @@ const GitSettings: React.FC = () => {
                 },
               }}
             />
-            <TextField
-              fullWidth
-              label="Frontend Redirect URL"
-              value={formData.githubFrontendRedirectUrl}
-              onChange={handleInputChange('githubFrontendRedirectUrl')}
-              placeholder="http://localhost:5173/settings"
-              helperText="Where to redirect after OAuth completes"
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.8125rem',
-                },
-              }}
-            />
+            {!isElectron && (
+              <TextField
+                fullWidth
+                label="Frontend Redirect URL"
+                value={formData.githubFrontendRedirectUrl}
+                onChange={handleInputChange('githubFrontendRedirectUrl')}
+                placeholder="http://localhost:5173/settings"
+                helperText="Where to redirect after OAuth completes"
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '0.8125rem',
+                  },
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -431,21 +470,58 @@ const GitSettings: React.FC = () => {
             </Box>
           ) : (
             <Box>
-              <Button
-                variant="outlined"
-                startIcon={<GitHubIcon />}
-                href={authUrl}
-                sx={{
-                  borderColor: afkColors.border,
-                  color: afkColors.textPrimary,
-                  '&:hover': {
-                    borderColor: afkColors.textSecondary,
-                    bgcolor: 'rgba(255, 255, 255, 0.04)',
-                  },
-                }}
-              >
-                Connect GitHub
-              </Button>
+              {isAuthenticating ? (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    p: 2,
+                    border: `1px solid ${afkColors.border}`,
+                    borderRadius: 1,
+                    bgcolor: afkColors.surfaceElevated,
+                  }}
+                >
+                  <CircularProgress
+                    size={18}
+                    sx={{ color: afkColors.accent }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ color: afkColors.textSecondary, flex: 1 }}
+                  >
+                    Waiting for GitHub authorization&hellip;
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={cancelAuth}
+                    sx={{
+                      fontSize: '0.75rem',
+                      color: afkColors.textTertiary,
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              ) : (
+                <Button
+                  variant="outlined"
+                  startIcon={<GitHubIcon />}
+                  {...(isElectron
+                    ? { onClick: () => startAuth() }
+                    : { href: authUrl })}
+                  sx={{
+                    borderColor: afkColors.border,
+                    color: afkColors.textPrimary,
+                    '&:hover': {
+                      borderColor: afkColors.textSecondary,
+                      bgcolor: 'rgba(255, 255, 255, 0.04)',
+                    },
+                  }}
+                >
+                  Connect GitHub
+                </Button>
+              )}
               <Typography
                 variant="caption"
                 sx={{
@@ -483,4 +559,4 @@ const GitSettings: React.FC = () => {
   );
 };
 
-export default GitSettings;
+export { GitSettings };

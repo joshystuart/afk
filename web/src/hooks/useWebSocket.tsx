@@ -12,7 +12,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { SessionStatus } from '../api/types';
 import type { GitStatus, Session } from '../api/types';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 
 interface WebSocketContextValue {
   socketRef: React.RefObject<Socket | null>;

@@ -71,6 +71,9 @@ export class Session {
   @Column('datetime', { nullable: true })
   lastAccessedAt: Date | null;
 
+  @Column('varchar', { length: 50, nullable: true })
+  model: string | null;
+
   constructor(
     id?: SessionIdDto | string,
     name?: string,
@@ -83,6 +86,7 @@ export class Session {
     lastAccessedAt?: Date | null,
     imageId?: string | null,
     imageName?: string | null,
+    model?: string | null,
   ) {
     if (id) {
       this.id = typeof id === 'string' ? id : id.toString();
@@ -97,6 +101,7 @@ export class Session {
     if (lastAccessedAt !== undefined) this.lastAccessedAt = lastAccessedAt;
     if (imageId !== undefined) this.imageId = imageId;
     if (imageName !== undefined) this.imageName = imageName;
+    if (model !== undefined) this.model = model;
   }
 
   // Getter to maintain compatibility with existing SessionIdDto usage

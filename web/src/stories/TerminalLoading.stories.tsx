@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@mui/material';
-import TerminalLoading from '../components/TerminalLoading';
+import { TerminalLoading } from '../components/TerminalLoading';
 
 const meta = {
   title: 'Components/TerminalLoading',

@@ -220,4 +220,4 @@ const GeneralSettings: React.FC = () => {
   );
 };
 
-export default GeneralSettings;
+export { GeneralSettings };

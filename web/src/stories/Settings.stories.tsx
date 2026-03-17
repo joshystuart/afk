@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
-import Settings from '../pages/Settings';
+import { Settings } from '../pages/Settings';
 import { useSettingsStore } from '../stores/settings.store';
 import type { Settings as SettingsType } from '../api/types';
 
@@ -47,7 +47,7 @@ const mockSettings = {
     dockerStartPort: 7681,
     dockerEndPort: 7780,
     githubClientId: 'Ov23liXXXXXXXXXX',
-    githubCallbackUrl: 'http://localhost:3001/api/github/callback',
+    githubCallbackUrl: 'http://localhost:4919/api/github/callback',
     githubFrontendRedirectUrl: 'http://localhost:5173/settings',
   },
   withSshKeyOnly: {

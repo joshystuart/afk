@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth.store';
 import { sessionsApi } from '../api/sessions.api';
 import type { ChatMessage, ChatStreamEvent } from '../api/types';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 
 interface UseChatReturn {
   messages: ChatMessage[];

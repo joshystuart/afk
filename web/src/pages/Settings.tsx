@@ -3,9 +3,9 @@ import { Box, Typography, CircularProgress, Tabs, Tab } from '@mui/material';
 import { useSettingsStore } from '../stores/settings.store';
 import { afkColors } from '../themes/afk';
 import { useSearchParams } from 'react-router-dom';
-import GeneralSettings from './settings/GeneralSettings';
-import GitSettings from './settings/GitSettings';
-import DockerSettings from './settings/DockerSettings';
+import { GeneralSettings } from './settings/GeneralSettings';
+import { GitSettings } from './settings/GitSettings';
+import { DockerSettings } from './settings/DockerSettings';
 
 const TAB_KEYS = ['general', 'git', 'docker'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
@@ -96,4 +96,4 @@ const Settings: React.FC = () => {
   );
 };
 
-export default Settings;
+export { Settings };

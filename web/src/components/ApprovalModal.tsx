@@ -162,4 +162,4 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   );
 };
 
-export default ApprovalModal;
+export { ApprovalModal };

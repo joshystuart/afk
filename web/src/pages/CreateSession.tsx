@@ -909,4 +909,4 @@ const CreateSession: React.FC = () => {
   );
 };
 
-export default CreateSession;
+export { CreateSession };

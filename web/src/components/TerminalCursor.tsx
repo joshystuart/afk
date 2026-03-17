@@ -57,4 +57,4 @@ const TerminalCursor: React.FC<TerminalCursorProps> = ({
   );
 };
 
-export default TerminalCursor;
+export { TerminalCursor };

@@ -15,8 +15,6 @@ import {
   Alert,
   Typography,
   Tooltip,
-  useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
@@ -38,16 +36,16 @@ import { SessionStatus } from '../api/types';
 import { useSessionStore } from '../stores/session.store';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
-import ApprovalModal from '../components/ApprovalModal';
-import TerminalCursor from '../components/TerminalCursor';
-import CommitPushDialog from '../components/CommitPushDialog';
+import { ApprovalModal } from '../components/ApprovalModal';
+import { TerminalCursor } from '../components/TerminalCursor';
+import { CommitPushDialog } from '../components/CommitPushDialog';
 import { ChatPanel } from '../components/chat/ChatPanel';
+
+const CONTENT_HEIGHT = 'calc(100vh - 48px)';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const theme = useTheme();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
 
   const {
@@ -245,7 +243,7 @@ const SessionDetails: React.FC = () => {
     return (
       <Box
         sx={{
-          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          height: CONTENT_HEIGHT,
           display: 'flex',
           flexDirection: 'column',
           p: 3,
@@ -266,7 +264,7 @@ const SessionDetails: React.FC = () => {
     return (
       <Box
         sx={{
-          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          height: CONTENT_HEIGHT,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -389,7 +387,7 @@ const SessionDetails: React.FC = () => {
     return (
       <Box
         sx={{
-          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          height: CONTENT_HEIGHT,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -478,7 +476,7 @@ const SessionDetails: React.FC = () => {
       <>
         <Box
           sx={{
-            height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+            height: CONTENT_HEIGHT,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -637,7 +635,7 @@ const SessionDetails: React.FC = () => {
       <>
         <Box
           sx={{
-            height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+            height: CONTENT_HEIGHT,
             display: 'flex',
             flexDirection: 'column',
             bgcolor: afkColors.background,
@@ -748,7 +746,7 @@ const SessionDetails: React.FC = () => {
     <>
       <Box
         sx={{
-          height: isMobile ? 'calc(100vh - 48px)' : '100vh',
+          height: CONTENT_HEIGHT,
           display: 'flex',
           flexDirection: 'column',
           bgcolor: afkColors.background,
@@ -976,4 +974,4 @@ const SessionDetails: React.FC = () => {
   );
 };
 
-export default SessionDetails;
+export { SessionDetails };

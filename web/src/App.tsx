@@ -12,14 +12,14 @@ import { WebSocketProvider } from './hooks/useWebSocket';
 import { ROUTES } from './utils/constants';
 
 // Pages
-import Dashboard from './pages/Dashboard';
-import SessionDetails from './pages/SessionDetails';
-import CreateSession from './pages/CreateSession';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
+import { Dashboard } from './pages/Dashboard';
+import { SessionDetails } from './pages/SessionDetails';
+import { CreateSession } from './pages/CreateSession';
+import { Settings } from './pages/Settings';
+import { Login } from './pages/Login';
 
 // Layout
-import Layout from './components/Layout';
+import { Layout } from './components/Layout';
 
 // AFK Theme
 import { afkTheme } from './themes/afk';
@@ -113,4 +113,4 @@ function App() {
   );
 }
 
-export default App;
+export { App };

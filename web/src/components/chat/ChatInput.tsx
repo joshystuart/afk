@@ -17,13 +17,15 @@ import {
 } from '@mui/icons-material';
 import { afkColors } from '../../themes/afk';
 
-const MODELS = [
+export const MODELS = [
   { id: 'sonnet', label: 'Sonnet 4.6' },
   { id: 'opus', label: 'Opus 4.6' },
   { id: 'haiku', label: 'Haiku 4.5' },
 ] as const;
 
-const DEFAULT_MODEL = MODELS[0].id;
+export const DEFAULT_MODEL = MODELS[0].id;
+
+export type ModelId = (typeof MODELS)[number]['id'];
 
 interface ChatInputProps {
   onSend: (
@@ -34,6 +36,8 @@ interface ChatInputProps {
   onCancel: () => void;
   isProcessing: boolean;
   disabled?: boolean;
+  selectedModel: ModelId;
+  onModelChange: (model: ModelId) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -41,11 +45,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onCancel,
   isProcessing,
   disabled = false,
+  selectedModel,
+  onModelChange,
 }) => {
   const [value, setValue] = React.useState('');
   const [continueConversation, setContinueConversation] = React.useState(true);
-  const [selectedModel, setSelectedModel] =
-    React.useState<(typeof MODELS)[number]['id']>(DEFAULT_MODEL);
   const [modelAnchorEl, setModelAnchorEl] = React.useState<null | HTMLElement>(
     null,
   );
@@ -207,7 +211,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               key={model.id}
               selected={model.id === selectedModel}
               onClick={() => {
-                setSelectedModel(model.id);
+                onModelChange(model.id);
                 setModelAnchorEl(null);
               }}
               sx={{

@@ -2,7 +2,7 @@ import { apiClient } from './client';
 import type { GitHubRepo, GitHubStatus } from './types';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  import.meta.env.VITE_API_URL || 'http://localhost:4919/api';
 
 export const githubApi = {
   /** Get the full auth URL to redirect to (direct browser navigation) */

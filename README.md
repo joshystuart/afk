@@ -69,8 +69,8 @@ npm run start:dev
 ```
 
 - Web interface: [http://localhost:5173](http://localhost:5173)
-- Server API: [http://localhost:3001](http://localhost:3001)
-- Swagger API docs: [http://localhost:3001/api/docs](http://localhost:3001/api/docs)
+- Server API: [http://localhost:4919](http://localhost:4919)
+- Swagger API docs: [http://localhost:4919/api/docs](http://localhost:4919/api/docs)
 
 ```bash
 # Production-like mode (built frontend preview + server start)
@@ -79,7 +79,7 @@ npm run start
 ```
 
 - Web interface: [http://localhost:4173](http://localhost:4173)
-- Server API: [http://localhost:3001](http://localhost:3001)
+- Server API: [http://localhost:4919](http://localhost:4919)
 
 ### Getting Started
 
@@ -124,7 +124,7 @@ Or add them directly to `server/.env.yaml`:
 github:
   clientId: 'your-client-id'
   clientSecret: 'your-client-secret'
-  callbackUrl: 'http://localhost:3001/api/github/callback'
+  callbackUrl: 'http://localhost:4919/api/github/callback'
   frontendRedirectUrl: 'http://localhost:5173/settings'
 ```
 
@@ -374,13 +374,13 @@ adminUser:
   password: '${ADMIN_PASSWORD:-password123}'
 
 auth:
-  jwtSecret: '${JWT_SECRET:-afk-development-secret-key-change-in-production}'
+  jwtSecret: '${AUTH_JWT_SECRET:-afk-development-secret-key-change-in-production}'
 
 # Optional: GitHub OAuth for repository browsing
 github:
   clientId: '${GITHUB_CLIENT_ID:-}'
   clientSecret: '${GITHUB_CLIENT_SECRET:-}'
-  callbackUrl: '${GITHUB_CALLBACK_URL:-http://localhost:3001/api/github/callback}'
+  callbackUrl: '${GITHUB_CALLBACK_URL:-http://localhost:4919/api/github/callback}'
   frontendRedirectUrl: '${GITHUB_FRONTEND_REDIRECT_URL:-http://localhost:5173/settings}'
 ```
 
@@ -399,8 +399,8 @@ Configure the web client by editing `web/.env`:
 
 ```bash
 # API endpoints
-VITE_API_URL=http://localhost:3001/api
-VITE_WS_URL=http://localhost:3001
+VITE_API_URL=http://localhost:4919/api
+VITE_WS_URL=http://localhost:4919
 ```
 
 The web client uses Vite, so all environment variables must be prefixed with `VITE_`.

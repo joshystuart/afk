@@ -24,9 +24,9 @@ import { useSessionStore } from '../stores/session.store';
 import { SessionStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
-import ApprovalModal from '../components/ApprovalModal';
-import BulkActionModal from '../components/BulkActionModal';
-import TerminalCursor from '../components/TerminalCursor';
+import { ApprovalModal } from '../components/ApprovalModal';
+import { BulkActionModal } from '../components/BulkActionModal';
+import { TerminalCursor } from '../components/TerminalCursor';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -697,4 +697,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export { Dashboard };

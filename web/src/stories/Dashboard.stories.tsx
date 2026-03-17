@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import Dashboard from '../pages/Dashboard';
+import { Dashboard } from '../pages/Dashboard';
 import { useSessionStore } from '../stores/session.store';
 import { SessionStatus } from '../api/types';
 import type { Session } from '../api/types';

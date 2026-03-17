@@ -5,7 +5,7 @@ import { ChatMessage } from '../domain/chat/chat-message.entity';
 import { DockerImage } from '../domain/docker-images/docker-image.entity';
 
 async function resetDatabase(): Promise<void> {
-  const dbPath = process.env.DB_DATABASE || 'afk.sqlite';
+  const dbPath = process.env.DB_SQLITE_DATABASE || 'afk.sqlite';
   console.log(`Connecting to database: ${dbPath}`);
 
   const dataSource = new DataSource({

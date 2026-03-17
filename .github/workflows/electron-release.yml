@@ -1,0 +1,97 @@
+name: Electron Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to rebuild and release
+        required: true
+        type: string
+
+concurrency:
+  group: electron-release-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Resolve release tag
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            server/node_modules
+            web/node_modules
+            electron/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      - name: Build server
+        run: npm run server:build
+
+      - name: Build web
+        run: npm run web:build
+
+      - name: Build electron
+        run: npm run electron:build
+
+      - name: Create placeholder build resources
+        run: |
+          mkdir -p electron/build
+          cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns electron/build/icon.icns 2>/dev/null || touch electron/build/icon.icns
+          sips -s format png electron/build/icon.icns --out electron/build/icon.png 2>/dev/null || touch electron/build/icon.png
+          cat > electron/build/entitlements.mac.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+          <true/>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Package electron app
+        run: npm run electron:package
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: AFK ${{ steps.release.outputs.tag }}
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            electron/release/*.dmg
+            electron/release/*.zip

@@ -1,0 +1,66 @@
+name: PR Electron Build
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'electron/**'
+      - 'server/**'
+      - 'web/**'
+      - 'package.json'
+
+jobs:
+  electron-build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            server/node_modules
+            web/node_modules
+            electron/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      - name: Build server
+        run: npm run server:build
+
+      - name: Build web
+        run: npm run web:build
+
+      - name: Build electron
+        run: npm run electron:build
+
+      - name: Create placeholder build resources
+        run: |
+          mkdir -p electron/build
+          cp /System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericApplicationIcon.icns electron/build/icon.icns 2>/dev/null || touch electron/build/icon.icns
+          sips -s format png electron/build/icon.icns --out electron/build/icon.png 2>/dev/null || touch electron/build/icon.png
+          cat > electron/build/entitlements.mac.plist << 'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+          <true/>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Package electron app (unpacked)
+        run: npm run electron:package:dir

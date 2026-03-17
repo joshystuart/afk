@@ -1,10 +1,12 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { afkColors } from '../../themes/afk';
 import { ChatMessageBubble } from './ChatMessageBubble';
-import { ChatInput } from './ChatInput';
+import { ChatInput, DEFAULT_MODEL, type ModelId } from './ChatInput';
 import { StreamingIndicator } from './StreamingIndicator';
 import { useChat } from '../../hooks/useChat';
+import { sessionsApi } from '../../api/sessions.api';
 
 interface ChatPanelProps {
   sessionId: string;
@@ -19,6 +21,46 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     sendMessage,
     cancelExecution,
   } = useChat(sessionId);
+
+  const queryClient = useQueryClient();
+  const { data: session } = useQuery({
+    queryKey: ['session', sessionId],
+    queryFn: () => sessionsApi.getSession(sessionId),
+    enabled: !!sessionId,
+  });
+
+  const [selectedModel, setSelectedModel] =
+    React.useState<ModelId>(DEFAULT_MODEL);
+  const initializedForSessionRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (initializedForSessionRef.current !== sessionId) {
+      initializedForSessionRef.current = null;
+      setSelectedModel(DEFAULT_MODEL);
+    }
+  }, [sessionId]);
+
+  React.useEffect(() => {
+    if (session && initializedForSessionRef.current !== sessionId) {
+      setSelectedModel((session.model as ModelId) || DEFAULT_MODEL);
+      initializedForSessionRef.current = sessionId;
+    }
+  }, [session, sessionId]);
+
+  const handleModelChange = React.useCallback(
+    (model: ModelId) => {
+      setSelectedModel(model);
+      sessionsApi
+        .updateSession(sessionId, { model })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        })
+        .catch((err) => {
+          console.error('Failed to persist model selection:', err);
+        });
+    },
+    [sessionId, queryClient],
+  );
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -138,6 +180,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         onSend={sendMessage}
         onCancel={cancelExecution}
         isProcessing={isProcessing}
+        selectedModel={selectedModel}
+        onModelChange={handleModelChange}
       />
     </Box>
   );

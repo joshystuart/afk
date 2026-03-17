@@ -141,4 +141,4 @@ const BulkActionModal: React.FC<BulkActionModalProps> = ({
   );
 };
 
-export default BulkActionModal;
+export { BulkActionModal };

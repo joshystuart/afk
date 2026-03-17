@@ -20,9 +20,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
 import { useAuthStore } from '../stores/auth.store';
 import { useSession } from '../hooks/useSession';
+import { useIsElectronMac } from '../hooks/useElectron';
 import { SessionStatus } from '../api/types';
 import { afkColors } from '../themes/afk';
+import { DockerStatusBanner } from './DockerStatusBanner';
 
+const TRAFFIC_LIGHT_WIDTH = 78;
+export const TOP_BAR_HEIGHT = 48;
 const SIDEBAR_WIDTH = 220;
 
 interface LayoutProps {
@@ -36,6 +40,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { logout } = useAuthStore();
   const { sessions } = useSession();
+  const isElectronMac = useIsElectronMac();
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -73,40 +78,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
   ];
 
-  const sidebar = (
+  const sidebarContent = (
     <Box
       sx={{
         height: '100%',
-        bgcolor: afkColors.surface,
         display: 'flex',
         flexDirection: 'column',
-        borderRight: `1px solid ${afkColors.border}`,
       }}
     >
-      {/* Logo */}
+      {/* Nav Items */}
       <Box
         sx={{
-          px: 2.5,
-          py: 2.5,
+          px: 1.5,
+          pt: 1.5,
+          flex: 1,
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
         }}
       >
-        <Typography
-          sx={{
-            fontFamily: '"JetBrains Mono", monospace',
-            fontWeight: 700,
-            fontSize: '1.25rem',
-            color: afkColors.textPrimary,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          AFK
-        </Typography>
-      </Box>
-
-      {/* Nav Items */}
-      <Box sx={{ px: 1.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           {menuItems.map((item) => {
             const isSelected = location.pathname === item.url;
@@ -286,106 +275,111 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 
   return (
-    <Box sx={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
-      {/* Mobile hamburger */}
-      {isMobile && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 48,
-            bgcolor: afkColors.surface,
-            borderBottom: `1px solid ${afkColors.border}`,
-            display: 'flex',
-            alignItems: 'center',
-            px: 1.5,
-            zIndex: theme.zIndex.drawer + 1,
-            gap: 1.5,
-          }}
-        >
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top bar - always visible */}
+      <Box
+        sx={{
+          height: TOP_BAR_HEIGHT,
+          flexShrink: 0,
+          bgcolor: afkColors.surface,
+          borderBottom: `1px solid ${afkColors.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          px: 1.5,
+          gap: 1.5,
+          ...(isElectronMac && {
+            WebkitAppRegion: 'drag',
+            pl: `${TRAFFIC_LIGHT_WIDTH}px`,
+          }),
+        }}
+      >
+        {isMobile && (
           <IconButton
             onClick={handleDrawerToggle}
             size="small"
-            sx={{ color: afkColors.textSecondary }}
+            sx={{
+              color: afkColors.textSecondary,
+              ...(isElectronMac && { WebkitAppRegion: 'no-drag' }),
+            }}
           >
             <MenuIcon fontSize="small" />
           </IconButton>
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              color: afkColors.textPrimary,
-            }}
-          >
-            AFK
-          </Typography>
-        </Box>
-      )}
-
-      {/* Mobile Drawer */}
-      {isMobile && (
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
+        )}
+        <Typography
           sx={{
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: SIDEBAR_WIDTH,
-              border: 'none',
-            },
+            fontFamily: '"JetBrains Mono", monospace',
+            fontWeight: 700,
+            fontSize: '0.875rem',
+            color: afkColors.textPrimary,
           }}
         >
-          {sidebar}
-        </Drawer>
-      )}
+          AFK
+        </Typography>
+      </Box>
 
-      {/* Desktop Sidebar - always visible */}
-      {!isMobile && (
-        <Box
-          component="nav"
-          sx={{
-            width: SIDEBAR_WIDTH,
-            flexShrink: 0,
-          }}
-        >
+      <DockerStatusBanner />
+
+      {/* Body: sidebar + content */}
+      <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {/* Mobile Drawer */}
+        {isMobile && (
           <Drawer
-            variant="permanent"
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
             sx={{
               '& .MuiDrawer-paper': {
                 boxSizing: 'border-box',
                 width: SIDEBAR_WIDTH,
                 border: 'none',
+                top: TOP_BAR_HEIGHT,
+                height: `calc(100% - ${TOP_BAR_HEIGHT}px)`,
               },
             }}
-            open
           >
-            {sidebar}
+            {sidebarContent}
           </Drawer>
-        </Box>
-      )}
+        )}
 
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          width: '100%',
-          minHeight: '100vh',
-          bgcolor: afkColors.background,
-          ...(isMobile && {
-            pt: '48px',
-          }),
-        }}
-      >
-        {children}
+        {/* Desktop Sidebar */}
+        {!isMobile && (
+          <Box
+            component="nav"
+            sx={{
+              width: SIDEBAR_WIDTH,
+              flexShrink: 0,
+              bgcolor: afkColors.surface,
+              borderRight: `1px solid ${afkColors.border}`,
+              overflowY: 'auto',
+            }}
+          >
+            {sidebarContent}
+          </Box>
+        )}
+
+        {/* Main Content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            overflow: 'auto',
+            bgcolor: afkColors.background,
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );
 };
 
-export default Layout;
+export { Layout };

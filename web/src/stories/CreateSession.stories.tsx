@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from '@mui/material';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import CreateSession from '../pages/CreateSession';
+import { CreateSession } from '../pages/CreateSession';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import type { Settings, DockerImage } from '../api/types';

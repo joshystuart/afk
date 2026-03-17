@@ -39,6 +39,7 @@ export const sessionsApi = {
       imageId: sessionData.imageId,
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
+      model: sessionData.model,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -61,6 +62,7 @@ export const sessionsApi = {
       imageId: sessionData.imageId,
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
+      model: sessionData.model,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -85,6 +87,7 @@ export const sessionsApi = {
       imageId: sessionData.imageId,
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
+      model: sessionData.model,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;

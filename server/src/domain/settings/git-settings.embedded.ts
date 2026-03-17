@@ -2,7 +2,7 @@ import { Column } from 'typeorm';
 
 export class GitSettings {
   static readonly DEFAULT_GITHUB_CALLBACK_URL =
-    'http://localhost:3001/api/github/callback';
+    'http://localhost:4919/api/github/callback';
   static readonly DEFAULT_GITHUB_FRONTEND_REDIRECT_URL =
     'http://localhost:5173/settings';
 

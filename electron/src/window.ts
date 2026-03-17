@@ -41,6 +41,23 @@ export function createWindow(): void {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+        return {
+          action: 'allow',
+          overrideBrowserWindowOptions: {
+            width: 960,
+            height: 640,
+            title: 'AFK Terminal',
+            backgroundColor: '#0a0a0a',
+          },
+        };
+      }
+    } catch {
+      // invalid URL, fall through to deny
+    }
+
     if (url.startsWith('http://') || url.startsWith('https://')) {
       shell.openExternal(url);
     }

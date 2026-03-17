@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
+import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
+import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
 import { UpdateScheduledJobRequest } from './update-scheduled-job-request.dto';
 
 @Injectable()
@@ -9,6 +11,8 @@ export class UpdateScheduledJobInteractor {
 
   constructor(
     private readonly scheduledJobRepository: ScheduledJobRepository,
+    private readonly jobScheduler: JobSchedulerService,
+    private readonly launchdService: LaunchdService,
   ) {}
 
   async execute(
@@ -47,6 +51,9 @@ export class UpdateScheduledJobInteractor {
     if (request.enabled !== undefined) job.enabled = request.enabled;
 
     await this.scheduledJobRepository.save(job);
+
+    await this.jobScheduler.updateJob(job);
+    await this.launchdService.updatePlist(job);
 
     this.logger.log(`Updated scheduled job: ${job.id} (${job.name})`);
 

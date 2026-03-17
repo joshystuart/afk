@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
+import { JobSchedulerService } from '../../services/scheduled-jobs/job-scheduler.service';
+import { LaunchdService } from '../../services/scheduled-jobs/launchd.service';
 
 @Injectable()
 export class DeleteScheduledJobInteractor {
@@ -7,6 +9,8 @@ export class DeleteScheduledJobInteractor {
 
   constructor(
     private readonly scheduledJobRepository: ScheduledJobRepository,
+    private readonly jobScheduler: JobSchedulerService,
+    private readonly launchdService: LaunchdService,
   ) {}
 
   async execute(id: string): Promise<void> {
@@ -14,6 +18,9 @@ export class DeleteScheduledJobInteractor {
     if (!job) {
       throw new Error('Scheduled job not found');
     }
+
+    this.jobScheduler.unregisterJob(id);
+    await this.launchdService.removePlist(id);
 
     await this.scheduledJobRepository.delete(id);
 

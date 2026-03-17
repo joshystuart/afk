@@ -4,19 +4,19 @@ overview: Add a "Scheduled Jobs" feature to AFK that allows users to define recu
 todos:
   - id: phase-1-tray
     content: 'Phase 1: Tray icon + background support (electron/src/tray.ts, modify main.ts and window.ts)'
-    status: pending
+    status: completed
   - id: phase-2-screens
     content: 'Phase 2: Empty screens + navigation (routes, sidebar, placeholder pages)'
-    status: pending
+    status: completed
   - id: phase-3-data-model
     content: 'Phase 3: Data model + API -- entities, DTOs, controllers, interactors for CRUD'
     status: completed
   - id: phase-4-create-ui
     content: 'Phase 4: Create job form UI -- reuse repo selector, image selector, add schedule config'
-    status: pending
+    status: completed
   - id: phase-5-execution
     content: 'Phase 5: Job execution engine + hybrid scheduler (@nestjs/schedule + macOS LaunchAgent plists)'
-    status: pending
+    status: completed
   - id: phase-6-history-ui
     content: 'Phase 6: Job list + run history UI with output viewing'
     status: pending

@@ -36,3 +36,17 @@ export interface ContainerCreateOptions {
   githubToken?: string;
   hostMountPath?: string;
 }
+
+export interface EphemeralContainerCreateOptions {
+  jobId: string;
+  runId: string;
+  imageName: string;
+  repoUrl: string;
+  branch: string;
+  gitUserName: string;
+  gitUserEmail: string;
+  sshPrivateKey?: string;
+  ports: PortPairDto;
+  claudeToken?: string;
+  githubToken?: string;
+}

@@ -6,6 +6,7 @@ import {
   ContainerCreateOptions,
   ContainerInfo,
   ContainerStats,
+  EphemeralContainerCreateOptions,
 } from '../../domain/containers/container.entity';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
@@ -120,6 +121,73 @@ export class DockerEngineService implements OnModuleInit {
       this.logger.error('Failed to create container', error);
       throw new Error(`Container creation failed: ${error.message}`);
     }
+  }
+
+  async createEphemeralContainer(
+    options: EphemeralContainerCreateOptions,
+  ): Promise<Dockerode.Container> {
+    this.logger.log('Creating ephemeral container for job run', {
+      jobId: options.jobId,
+      runId: options.runId,
+      repoUrl: options.repoUrl,
+      branch: options.branch,
+    });
+
+    try {
+      await this.ping();
+      await this.ensureImageAvailable(options.imageName);
+
+      const docker = await this.getDockerClient();
+      const container = await docker.createContainer({
+        Image: options.imageName,
+        Env: this.buildEphemeralEnvironment(options),
+        ExposedPorts: this.buildExposedPorts(options.ports),
+        HostConfig: {
+          PortBindings: this.buildPortBindings(options.ports),
+          RestartPolicy: { Name: 'no' },
+        },
+        Labels: {
+          'afk.job.id': options.jobId,
+          'afk.job.run.id': options.runId,
+          'afk.managed': 'true',
+        },
+      });
+
+      await container.start();
+      return container;
+    } catch (error) {
+      this.logger.error('Failed to create ephemeral container', error);
+      throw new Error(`Ephemeral container creation failed: ${error.message}`);
+    }
+  }
+
+  private buildEphemeralEnvironment(
+    options: EphemeralContainerCreateOptions,
+  ): string[] {
+    const env = [
+      `REPO_URL=${options.repoUrl}`,
+      `REPO_BRANCH=${options.branch}`,
+      `GIT_USER_NAME=${options.gitUserName}`,
+      `GIT_USER_EMAIL=${options.gitUserEmail}`,
+      `TERMINAL_PORT=${options.ports.port}`,
+      `SESSION_NAME=job-${options.runId.substring(0, 8)}`,
+      `IMAGE_NAME=${options.imageName}`,
+      `CLAUDE_DANGEROUS_SKIP_PERMISSIONS=1`,
+    ];
+
+    if (options.sshPrivateKey) {
+      env.push(`SSH_PRIVATE_KEY=${options.sshPrivateKey}`);
+    }
+
+    if (options.claudeToken) {
+      env.push(`CLAUDE_CODE_OAUTH_TOKEN=${options.claudeToken}`);
+    }
+
+    if (options.githubToken) {
+      env.push(`GITHUB_TOKEN=${options.githubToken}`);
+    }
+
+    return env;
   }
 
   private async ensureImageAvailable(imageName: string): Promise<void> {

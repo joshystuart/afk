@@ -18,6 +18,7 @@ import { DockerImagesModule } from './domain/docker-images/docker-images.module'
 import { DockerImagesInteractorModule } from './interactors/docker-images/docker-images.module';
 import { ScheduledJobsDomainModule } from './domain/scheduled-jobs/scheduled-jobs.module';
 import { ScheduledJobsInteractorModule } from './interactors/scheduled-jobs/scheduled-jobs.module';
+import { ScheduledJobsServicesModule } from './services/scheduled-jobs/scheduled-jobs-services.module';
 
 export interface AppModuleOptions {
   configPath?: string;
@@ -46,6 +47,7 @@ export class AppModule {
       DockerImagesInteractorModule,
       ScheduledJobsDomainModule,
       ScheduledJobsInteractorModule,
+      ScheduledJobsServicesModule,
     ];
 
     if (options?.staticAssetsPath) {

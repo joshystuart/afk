@@ -3,6 +3,8 @@ import { v4 as uuid } from 'uuid';
 import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
+import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
+import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
 import { CreateScheduledJobRequest } from './create-scheduled-job-request.dto';
 
 @Injectable()
@@ -12,6 +14,8 @@ export class CreateScheduledJobInteractor {
   constructor(
     private readonly scheduledJobRepository: ScheduledJobRepository,
     private readonly dockerImageRepository: DockerImageRepository,
+    private readonly jobScheduler: JobSchedulerService,
+    private readonly launchdService: LaunchdService,
   ) {}
 
   async execute(request: CreateScheduledJobRequest): Promise<ScheduledJob> {
@@ -38,6 +42,9 @@ export class CreateScheduledJobInteractor {
     job.nextRunAt = null;
 
     await this.scheduledJobRepository.save(job);
+
+    await this.jobScheduler.registerJob(job);
+    await this.launchdService.createPlist(job);
 
     this.logger.log(`Created scheduled job: ${job.id} (${job.name})`);
 

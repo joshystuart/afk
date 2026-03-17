@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ScheduledJobsDomainModule } from '../../domain/scheduled-jobs/scheduled-jobs.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
+import { ScheduledJobsServicesModule } from '../../services/scheduled-jobs/scheduled-jobs-services.module';
 import { ResponseService } from '../../libs/response/response.service';
 import { CreateScheduledJobController } from './create-scheduled-job/create-scheduled-job.controller';
 import { CreateScheduledJobInteractor } from './create-scheduled-job/create-scheduled-job.interactor';
@@ -14,9 +15,15 @@ import { DeleteScheduledJobController } from './delete-scheduled-job.controller'
 import { DeleteScheduledJobInteractor } from './delete-scheduled-job.interactor';
 import { ListScheduledJobRunsController } from './list-scheduled-job-runs.controller';
 import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.interactor';
+import { TriggerScheduledJobController } from './trigger-scheduled-job/trigger-scheduled-job.controller';
+import { TriggerScheduledJobInteractor } from './trigger-scheduled-job/trigger-scheduled-job.interactor';
 
 @Module({
-  imports: [ScheduledJobsDomainModule, DockerImagesModule],
+  imports: [
+    ScheduledJobsDomainModule,
+    DockerImagesModule,
+    ScheduledJobsServicesModule,
+  ],
   controllers: [
     CreateScheduledJobController,
     ListScheduledJobsController,
@@ -24,6 +31,7 @@ import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.intera
     UpdateScheduledJobController,
     DeleteScheduledJobController,
     ListScheduledJobRunsController,
+    TriggerScheduledJobController,
   ],
   providers: [
     CreateScheduledJobInteractor,
@@ -32,6 +40,7 @@ import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.intera
     UpdateScheduledJobInteractor,
     DeleteScheduledJobInteractor,
     ListScheduledJobRunsInteractor,
+    TriggerScheduledJobInteractor,
     ResponseService,
   ],
   exports: [
@@ -41,6 +50,7 @@ import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.intera
     UpdateScheduledJobInteractor,
     DeleteScheduledJobInteractor,
     ListScheduledJobRunsInteractor,
+    TriggerScheduledJobInteractor,
   ],
 })
 export class ScheduledJobsInteractorModule {}

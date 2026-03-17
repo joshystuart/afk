@@ -1,10 +1,18 @@
 import { PortPairDto } from './port-pair.dto';
 
+export enum ContainerHealth {
+  UNKNOWN = 'unknown',
+  STARTING = 'starting',
+  HEALTHY = 'healthy',
+  UNHEALTHY = 'unhealthy',
+  NONE = 'none',
+}
+
 export interface ContainerInfo {
   id: string;
   name: string;
   state: string;
-  health?: string;
+  health: ContainerHealth;
   created: Date;
   ports: Record<string, any> | null;
   labels: Record<string, string>;

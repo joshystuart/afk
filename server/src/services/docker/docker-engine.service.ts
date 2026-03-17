@@ -4,6 +4,7 @@ import { ContainerNotFoundError } from './container-not-found.error';
 import { DockerOptions } from 'dockerode';
 import {
   ContainerCreateOptions,
+  ContainerHealth,
   ContainerInfo,
   ContainerStats,
   EphemeralContainerCreateOptions,
@@ -305,7 +306,7 @@ export class DockerEngineService implements OnModuleInit {
       id: info.Id,
       name: info.Name,
       state: info.State.Status,
-      health: info.State.Health?.Status,
+      health: this.mapHealthStatus(info.State.Health?.Status),
       created: new Date(info.Created),
       ports: this.extractPorts(info),
       labels: info.Config.Labels || {},
@@ -478,10 +479,10 @@ export class DockerEngineService implements OnModuleInit {
 
     while (Date.now() < deadline) {
       const info = await this.getContainerInfo(containerId);
-      if (info.health === 'healthy') {
+      if (info.health === ContainerHealth.HEALTHY) {
         return;
       }
-      if (info.health === 'unhealthy') {
+      if (info.health === ContainerHealth.UNHEALTHY) {
         throw new Error(`Container ${containerId} reported unhealthy`);
       }
       await new Promise((resolve) => setTimeout(resolve, pollMs));
@@ -494,14 +495,14 @@ export class DockerEngineService implements OnModuleInit {
 
   async isContainerReady(containerId: string): Promise<boolean> {
     const info = await this.getContainerInfo(containerId);
-    return info.state === 'running' && info.health === 'healthy';
+    return info.state === 'running' && info.health === ContainerHealth.HEALTHY;
   }
 
   async ping(): Promise<void> {
     try {
       const docker = await this.getDockerClient();
       await docker.ping();
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Docker ping failed', error);
       throw new Error(`Cannot connect to Docker daemon: ${error.message}`);
     }
@@ -551,6 +552,13 @@ export class DockerEngineService implements OnModuleInit {
     };
   }
 
+  private mapHealthStatus(status: string | undefined): ContainerHealth {
+    if (!status) return ContainerHealth.UNKNOWN;
+
+    const mapped = Object.values(ContainerHealth).find((v) => v === status);
+    return mapped ?? ContainerHealth.UNKNOWN;
+  }
+
   private extractPorts(info: any): Record<string, any> | null {
     if (!info.NetworkSettings || !info.NetworkSettings.Ports) {
       return null;
@@ -562,6 +570,7 @@ export class DockerEngineService implements OnModuleInit {
     id: container.Id,
     name: container.Names[0]?.replace('/', '') || '',
     state: container.State,
+    health: this.mapHealthStatus(container.Status),
     created: new Date(container.Created * 1000),
     ports: container.Ports ? this.mapPorts(container.Ports) : null,
     labels: container.Labels || {},

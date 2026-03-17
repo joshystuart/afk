@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: phase-6-history-ui
     content: 'Phase 6: Job list + run history UI with output viewing'
-    status: pending
+    status: completed
   - id: phase-7-edit
     content: 'Phase 7: Edit, pause/resume, delete, manual trigger'
     status: pending

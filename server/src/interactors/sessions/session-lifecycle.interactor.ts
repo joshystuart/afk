@@ -11,7 +11,6 @@ import { ChatMessageRepository } from '../../domain/chat/chat-message.repository
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
-import * as http from 'http';
 
 @Injectable()
 export class SessionLifecycleInteractor {
@@ -426,47 +425,18 @@ export class SessionLifecycleInteractor {
       throw new Error('Session not found');
     }
 
-    if (session.status !== SessionStatus.RUNNING || !session.ports) {
+    if (session.status !== SessionStatus.RUNNING || !session.containerId) {
       return {
         terminalReady: false,
         allReady: false,
       };
     }
 
-    const terminalReady = await this.checkTerminalEndpoint(session.ports.port);
+    const ready = await this.dockerEngine.isContainerReady(session.containerId);
 
     return {
-      terminalReady,
-      allReady: terminalReady,
+      terminalReady: ready,
+      allReady: ready,
     };
-  }
-
-  private async checkTerminalEndpoint(port: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      const options = {
-        hostname: 'localhost',
-        port: port,
-        path: '/',
-        method: 'GET',
-        timeout: 2000,
-      };
-
-      const req = http.request(options, (res) => {
-        // If we get any HTTP response, the terminal is ready
-        resolve(res.statusCode === 200 || res.statusCode === 404);
-      });
-
-      req.on('error', () => {
-        resolve(false);
-      });
-
-      req.on('timeout', () => {
-        req.destroy();
-        resolve(false);
-      });
-
-      req.setTimeout(2000);
-      req.end();
-    });
   }
 }

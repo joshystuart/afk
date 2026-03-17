@@ -4,6 +4,7 @@ export interface ContainerInfo {
   id: string;
   name: string;
   state: string;
+  health?: string;
   created: Date;
   ports: Record<string, any> | null;
   labels: Record<string, string>;

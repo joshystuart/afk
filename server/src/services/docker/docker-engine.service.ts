@@ -305,6 +305,7 @@ export class DockerEngineService implements OnModuleInit {
       id: info.Id,
       name: info.Name,
       state: info.State.Status,
+      health: info.State.Health?.Status,
       created: new Date(info.Created),
       ports: this.extractPorts(info),
       labels: info.Config.Labels || {},
@@ -452,6 +453,48 @@ export class DockerEngineService implements OnModuleInit {
     };
 
     return { stream: stdoutPassthrough, kill };
+  }
+
+  async waitForContainerReady(
+    containerId: string,
+    options?: { maxWaitMs?: number; pollMs?: number },
+  ): Promise<void> {
+    const maxWaitMs = options?.maxWaitMs ?? 120_000;
+    const pollMs = options?.pollMs ?? 2_000;
+    const deadline = Date.now() + maxWaitMs;
+
+    while (Date.now() < deadline) {
+      const info = await this.getContainerInfo(containerId);
+      if (info.state === 'running') {
+        break;
+      }
+      if (info.state === 'exited' || info.state === 'dead') {
+        throw new Error(
+          `Container ${containerId} exited unexpectedly (state: ${info.state})`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
+
+    while (Date.now() < deadline) {
+      const info = await this.getContainerInfo(containerId);
+      if (info.health === 'healthy') {
+        return;
+      }
+      if (info.health === 'unhealthy') {
+        throw new Error(`Container ${containerId} reported unhealthy`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
+
+    throw new Error(
+      `Container ${containerId} did not become ready within ${maxWaitMs / 1000}s`,
+    );
+  }
+
+  async isContainerReady(containerId: string): Promise<boolean> {
+    const info = await this.getContainerInfo(containerId);
+    return info.state === 'running' && info.health === 'healthy';
   }
 
   async ping(): Promise<void> {

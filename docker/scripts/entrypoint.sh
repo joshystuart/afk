@@ -170,6 +170,9 @@ start_terminal() {
     
     log_info "Starting ttyd on port $TERMINAL_PORT (foreground)"
     
+    touch /tmp/afk-ready
+    log_info "Container ready signal written"
+    
     local terminal_title="AFK"
     if [ -n "$SESSION_NAME" ] && [ -n "$IMAGE_NAME" ]; then
         terminal_title="$SESSION_NAME ($IMAGE_NAME)"

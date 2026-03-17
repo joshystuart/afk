@@ -1,6 +1,5 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import * as http from 'http';
 import { v4 as uuidv4 } from 'uuid';
 import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
 import { ScheduledJobRunRepository } from '../../domain/scheduled-jobs/scheduled-job-run.repository';
@@ -16,9 +15,6 @@ import { NdjsonParser } from '../chat/ndjson-parser';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 
 const DEDUP_WINDOW_MS = 60_000;
-const CONTAINER_READY_MAX_ATTEMPTS = 30;
-const WORKSPACE_READY_MAX_ATTEMPTS = 60;
-const WORKSPACE_READY_POLL_MS = 2_000;
 const WORKSPACE_DIR = '/workspace/repo';
 
 export const JOB_RUN_EVENTS = {
@@ -134,7 +130,7 @@ export class JobExecutorService {
         runId: run.id,
         containerId: container.id,
       });
-      await this.waitForContainerReady(container.id, ports.port);
+      await this.dockerEngine.waitForContainerReady(container.id);
       this.logger.log('Container is ready', {
         jobId,
         runId: run.id,
@@ -349,69 +345,6 @@ export class JobExecutorService {
     }
 
     return { committed: true, filesChanged, commitSha };
-  }
-
-  private async waitForContainerReady(
-    containerId: string,
-    port: number,
-  ): Promise<void> {
-    for (let i = 0; i < CONTAINER_READY_MAX_ATTEMPTS; i++) {
-      const info = await this.dockerEngine.getContainerInfo(containerId);
-      if (info.state === 'running') {
-        break;
-      }
-      if (i === CONTAINER_READY_MAX_ATTEMPTS - 1) {
-        throw new Error('Ephemeral container failed to start within timeout');
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    this.logger.debug('Container is running, waiting for workspace setup', {
-      containerId,
-      port,
-    });
-
-    for (let i = 0; i < WORKSPACE_READY_MAX_ATTEMPTS; i++) {
-      if (await this.checkTerminalEndpoint(port)) {
-        this.logger.debug('Terminal endpoint ready', {
-          containerId,
-          attempt: i + 1,
-        });
-        return;
-      }
-      await new Promise((resolve) =>
-        setTimeout(resolve, WORKSPACE_READY_POLL_MS),
-      );
-    }
-
-    throw new Error(
-      `Container workspace not ready after ${WORKSPACE_READY_MAX_ATTEMPTS} attempts (${(WORKSPACE_READY_MAX_ATTEMPTS * WORKSPACE_READY_POLL_MS) / 1000}s)`,
-    );
-  }
-
-  private checkTerminalEndpoint(port: number): Promise<boolean> {
-    return new Promise((resolve) => {
-      const req = http.request(
-        {
-          hostname: 'localhost',
-          port,
-          path: '/',
-          method: 'GET',
-          timeout: 2000,
-        },
-        (res) => {
-          resolve(res.statusCode === 200 || res.statusCode === 404);
-        },
-      );
-
-      req.on('error', () => resolve(false));
-      req.on('timeout', () => {
-        req.destroy();
-        resolve(false);
-      });
-      req.setTimeout(2000);
-      req.end();
-    });
   }
 
   private generateBranchName(prefix: string): string {

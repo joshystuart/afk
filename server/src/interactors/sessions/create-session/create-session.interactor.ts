@@ -156,8 +156,8 @@ export class CreateSessionInteractor {
       // Save session immediately after container assignment (in STARTING state)
       await this.sessionRepository.save(session);
 
-      // Wait for container to be ready
-      await this.waitForContainerReady(container.id);
+      // Wait for container to be ready (Docker HEALTHCHECK: sentinel file + ttyd)
+      await this.dockerEngine.waitForContainerReady(container.id);
       session.markAsRunning();
 
       // Update session status to running
@@ -274,24 +274,6 @@ export class CreateSessionInteractor {
     }
 
     // SSH key validation is now handled at the settings level
-  }
-
-  private async waitForContainerReady(
-    containerId: string,
-    maxAttempts: number = 30,
-  ): Promise<void> {
-    for (let i = 0; i < maxAttempts; i++) {
-      const info = await this.dockerEngine.getContainerInfo(containerId);
-
-      if (info.state === 'running') {
-        // Additional health check can be added here
-        return;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    throw new Error('Container failed to start within timeout');
   }
 
   private deriveSessionName(repoUrl?: string, branch?: string): string {

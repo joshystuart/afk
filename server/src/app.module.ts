@@ -16,6 +16,8 @@ import { GitHubModule } from './libs/github/github.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DockerImagesModule } from './domain/docker-images/docker-images.module';
 import { DockerImagesInteractorModule } from './interactors/docker-images/docker-images.module';
+import { ScheduledJobsDomainModule } from './domain/scheduled-jobs/scheduled-jobs.module';
+import { ScheduledJobsInteractorModule } from './interactors/scheduled-jobs/scheduled-jobs.module';
 
 export interface AppModuleOptions {
   configPath?: string;
@@ -42,6 +44,8 @@ export class AppModule {
       GitHubModule,
       DockerImagesModule,
       DockerImagesInteractorModule,
+      ScheduledJobsDomainModule,
+      ScheduledJobsInteractorModule,
     ];
 
     if (options?.staticAssetsPath) {

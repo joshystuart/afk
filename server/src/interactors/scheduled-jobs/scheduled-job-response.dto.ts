@@ -10,6 +10,7 @@ export class ScheduledJobResponseDto {
   newBranchPrefix?: string;
   imageId!: string;
   prompt!: string;
+  model?: string;
   scheduleType!: ScheduleType;
   cronExpression?: string;
   intervalMs?: number;
@@ -30,6 +31,7 @@ export class ScheduledJobResponseDto {
     dto.newBranchPrefix = job.newBranchPrefix || undefined;
     dto.imageId = job.imageId;
     dto.prompt = job.prompt;
+    dto.model = job.model || undefined;
     dto.scheduleType = job.scheduleType;
     dto.cronExpression = job.cronExpression || undefined;
     dto.intervalMs = job.intervalMs || undefined;

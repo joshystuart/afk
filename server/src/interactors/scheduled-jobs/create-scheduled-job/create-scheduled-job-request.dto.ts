@@ -29,7 +29,7 @@ export class CreateScheduledJobRequest {
   @IsBoolean()
   createNewBranch?: boolean;
 
-  @ValidateIf((o) => o.createNewBranch === true)
+  @ValidateIf((o: CreateScheduledJobRequest) => o.createNewBranch === true)
   @IsString()
   @MinLength(1)
   @MaxLength(255)
@@ -43,14 +43,23 @@ export class CreateScheduledJobRequest {
   @MinLength(1)
   prompt!: string;
 
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  model!: string;
+
   @IsEnum(ScheduleType)
   scheduleType!: ScheduleType;
 
-  @ValidateIf((o) => o.scheduleType === ScheduleType.CRON)
+  @ValidateIf(
+    (o: CreateScheduledJobRequest) => o.scheduleType === ScheduleType.CRON,
+  )
   @IsString()
   cronExpression?: string;
 
-  @ValidateIf((o) => o.scheduleType === ScheduleType.INTERVAL)
+  @ValidateIf(
+    (o: CreateScheduledJobRequest) => o.scheduleType === ScheduleType.INTERVAL,
+  )
   @IsNumber()
   intervalMs?: number;
 

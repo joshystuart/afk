@@ -33,6 +33,9 @@ export class ScheduledJob {
   @Column('text')
   prompt: string;
 
+  @Column('varchar', { length: 50, nullable: true })
+  model: string | null;
+
   @Column({ type: 'varchar', enum: ScheduleType })
   scheduleType: ScheduleType;
 

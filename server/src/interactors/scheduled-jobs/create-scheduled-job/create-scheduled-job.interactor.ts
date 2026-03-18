@@ -6,6 +6,7 @@ import { DockerImageRepository } from '../../../domain/docker-images/docker-imag
 import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
 import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
 import { CreateScheduledJobRequest } from './create-scheduled-job-request.dto';
+import { ScheduledJobDefinitionService } from '../scheduled-job-definition.service';
 
 @Injectable()
 export class CreateScheduledJobInteractor {
@@ -16,6 +17,7 @@ export class CreateScheduledJobInteractor {
     private readonly dockerImageRepository: DockerImageRepository,
     private readonly jobScheduler: JobSchedulerService,
     private readonly launchdService: LaunchdService,
+    private readonly scheduledJobDefinitionService: ScheduledJobDefinitionService,
   ) {}
 
   async execute(request: CreateScheduledJobRequest): Promise<ScheduledJob> {
@@ -24,22 +26,21 @@ export class CreateScheduledJobInteractor {
       throw new Error(`Docker image not found: ${request.imageId}`);
     }
 
-    const job = new ScheduledJob();
-    job.id = uuid();
-    job.name = request.name.trim();
-    job.repoUrl = request.repoUrl;
-    job.branch = request.branch;
-    job.createNewBranch = request.createNewBranch ?? false;
-    job.newBranchPrefix = request.newBranchPrefix ?? null;
-    job.imageId = request.imageId;
-    job.prompt = request.prompt;
-    job.scheduleType = request.scheduleType;
-    job.cronExpression = request.cronExpression ?? null;
-    job.intervalMs = request.intervalMs ?? null;
-    job.commitAndPush = request.commitAndPush ?? false;
-    job.enabled = true;
-    job.lastRunAt = null;
-    job.nextRunAt = null;
+    const job = this.scheduledJobDefinitionService.create(uuid(), {
+      name: request.name,
+      repoUrl: request.repoUrl,
+      branch: request.branch,
+      createNewBranch: request.createNewBranch ?? false,
+      newBranchPrefix: request.newBranchPrefix ?? null,
+      imageId: request.imageId,
+      prompt: request.prompt,
+      model: request.model,
+      scheduleType: request.scheduleType,
+      cronExpression: request.cronExpression ?? null,
+      intervalMs: request.intervalMs ?? null,
+      commitAndPush: request.commitAndPush ?? false,
+      enabled: true,
+    });
 
     await this.scheduledJobRepository.save(job);
 

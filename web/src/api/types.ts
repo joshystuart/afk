@@ -227,6 +227,7 @@ export interface ScheduledJob {
   newBranchPrefix?: string;
   imageId: string;
   prompt: string;
+  model?: string;
   scheduleType: ScheduleType;
   cronExpression?: string;
   intervalMs?: number;
@@ -263,6 +264,7 @@ export interface CreateScheduledJobRequest {
   newBranchPrefix?: string;
   imageId: string;
   prompt: string;
+  model: string;
   scheduleType: ScheduleType;
   cronExpression?: string;
   intervalMs?: number;
@@ -277,6 +279,7 @@ export interface UpdateScheduledJobRequest {
   newBranchPrefix?: string;
   imageId?: string;
   prompt?: string;
+  model?: string | null;
   scheduleType?: ScheduleType;
   cronExpression?: string;
   intervalMs?: number;

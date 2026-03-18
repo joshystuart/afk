@@ -16,16 +16,15 @@ import {
   KeyboardArrowDown as ChevronDownIcon,
 } from '@mui/icons-material';
 import { afkColors } from '../../themes/afk';
+import {
+  CLAUDE_MODELS,
+  DEFAULT_CLAUDE_MODEL,
+  getClaudeModelLabel,
+  type ClaudeModelId,
+} from '../../utils/claude-models';
 
-export const MODELS = [
-  { id: 'sonnet', label: 'Sonnet 4.6' },
-  { id: 'opus', label: 'Opus 4.6' },
-  { id: 'haiku', label: 'Haiku 4.5' },
-] as const;
-
-export const DEFAULT_MODEL = MODELS[0].id;
-
-export type ModelId = (typeof MODELS)[number]['id'];
+export const DEFAULT_MODEL = DEFAULT_CLAUDE_MODEL;
+export type ModelId = ClaudeModelId;
 
 interface ChatInputProps {
   onSend: (
@@ -36,8 +35,8 @@ interface ChatInputProps {
   onCancel: () => void;
   isProcessing: boolean;
   disabled?: boolean;
-  selectedModel: ModelId;
-  onModelChange: (model: ModelId) => void;
+  selectedModel: ClaudeModelId;
+  onModelChange: (model: ClaudeModelId) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -55,8 +54,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   );
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
-  const selectedModelLabel =
-    MODELS.find((m) => m.id === selectedModel)?.label ?? selectedModel;
+  const selectedModelLabel = getClaudeModelLabel(selectedModel);
 
   const handleSend = () => {
     const trimmed = value.trim();
@@ -206,7 +204,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             },
           }}
         >
-          {MODELS.map((model) => (
+          {CLAUDE_MODELS.map((model) => (
             <MenuItem
               key={model.id}
               selected={model.id === selectedModel}

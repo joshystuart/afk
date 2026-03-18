@@ -35,6 +35,7 @@ import {
   type ScheduledJobRun,
 } from '../api/types';
 import { ROUTES } from '../utils/constants';
+import { getClaudeModelLabel } from '../utils/claude-models';
 import { afkColors } from '../themes/afk';
 import { RunOutputDialog } from '../components/scheduled-jobs/RunOutputViewer';
 
@@ -284,6 +285,12 @@ const SettingsTab: React.FC<{ job: ScheduledJob }> = ({ job }) => {
           }}
         >
           {job.imageId}
+        </Typography>
+      </SettingsRow>
+
+      <SettingsRow label="Model">
+        <Typography sx={{ fontSize: '0.875rem' }}>
+          {getClaudeModelLabel(job.model)}
         </Typography>
       </SettingsRow>
 

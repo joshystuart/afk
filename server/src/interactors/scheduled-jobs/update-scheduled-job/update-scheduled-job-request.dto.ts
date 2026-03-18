@@ -48,15 +48,24 @@ export class UpdateScheduledJobRequest {
   prompt?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  model?: string | null;
+
+  @IsOptional()
   @IsEnum(ScheduleType)
   scheduleType?: ScheduleType;
 
-  @ValidateIf((o) => o.scheduleType === ScheduleType.CRON)
+  @ValidateIf(
+    (o: UpdateScheduledJobRequest) => o.scheduleType === ScheduleType.CRON,
+  )
   @IsOptional()
   @IsString()
   cronExpression?: string;
 
-  @ValidateIf((o) => o.scheduleType === ScheduleType.INTERVAL)
+  @ValidateIf(
+    (o: UpdateScheduledJobRequest) => o.scheduleType === ScheduleType.INTERVAL,
+  )
   @IsOptional()
   @IsNumber()
   intervalMs?: number;

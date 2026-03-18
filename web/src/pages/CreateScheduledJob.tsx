@@ -31,6 +31,7 @@ import {
   ScheduleType,
 } from '../api/types';
 import { ROUTES } from '../utils/constants';
+import { CLAUDE_MODELS, DEFAULT_CLAUDE_MODEL } from '../utils/claude-models';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
@@ -54,6 +55,7 @@ interface CreateJobForm {
   repoUrl: string;
   branch: string;
   prompt: string;
+  model: string;
   scheduleType: ScheduleType;
   cronExpression: string;
   intervalValue: number;
@@ -136,6 +138,7 @@ const CreateScheduledJob: React.FC = () => {
       repoUrl: '',
       branch: 'main',
       prompt: '',
+      model: DEFAULT_CLAUDE_MODEL,
       scheduleType: ScheduleType.CRON,
       cronExpression: '0 9 * * *',
       intervalValue: 1,
@@ -185,6 +188,7 @@ const CreateScheduledJob: React.FC = () => {
       repoUrl: data.repoUrl,
       branch: data.branch,
       prompt: data.prompt,
+      model: data.model,
       scheduleType: data.scheduleType,
       cronExpression:
         data.scheduleType === ScheduleType.CRON
@@ -362,6 +366,51 @@ const CreateScheduledJob: React.FC = () => {
               </TextField>
             )}
           />
+
+          <Box sx={{ mt: 2 }}>
+            <Controller
+              name="model"
+              control={control}
+              rules={{ required: 'Please select a Claude model' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="Claude Model"
+                  helperText={
+                    errors.model?.message ||
+                    'Choose which Claude model each scheduled run should use'
+                  }
+                  error={!!errors.model}
+                >
+                  {CLAUDE_MODELS.map((model) => (
+                    <MenuItem key={model.id} value={model.id}>
+                      <Box>
+                        <Typography
+                          sx={{
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            color: afkColors.textPrimary,
+                          }}
+                        >
+                          {model.label}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: '0.75rem',
+                            color: afkColors.textTertiary,
+                          }}
+                        >
+                          {model.description}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Box>
         </Box>
 
         {/* Repository */}

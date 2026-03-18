@@ -4,6 +4,7 @@ import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled
 import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
 import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
 import { UpdateScheduledJobRequest } from './update-scheduled-job-request.dto';
+import { ScheduledJobDefinitionService } from '../scheduled-job-definition.service';
 
 @Injectable()
 export class UpdateScheduledJobInteractor {
@@ -13,6 +14,7 @@ export class UpdateScheduledJobInteractor {
     private readonly scheduledJobRepository: ScheduledJobRepository,
     private readonly jobScheduler: JobSchedulerService,
     private readonly launchdService: LaunchdService,
+    private readonly scheduledJobDefinitionService: ScheduledJobDefinitionService,
   ) {}
 
   async execute(
@@ -24,31 +26,7 @@ export class UpdateScheduledJobInteractor {
       throw new Error('Scheduled job not found');
     }
 
-    if (request.name !== undefined) {
-      const trimmed = request.name.trim();
-      if (!trimmed) {
-        throw new Error('Job name cannot be empty');
-      }
-      job.name = trimmed;
-    }
-
-    if (request.repoUrl !== undefined) job.repoUrl = request.repoUrl;
-    if (request.branch !== undefined) job.branch = request.branch;
-    if (request.createNewBranch !== undefined)
-      job.createNewBranch = request.createNewBranch;
-    if (request.newBranchPrefix !== undefined)
-      job.newBranchPrefix = request.newBranchPrefix || null;
-    if (request.imageId !== undefined) job.imageId = request.imageId;
-    if (request.prompt !== undefined) job.prompt = request.prompt;
-    if (request.scheduleType !== undefined)
-      job.scheduleType = request.scheduleType;
-    if (request.cronExpression !== undefined)
-      job.cronExpression = request.cronExpression || null;
-    if (request.intervalMs !== undefined)
-      job.intervalMs = request.intervalMs || null;
-    if (request.commitAndPush !== undefined)
-      job.commitAndPush = request.commitAndPush;
-    if (request.enabled !== undefined) job.enabled = request.enabled;
+    this.scheduledJobDefinitionService.apply(job, request);
 
     await this.scheduledJobRepository.save(job);
 

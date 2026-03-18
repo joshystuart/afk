@@ -167,6 +167,7 @@ export class JobExecutorService {
         run.id,
         jobId,
         job.prompt,
+        job.model,
       );
       run.streamEvents = streamResult.streamEvents;
 
@@ -249,17 +250,19 @@ export class JobExecutorService {
     runId: string,
     jobId: string,
     prompt: string,
+    model?: string | null,
   ): Promise<{ streamEvents: any[] }> {
     const execution = await this.claudeStreamRunner.startPrompt({
       containerId,
       prompt,
+      model: model ?? undefined,
       workingDir: WORKSPACE_DIR,
       includePartialMessages: true,
       onEvent: (event) => {
         this.eventEmitter.emit(JOB_RUN_EVENTS.stream, {
           jobId,
           runId,
-          event,
+          event: event as unknown,
         });
       },
       onPersistSnapshot: async (streamEvents) => {

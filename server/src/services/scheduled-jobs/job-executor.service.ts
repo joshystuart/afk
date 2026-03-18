@@ -16,10 +16,13 @@ import {
   ClaudeStreamRunnerService,
 } from '../chat/claude-stream-runner.service';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
+import { EphemeralContainerCreateOptions } from '../../domain/containers/container.entity';
 import { GitService } from '../git/git.service';
 
 const DEDUP_WINDOW_MS = 60_000;
 const WORKSPACE_DIR = '/workspace/repo';
+const MAX_CONTAINER_START_RETRIES = 3;
+const CONTAINER_RETRY_BASE_DELAY_MS = 5_000;
 
 export const JOB_RUN_EVENTS = {
   started: 'job.run.started',
@@ -112,6 +115,8 @@ export class JobExecutorService {
         );
       }
 
+      await this.dockerEngine.waitForDockerReady();
+
       ports = await this.portManager.allocatePortPair();
 
       const settings = await this.settingsRepository.get();
@@ -128,7 +133,7 @@ export class JobExecutorService {
           ? settings.git.githubAccessToken
           : undefined;
 
-      const container = await this.dockerEngine.createEphemeralContainer({
+      const containerCreateOptions = {
         jobId: job.id,
         runId: run.id,
         imageName: dockerImage.image,
@@ -140,22 +145,16 @@ export class JobExecutorService {
         ports,
         claudeToken: settings.general.claudeToken,
         githubToken,
-      });
+      };
+
+      const container = await this.createContainerWithRetries(
+        containerCreateOptions,
+        run,
+      );
 
       run.containerId = container.id;
       await this.scheduledJobRunRepository.save(run);
       this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-        jobId,
-        runId: run.id,
-      });
-
-      this.logger.log('Waiting for container to be ready', {
-        jobId,
-        runId: run.id,
-        containerId: container.id,
-      });
-      await this.dockerEngine.waitForContainerReady(container.id);
-      this.logger.log('Container is ready', {
         jobId,
         runId: run.id,
       });
@@ -275,6 +274,64 @@ export class JobExecutorService {
         await this.portManager.releasePortPair(ports);
       }
     }
+  }
+
+  private async createContainerWithRetries(
+    options: EphemeralContainerCreateOptions,
+    run: ScheduledJobRun,
+  ): Promise<{ id: string }> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= MAX_CONTAINER_START_RETRIES; attempt++) {
+      try {
+        const container =
+          await this.dockerEngine.createEphemeralContainer(options);
+
+        this.logger.log('Waiting for container to be ready', {
+          jobId: options.jobId,
+          runId: run.id,
+          containerId: container.id,
+          attempt,
+        });
+        await this.dockerEngine.waitForContainerReady(container.id);
+        this.logger.log('Container is ready', {
+          jobId: options.jobId,
+          runId: run.id,
+          attempt,
+        });
+
+        return container;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        this.logger.warn('Container start attempt failed', {
+          jobId: options.jobId,
+          runId: run.id,
+          attempt,
+          maxAttempts: MAX_CONTAINER_START_RETRIES,
+          error: lastError.message,
+        });
+
+        if (run.containerId) {
+          await this.dockerEngine
+            .removeContainer(run.containerId)
+            .catch(() => {});
+          run.containerId = undefined as unknown as string;
+        }
+
+        if (attempt < MAX_CONTAINER_START_RETRIES) {
+          const delayMs = CONTAINER_RETRY_BASE_DELAY_MS * attempt;
+          this.logger.log('Retrying container creation', {
+            jobId: options.jobId,
+            runId: run.id,
+            nextAttemptIn: `${delayMs}ms`,
+          });
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          await this.dockerEngine.waitForDockerReady();
+        }
+      }
+    }
+
+    throw lastError ?? new Error('Container creation failed after retries');
   }
 
   private async runClaudePrompt(

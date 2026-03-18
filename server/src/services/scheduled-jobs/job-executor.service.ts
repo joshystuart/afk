@@ -203,6 +203,13 @@ export class JobExecutorService {
       });
     } finally {
       if (run.containerId) {
+        await this.dockerEngine.stopContainer(run.containerId).catch((err) =>
+          this.logger.warn('Failed to stop ephemeral container', {
+            containerId: run.containerId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+
         await this.dockerEngine.removeContainer(run.containerId).catch((err) =>
           this.logger.warn('Failed to remove ephemeral container', {
             containerId: run.containerId,
@@ -287,12 +294,6 @@ export class JobExecutorService {
     filesChanged: number;
     commitSha: string | null;
   }> {
-    const diffResult = await this.dockerEngine.execInContainer(
-      containerId,
-      ['git', 'diff', '--stat', '--cached'],
-      WORKSPACE_DIR,
-    );
-
     await this.dockerEngine.execInContainer(
       containerId,
       ['git', 'add', '-A'],

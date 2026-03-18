@@ -10,7 +10,6 @@ import {
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  Add as AddIcon,
   Schedule as ScheduleIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
@@ -61,15 +60,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const menuItems = [
     {
       id: 'dashboard',
-      title: 'Dashboard',
+      title: 'Sessions',
       url: ROUTES.DASHBOARD,
       icon: DashboardIcon,
-    },
-    {
-      id: 'create-session',
-      title: 'New Session',
-      url: ROUTES.CREATE_SESSION,
-      icon: AddIcon,
     },
     {
       id: 'scheduled-jobs',

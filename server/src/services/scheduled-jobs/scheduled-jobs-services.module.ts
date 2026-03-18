@@ -4,6 +4,7 @@ import { ScheduledJobsDomainModule } from '../../domain/scheduled-jobs/scheduled
 import { DockerModule } from '../docker/docker.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { SettingsModule } from '../../interactors/settings/settings.module';
+import { ChatModule } from '../chat/chat.module';
 import { JobExecutorService } from './job-executor.service';
 import { JobSchedulerService } from './job-scheduler.service';
 import { LaunchdService } from './launchd.service';
@@ -15,6 +16,7 @@ import { LaunchdService } from './launchd.service';
     DockerModule,
     DockerImagesModule,
     SettingsModule,
+    ChatModule,
   ],
   providers: [JobExecutorService, JobSchedulerService, LaunchdService],
   exports: [JobExecutorService, JobSchedulerService, LaunchdService],

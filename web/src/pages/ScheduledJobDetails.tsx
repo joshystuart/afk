@@ -27,6 +27,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   useScheduledJob,
   useScheduledJobRuns,
+  useScheduledJobRunStream,
 } from '../hooks/useScheduledJobs';
 import {
   ScheduledJobRunStatus,
@@ -47,8 +48,15 @@ const ScheduledJobDetails: React.FC = () => {
   const { data: runs = [], isLoading: runsLoading } = useScheduledJobRuns(
     id || '',
   );
-  const [selectedRun, setSelectedRun] = React.useState<ScheduledJobRun | null>(
-    null,
+  const [selectedRunId, setSelectedRunId] = React.useState<string | null>(null);
+  const selectedRun = React.useMemo(
+    () => runs.find((run) => run.id === selectedRunId) ?? null,
+    [runs, selectedRunId],
+  );
+  useScheduledJobRunStream(
+    id || '',
+    selectedRunId,
+    selectedRun?.status === ScheduledJobRunStatus.RUNNING,
   );
 
   const tabParam = searchParams.get('tab') as TabKey | null;
@@ -168,14 +176,14 @@ const ScheduledJobDetails: React.FC = () => {
         <HistoryTab
           runs={runs}
           isLoading={runsLoading}
-          onViewOutput={setSelectedRun}
+          onViewOutput={(run) => setSelectedRunId(run.id)}
         />
       )}
 
       <RunOutputDialog
         run={selectedRun}
         open={!!selectedRun}
-        onClose={() => setSelectedRun(null)}
+        onClose={() => setSelectedRunId(null)}
       />
     </Box>
   );

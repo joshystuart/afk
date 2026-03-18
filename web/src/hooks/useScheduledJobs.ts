@@ -1,14 +1,19 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { scheduledJobsApi } from '../api/scheduled-jobs.api';
 import type {
   CreateScheduledJobRequest,
   UpdateScheduledJobRequest,
   ScheduledJob,
+  ScheduledJobRun,
+  ChatStreamEvent,
 } from '../api/types';
+import { ScheduledJobRunStatus } from '../api/types';
+import { useWebSocket } from './useWebSocket';
 
 const JOBS_KEY = ['scheduled-jobs'];
 const jobKey = (id: string) => ['scheduled-job', id];
-const runsKey = (jobId: string) => ['scheduled-job-runs', jobId];
+export const runsKey = (jobId: string) => ['scheduled-job-runs', jobId];
 
 export const useScheduledJobs = () => {
   const queryClient = useQueryClient();
@@ -104,4 +109,63 @@ export const useScheduledJobRuns = (jobId: string) => {
     queryFn: () => scheduledJobsApi.listRuns(jobId),
     enabled: !!jobId,
   });
+};
+
+export const useScheduledJobRunStream = (
+  jobId: string,
+  runId: string | null,
+  open: boolean,
+) => {
+  const queryClient = useQueryClient();
+  const { socket } = useWebSocket();
+
+  useEffect(() => {
+    if (!socket || !jobId || !runId || !open) {
+      return;
+    }
+
+    const updateRun = (updater: (run: ScheduledJobRun) => ScheduledJobRun) => {
+      queryClient.setQueryData<ScheduledJobRun[]>(runsKey(jobId), (runs) => {
+        if (!runs) {
+          return runs;
+        }
+
+        return runs.map((run) => (run.id === runId ? updater(run) : run));
+      });
+    };
+
+    const handleRunStream = (data: {
+      jobId: string;
+      runId: string;
+      event: ChatStreamEvent;
+    }) => {
+      if (data.jobId !== jobId || data.runId !== runId) {
+        return;
+      }
+
+      updateRun((run) => ({
+        ...run,
+        status: ScheduledJobRunStatus.RUNNING,
+        streamEvents: [...(run.streamEvents ?? []), data.event],
+      }));
+    };
+
+    const handleRunUpdated = (data: { run: ScheduledJobRun }) => {
+      if (data.run.jobId !== jobId || data.run.id !== runId) {
+        return;
+      }
+
+      updateRun(() => data.run);
+    };
+
+    socket.on('job.run.stream', handleRunStream);
+    socket.on('job.run.updated', handleRunUpdated);
+    socket.emit('subscribe.job.run', { runId });
+
+    return () => {
+      socket.emit('unsubscribe.job.run', { runId });
+      socket.off('job.run.stream', handleRunStream);
+      socket.off('job.run.updated', handleRunUpdated);
+    };
+  }, [socket, queryClient, jobId, runId, open]);
 };

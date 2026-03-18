@@ -5,8 +5,10 @@ import { ChatMessageRepository } from '../../domain/chat/chat-message.repository
 import { SessionRepository } from '../repositories/session.repository';
 import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
-import { DockerEngineService } from '../docker/docker-engine.service';
-import { NdjsonParser } from './ndjson-parser';
+import {
+  ClaudeStreamExecutionError,
+  ClaudeStreamRunnerService,
+} from './claude-stream-runner.service';
 
 export interface ChatStreamEvent {
   type: string;
@@ -40,7 +42,7 @@ export class ChatService {
     private readonly chatMessageRepository: ChatMessageRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
-    private readonly dockerEngine: DockerEngineService,
+    private readonly claudeStreamRunner: ClaudeStreamRunnerService,
   ) {}
 
   async sendMessage(
@@ -83,23 +85,23 @@ export class ChatService {
 
     const assistantMessageId = uuidv4();
     const startTime = Date.now();
-    const cmd = this.buildClaudeCommand(
-      content,
-      options.continueConversation,
-      options.model,
-    );
+    const executionOptions = {
+      containerId: session.containerId,
+      prompt: content,
+      continueConversation: options.continueConversation,
+      model: options.model,
+      includePartialMessages: true,
+      persistEveryEvents: ChatService.PERSIST_INTERVAL_EVENTS,
+      workingDir: '/workspace/repo',
+    };
 
     this.logger.log('Executing Claude command', {
       sessionId,
       assistantMessageId,
-      cmd: cmd.join(' '),
+      promptLength: content.length,
+      continueConversation: options.continueConversation,
+      model: options.model,
     });
-
-    const parser = new NdjsonParser();
-    const streamEvents: any[] = [];
-    let conversationId: string | null = null;
-    let costUsd: number | null = null;
-    let resultContent = '';
 
     // Persist placeholder so partial output survives navigation away or server restart
     await this.chatMessageRepository.save(
@@ -116,171 +118,98 @@ export class ChatService {
       }),
     );
 
-    let lastPersistedCount = 0;
-    let pendingPersist: Promise<void> | null = null;
-
-    const persistPartialStream = () => {
-      const eventsSnapshot = [...streamEvents];
-      pendingPersist = this.chatMessageRepository
-        .updateMessage(assistantMessageId, { streamEvents: eventsSnapshot })
-        .catch((err) =>
-          this.logger.warn('Failed to persist partial stream', {
-            sessionId,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        )
-        .finally(() => {
-          pendingPersist = null;
-        });
-    };
-
-    // Guard: completion logic can be triggered by the `result` event
-    // (preferred) or by stream `end`/`error` — whichever fires first.
-    let completed = false;
-
-    const finalize = async (killStream: () => Promise<void>) => {
-      if (completed) return;
-      completed = true;
-
-      if (pendingPersist) {
-        await pendingPersist.catch(() => {});
-      }
-
-      const durationMs = Date.now() - startTime;
-
-      try {
-        await this.chatMessageRepository.updateMessage(assistantMessageId, {
-          content: resultContent,
-          streamEvents,
-          conversationId,
-          costUsd,
-          durationMs,
-        });
-
-        this.logger.log('Claude execution completed', {
-          sessionId,
-          assistantMessageId,
-          durationMs,
-          costUsd,
-          conversationId,
-        });
-
-        onComplete({
-          assistantMessageId,
-          conversationId,
-          costUsd,
-          durationMs,
-        });
-      } catch (err) {
-        this.logger.error('Failed to save assistant message', err);
-        onError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        this.activeExecutions.delete(sessionId);
-      }
-
-      // Claude CLI hangs after emitting the result event (known bug).
-      // Kill the Docker exec process so it doesn't linger.
-      killStream().catch((err) =>
-        this.logger.warn('Error killing exec stream after completion', {
-          sessionId,
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
-    };
-
     try {
-      const { stream, kill } = await this.dockerEngine.execStreamInContainer(
-        session.containerId,
-        cmd,
-        (chunk: string) => {
-          const events = parser.parse(chunk);
-          for (const event of events) {
-            streamEvents.push(event);
-            onStreamEvent(event);
-
-            if (event.type === 'result') {
-              conversationId = event.session_id ?? null;
-              costUsd = event.cost_usd ?? null;
-              resultContent = event.result ?? '';
-
-              // Don't await — let the stream handler return so the event
-              // loop can process the kill and subsequent end/error events.
-              finalize(kill);
-            }
-          }
-
-          const delta = streamEvents.length - lastPersistedCount;
-          if (delta >= ChatService.PERSIST_INTERVAL_EVENTS && !pendingPersist) {
-            lastPersistedCount = streamEvents.length;
-            persistPartialStream();
-          }
+      const execution = await this.claudeStreamRunner.startPrompt({
+        ...executionOptions,
+        onEvent: onStreamEvent,
+        onPersistSnapshot: async (streamEvents) => {
+          await this.chatMessageRepository.updateMessage(assistantMessageId, {
+            streamEvents,
+          });
         },
-        '/workspace/repo',
-      );
+      });
 
-      this.activeExecutions.set(sessionId, { kill, assistantMessageId });
+      this.activeExecutions.set(sessionId, {
+        kill: execution.kill,
+        assistantMessageId,
+      });
 
       const wrappedKill = async () => {
-        await kill();
+        await execution.kill();
         this.activeExecutions.delete(sessionId);
       };
 
-      // Fallback: if the stream ends naturally (e.g. future CLI fix),
-      // finalize here so nothing is lost.
-      stream.on('end', async () => {
-        const remaining = parser.flush();
-        for (const event of remaining) {
-          streamEvents.push(event);
-          onStreamEvent(event);
-          if (event.type === 'result') {
-            conversationId = event.session_id ?? null;
-            costUsd = event.cost_usd ?? null;
-            resultContent = event.result ?? '';
+      execution.result
+        .then(async (result) => {
+          try {
+            await this.chatMessageRepository.updateMessage(assistantMessageId, {
+              content: result.resultContent,
+              streamEvents: result.streamEvents,
+              conversationId: result.conversationId,
+              costUsd: result.costUsd,
+              durationMs: result.durationMs,
+            });
+
+            this.logger.log('Claude execution completed', {
+              sessionId,
+              assistantMessageId,
+              durationMs: result.durationMs,
+              costUsd: result.costUsd,
+              conversationId: result.conversationId,
+            });
+
+            onComplete({
+              assistantMessageId,
+              conversationId: result.conversationId,
+              costUsd: result.costUsd,
+              durationMs: result.durationMs,
+            });
+          } catch (err) {
+            this.logger.error('Failed to save assistant message', err);
+            onError(err instanceof Error ? err : new Error(String(err)));
+          } finally {
+            this.activeExecutions.delete(sessionId);
           }
-        }
-        await finalize(kill);
-      });
+        })
+        .catch(async (err: unknown) => {
+          const error = err instanceof Error ? err : new Error(String(err));
+          const partialResult =
+            err instanceof ClaudeStreamExecutionError
+              ? err.partialResult
+              : null;
 
-      stream.on('error', async (err: Error) => {
-        if (completed) {
-          // Stream error after we already finalized (expected when we
-          // kill the hanging process) — ignore silently.
-          return;
-        }
+          this.activeExecutions.delete(sessionId);
+          this.logger.error('Stream error during Claude execution', {
+            sessionId,
+            error: error.message,
+          });
 
-        this.activeExecutions.delete(sessionId);
-        this.logger.error('Stream error during Claude execution', {
-          sessionId,
-          error: err.message,
+          if (partialResult && partialResult.streamEvents.length > 0) {
+            await this.chatMessageRepository
+              .updateMessage(assistantMessageId, {
+                content: partialResult.resultContent || '(interrupted)',
+                streamEvents: partialResult.streamEvents,
+                conversationId: partialResult.conversationId,
+                costUsd: partialResult.costUsd,
+                durationMs: partialResult.durationMs || Date.now() - startTime,
+              })
+              .catch((persistErr) =>
+                this.logger.warn('Failed to persist partial stream on error', {
+                  sessionId,
+                  error:
+                    persistErr instanceof Error
+                      ? persistErr.message
+                      : String(persistErr),
+                }),
+              );
+          } else {
+            await this.chatMessageRepository
+              .deleteById(assistantMessageId)
+              .catch(() => {});
+          }
+
+          onError(error);
         });
-
-        if (streamEvents.length > 0) {
-          const durationMs = Date.now() - startTime;
-          await this.chatMessageRepository
-            .updateMessage(assistantMessageId, {
-              content: resultContent || '(interrupted)',
-              streamEvents,
-              conversationId,
-              costUsd,
-              durationMs,
-            })
-            .catch((persistErr) =>
-              this.logger.warn('Failed to persist partial stream on error', {
-                sessionId,
-                error:
-                  persistErr instanceof Error
-                    ? persistErr.message
-                    : String(persistErr),
-              }),
-            );
-        } else {
-          await this.chatMessageRepository
-            .deleteById(assistantMessageId)
-            .catch(() => {});
-        }
-
-        onError(err);
-      });
 
       return { userMessageId, assistantMessageId, kill: wrappedKill };
     } catch (err) {
@@ -315,32 +244,5 @@ export class ChatService {
     return execution
       ? { assistantMessageId: execution.assistantMessageId }
       : null;
-  }
-
-  private buildClaudeCommand(
-    prompt: string,
-    continueConversation: boolean,
-    model?: string,
-  ): string[] {
-    const cmd = [
-      'claude',
-      '-p',
-      prompt,
-      '--output-format',
-      'stream-json',
-      '--verbose',
-      '--dangerously-skip-permissions',
-      '--include-partial-messages',
-    ];
-
-    if (model) {
-      cmd.push('--model', model);
-    }
-
-    if (continueConversation) {
-      cmd.push('--continue');
-    }
-
-    return cmd;
   }
 }

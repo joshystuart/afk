@@ -11,7 +11,10 @@ import { DockerImageRepository } from '../../domain/docker-images/docker-image.r
 import { DockerImageStatus } from '../../domain/docker-images/docker-image-status.enum';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
-import { NdjsonParser } from '../chat/ndjson-parser';
+import {
+  ClaudeStreamExecutionError,
+  ClaudeStreamRunnerService,
+} from '../chat/claude-stream-runner.service';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 
 const DEDUP_WINDOW_MS = 60_000;
@@ -19,6 +22,7 @@ const WORKSPACE_DIR = '/workspace/repo';
 
 export const JOB_RUN_EVENTS = {
   started: 'job.run.started',
+  stream: 'job.run.stream',
   completed: 'job.run.completed',
   failed: 'job.run.failed',
 } as const;
@@ -36,6 +40,7 @@ export class JobExecutorService {
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly claudeStreamRunner: ClaudeStreamRunnerService,
   ) {}
 
   async execute(jobId: string): Promise<void> {
@@ -67,6 +72,7 @@ export class JobExecutorService {
     run.status = ScheduledJobRunStatus.PENDING;
     run.branch = job.branch;
     run.committed = false;
+    run.streamEvents = [];
     await this.scheduledJobRunRepository.save(run);
 
     this.eventEmitter.emit(JOB_RUN_EVENTS.started, {
@@ -154,8 +160,13 @@ export class JobExecutorService {
         runId: run.id,
         promptLength: job.prompt.length,
       });
-      const streamEvents = await this.runClaudePrompt(container.id, job.prompt);
-      run.streamEvents = streamEvents;
+      const streamResult = await this.runClaudePrompt(
+        container.id,
+        run.id,
+        jobId,
+        job.prompt,
+      );
+      run.streamEvents = streamResult.streamEvents;
 
       if (job.commitAndPush) {
         const commitResult = await this.commitAndPush(container.id, branchName);
@@ -181,6 +192,10 @@ export class JobExecutorService {
         runId: run.id,
       });
     } catch (error) {
+      if (error instanceof ClaudeStreamExecutionError) {
+        run.streamEvents = error.partialResult.streamEvents;
+      }
+
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error('Job run failed', {
         jobId,
@@ -225,65 +240,35 @@ export class JobExecutorService {
 
   private async runClaudePrompt(
     containerId: string,
+    runId: string,
+    jobId: string,
     prompt: string,
-  ): Promise<any[]> {
-    const parser = new NdjsonParser();
-    const streamEvents: any[] = [];
-    let completed = false;
-    let resolvePromise: (events: any[]) => void;
-    let rejectPromise: (err: Error) => void;
-
-    const resultPromise = new Promise<any[]>((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
-
-    const cmd = [
-      'claude',
-      '-p',
-      prompt,
-      '--output-format',
-      'stream-json',
-      '--verbose',
-      '--dangerously-skip-permissions',
-    ];
-
-    const { stream, kill } = await this.dockerEngine.execStreamInContainer(
+  ): Promise<{ streamEvents: any[] }> {
+    const execution = await this.claudeStreamRunner.startPrompt({
       containerId,
-      cmd,
-      (chunk: string) => {
-        const events = parser.parse(chunk);
-        for (const event of events) {
-          streamEvents.push(event);
-          if (event.type === 'result' && !completed) {
-            completed = true;
-            kill().catch(() => {});
-            resolvePromise(streamEvents);
-          }
-        }
+      prompt,
+      workingDir: WORKSPACE_DIR,
+      includePartialMessages: true,
+      onEvent: (event) => {
+        this.eventEmitter.emit(JOB_RUN_EVENTS.stream, {
+          jobId,
+          runId,
+          event,
+        });
       },
-      WORKSPACE_DIR,
-    );
+      onPersistSnapshot: async (streamEvents) => {
+        const run = await this.scheduledJobRunRepository.findById(runId);
+        if (!run) {
+          return;
+        }
 
-    stream.on('end', () => {
-      const remaining = parser.flush();
-      for (const event of remaining) {
-        streamEvents.push(event);
-      }
-      if (!completed) {
-        completed = true;
-        resolvePromise(streamEvents);
-      }
+        run.streamEvents = streamEvents;
+        await this.scheduledJobRunRepository.save(run);
+      },
     });
 
-    stream.on('error', (err: Error) => {
-      if (!completed) {
-        completed = true;
-        rejectPromise(err);
-      }
-    });
-
-    return resultPromise;
+    const result = await execution.result;
+    return { streamEvents: result.streamEvents };
   }
 
   private async commitAndPush(

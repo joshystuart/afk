@@ -100,6 +100,16 @@ const AppContent = () => {
             }
           />
           <Route
+            path={ROUTES.EDIT_SCHEDULED_JOB}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateScheduledJob />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path={ROUTES.SCHEDULED_JOB_DETAILS}
             element={
               <ProtectedRoute>

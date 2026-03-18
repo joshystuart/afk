@@ -23,7 +23,7 @@ export class TriggerScheduledJobInteractor {
     });
 
     // Fire and forget — execution runs in the background
-    this.jobExecutor.execute(jobId).catch((err) => {
+    this.jobExecutor.execute(jobId, { ignoreEnabled: true }).catch((err) => {
       this.logger.error('Background job execution failed', {
         jobId,
         error: err instanceof Error ? err.message : String(err),

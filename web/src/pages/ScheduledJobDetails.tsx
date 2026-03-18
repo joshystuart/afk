@@ -14,6 +14,12 @@ import {
   TableHead,
   TableRow,
   IconButton,
+  Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -22,12 +28,23 @@ import {
   Cancel as FailedIcon,
   HourglassEmpty as PendingIcon,
   Loop as RunningIcon,
+  Edit as EditIcon,
+  PauseCircleOutline as PauseIcon,
+  PlayCircleOutline as PlayIcon,
+  DeleteOutline as DeleteIcon,
+  Bolt as RunNowIcon,
 } from '@mui/icons-material';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import {
   useScheduledJob,
   useScheduledJobRuns,
   useScheduledJobRunStream,
+  useScheduledJobs,
 } from '../hooks/useScheduledJobs';
 import {
   ScheduledJobRunStatus,
@@ -44,12 +61,25 @@ type TabKey = (typeof TAB_KEYS)[number];
 
 const ScheduledJobDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: job, isLoading: jobLoading } = useScheduledJob(id || '');
   const { data: runs = [], isLoading: runsLoading } = useScheduledJobRuns(
     id || '',
   );
+  const {
+    updateJob,
+    isUpdating,
+    updateError,
+    deleteJob,
+    isDeleting,
+    deleteError,
+    triggerJob,
+    isTriggering,
+    triggerError,
+  } = useScheduledJobs();
   const [selectedRunId, setSelectedRunId] = React.useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const selectedRun = React.useMemo(
     () => runs.find((run) => run.id === selectedRunId) ?? null,
     [runs, selectedRunId],
@@ -64,6 +94,7 @@ const ScheduledJobDetails: React.FC = () => {
   const activeTab = TAB_KEYS.indexOf(
     tabParam && TAB_KEYS.includes(tabParam) ? tabParam : 'settings',
   );
+  const actionError = updateError || deleteError || triggerError;
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     const next = new URLSearchParams(searchParams);
@@ -73,6 +104,38 @@ const ScheduledJobDetails: React.FC = () => {
       next.set('tab', TAB_KEYS[newValue]);
     }
     setSearchParams(next, { replace: true });
+  };
+
+  const handleRunNow = async () => {
+    if (!job) {
+      return;
+    }
+
+    await triggerJob(job.id);
+
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', 'history');
+    setSearchParams(next, { replace: true });
+  };
+
+  const handleToggleEnabled = async () => {
+    if (!job) {
+      return;
+    }
+
+    await updateJob({
+      id: job.id,
+      request: { enabled: !job.enabled },
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!job) {
+      return;
+    }
+
+    await deleteJob(job.id);
+    navigate(ROUTES.SCHEDULED_JOBS);
   };
 
   if (jobLoading) {
@@ -131,28 +194,83 @@ const ScheduledJobDetails: React.FC = () => {
         </Button>
       </Box>
 
+      {actionError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {actionError.message || 'Failed to update scheduled job.'}
+        </Alert>
+      )}
+
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          mb: 0.5,
+          alignItems: { xs: 'flex-start', md: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: 2,
+          flexWrap: 'wrap',
         }}
       >
-        <Typography variant="h3">{job.name}</Typography>
-        <Chip
-          label={job.enabled ? 'Active' : 'Paused'}
-          size="small"
-          sx={{
-            bgcolor: job.enabled
-              ? afkColors.accentMuted
-              : afkColors.surfaceElevated,
-            color: job.enabled ? afkColors.accent : afkColors.textTertiary,
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.6875rem',
-            fontWeight: 500,
-          }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Typography variant="h3">{job.name}</Typography>
+          <Chip
+            label={job.enabled ? 'Active' : 'Paused'}
+            size="small"
+            sx={{
+              bgcolor: job.enabled
+                ? afkColors.accentMuted
+                : afkColors.surfaceElevated,
+              color: job.enabled ? afkColors.accent : afkColors.textTertiary,
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.6875rem',
+              fontWeight: 500,
+            }}
+          />
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            component={Link}
+            to={ROUTES.getEditScheduledJob(job.id)}
+            variant="outlined"
+            size="small"
+            startIcon={<EditIcon />}
+            disabled={isUpdating || isDeleting || isTriggering}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<RunNowIcon />}
+            onClick={() => {
+              void handleRunNow();
+            }}
+            disabled={isUpdating || isDeleting || isTriggering}
+          >
+            Run Now
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color={job.enabled ? 'warning' : 'success'}
+            startIcon={job.enabled ? <PauseIcon /> : <PlayIcon />}
+            onClick={() => {
+              void handleToggleEnabled();
+            }}
+            disabled={isUpdating || isDeleting || isTriggering}
+          >
+            {job.enabled ? 'Pause' : 'Resume'}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={isUpdating || isDeleting || isTriggering}
+          >
+            Delete
+          </Button>
+        </Box>
       </Box>
       <Typography
         sx={{
@@ -186,6 +304,38 @@ const ScheduledJobDetails: React.FC = () => {
         open={!!selectedRun}
         onClose={() => setSelectedRunId(null)}
       />
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Delete Scheduled Job?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`This will permanently remove "${job.name}" and stop future scheduled runs.`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              void handleDelete();
+            }}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Job'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

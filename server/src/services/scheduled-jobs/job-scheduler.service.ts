@@ -36,6 +36,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.unregisterJob(job.id);
 
     if (!job.enabled) {
+      await this.persistNextRunAt(job, null);
       this.logger.log('Job is disabled, not registering', { jobId: job.id });
       return;
     }
@@ -47,6 +48,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     } else if (job.scheduleType === ScheduleType.INTERVAL && job.intervalMs) {
       this.registerIntervalJob(schedulerKey, job);
     } else {
+      await this.persistNextRunAt(job, null);
       this.logger.warn('Job has no valid schedule configuration', {
         jobId: job.id,
         scheduleType: job.scheduleType,
@@ -89,12 +91,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
     const nextDate = cronJob.nextDate();
     job.nextRunAt = nextDate ? nextDate.toJSDate() : null;
-    this.scheduledJobRepository.save(job).catch((err) => {
-      this.logger.warn('Failed to persist nextRunAt', {
-        jobId: job.id,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    });
+    void this.persistNextRunAt(job, job.nextRunAt);
 
     this.logger.log('Registered cron job', {
       jobId: job.id,
@@ -109,12 +106,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     this.intervalHandles.set(job.id, handle);
 
     job.nextRunAt = new Date(Date.now() + job.intervalMs!);
-    this.scheduledJobRepository.save(job).catch((err) => {
-      this.logger.warn('Failed to persist nextRunAt', {
-        jobId: job.id,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    });
+    void this.persistNextRunAt(job, job.nextRunAt);
 
     this.logger.log('Registered interval job', {
       jobId: job.id,
@@ -166,5 +158,18 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   private getSchedulerKey(jobId: string): string {
     return `${JOB_PREFIX}${jobId}`;
+  }
+
+  private async persistNextRunAt(
+    job: ScheduledJob,
+    nextRunAt: Date | null,
+  ): Promise<void> {
+    job.nextRunAt = nextRunAt;
+    await this.scheduledJobRepository.save(job).catch((err) => {
+      this.logger.warn('Failed to persist nextRunAt', {
+        jobId: job.id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 }

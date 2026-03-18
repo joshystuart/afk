@@ -65,6 +65,10 @@ export const useScheduledJobs = () => {
       }
       queryClient.invalidateQueries({ queryKey: JOBS_KEY });
     },
+    onSuccess: (_, id) => {
+      queryClient.removeQueries({ queryKey: jobKey(id) });
+      queryClient.removeQueries({ queryKey: runsKey(id) });
+    },
   });
 
   const triggerMutation = useMutation({
@@ -72,6 +76,10 @@ export const useScheduledJobs = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: runsKey(id) });
       queryClient.invalidateQueries({ queryKey: jobKey(id) });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: runsKey(id) });
+        queryClient.invalidateQueries({ queryKey: jobKey(id) });
+      }, 1000);
     },
   });
 
@@ -86,12 +94,15 @@ export const useScheduledJobs = () => {
 
     updateJob: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
+    updateError: updateMutation.error,
 
     deleteJob: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+    deleteError: deleteMutation.error,
 
     triggerJob: triggerMutation.mutateAsync,
     isTriggering: triggerMutation.isPending,
+    triggerError: triggerMutation.error,
   };
 };
 

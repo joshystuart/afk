@@ -6,10 +6,12 @@ export const ROUTES = {
   SESSION_DETAILS: '/sessions/:id',
   SCHEDULED_JOBS: '/jobs',
   CREATE_SCHEDULED_JOB: '/jobs/create',
+  EDIT_SCHEDULED_JOB: '/jobs/:id/edit',
   SCHEDULED_JOB_DETAILS: '/jobs/:id',
   SETTINGS: '/settings',
   getSessionDetails: (id: string) => `/sessions/${id}`,
   getScheduledJobDetails: (id: string) => `/jobs/${id}`,
+  getEditScheduledJob: (id: string) => `/jobs/${id}/edit`,
 } as const;
 
 export const SESSION_STATUS_COLORS = {

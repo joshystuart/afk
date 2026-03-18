@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: phase-7-edit
     content: 'Phase 7: Edit, pause/resume, delete, manual trigger'
-    status: pending
+    status: completed
 isProject: false
 ---
 

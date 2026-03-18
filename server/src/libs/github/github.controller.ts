@@ -234,7 +234,7 @@ h1{font-size:1.25rem;margin:0 0 .5rem;color:${color}}p{margin:0;color:#a3a3a3;fo
 
     try {
       const repos = await this.githubService.listRepos(
-        settings.git.githubAccessToken!,
+        settings.git.githubAccessToken,
         {
           search,
           sort: sort || 'pushed',

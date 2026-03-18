@@ -45,13 +45,16 @@ export class JobExecutorService {
     private readonly gitService: GitService,
   ) {}
 
-  async execute(jobId: string): Promise<void> {
+  async execute(
+    jobId: string,
+    options: { ignoreEnabled?: boolean } = {},
+  ): Promise<void> {
     const job = await this.scheduledJobRepository.findById(jobId);
     if (!job) {
       this.logger.warn('Job not found, skipping execution', { jobId });
       return;
     }
-    if (!job.enabled) {
+    if (!job.enabled && !options.ignoreEnabled) {
       this.logger.log('Job is disabled, skipping execution', { jobId });
       return;
     }

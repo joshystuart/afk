@@ -13,6 +13,7 @@ import {
   MenuItem,
   Switch,
   FormControlLabel,
+  Skeleton,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -22,8 +23,8 @@ import {
   LockOpen as LockOpenIcon,
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
-import { useScheduledJobs } from '../hooks/useScheduledJobs';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useScheduledJob, useScheduledJobs } from '../hooks/useScheduledJobs';
 import { useGitHub } from '../hooks/useGitHub';
 import {
   type CreateScheduledJobRequest,
@@ -71,9 +72,36 @@ const SECTION_SX = {
   mb: 2.5,
 };
 
+function getIntervalDefaults(intervalMs?: number) {
+  if (!intervalMs || intervalMs <= 0) {
+    return { intervalValue: 1, intervalUnit: 3_600_000 };
+  }
+
+  const bestUnit =
+    [...INTERVAL_UNITS].reverse().find((unit) => intervalMs % unit.ms === 0) ??
+    INTERVAL_UNITS[0];
+
+  return {
+    intervalValue: Math.max(1, intervalMs / bestUnit.ms),
+    intervalUnit: bestUnit.ms,
+  };
+}
+
 const CreateScheduledJob: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { createJob, isCreating, createError } = useScheduledJobs();
+  const isEditMode = !!id;
+  const {
+    createJob,
+    isCreating,
+    createError,
+    updateJob,
+    isUpdating,
+    updateError,
+  } = useScheduledJobs();
+  const { data: existingJob, isLoading: isJobLoading } = useScheduledJob(
+    id || '',
+  );
   const { settings, fetchSettings } = useSettingsStore();
   const { isConnected, useRepos } = useGitHub();
   const { images, fetchImages } = useDockerImagesStore();
@@ -130,6 +158,7 @@ const CreateScheduledJob: React.FC = () => {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<CreateJobForm>({
     defaultValues: {
@@ -151,12 +180,56 @@ const CreateScheduledJob: React.FC = () => {
 
   const scheduleType = watch('scheduleType');
   const createNewBranch = watch('createNewBranch');
+  const imageId = watch('imageId');
 
   useEffect(() => {
-    if (defaultImage) {
+    if (!existingJob) {
+      return;
+    }
+
+    const intervalDefaults = getIntervalDefaults(existingJob.intervalMs);
+    reset({
+      name: existingJob.name,
+      imageId: existingJob.imageId,
+      repoUrl: existingJob.repoUrl,
+      branch: existingJob.branch,
+      prompt: existingJob.prompt,
+      model: existingJob.model || DEFAULT_CLAUDE_MODEL,
+      scheduleType: existingJob.scheduleType,
+      cronExpression: existingJob.cronExpression || '0 9 * * *',
+      intervalValue: intervalDefaults.intervalValue,
+      intervalUnit: intervalDefaults.intervalUnit,
+      createNewBranch: existingJob.createNewBranch,
+      newBranchPrefix: existingJob.newBranchPrefix || '',
+      commitAndPush: existingJob.commitAndPush,
+    });
+    setRepoSource(
+      isConnected && existingJob.repoUrl.startsWith('https://github.com/')
+        ? 'github'
+        : 'manual',
+    );
+    setSelectedRepo(null);
+    setSearchInput('');
+  }, [existingJob, isConnected, reset]);
+
+  useEffect(() => {
+    if (defaultImage && !imageId) {
       setValue('imageId', defaultImage.id);
     }
-  }, [defaultImage, setValue]);
+  }, [defaultImage, imageId, setValue]);
+
+  useEffect(() => {
+    if (!existingJob || repoSource !== 'github' || !repos?.length) {
+      return;
+    }
+
+    const matchingRepo =
+      repos.find((repo) => repo.clone_url === existingJob.repoUrl) ||
+      repos.find((repo) => repo.ssh_url === existingJob.repoUrl) ||
+      null;
+
+    setSelectedRepo(matchingRepo);
+  }, [existingJob, repoSource, repos]);
 
   const handleRepoSourceChange = (
     _: React.MouseEvent<HTMLElement>,
@@ -185,14 +258,14 @@ const CreateScheduledJob: React.FC = () => {
     const request: CreateScheduledJobRequest = {
       name: data.name.trim(),
       imageId: data.imageId,
-      repoUrl: data.repoUrl,
-      branch: data.branch,
+      repoUrl: data.repoUrl.trim(),
+      branch: data.branch.trim(),
       prompt: data.prompt,
       model: data.model,
       scheduleType: data.scheduleType,
       cronExpression:
         data.scheduleType === ScheduleType.CRON
-          ? data.cronExpression
+          ? data.cronExpression.trim()
           : undefined,
       intervalMs:
         data.scheduleType === ScheduleType.INTERVAL
@@ -206,12 +279,56 @@ const CreateScheduledJob: React.FC = () => {
       commitAndPush: data.commitAndPush || undefined,
     };
 
+    if (isEditMode && id) {
+      await updateJob({ id, request });
+      navigate(ROUTES.getScheduledJobDetails(id));
+      return;
+    }
+
     await createJob(request);
     navigate(ROUTES.SCHEDULED_JOBS);
   };
 
   const missingSettings =
     !settings?.hasClaudeToken || availableImages.length === 0;
+  const isSubmitting = isEditMode ? isUpdating : isCreating;
+  const submitError = isEditMode ? updateError : createError;
+
+  if (isEditMode && isJobLoading) {
+    return (
+      <Box sx={{ p: 3, width: '100%', maxWidth: 640 }}>
+        <Skeleton variant="text" width={160} height={28} sx={{ mb: 2 }} />
+        <Skeleton variant="text" width={280} height={40} sx={{ mb: 3 }} />
+        <Skeleton
+          variant="rectangular"
+          height={560}
+          sx={{ borderRadius: '8px' }}
+        />
+      </Box>
+    );
+  }
+
+  if (isEditMode && !existingJob) {
+    return (
+      <Box sx={{ p: 3, width: '100%', maxWidth: 640 }}>
+        <Button
+          component={Link}
+          to={ROUTES.SCHEDULED_JOBS}
+          startIcon={<ArrowBackIcon />}
+          size="small"
+          sx={{ mb: 2, color: afkColors.textSecondary }}
+        >
+          Back
+        </Button>
+        <Typography variant="h3" sx={{ mb: 1 }}>
+          Job Not Found
+        </Typography>
+        <Typography sx={{ color: afkColors.textTertiary }}>
+          The scheduled job you are trying to edit no longer exists.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3, width: '100%', maxWidth: 640 }}>
@@ -226,12 +343,15 @@ const CreateScheduledJob: React.FC = () => {
         >
           Back
         </Button>
-        <Typography variant="h3">Create Scheduled Job</Typography>
+        <Typography variant="h3">
+          {isEditMode ? 'Edit Scheduled Job' : 'Create Scheduled Job'}
+        </Typography>
       </Box>
 
-      {createError && (
+      {submitError && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {createError.message || 'Failed to create job. Please try again.'}
+          {submitError.message ||
+            `Failed to ${isEditMode ? 'update' : 'create'} job. Please try again.`}
         </Alert>
       )}
 
@@ -949,15 +1069,25 @@ const CreateScheduledJob: React.FC = () => {
           <Button
             type="submit"
             variant="contained"
-            disabled={isCreating || missingSettings}
+            disabled={isSubmitting || missingSettings}
           >
-            {isCreating ? 'Creating...' : 'Create Job'}
+            {isSubmitting
+              ? isEditMode
+                ? 'Saving...'
+                : 'Creating...'
+              : isEditMode
+                ? 'Save Changes'
+                : 'Create Job'}
           </Button>
           <Button
             variant="outlined"
             component={Link}
-            to={ROUTES.SCHEDULED_JOBS}
-            disabled={isCreating}
+            to={
+              isEditMode && id
+                ? ROUTES.getScheduledJobDetails(id)
+                : ROUTES.SCHEDULED_JOBS
+            }
+            disabled={isSubmitting}
           >
             Cancel
           </Button>

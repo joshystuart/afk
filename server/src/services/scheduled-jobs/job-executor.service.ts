@@ -16,6 +16,7 @@ import {
   ClaudeStreamRunnerService,
 } from '../chat/claude-stream-runner.service';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
+import { GitService } from '../git/git.service';
 
 const DEDUP_WINDOW_MS = 60_000;
 const WORKSPACE_DIR = '/workspace/repo';
@@ -41,6 +42,7 @@ export class JobExecutorService {
     private readonly settingsRepository: SettingsRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly claudeStreamRunner: ClaudeStreamRunnerService,
+    private readonly gitService: GitService,
   ) {}
 
   async execute(jobId: string): Promise<void> {
@@ -148,9 +150,9 @@ export class JobExecutorService {
           runId: run.id,
           branchName,
         });
-        await this.dockerEngine.execInContainer(
+        await this.gitService.createBranch(
           container.id,
-          ['git', 'checkout', '-b', branchName],
+          branchName,
           WORKSPACE_DIR,
         );
       }
@@ -169,7 +171,11 @@ export class JobExecutorService {
       run.streamEvents = streamResult.streamEvents;
 
       if (job.commitAndPush) {
-        const commitResult = await this.commitAndPush(container.id, branchName);
+        const commitResult = await this.gitService.commitAndPush(container.id, {
+          message: 'AFK scheduled job: automated changes',
+          branchName,
+          workingDir: WORKSPACE_DIR,
+        });
         run.committed = commitResult.committed;
         run.filesChanged = commitResult.filesChanged;
         run.commitSha = commitResult.commitSha;
@@ -269,68 +275,6 @@ export class JobExecutorService {
 
     const result = await execution.result;
     return { streamEvents: result.streamEvents };
-  }
-
-  private async commitAndPush(
-    containerId: string,
-    branchName: string,
-  ): Promise<{
-    committed: boolean;
-    filesChanged: number;
-    commitSha: string | null;
-  }> {
-    await this.dockerEngine.execInContainer(
-      containerId,
-      ['git', 'add', '-A'],
-      WORKSPACE_DIR,
-    );
-
-    const statusResult = await this.dockerEngine.execInContainer(
-      containerId,
-      ['git', 'status', '--porcelain'],
-      WORKSPACE_DIR,
-    );
-
-    if (!statusResult.stdout.trim()) {
-      this.logger.log('No changes to commit');
-      return { committed: false, filesChanged: 0, commitSha: null };
-    }
-
-    const filesChanged = statusResult.stdout
-      .trim()
-      .split('\n')
-      .filter((line) => line.trim()).length;
-
-    const commitResult = await this.dockerEngine.execInContainer(
-      containerId,
-      ['git', 'commit', '-m', `AFK scheduled job: automated changes`],
-      WORKSPACE_DIR,
-    );
-
-    if (commitResult.exitCode !== 0) {
-      this.logger.warn('Git commit failed', { stderr: commitResult.stderr });
-      return { committed: false, filesChanged, commitSha: null };
-    }
-
-    const shaResult = await this.dockerEngine.execInContainer(
-      containerId,
-      ['git', 'rev-parse', 'HEAD'],
-      WORKSPACE_DIR,
-    );
-    const commitSha = shaResult.stdout.trim() || null;
-
-    const pushResult = await this.dockerEngine.execInContainer(
-      containerId,
-      ['git', 'push', 'origin', branchName],
-      WORKSPACE_DIR,
-    );
-
-    if (pushResult.exitCode !== 0) {
-      this.logger.warn('Git push failed', { stderr: pushResult.stderr });
-      return { committed: true, filesChanged, commitSha };
-    }
-
-    return { committed: true, filesChanged, commitSha };
   }
 
   private generateBranchName(prefix: string): string {

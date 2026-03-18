@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DockerEngineService } from '../../services/docker/docker-engine.service';
 import { SessionRepository } from '../../services/repositories/session.repository';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import {
+  GitCommitAndPushResult,
+  GitService,
+  GitStatusResult,
+} from '../../services/git/git.service';
 
-export interface GitStatusResult {
-  hasChanges: boolean;
-  changedFileCount: number;
-  branch: string;
-}
+export type { GitStatusResult } from '../../services/git/git.service';
 
 export interface CommitAndPushResult {
   success: boolean;
@@ -16,11 +16,11 @@ export interface CommitAndPushResult {
 }
 
 @Injectable()
-export class GitInteractor {
-  private readonly logger = new Logger(GitInteractor.name);
+export class SessionGitInteractor {
+  private readonly logger = new Logger(SessionGitInteractor.name);
 
   constructor(
-    private readonly dockerEngine: DockerEngineService,
+    private readonly gitService: GitService,
     private readonly sessionRepository: SessionRepository,
   ) {}
 
@@ -40,29 +40,7 @@ export class GitInteractor {
     }
 
     try {
-      // Get changed files
-      const statusResult = await this.dockerEngine.execInContainer(
-        session.containerId,
-        ['git', 'status', '--porcelain'],
-      );
-
-      // Get current branch
-      const branchResult = await this.dockerEngine.execInContainer(
-        session.containerId,
-        ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-      );
-
-      const changedFiles = statusResult.stdout
-        ? statusResult.stdout
-            .split('\n')
-            .filter((line) => line.trim().length > 0)
-        : [];
-
-      return {
-        hasChanges: changedFiles.length > 0,
-        changedFileCount: changedFiles.length,
-        branch: branchResult.stdout || 'unknown',
-      };
+      return await this.gitService.getStatus(session.containerId);
     } catch (error) {
       this.logger.debug(
         'Git status not available yet (repo may still be initializing)',
@@ -101,59 +79,34 @@ export class GitInteractor {
     const containerId = session.containerId;
 
     try {
-      // Stage all changes
-      const addResult = await this.dockerEngine.execInContainer(containerId, [
-        'git',
-        'add',
-        '-A',
-      ]);
+      const result = await this.gitService.commitAndPush(containerId, {
+        message,
+      });
 
-      if (addResult.exitCode !== 0) {
-        this.logger.error('git add failed', { stderr: addResult.stderr });
+      if (!result.committed) {
         return {
           success: false,
-          message: `Failed to stage changes: ${addResult.stderr}`,
+          message: this.getCommitFailureMessage(result),
         };
       }
 
-      // Commit
-      const commitResult = await this.dockerEngine.execInContainer(
-        containerId,
-        ['git', 'commit', '-m', message.trim()],
-      );
-
-      if (commitResult.exitCode !== 0) {
-        this.logger.error('git commit failed', {
-          stderr: commitResult.stderr,
-        });
+      if (!result.pushed) {
         return {
           success: false,
-          message: `Failed to commit: ${commitResult.stderr || commitResult.stdout}`,
-        };
-      }
-
-      // Push
-      const pushResult = await this.dockerEngine.execInContainer(containerId, [
-        'git',
-        'push',
-      ]);
-
-      if (pushResult.exitCode !== 0) {
-        this.logger.error('git push failed', { stderr: pushResult.stderr });
-        return {
-          success: false,
-          message: `Failed to push: ${pushResult.stderr}`,
+          message: `Failed to push: ${result.pushError}`,
         };
       }
 
       this.logger.log('Commit and push successful', {
         sessionId: sessionId.toString(),
-        commitOutput: commitResult.stdout,
+        commitSha: result.commitSha,
       });
 
       return {
         success: true,
-        message: commitResult.stdout,
+        message: result.commitSha
+          ? `Changes committed and pushed (${result.commitSha})`
+          : 'Changes committed and pushed',
       };
     } catch (error) {
       this.logger.error('Commit and push failed', {
@@ -165,5 +118,13 @@ export class GitInteractor {
         message: `Operation failed: ${error.message}`,
       };
     }
+  }
+
+  private getCommitFailureMessage(result: GitCommitAndPushResult): string {
+    if (!result.commitError && result.filesChanged === 0) {
+      return 'No changes to commit';
+    }
+
+    return `Failed to commit: ${result.commitError ?? 'Unknown git commit error'}`;
   }
 }

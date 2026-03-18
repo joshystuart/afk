@@ -12,10 +12,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { SessionSubscriptionService } from './session-subscription.service';
 import { DockerEngineService } from '../services/docker/docker-engine.service';
-import {
-  GitWatcherService,
-  GitStatusResult,
-} from '../services/git-watcher/git-watcher.service';
+import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
+import { GitStatusResult } from '../services/git/git.service';
 import { SessionRepository } from '../services/repositories/session.repository';
 import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../domain/sessions/session-status.enum';

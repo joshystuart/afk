@@ -5,6 +5,7 @@ import { DockerModule } from '../docker/docker.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { SettingsModule } from '../../interactors/settings/settings.module';
 import { ChatModule } from '../chat/chat.module';
+import { GitModule } from '../git/git.module';
 import { JobExecutorService } from './job-executor.service';
 import { JobSchedulerService } from './job-scheduler.service';
 import { LaunchdService } from './launchd.service';
@@ -17,6 +18,7 @@ import { LaunchdService } from './launchd.service';
     DockerImagesModule,
     SettingsModule,
     ChatModule,
+    GitModule,
   ],
   providers: [JobExecutorService, JobSchedulerService, LaunchdService],
   exports: [JobExecutorService, JobSchedulerService, LaunchdService],

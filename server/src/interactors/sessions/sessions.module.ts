@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreateSessionInteractor } from './create-session/create-session.interactor';
 import { ListSessionsInteractor } from './list-sessions/list-sessions.interactor';
 import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
-import { GitInteractor } from './git.interactor';
+import { SessionGitInteractor } from './session-git.interactor';
 import { CreateSessionController } from './create-session/create-session.controller';
 import { ListSessionsController } from './list-sessions/list-sessions.controller';
 import { GetSessionController } from './get-session.controller';
@@ -22,6 +22,7 @@ import { DomainModule } from '../../domain/domain.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { SettingsModule } from '../settings/settings.module';
 import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
+import { GitModule } from '../../services/git/git.module';
 import { ChatModule } from '../../services/chat/chat.module';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
@@ -37,6 +38,7 @@ import { Session } from '../../domain/sessions/session.entity';
     DockerImagesModule,
     SettingsModule,
     GitWatcherModule,
+    GitModule,
     ChatModule,
   ],
   controllers: [
@@ -56,7 +58,7 @@ import { Session } from '../../domain/sessions/session.entity';
     CreateSessionInteractor,
     ListSessionsInteractor,
     SessionLifecycleInteractor,
-    GitInteractor,
+    SessionGitInteractor,
     UpdateSessionInteractor,
     SessionConfig,
     ResponseService,
@@ -66,7 +68,7 @@ import { Session } from '../../domain/sessions/session.entity';
     CreateSessionInteractor,
     ListSessionsInteractor,
     SessionLifecycleInteractor,
-    GitInteractor,
+    SessionGitInteractor,
   ],
 })
 export class SessionsModule {}

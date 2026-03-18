@@ -9,7 +9,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { IsString, IsNotEmpty } from 'class-validator';
-import { GitInteractor, CommitAndPushResult } from './git.interactor';
+import {
+  CommitAndPushResult,
+  SessionGitInteractor,
+} from './session-git.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -30,7 +33,7 @@ export class GitCommitPushController {
   private readonly logger = new Logger(GitCommitPushController.name);
 
   constructor(
-    private readonly gitInteractor: GitInteractor,
+    private readonly gitInteractor: SessionGitInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}

@@ -1,4 +1,5 @@
-FROM awayfromklaude/afk-base:latest
+ARG BASE_TAG=latest
+FROM awayfromklaude/afk-base:${BASE_TAG}
 
 USER root
 

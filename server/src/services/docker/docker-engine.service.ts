@@ -1,7 +1,8 @@
 import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import * as Dockerode from 'dockerode';
-import { ContainerNotFoundError } from './container-not-found.error';
 import { DockerOptions } from 'dockerode';
+import { PassThrough } from 'stream';
+import { ContainerNotFoundError } from './container-not-found.error';
 import {
   ContainerCreateOptions,
   ContainerHealth,
@@ -9,8 +10,15 @@ import {
   ContainerStats,
   EphemeralContainerCreateOptions,
 } from '../../domain/containers/container.entity';
+import { PortPairDto } from '../../domain/containers/port-pair.dto';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
+
+function isErrorWithStatusCode(
+  error: unknown,
+): error is Error & { statusCode: number; reason?: string } {
+  return error instanceof Error && 'statusCode' in error;
+}
 
 const WORKSPACE_BASE_PATH = '/workspace';
 const DEFAULT_REPO_NAME = 'workspace';
@@ -118,9 +126,10 @@ export class DockerEngineService implements OnModuleInit {
       });
 
       return container;
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Failed to create container', error);
-      throw new Error(`Container creation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Container creation failed: ${message}`);
     }
   }
 
@@ -156,9 +165,10 @@ export class DockerEngineService implements OnModuleInit {
 
       await container.start();
       return container;
-    } catch (error) {
+    } catch (error: unknown) {
       this.logger.error('Failed to create ephemeral container', error);
-      throw new Error(`Ephemeral container creation failed: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Ephemeral container creation failed: ${message}`);
     }
   }
 
@@ -195,8 +205,8 @@ export class DockerEngineService implements OnModuleInit {
     try {
       const docker = await this.getDockerClient();
       await docker.getImage(imageName).inspect();
-    } catch (error: any) {
-      if (error?.statusCode !== 404) {
+    } catch (error: unknown) {
+      if (!isErrorWithStatusCode(error) || error.statusCode !== 404) {
         throw error;
       }
 
@@ -210,7 +220,7 @@ export class DockerEngineService implements OnModuleInit {
     await new Promise<void>((resolve, reject) => {
       docker.pull(
         imageName,
-        (pullError: any, stream: NodeJS.ReadableStream) => {
+        (pullError: Error | null, stream: NodeJS.ReadableStream) => {
           if (pullError) {
             reject(pullError);
             return;
@@ -218,7 +228,7 @@ export class DockerEngineService implements OnModuleInit {
 
           docker.modem.followProgress(
             stream,
-            (progressError: any) => {
+            (progressError: Error | null) => {
               if (progressError) {
                 reject(progressError);
                 return;
@@ -227,7 +237,7 @@ export class DockerEngineService implements OnModuleInit {
               this.logger.log('Image pulled successfully', { imageName });
               resolve();
             },
-            (event: any) => {
+            (event: { status?: string }) => {
               if (event?.status) {
                 this.logger.debug(`Pull ${imageName}: ${event.status}`);
               }
@@ -243,9 +253,8 @@ export class DockerEngineService implements OnModuleInit {
       const docker = await this.getDockerClient();
       const container = docker.getContainer(containerId);
       await container.stop({ t: 10 });
-    } catch (error) {
-      if (error.statusCode !== 304) {
-        // Not modified (already stopped)
+    } catch (error: unknown) {
+      if (!isErrorWithStatusCode(error) || error.statusCode !== 304) {
         throw error;
       }
     }
@@ -256,9 +265,8 @@ export class DockerEngineService implements OnModuleInit {
       const docker = await this.getDockerClient();
       const container = docker.getContainer(containerId);
       await container.start();
-    } catch (error) {
-      if (error.statusCode !== 304) {
-        // Not modified (already started)
+    } catch (error: unknown) {
+      if (!isErrorWithStatusCode(error) || error.statusCode !== 304) {
         throw error;
       }
     }
@@ -269,8 +277,12 @@ export class DockerEngineService implements OnModuleInit {
       const docker = await this.getDockerClient();
       const container = docker.getContainer(containerId);
       await container.remove({ force: true });
-    } catch (error: any) {
-      if (error?.statusCode === 404 && error?.reason === 'no such container') {
+    } catch (error: unknown) {
+      if (
+        isErrorWithStatusCode(error) &&
+        error.statusCode === 404 &&
+        error.reason === 'no such container'
+      ) {
         throw new ContainerNotFoundError(containerId, error);
       }
       throw error;
@@ -283,8 +295,8 @@ export class DockerEngineService implements OnModuleInit {
       const volume = docker.getVolume(volumeName);
       await volume.remove();
       this.logger.log(`Volume removed: ${volumeName}`);
-    } catch (error: any) {
-      if (error?.statusCode === 404) {
+    } catch (error: unknown) {
+      if (isErrorWithStatusCode(error) && error.statusCode === 404) {
         this.logger.warn(`Volume not found (already removed): ${volumeName}`);
         return;
       }
@@ -378,10 +390,8 @@ export class DockerEngineService implements OnModuleInit {
       const stdoutBuffers: Buffer[] = [];
       const stderrBuffers: Buffer[] = [];
 
-      // Dockerode multiplexes stdout/stderr into a single stream.
-      // Use demuxStream to separate them.
-      const stdoutPassthrough = new (require('stream').PassThrough)();
-      const stderrPassthrough = new (require('stream').PassThrough)();
+      const stdoutPassthrough = new PassThrough();
+      const stderrPassthrough = new PassThrough();
 
       container.modem.demuxStream(stream, stdoutPassthrough, stderrPassthrough);
 
@@ -427,8 +437,8 @@ export class DockerEngineService implements OnModuleInit {
 
     const stream = await exec.start({ hijack: true, stdin: false });
 
-    const stdoutPassthrough = new (require('stream').PassThrough)();
-    const stderrPassthrough = new (require('stream').PassThrough)();
+    const stdoutPassthrough = new PassThrough();
+    const stderrPassthrough = new PassThrough();
 
     container.modem.demuxStream(stream, stdoutPassthrough, stderrPassthrough);
 
@@ -445,10 +455,12 @@ export class DockerEngineService implements OnModuleInit {
         stream.destroy();
         stdoutPassthrough.destroy();
         stderrPassthrough.destroy();
-      } catch (error) {
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
         this.logger.warn('Error killing exec stream', {
           containerId,
-          error: error.message,
+          error: message,
         });
       }
     };
@@ -502,9 +514,10 @@ export class DockerEngineService implements OnModuleInit {
     try {
       const docker = await this.getDockerClient();
       await docker.ping();
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('Docker ping failed', error);
-      throw new Error(`Cannot connect to Docker daemon: ${error.message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Cannot connect to Docker daemon: ${message}`);
     }
   }
 
@@ -538,14 +551,16 @@ export class DockerEngineService implements OnModuleInit {
     return env;
   }
 
-  private buildExposedPorts(ports: any): Record<string, {}> {
+  private buildExposedPorts(
+    ports: PortPairDto,
+  ): Record<string, Record<string, never>> {
     return {
       [`${ports.port}/tcp`]: {},
     };
   }
 
   private buildPortBindings(
-    ports: any,
+    ports: PortPairDto,
   ): Record<string, Array<{ HostPort: string }>> {
     return {
       [`${ports.port}/tcp`]: [{ HostPort: ports.port.toString() }],
@@ -559,14 +574,26 @@ export class DockerEngineService implements OnModuleInit {
     return mapped ?? ContainerHealth.UNKNOWN;
   }
 
-  private extractPorts(info: any): Record<string, any> | null {
-    if (!info.NetworkSettings || !info.NetworkSettings.Ports) {
+  private extractPorts(
+    info: Dockerode.ContainerInspectInfo,
+  ): Record<string, number> | null {
+    const ports = info.NetworkSettings?.Ports;
+    if (!ports) {
       return null;
     }
-    return info.NetworkSettings.Ports;
+    const result: Record<string, number> = {};
+    for (const [key, bindings] of Object.entries(ports)) {
+      const hostPort = bindings?.[0]?.HostPort;
+      if (hostPort) {
+        result[key] = parseInt(hostPort, 10);
+      }
+    }
+    return result;
   }
 
-  private mapContainerInfo = (container: any): ContainerInfo => ({
+  private mapContainerInfo = (
+    container: Dockerode.ContainerInfo,
+  ): ContainerInfo => ({
     id: container.Id,
     name: container.Names[0]?.replace('/', '') || '',
     state: container.State,
@@ -576,8 +603,8 @@ export class DockerEngineService implements OnModuleInit {
     labels: container.Labels || {},
   });
 
-  private mapPorts(ports: any[]): Record<string, any> {
-    const result: Record<string, any> = {};
+  private mapPorts(ports: Dockerode.Port[]): Record<string, number> {
+    const result: Record<string, number> = {};
     ports.forEach((port) => {
       if (port.PublicPort) {
         result[`${port.PrivatePort}/${port.Type}`] = port.PublicPort;
@@ -586,12 +613,21 @@ export class DockerEngineService implements OnModuleInit {
     return result;
   }
 
-  private calculateCpuPercent(stats: any): number {
-    // Basic CPU calculation - would need more sophisticated logic for production
+  private calculateCpuPercent(stats: Dockerode.ContainerStats): number {
+    const cpuDelta =
+      stats.cpu_stats.cpu_usage.total_usage -
+      stats.precpu_stats.cpu_usage.total_usage;
+    const systemDelta =
+      stats.cpu_stats.system_cpu_usage - stats.precpu_stats.system_cpu_usage;
+    const onlineCpus = stats.cpu_stats.online_cpus || 1;
+
+    if (systemDelta > 0 && cpuDelta >= 0) {
+      return (cpuDelta / systemDelta) * onlineCpus * 100;
+    }
     return 0;
   }
 
-  private calculateMemoryUsage(stats: any): {
+  private calculateMemoryUsage(stats: Dockerode.ContainerStats): {
     used: number;
     total: number;
     percentage: number;
@@ -605,7 +641,10 @@ export class DockerEngineService implements OnModuleInit {
     };
   }
 
-  private extractNetworkStats(stats: any): { rx: number; tx: number } {
+  private extractNetworkStats(stats: Dockerode.ContainerStats): {
+    rx: number;
+    tx: number;
+  } {
     return {
       rx: stats.networks?.eth0?.rx_bytes || 0,
       tx: stats.networks?.eth0?.tx_bytes || 0,

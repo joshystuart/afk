@@ -12,6 +12,7 @@ import {
   ApiResponse as ApiResponseType,
 } from '../../libs/response/response.service';
 import { ScheduledJobResponseDto } from './scheduled-job-response.dto';
+import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
 import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
 import {
   ScheduledJobRoutes,
@@ -23,6 +24,7 @@ import {
 export class GetScheduledJobController {
   constructor(
     private readonly getScheduledJobInteractor: GetScheduledJobInteractor,
+    private readonly scheduledJobResponseFactory: ScheduledJobResponseFactory,
     private readonly responseService: ResponseService,
   ) {}
 
@@ -47,7 +49,7 @@ export class GetScheduledJobController {
   ): Promise<ApiResponseType<ScheduledJobResponseDto>> {
     try {
       const job = await this.getScheduledJobInteractor.execute(id);
-      const response = ScheduledJobResponseDto.fromDomain(job);
+      const response = await this.scheduledJobResponseFactory.create(job);
       return this.responseService.success(response);
     } catch (error) {
       const message =

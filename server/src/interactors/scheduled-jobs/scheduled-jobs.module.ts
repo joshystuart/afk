@@ -18,6 +18,7 @@ import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.intera
 import { TriggerScheduledJobController } from './trigger-scheduled-job/trigger-scheduled-job.controller';
 import { TriggerScheduledJobInteractor } from './trigger-scheduled-job/trigger-scheduled-job.interactor';
 import { ScheduledJobDefinitionService } from './scheduled-job-definition.service';
+import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ScheduledJobDefinitionService } from './scheduled-job-definition.servic
     ListScheduledJobRunsInteractor,
     TriggerScheduledJobInteractor,
     ScheduledJobDefinitionService,
+    ScheduledJobResponseFactory,
     ResponseService,
   ],
   exports: [
@@ -53,6 +55,7 @@ import { ScheduledJobDefinitionService } from './scheduled-job-definition.servic
     DeleteScheduledJobInteractor,
     ListScheduledJobRunsInteractor,
     TriggerScheduledJobInteractor,
+    ScheduledJobResponseFactory,
   ],
 })
 export class ScheduledJobsInteractorModule {}

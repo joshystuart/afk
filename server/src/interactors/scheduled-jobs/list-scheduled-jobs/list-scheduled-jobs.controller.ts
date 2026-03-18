@@ -6,6 +6,7 @@ import {
   ApiResponse as ApiResponseType,
 } from '../../../libs/response/response.service';
 import { ScheduledJobResponseDto } from '../scheduled-job-response.dto';
+import { ScheduledJobResponseFactory } from '../scheduled-job-response.factory';
 import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
 import { ScheduledJobRoutes } from '../scheduled-job.routes';
 
@@ -14,6 +15,7 @@ import { ScheduledJobRoutes } from '../scheduled-job.routes';
 export class ListScheduledJobsController {
   constructor(
     private readonly listScheduledJobsInteractor: ListScheduledJobsInteractor,
+    private readonly scheduledJobResponseFactory: ScheduledJobResponseFactory,
     private readonly responseService: ResponseService,
   ) {}
 
@@ -33,7 +35,7 @@ export class ListScheduledJobsController {
     ApiResponseType<ScheduledJobResponseDto[]>
   > {
     const jobs = await this.listScheduledJobsInteractor.execute();
-    const response = jobs.map(ScheduledJobResponseDto.fromDomain);
+    const response = await this.scheduledJobResponseFactory.createMany(jobs);
     return this.responseService.success(response);
   }
 }

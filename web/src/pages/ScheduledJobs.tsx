@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useScheduledJobs } from '../hooks/useScheduledJobs';
 import type { ScheduledJob } from '../api/types';
+import { ScheduledJobRunStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 
@@ -41,6 +42,41 @@ function formatRelativeTime(dateStr?: string): string {
 
 function getRepoName(repoUrl: string): string {
   return repoUrl.split('/').pop()?.replace('.git', '') || repoUrl;
+}
+
+function getJobActivityState(job: ScheduledJob): {
+  label: string;
+  color: string;
+  dotColor?: string;
+} {
+  if (job.currentRun?.status === ScheduledJobRunStatus.RUNNING) {
+    return {
+      label: 'Running',
+      color: afkColors.warning,
+      dotColor: afkColors.warning,
+    };
+  }
+
+  if (job.currentRun?.status === ScheduledJobRunStatus.PENDING) {
+    return {
+      label: 'Starting',
+      color: afkColors.warning,
+      dotColor: afkColors.warning,
+    };
+  }
+
+  if (!job.enabled) {
+    return {
+      label: 'Paused',
+      color: afkColors.textTertiary,
+    };
+  }
+
+  return {
+    label: 'Active',
+    color: afkColors.accent,
+    dotColor: afkColors.accent,
+  };
 }
 
 const ScheduledJobs: React.FC = () => {
@@ -198,6 +234,8 @@ const JobCard: React.FC<{
   ) => void;
   onView: () => void;
 }> = ({ job, onToggleEnabled, onView }) => {
+  const activityState = getJobActivityState(job);
+
   return (
     <motion.div
       layout
@@ -340,43 +378,29 @@ const JobCard: React.FC<{
               gap: 0.5,
             }}
           >
-            {!job.enabled && (
-              <Typography
-                sx={{
-                  fontSize: '0.6875rem',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontWeight: 500,
-                  color: afkColors.textTertiary,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
-                Paused
-              </Typography>
-            )}
-            {job.enabled && (
+            {activityState.dotColor && (
               <>
                 <DotIcon
                   sx={{
                     fontSize: 8,
-                    color: afkColors.accent,
+                    color: activityState.dotColor,
                     animation: 'pulse-dot 2s ease-in-out infinite',
                   }}
                 />
-                <Typography
-                  sx={{
-                    fontSize: '0.6875rem',
-                    fontFamily: '"JetBrains Mono", monospace',
-                    fontWeight: 500,
-                    color: afkColors.accent,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Active
-                </Typography>
               </>
             )}
+            <Typography
+              sx={{
+                fontSize: '0.6875rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontWeight: 500,
+                color: activityState.color,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {activityState.label}
+            </Typography>
           </Box>
         </Box>
       </Box>

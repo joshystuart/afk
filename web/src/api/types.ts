@@ -218,6 +218,15 @@ export const ScheduledJobRunStatus = {
 export type ScheduledJobRunStatus =
   (typeof ScheduledJobRunStatus)[keyof typeof ScheduledJobRunStatus];
 
+export interface ScheduledJobRunSummary {
+  id: string;
+  jobId: string;
+  status: ScheduledJobRunStatus;
+  branch?: string;
+  startedAt?: string;
+  createdAt: string;
+}
+
 export interface ScheduledJob {
   id: string;
   name: string;
@@ -235,6 +244,7 @@ export interface ScheduledJob {
   enabled: boolean;
   lastRunAt?: string;
   nextRunAt?: string;
+  currentRun?: ScheduledJobRunSummary;
   createdAt: string;
   updatedAt: string;
 }

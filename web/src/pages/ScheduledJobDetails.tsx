@@ -59,6 +59,42 @@ import { RunOutputDialog } from '../components/scheduled-jobs/RunOutputViewer';
 const TAB_KEYS = ['settings', 'history'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
+function getJobChipConfig(job: ScheduledJob): {
+  label: string;
+  bg: string;
+  color: string;
+} {
+  if (job.currentRun?.status === ScheduledJobRunStatus.RUNNING) {
+    return {
+      label: 'Running',
+      bg: afkColors.warningMuted,
+      color: afkColors.warning,
+    };
+  }
+
+  if (job.currentRun?.status === ScheduledJobRunStatus.PENDING) {
+    return {
+      label: 'Starting',
+      bg: afkColors.warningMuted,
+      color: afkColors.warning,
+    };
+  }
+
+  if (job.enabled) {
+    return {
+      label: 'Active',
+      bg: afkColors.accentMuted,
+      color: afkColors.accent,
+    };
+  }
+
+  return {
+    label: 'Paused',
+    bg: afkColors.surfaceElevated,
+    color: afkColors.textTertiary,
+  };
+}
+
 const ScheduledJobDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -179,6 +215,8 @@ const ScheduledJobDetails: React.FC = () => {
     );
   }
 
+  const jobChip = getJobChipConfig(job);
+
   return (
     <Box sx={{ p: 3, width: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
@@ -213,13 +251,11 @@ const ScheduledJobDetails: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Typography variant="h3">{job.name}</Typography>
           <Chip
-            label={job.enabled ? 'Active' : 'Paused'}
+            label={jobChip.label}
             size="small"
             sx={{
-              bgcolor: job.enabled
-                ? afkColors.accentMuted
-                : afkColors.surfaceElevated,
-              color: job.enabled ? afkColors.accent : afkColors.textTertiary,
+              bgcolor: jobChip.bg,
+              color: jobChip.color,
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.6875rem',
               fontWeight: 500,

@@ -15,8 +15,48 @@ const JOBS_KEY = ['scheduled-jobs'];
 const jobKey = (id: string) => ['scheduled-job', id];
 export const runsKey = (jobId: string) => ['scheduled-job-runs', jobId];
 
+function upsertJob(
+  jobs: ScheduledJob[] | undefined,
+  nextJob: ScheduledJob,
+): ScheduledJob[] | undefined {
+  if (!jobs) {
+    return jobs;
+  }
+
+  const existingIndex = jobs.findIndex((job) => job.id === nextJob.id);
+  if (existingIndex === -1) {
+    return jobs;
+  }
+
+  const nextJobs = [...jobs];
+  nextJobs[existingIndex] = nextJob;
+  return nextJobs;
+}
+
+function upsertRun(
+  runs: ScheduledJobRun[] | undefined,
+  nextRun: ScheduledJobRun,
+): ScheduledJobRun[] {
+  if (!runs || runs.length === 0) {
+    return [nextRun];
+  }
+
+  const existingIndex = runs.findIndex((run) => run.id === nextRun.id);
+  if (existingIndex === -1) {
+    return [nextRun, ...runs].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
+
+  const nextRuns = [...runs];
+  nextRuns[existingIndex] = nextRun;
+  return nextRuns;
+}
+
 export const useScheduledJobs = () => {
   const queryClient = useQueryClient();
+  const { socket } = useWebSocket();
 
   const {
     data: jobs = [],
@@ -26,6 +66,34 @@ export const useScheduledJobs = () => {
     queryKey: JOBS_KEY,
     queryFn: () => scheduledJobsApi.list(),
   });
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    const handleScheduledJobUpdated = (data: { job: ScheduledJob }) => {
+      queryClient.setQueryData<ScheduledJob[]>(JOBS_KEY, (currentJobs) =>
+        upsertJob(currentJobs, data.job),
+      );
+      queryClient.setQueryData<ScheduledJob>(jobKey(data.job.id), data.job);
+    };
+
+    const handleScheduledJobRunUpdated = (data: { run: ScheduledJobRun }) => {
+      queryClient.setQueryData<ScheduledJobRun[]>(
+        runsKey(data.run.jobId),
+        (currentRuns) => upsertRun(currentRuns, data.run),
+      );
+    };
+
+    socket.on('scheduled.job.updated', handleScheduledJobUpdated);
+    socket.on('scheduled.job.run.updated', handleScheduledJobRunUpdated);
+
+    return () => {
+      socket.off('scheduled.job.updated', handleScheduledJobUpdated);
+      socket.off('scheduled.job.run.updated', handleScheduledJobRunUpdated);
+    };
+  }, [socket, queryClient]);
 
   const createMutation = useMutation({
     mutationFn: (request: CreateScheduledJobRequest) =>
@@ -74,12 +142,9 @@ export const useScheduledJobs = () => {
   const triggerMutation = useMutation({
     mutationFn: (id: string) => scheduledJobsApi.trigger(id),
     onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: JOBS_KEY });
       queryClient.invalidateQueries({ queryKey: runsKey(id) });
       queryClient.invalidateQueries({ queryKey: jobKey(id) });
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: runsKey(id) });
-        queryClient.invalidateQueries({ queryKey: jobKey(id) });
-      }, 1000);
     },
   });
 

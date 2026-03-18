@@ -23,6 +23,7 @@ const WORKSPACE_DIR = '/workspace/repo';
 
 export const JOB_RUN_EVENTS = {
   started: 'job.run.started',
+  updated: 'job.run.updated',
   stream: 'job.run.stream',
   completed: 'job.run.completed',
   failed: 'job.run.failed',
@@ -84,12 +85,20 @@ export class JobExecutorService {
       jobId,
       runId: run.id,
     });
+    this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
+      jobId,
+      runId: run.id,
+    });
 
     let ports: PortPairDto | null = null;
 
     try {
       run.markRunning();
       await this.scheduledJobRunRepository.save(run);
+      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
+        jobId,
+        runId: run.id,
+      });
 
       const dockerImage = await this.dockerImageRepository.findById(
         job.imageId,
@@ -135,6 +144,10 @@ export class JobExecutorService {
 
       run.containerId = container.id;
       await this.scheduledJobRunRepository.save(run);
+      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
+        jobId,
+        runId: run.id,
+      });
 
       this.logger.log('Waiting for container to be ready', {
         jobId,
@@ -187,9 +200,17 @@ export class JobExecutorService {
 
       run.markCompleted();
       await this.scheduledJobRunRepository.save(run);
+      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
+        jobId,
+        runId: run.id,
+      });
 
       job.recordRun(new Date());
       await this.scheduledJobRepository.save(job);
+      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
+        jobId,
+        runId: run.id,
+      });
 
       this.logger.log('Job run completed successfully', {
         jobId,
@@ -214,12 +235,20 @@ export class JobExecutorService {
       });
 
       run.markFailed(message);
+      let failurePersisted = true;
       await this.scheduledJobRunRepository.save(run).catch((saveErr) => {
+        failurePersisted = false;
         this.logger.error('Failed to persist run failure', {
           runId: run.id,
           error: saveErr instanceof Error ? saveErr.message : String(saveErr),
         });
       });
+      if (failurePersisted) {
+        this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
+          jobId,
+          runId: run.id,
+        });
+      }
 
       this.eventEmitter.emit(JOB_RUN_EVENTS.failed, {
         jobId,

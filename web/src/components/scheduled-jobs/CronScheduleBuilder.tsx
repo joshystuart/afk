@@ -50,7 +50,6 @@ const CRON_PRESETS = [
   { label: 'Daily 9am', value: '0 9 * * *' },
   { label: 'Weekdays 9am', value: '0 9 * * 1-5' },
   { label: 'Weekly Mon 9am', value: '0 9 * * 1' },
-  { label: 'Every 6h', value: '0 */6 * * *' },
   { label: 'Monthly 1st', value: '0 9 1 * *' },
 ];
 

@@ -3,7 +3,6 @@ import type {
   Session,
   CreateSessionRequest,
   UpdateSessionRequest,
-  CreateSessionResponse,
   GitStatus,
   CommitAndPushRequest,
   CommitAndPushResponse,
@@ -12,11 +11,25 @@ import type {
 
 export const sessionsApi = {
   // Create a new session
-  createSession: async (
-    request: CreateSessionRequest,
-  ): Promise<CreateSessionResponse> => {
+  createSession: async (request: CreateSessionRequest): Promise<Session> => {
     const response = await apiClient.post('/sessions', request);
-    return response as unknown as CreateSessionResponse;
+    const sessionData = response as any;
+
+    return {
+      id: sessionData.id,
+      name: sessionData.name,
+      status: sessionData.status,
+      repoUrl: sessionData.repoUrl,
+      branch: sessionData.branch || 'main',
+      port: sessionData.port,
+      terminalUrl: sessionData.terminalUrl,
+      imageId: sessionData.imageId,
+      imageName: sessionData.imageName,
+      hostMountPath: sessionData.hostMountPath,
+      model: sessionData.model,
+      createdAt: sessionData.createdAt,
+      updatedAt: sessionData.updatedAt,
+    } as Session;
   },
 
   // List all sessions with pagination

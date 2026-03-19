@@ -12,8 +12,8 @@ const colors = {
   borderSubtle: '#141416',
 
   textPrimary: '#fafafa',
-  textSecondary: '#71717a',
-  textTertiary: '#52525b',
+  textSecondary: '#a1a1aa',
+  textTertiary: '#71717a',
 
   accent: '#10b981',
   accentDark: '#059669',
@@ -37,9 +37,9 @@ export const afkTheme = createTheme({
       contrastText: '#fff',
     },
     secondary: {
-      main: '#71717a',
-      light: '#a1a1aa',
-      dark: '#52525b',
+      main: '#a1a1aa',
+      light: '#d4d4d8',
+      dark: '#71717a',
       contrastText: '#fff',
     },
     error: {

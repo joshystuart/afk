@@ -291,8 +291,8 @@ const CreateSession: React.FC = () => {
         cleanupOnDelete: mountToHost && cleanupOnDelete ? true : undefined,
       };
 
-      await createSession(request);
-      navigate(ROUTES.DASHBOARD);
+      const session = await createSession(request);
+      navigate(ROUTES.getSessionDetails(session.id));
     } catch (err) {
       console.error('Failed to create session:', err);
     }

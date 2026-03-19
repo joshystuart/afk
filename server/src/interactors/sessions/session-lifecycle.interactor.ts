@@ -220,7 +220,7 @@ export class SessionLifecycleInteractor {
     );
   }
 
-  private async performBackgroundHealthCheck(session: any): Promise<void> {
+  async performBackgroundHealthCheck(session: any): Promise<void> {
     // Run health check in background without blocking
     (async () => {
       const maxAttempts = 30; // 60 seconds total (30 * 2 seconds)

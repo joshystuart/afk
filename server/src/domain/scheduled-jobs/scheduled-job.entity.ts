@@ -51,6 +51,9 @@ export class ScheduledJob {
   @Column('boolean', { default: true })
   enabled: boolean;
 
+  @Column('varchar', { length: 64 })
+  triggerToken: string;
+
   @Column('datetime', { nullable: true })
   lastRunAt: Date | null;
 

@@ -6,6 +6,7 @@ import {
   HttpStatus,
   NotFoundException,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { TriggerScheduledJobInteractor } from './trigger-scheduled-job.interactor';
@@ -18,6 +19,8 @@ import {
   ScheduledJobRoutes,
   ScheduledJobRouteParams,
 } from '../scheduled-job.routes';
+import { Public } from '../../../libs/auth/auth.guard';
+import { TriggerTokenGuard } from './trigger-token.guard';
 
 @ApiTags('Scheduled Jobs')
 @Controller(ScheduledJobRoutes.BASE)
@@ -27,6 +30,8 @@ export class TriggerScheduledJobController {
     private readonly responseService: ResponseService,
   ) {}
 
+  @Public()
+  @UseGuards(TriggerTokenGuard)
   @Post(ScheduledJobRoutes.TRIGGER)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Trigger immediate execution of a scheduled job' })

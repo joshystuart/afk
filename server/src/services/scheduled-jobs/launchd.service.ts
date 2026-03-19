@@ -89,17 +89,17 @@ export class LaunchdService {
 
   private buildPlistContent(job: ScheduledJob): string {
     const label = this.getPlistLabel(job.id);
-    const triggerUrl = `http://localhost:${this.serverPort}/scheduled-jobs/${job.id}/trigger`;
+    const triggerUrl = `http://localhost:${this.serverPort}/api/scheduled-jobs/${job.id}/trigger`;
 
     const shellScript = [
-      `if ! curl -sf http://localhost:${this.serverPort}/health/live > /dev/null 2>&1; then`,
+      `if ! curl -sf http://localhost:${this.serverPort}/api/health/live > /dev/null 2>&1; then`,
       `  open -a AFK`,
       `  for i in $(seq 1 30); do`,
       `    sleep 2`,
-      `    curl -sf http://localhost:${this.serverPort}/health/live > /dev/null 2>&1 && break`,
+      `    curl -sf http://localhost:${this.serverPort}/api/health/live > /dev/null 2>&1 && break`,
       `  done`,
       `fi`,
-      `curl -sf -X POST ${triggerUrl}`,
+      `curl -sf -X POST -H "X-Trigger-Token: ${job.triggerToken}" ${triggerUrl}`,
     ].join('\n      ');
 
     const scheduleSection = this.buildScheduleSection(job);

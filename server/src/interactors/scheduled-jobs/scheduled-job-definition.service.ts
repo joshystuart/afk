@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { ScheduleType } from '../../domain/scheduled-jobs/schedule-type.enum';
 import { ScheduledJob } from '../../domain/scheduled-jobs/scheduled-job.entity';
 
@@ -27,6 +28,7 @@ export class ScheduledJobDefinitionService {
     job.id = id;
     this.apply(job, definition);
     job.enabled = definition.enabled ?? true;
+    job.triggerToken = randomBytes(32).toString('hex');
     job.lastRunAt = null;
     job.nextRunAt = null;
     return job;

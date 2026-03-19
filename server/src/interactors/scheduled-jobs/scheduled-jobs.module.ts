@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduledJobsDomainModule } from '../../domain/scheduled-jobs/scheduled-jobs.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { ScheduledJobsServicesModule } from '../../services/scheduled-jobs/scheduled-jobs-services.module';
+import { AuthModule } from '../../libs/auth/auth.module';
 import { ResponseService } from '../../libs/response/response.service';
 import { CreateScheduledJobController } from './create-scheduled-job/create-scheduled-job.controller';
 import { CreateScheduledJobInteractor } from './create-scheduled-job/create-scheduled-job.interactor';
@@ -17,6 +18,7 @@ import { ListScheduledJobRunsController } from './list-scheduled-job-runs.contro
 import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.interactor';
 import { TriggerScheduledJobController } from './trigger-scheduled-job/trigger-scheduled-job.controller';
 import { TriggerScheduledJobInteractor } from './trigger-scheduled-job/trigger-scheduled-job.interactor';
+import { TriggerTokenGuard } from './trigger-scheduled-job/trigger-token.guard';
 import { ScheduledJobDefinitionService } from './scheduled-job-definition.service';
 import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
 
@@ -25,6 +27,7 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     ScheduledJobsDomainModule,
     DockerImagesModule,
     ScheduledJobsServicesModule,
+    AuthModule,
   ],
   controllers: [
     CreateScheduledJobController,
@@ -45,6 +48,7 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     TriggerScheduledJobInteractor,
     ScheduledJobDefinitionService,
     ScheduledJobResponseFactory,
+    TriggerTokenGuard,
     ResponseService,
   ],
   exports: [

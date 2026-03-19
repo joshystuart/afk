@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -58,18 +58,25 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
   onChange,
   error,
 }) => {
-  const [mode, setMode] = useState<ScheduleMode>('simple');
-  const [simpleConfig, setSimpleConfig] = useState<SimpleCronConfig>({
-    frequency: 'daily',
-    time: { hour: 9, minute: 0 },
-    days: [],
+  const [mode, setMode] = useState<ScheduleMode>(() => {
+    return parseCronExpression(value) ? 'simple' : 'advanced';
+  });
+  const [simpleConfig, setSimpleConfig] = useState<SimpleCronConfig>(() => {
+    return (
+      parseCronExpression(value) ?? {
+        frequency: 'daily',
+        time: { hour: 9, minute: 0 },
+        days: [],
+      }
+    );
   });
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const syncingFromProp = useRef(false);
 
-  // Initialize from prop value
   useEffect(() => {
     const parsed = parseCronExpression(value);
     if (parsed) {
+      syncingFromProp.current = true;
       setMode('simple');
       setSimpleConfig(parsed);
     } else {
@@ -77,8 +84,11 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
     }
   }, [value]);
 
-  // Update cron expression when simple config changes
   useEffect(() => {
+    if (syncingFromProp.current) {
+      syncingFromProp.current = false;
+      return;
+    }
     if (mode === 'simple') {
       const cronExpr = buildCronExpression(simpleConfig);
       if (cronExpr !== value) {
@@ -150,10 +160,17 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
     onChange(newValue);
   };
 
+  const description = useMemo(
+    () => describeCronExpression(simpleConfig),
+    [simpleConfig],
+  );
+  const cronExpr = useMemo(
+    () => buildCronExpression(simpleConfig),
+    [simpleConfig],
+  );
+
   const renderSimpleMode = () => {
     const selectedDays = simpleConfig.days || [];
-    const description = describeCronExpression(simpleConfig);
-    const cronExpr = buildCronExpression(simpleConfig);
 
     return (
       <Box>
@@ -275,9 +292,7 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
                   label={String(day)}
                   size="small"
                   onClick={() => handleDayToggle(day)}
-                  variant={
-                    selectedDays.includes(day) ? 'filled' : 'outlined'
-                  }
+                  variant={selectedDays.includes(day) ? 'filled' : 'outlined'}
                   sx={{
                     cursor: 'pointer',
                     fontSize: '0.7rem',
@@ -410,9 +425,7 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
           placeholder="0 9 * * *"
           value={value}
           onChange={(e) => handleAdvancedChange(e.target.value)}
-          helperText={
-            error || 'Standard 5-field cron (min hour dom month dow)'
-          }
+          helperText={error || 'Standard 5-field cron (min hour dom month dow)'}
           error={!!error}
           sx={{
             mb: 2,

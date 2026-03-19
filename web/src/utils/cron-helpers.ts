@@ -60,28 +60,25 @@ function compressRange(numbers: number[]): string {
     if (numbers[i] === rangeEnd + 1) {
       rangeEnd = numbers[i];
     } else {
-      if (rangeEnd - rangeStart >= 2) {
-        ranges.push(`${rangeStart}-${rangeEnd}`);
-      } else if (rangeEnd === rangeStart) {
-        ranges.push(String(rangeStart));
-      } else {
-        ranges.push(String(rangeStart), String(rangeEnd));
-      }
+      pushRange(ranges, rangeStart, rangeEnd);
       rangeStart = numbers[i];
       rangeEnd = numbers[i];
     }
   }
 
-  // Handle the last range
-  if (rangeEnd - rangeStart >= 2) {
-    ranges.push(`${rangeStart}-${rangeEnd}`);
-  } else if (rangeEnd === rangeStart) {
-    ranges.push(String(rangeStart));
-  } else {
-    ranges.push(String(rangeStart), String(rangeEnd));
-  }
+  pushRange(ranges, rangeStart, rangeEnd);
 
   return ranges.join(',');
+}
+
+function pushRange(ranges: string[], start: number, end: number): void {
+  if (start === end) {
+    ranges.push(String(start));
+  } else if (end - start >= 2) {
+    ranges.push(`${start}-${end}`);
+  } else {
+    ranges.push(String(start), String(end));
+  }
 }
 
 /**
@@ -156,7 +153,11 @@ function parseDomField(field: string): number[] | null {
  * - Combined: "1-3,5,7-9"
  * Does NOT handle step expressions (star/n, 1-5/2) or special chars (L, W, #)
  */
-function parseNumericField(field: string, min: number, max: number): number[] | null {
+function parseNumericField(
+  field: string,
+  min: number,
+  max: number,
+): number[] | null {
   if (field === '*') return null; // Wildcard not allowed here
   if (/[*/LW#]/.test(field)) return null; // Step or special expressions not supported
 
@@ -249,7 +250,8 @@ export function describeCronExpression(config: SimpleCronConfig): string {
  * Formats time in 12-hour format with AM/PM
  */
 function formatTime(time: { hour: number; minute: number }): string {
-  const hour12 = time.hour === 0 ? 12 : time.hour > 12 ? time.hour - 12 : time.hour;
+  const hour12 =
+    time.hour === 0 ? 12 : time.hour > 12 ? time.hour - 12 : time.hour;
   const ampm = time.hour >= 12 ? 'PM' : 'AM';
   const minuteStr = String(time.minute).padStart(2, '0');
   return `${hour12}:${minuteStr} ${ampm}`;

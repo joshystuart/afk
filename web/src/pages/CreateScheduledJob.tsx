@@ -516,14 +516,6 @@ const CreateScheduledJob: React.FC = () => {
                         >
                           {model.label}
                         </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: '0.75rem',
-                            color: afkColors.textTertiary,
-                          }}
-                        >
-                          {model.description}
-                        </Typography>
                       </Box>
                     </MenuItem>
                   ))}

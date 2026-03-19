@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduledJobsDomainModule } from '../../domain/scheduled-jobs/scheduled-jobs.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
 import { ScheduledJobsServicesModule } from '../../services/scheduled-jobs/scheduled-jobs-services.module';
+import { StreamArchiveModule } from '../../services/stream-archive/stream-archive.module';
 import { AuthModule } from '../../libs/auth/auth.module';
 import { ResponseService } from '../../libs/response/response.service';
 import { CreateScheduledJobController } from './create-scheduled-job/create-scheduled-job.controller';
@@ -27,6 +28,7 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     ScheduledJobsDomainModule,
     DockerImagesModule,
     ScheduledJobsServicesModule,
+    StreamArchiveModule,
     AuthModule,
   ],
   controllers: [

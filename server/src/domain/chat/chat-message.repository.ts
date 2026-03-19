@@ -19,7 +19,13 @@ export class ChatMessageRepository {
     partial: Partial<
       Pick<
         ChatMessage,
-        'streamEvents' | 'content' | 'conversationId' | 'costUsd' | 'durationMs'
+        | 'streamEvents'
+        | 'content'
+        | 'conversationId'
+        | 'costUsd'
+        | 'durationMs'
+        | 'streamEventCount'
+        | 'streamByteCount'
       >
     >,
   ): Promise<void> {

@@ -332,15 +332,7 @@ This is the safety net that prevents a forgotten browser tab plus running contai
 
 ## Data Migration Strategy
 
-Because the current `streamEvents` JSON columns already contain historical data, migration should be done in two steps:
-
-1. Add the new chunk tables and summary columns while keeping existing `streamEvents` columns readable.
-2. Switch new writes to the chunked archive path.
-3. Update read paths to prefer chunk storage.
-4. Optionally backfill old `streamEvents` rows into chunk tables with a one-time migration script.
-5. Remove or deprecate the old `streamEvents` columns only after the new readers are fully stable.
-
-This avoids breaking existing history while we refactor.
+Don't worry about migration. Instead create an npm script helper that will delete all history, but keep all settings in tact
 
 ---
 

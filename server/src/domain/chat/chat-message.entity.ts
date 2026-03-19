@@ -24,6 +24,12 @@ export class ChatMessage {
   @Column('json', { nullable: true })
   streamEvents: any[] | null;
 
+  @Column('int', { nullable: true })
+  streamEventCount: number | null;
+
+  @Column('int', { nullable: true })
+  streamByteCount: number | null;
+
   @Column('varchar', { length: 255, nullable: true })
   conversationId: string | null;
 

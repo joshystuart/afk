@@ -1,8 +1,5 @@
 import { DataSource } from 'typeorm';
-import { Session } from '../domain/sessions/session.entity';
-import { Settings } from '../domain/settings/settings.entity';
-import { ChatMessage } from '../domain/chat/chat-message.entity';
-import { DockerImage } from '../domain/docker-images/docker-image.entity';
+import { typeormEntities } from '../database/database.config';
 
 async function resetDatabase(): Promise<void> {
   const dbPath = process.env.DB_SQLITE_DATABASE || 'afk.sqlite';
@@ -11,7 +8,7 @@ async function resetDatabase(): Promise<void> {
   const dataSource = new DataSource({
     type: 'sqlite',
     database: dbPath,
-    entities: [Session, Settings, ChatMessage, DockerImage],
+    entities: typeormEntities,
     synchronize: false,
   });
 

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DockerEngineService } from '../../services/docker/docker-engine.service';
+import { ContainerLogStreamService } from '../../services/docker/container-log-stream.service';
 import { ContainerNotFoundError } from '../../services/docker/container-not-found.error';
 import { SessionRepository } from '../../services/repositories/session.repository';
 import { PortManagerService } from '../../services/docker/port-manager.service';
@@ -18,6 +19,7 @@ export class SessionLifecycleInteractor {
 
   constructor(
     private readonly dockerEngine: DockerEngineService,
+    private readonly containerLogStream: ContainerLogStreamService,
     private readonly sessionRepository: SessionRepository,
     private readonly portManager: PortManagerService,
     private readonly gitWatcherService: GitWatcherService,
@@ -41,6 +43,8 @@ export class SessionLifecycleInteractor {
     try {
       // Stop git watcher before stopping container
       await this.gitWatcherService.stopWatching(sessionId.toString());
+
+      await this.containerLogStream.releaseSession(sessionId.toString());
 
       await this.dockerEngine.stopContainer(session.containerId!);
       session.stop();
@@ -128,6 +132,11 @@ export class SessionLifecycleInteractor {
       session.markAsRunning();
       await this.sessionRepository.save(session);
 
+      await this.containerLogStream.ensureRunningLogStream(
+        session.id,
+        session.containerId,
+      );
+
       this.logger.log('Session started (optimistically)', {
         sessionId: sessionId.toString(),
       });
@@ -143,6 +152,8 @@ export class SessionLifecycleInteractor {
   }
 
   private async recreateContainer(session: any): Promise<void> {
+    await this.containerLogStream.releaseSession(session.id);
+
     // Remove old container if it exists
     if (session.containerId) {
       try {
@@ -180,44 +191,15 @@ export class SessionLifecycleInteractor {
     session.containerId = container.id;
     await this.sessionRepository.save(session);
 
+    await this.containerLogStream.ensureRunningLogStream(
+      session.id,
+      container.id,
+    );
+
     this.logger.log('Container recreated successfully', {
       sessionId: session.id,
       newContainerId: container.id,
     });
-  }
-
-  private async waitForContainerHealth(
-    session: any,
-    maxAttempts: number = 15,
-  ): Promise<void> {
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      try {
-        const health = await this.checkTerminalHealth(
-          new SessionIdDto(session.id),
-        );
-        if (health.allReady) {
-          this.logger.log('Container health check passed', {
-            sessionId: session.id,
-          });
-          return;
-        }
-      } catch (error) {
-        this.logger.debug('Health check attempt failed', {
-          sessionId: session.id,
-          attempt: attempts + 1,
-          error: error.message,
-        });
-      }
-
-      attempts++;
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
-    }
-
-    throw new Error(
-      `Container failed health check after ${maxAttempts} attempts`,
-    );
   }
 
   async performBackgroundHealthCheck(session: any): Promise<void> {
@@ -302,67 +284,12 @@ export class SessionLifecycleInteractor {
     const sid = sessionId.toString();
 
     try {
-      await this.gitWatcherService.stopWatching(sid);
-
-      this.emitDeleteProgress(sid, 'Removing container and volumes...');
-
-      const containerRemoval = session.containerId
-        ? this.dockerEngine
-            .removeContainer(session.containerId)
-            .catch((err) => {
-              if (err instanceof ContainerNotFoundError) {
-                this.logger.warn('Container already removed, continuing', {
-                  sessionId: sid,
-                  containerId: session.containerId,
-                });
-              } else {
-                throw err;
-              }
-            })
-        : Promise.resolve();
-
-      const volumeRemoval = this.dockerEngine
-        .removeSessionVolumes(session.id)
-        .catch((volumeError) => {
-          this.logger.warn('Failed to remove session volumes, continuing', {
-            sessionId: sid,
-            error: volumeError.message,
-          });
-        });
-
-      await Promise.all([containerRemoval, volumeRemoval]);
-
-      if (session.config?.cleanupOnDelete && session.config?.hostMountPath) {
-        this.emitDeleteProgress(sid, 'Cleaning up workspace files...');
-        try {
-          const safePath = this.mountPathValidator.validateReal(
-            session.config.hostMountPath,
-          );
-          await fs.rm(safePath, { recursive: true, force: true });
-          this.logger.log('Cleaned up host mount directory', {
-            sessionId: sid,
-            hostMountPath: safePath,
-          });
-        } catch (cleanupError) {
-          this.logger.warn(
-            'Failed to clean up host mount directory, continuing',
-            {
-              sessionId: sid,
-              hostMountPath: session.config.hostMountPath,
-              error: cleanupError.message,
-            },
-          );
-        }
-      }
+      await this.stopWatchingAndReleaseLogsForDeletion(sid);
+      await this.removeDockerResourcesForDeletion(session, sid);
+      await this.cleanupHostMountIfConfigured(session, sid);
 
       this.emitDeleteProgress(sid, 'Finalizing...');
-
-      if (session.ports) {
-        await this.portManager.releasePortPair(session.ports);
-      }
-
-      await this.chatMessageRepository.deleteBySessionId(sid);
-      await this.sessionRepository.delete(sessionId);
+      await this.deleteSessionRecordsAndReleasePorts(session, sessionId, sid);
 
       this.logger.log('Session deleted', { sessionId: sid });
       this.eventEmitter.emit('session.deleted', { sessionId: sid });
@@ -381,6 +308,85 @@ export class SessionLifecycleInteractor {
         error: error.message,
       });
     }
+  }
+
+  private async stopWatchingAndReleaseLogsForDeletion(
+    sessionId: string,
+  ): Promise<void> {
+    await this.gitWatcherService.stopWatching(sessionId);
+    await this.containerLogStream.releaseSession(sessionId);
+  }
+
+  private async removeDockerResourcesForDeletion(
+    session: any,
+    sid: string,
+  ): Promise<void> {
+    this.emitDeleteProgress(sid, 'Removing container and volumes...');
+
+    const containerRemoval = session.containerId
+      ? this.dockerEngine.removeContainer(session.containerId).catch((err) => {
+          if (err instanceof ContainerNotFoundError) {
+            this.logger.warn('Container already removed, continuing', {
+              sessionId: sid,
+              containerId: session.containerId,
+            });
+          } else {
+            throw err;
+          }
+        })
+      : Promise.resolve();
+
+    const volumeRemoval = this.dockerEngine
+      .removeSessionVolumes(session.id)
+      .catch((volumeError) => {
+        this.logger.warn('Failed to remove session volumes, continuing', {
+          sessionId: sid,
+          error: volumeError.message,
+        });
+      });
+
+    await Promise.all([containerRemoval, volumeRemoval]);
+  }
+
+  private async cleanupHostMountIfConfigured(
+    session: any,
+    sid: string,
+  ): Promise<void> {
+    if (!session.config?.cleanupOnDelete || !session.config?.hostMountPath) {
+      return;
+    }
+
+    this.emitDeleteProgress(sid, 'Cleaning up workspace files...');
+
+    try {
+      const safePath = this.mountPathValidator.validateReal(
+        session.config.hostMountPath,
+      );
+      await fs.rm(safePath, { recursive: true, force: true });
+      this.logger.log('Cleaned up host mount directory', {
+        sessionId: sid,
+        hostMountPath: safePath,
+      });
+    } catch (cleanupError) {
+      this.logger.warn('Failed to clean up host mount directory, continuing', {
+        sessionId: sid,
+        hostMountPath: session.config.hostMountPath,
+        error: cleanupError.message,
+      });
+    }
+  }
+
+  private async deleteSessionRecordsAndReleasePorts(
+    session: any,
+    sessionId: SessionIdDto,
+    sid: string,
+  ): Promise<void> {
+    if (session.ports) {
+      await this.portManager.releasePortPair(session.ports);
+    }
+
+    await this.chatMessageRepository.deleteBySessionId(sid);
+    await this.sessionRepository.delete(sessionId);
   }
 
   async getSessionInfo(sessionId: SessionIdDto): Promise<any> {

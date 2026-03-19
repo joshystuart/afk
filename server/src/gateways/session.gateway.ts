@@ -11,7 +11,7 @@ import { Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { SessionSubscriptionService } from './session-subscription.service';
-import { DockerEngineService } from '../services/docker/docker-engine.service';
+import { ContainerLogStreamService } from '../services/docker/container-log-stream.service';
 import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
 import { GitStatusResult } from '../services/git/git.service';
 import { SessionRepository } from '../services/repositories/session.repository';
@@ -110,7 +110,7 @@ export class SessionGateway
 
   constructor(
     private readonly sessionSubscriptionService: SessionSubscriptionService,
-    private readonly dockerEngine: DockerEngineService,
+    private readonly containerLogStream: ContainerLogStreamService,
     private readonly gitWatcherService: GitWatcherService,
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
@@ -139,6 +139,8 @@ export class SessionGateway
   }
 
   async handleDisconnect(client: Socket) {
+    this.containerLogStream.removeAllSubscribersForSocket(client.id);
+
     // Get sessions this client was subscribed to before unsubscribing
     const sessions = this.sessionSubscriptionService.getSessionsForClient(
       client.id,
@@ -242,8 +244,14 @@ export class SessionGateway
         };
       }
 
-      const stream = await this.dockerEngine.streamContainerLogs(
+      await this.containerLogStream.ensureRunningLogStream(
+        data.sessionId,
         session.containerId,
+      );
+      this.containerLogStream.addSubscriber(
+        data.sessionId,
+        session.containerId,
+        client.id,
         (log: string) => {
           client.emit(SOCKET_EVENTS.logData, {
             sessionId: data.sessionId,
@@ -252,8 +260,6 @@ export class SessionGateway
           });
         },
       );
-
-      (client as any).logStream = stream;
 
       return {
         event: SOCKET_EVENTS.logsSubscribed,
@@ -269,11 +275,7 @@ export class SessionGateway
 
   @SubscribeMessage(SOCKET_EVENTS.unsubscribeLogs)
   async handleLogUnsubscription(@ConnectedSocket() client: Socket) {
-    const stream = (client as any).logStream;
-    if (stream) {
-      stream.destroy();
-      delete (client as any).logStream;
-    }
+    this.containerLogStream.removeSubscriber(client.id);
 
     return {
       event: SOCKET_EVENTS.logsUnsubscribed,

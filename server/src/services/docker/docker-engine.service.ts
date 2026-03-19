@@ -103,28 +103,6 @@ export class DockerEngineService implements OnModuleInit {
 
       await container.start();
 
-      const logStream = await container.logs({
-        follow: true,
-        stdout: true,
-        stderr: true,
-        tail: 1000,
-      });
-      logStream.on('data', (chunk) => {
-        this.logger.debug(
-          `Container ${options.sessionId}`,
-          chunk.toString('utf8'),
-        );
-      });
-      logStream.on('end', () => {
-        this.logger.debug(`Container ${options.sessionId} - Log stream ended.`);
-      });
-      logStream.on('error', (err) => {
-        this.logger.debug(
-          `Container ${options.sessionId} - Log stream error`,
-          err,
-        );
-      });
-
       return container;
     } catch (error: unknown) {
       this.logger.error('Failed to create container', error);
@@ -349,24 +327,21 @@ export class DockerEngineService implements OnModuleInit {
     };
   }
 
-  async streamContainerLogs(
+  /**
+   * Opens a raw follow stream for container logs. Lifecycle (including exactly
+   * one follower per session) is owned by ContainerLogStreamService.
+   */
+  async openContainerFollowLogStream(
     containerId: string,
-    onData: (log: string) => void,
   ): Promise<NodeJS.ReadableStream> {
     const docker = await this.getDockerClient();
     const container = docker.getContainer(containerId);
-    const stream = await container.logs({
+    return await container.logs({
       stdout: true,
       stderr: true,
       follow: true,
-      tail: 100,
+      tail: 1000,
     });
-
-    stream.on('data', (chunk) => {
-      onData(chunk.toString());
-    });
-
-    return stream;
   }
 
   async execInContainer(

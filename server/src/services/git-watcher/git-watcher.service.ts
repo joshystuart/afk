@@ -1,12 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DockerEngineService } from '../docker/docker-engine.service';
-
-export interface GitStatusResult {
-  hasChanges: boolean;
-  changedFileCount: number;
-  branch: string;
-}
+import { GitService, GitStatusResult } from '../git/git.service';
 
 interface WatcherState {
   kill: () => Promise<void>;
@@ -22,6 +17,7 @@ export class GitWatcherService {
 
   constructor(
     private readonly dockerEngine: DockerEngineService,
+    private readonly gitService: GitService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -161,31 +157,7 @@ export class GitWatcherService {
     containerId: string,
   ): Promise<void> {
     try {
-      const [statusResult, branchResult] = await Promise.all([
-        this.dockerEngine.execInContainer(containerId, [
-          'git',
-          'status',
-          '--porcelain',
-        ]),
-        this.dockerEngine.execInContainer(containerId, [
-          'git',
-          'rev-parse',
-          '--abbrev-ref',
-          'HEAD',
-        ]),
-      ]);
-
-      const changedFiles = statusResult.stdout
-        ? statusResult.stdout
-            .split('\n')
-            .filter((line) => line.trim().length > 0)
-        : [];
-
-      const newStatus: GitStatusResult = {
-        hasChanges: changedFiles.length > 0,
-        changedFileCount: changedFiles.length,
-        branch: branchResult.stdout || 'unknown',
-      };
+      const newStatus = await this.gitService.getStatus(containerId);
 
       // Only emit if status actually changed
       const state = this.watchers.get(sessionId);

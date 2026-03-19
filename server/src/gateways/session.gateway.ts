@@ -12,22 +12,29 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { SessionSubscriptionService } from './session-subscription.service';
 import { DockerEngineService } from '../services/docker/docker-engine.service';
-import {
-  GitWatcherService,
-  GitStatusResult,
-} from '../services/git-watcher/git-watcher.service';
+import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
+import { GitStatusResult } from '../services/git/git.service';
 import { SessionRepository } from '../services/repositories/session.repository';
 import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
 import { ChatService } from '../services/chat/chat.service';
+import { ScheduledJobRepository } from '../domain/scheduled-jobs/scheduled-job.repository';
+import { ScheduledJobRunRepository } from '../domain/scheduled-jobs/scheduled-job-run.repository';
+import { ScheduledJobRunStatus } from '../domain/scheduled-jobs/scheduled-job-run-status.enum';
+import { ScheduledJobResponseFactory } from '../interactors/scheduled-jobs/scheduled-job-response.factory';
+import { ScheduledJobRunResponseDto } from '../interactors/scheduled-jobs/scheduled-job-run-response.dto';
+import { JOB_RUN_EVENTS } from '../services/scheduled-jobs/job-executor.service';
 
 const ROOM_PREFIX = 'session:';
+const JOB_RUN_ROOM_PREFIX = 'job-run:';
 
 const SOCKET_EVENTS = {
   subscribeSession: 'subscribe.session',
   unsubscribeSession: 'unsubscribe.session',
   subscribeLogs: 'subscribe.logs',
   unsubscribeLogs: 'unsubscribe.logs',
+  subscribeJobRun: 'subscribe.job.run',
+  unsubscribeJobRun: 'unsubscribe.job.run',
   chatSend: 'chat.send',
   chatCancel: 'chat.cancel',
   chatStatus: 'chat.status',
@@ -40,6 +47,13 @@ const SOCKET_EVENTS = {
   logsError: 'logs.error',
   logsSubscribed: 'logs.subscribed',
   logsUnsubscribed: 'logs.unsubscribed',
+  jobRunSubscribed: 'job.run.subscribed',
+  jobRunUnsubscribed: 'job.run.unsubscribed',
+  jobRunStream: 'job.run.stream',
+  jobRunUpdated: 'job.run.updated',
+  jobRunError: 'job.run.error',
+  scheduledJobUpdated: 'scheduled.job.updated',
+  scheduledJobRunUpdated: 'scheduled.job.run.updated',
   subscriptionSuccess: 'subscription.success',
   subscriptionError: 'subscription.error',
   unsubscriptionSuccess: 'unsubscription.success',
@@ -101,10 +115,17 @@ export class SessionGateway
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly chatService: ChatService,
+    private readonly scheduledJobRepository: ScheduledJobRepository,
+    private readonly scheduledJobRunRepository: ScheduledJobRunRepository,
+    private readonly scheduledJobResponseFactory: ScheduledJobResponseFactory,
   ) {}
 
   private getSessionRoom(sessionId: string): string {
     return `${ROOM_PREFIX}${sessionId}`;
+  }
+
+  private getJobRunRoom(runId: string): string {
+    return `${JOB_RUN_ROOM_PREFIX}${runId}`;
   }
 
   private nowIso(): string {
@@ -258,6 +279,106 @@ export class SessionGateway
       event: SOCKET_EVENTS.logsUnsubscribed,
       data: {},
     };
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.subscribeJobRun)
+  async handleJobRunSubscription(
+    @MessageBody() data: { runId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const run = await this.scheduledJobRunRepository.findById(data.runId);
+    if (!run) {
+      return {
+        event: SOCKET_EVENTS.jobRunError,
+        data: { runId: data.runId, error: 'Scheduled job run not found' },
+      };
+    }
+
+    client.emit(SOCKET_EVENTS.jobRunUpdated, {
+      run: ScheduledJobRunResponseDto.fromDomain(run),
+      timestamp: this.nowIso(),
+    });
+
+    if (run.status !== ScheduledJobRunStatus.RUNNING) {
+      return {
+        event: SOCKET_EVENTS.jobRunSubscribed,
+        data: { runId: data.runId, active: false },
+      };
+    }
+
+    await client.join(this.getJobRunRoom(data.runId));
+
+    return {
+      event: SOCKET_EVENTS.jobRunSubscribed,
+      data: { runId: data.runId, active: true },
+    };
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.unsubscribeJobRun)
+  async handleJobRunUnsubscription(
+    @MessageBody() data: { runId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    await client.leave(this.getJobRunRoom(data.runId));
+
+    return {
+      event: SOCKET_EVENTS.jobRunUnsubscribed,
+      data: { runId: data.runId },
+    };
+  }
+
+  @OnEvent(JOB_RUN_EVENTS.stream)
+  handleJobRunStream(payload: {
+    jobId: string;
+    runId: string;
+    event: unknown;
+  }) {
+    this.server
+      .to(this.getJobRunRoom(payload.runId))
+      .emit(SOCKET_EVENTS.jobRunStream, {
+        jobId: payload.jobId,
+        runId: payload.runId,
+        event: payload.event,
+        timestamp: this.nowIso(),
+      });
+  }
+
+  @OnEvent(JOB_RUN_EVENTS.updated)
+  async handleScheduledJobRunUpdated(payload: {
+    jobId: string;
+    runId: string;
+  }) {
+    const [job, run] = await Promise.all([
+      this.scheduledJobRepository.findById(payload.jobId),
+      this.scheduledJobRunRepository.findById(payload.runId),
+    ]);
+
+    if (run) {
+      const runResponse = ScheduledJobRunResponseDto.fromDomain(run);
+
+      this.server
+        .to(this.getJobRunRoom(payload.runId))
+        .emit(SOCKET_EVENTS.jobRunUpdated, {
+          run: runResponse,
+          timestamp: this.nowIso(),
+        });
+
+      this.server.emit(SOCKET_EVENTS.scheduledJobRunUpdated, {
+        run: runResponse,
+        timestamp: this.nowIso(),
+      });
+    }
+
+    if (!job) {
+      return;
+    }
+
+    const jobResponse = await this.scheduledJobResponseFactory.create(job);
+
+    this.server.emit(SOCKET_EVENTS.scheduledJobUpdated, {
+      job: jobResponse,
+      timestamp: this.nowIso(),
+    });
   }
 
   // Listen for git status changes from GitWatcherService

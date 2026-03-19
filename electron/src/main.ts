@@ -4,18 +4,28 @@ import { setLoadingStatus } from './loading-screen';
 import { configureElectronEnvironment } from './environment';
 import { startServer, stopServer, isServerRunning } from './server';
 import { createWindow, getMainWindow } from './window';
+import { createTray, setIsQuitting, destroyTray } from './tray';
 
 app.on('window-all-closed', () => {
-  app.quit();
+  // On macOS, keep the app alive in the tray when all windows are closed.
+  // On other platforms, quit as usual.
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });
 
 app.on('activate', () => {
-  if (getMainWindow() === null && isServerRunning()) {
+  const window = getMainWindow();
+  if (window) {
+    window.show();
+    window.focus();
+  } else if (isServerRunning()) {
     createWindow();
   }
 });
 
 app.whenReady().then(async () => {
+  createTray();
   createWindow();
 
   setLoadingStatus(getMainWindow(), 'Starting server\u2026');
@@ -35,10 +45,13 @@ app.whenReady().then(async () => {
         detail: String(error),
       });
     }
+    setIsQuitting(true);
     app.quit();
   }
 });
 
 app.on('before-quit', async () => {
+  setIsQuitting(true);
+  destroyTray();
   await stopServer();
 });

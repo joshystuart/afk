@@ -76,8 +76,10 @@ const SessionDetails: React.FC = () => {
   const sessionQuery = id ? getSession(id) : null;
   const session = sessionQuery?.data;
 
-  const shouldCheckHealth = session?.status === SessionStatus.RUNNING;
-  const healthCheck = useSessionHealth(id || null, shouldCheckHealth);
+  const isStartingOrRunning =
+    session?.status === SessionStatus.RUNNING ||
+    session?.status === SessionStatus.STARTING;
+  const healthCheck = useSessionHealth(id || null, isStartingOrRunning);
 
   const isRunning = session?.status === SessionStatus.RUNNING;
   const isReady = isRunning && healthCheck.allReady;
@@ -471,7 +473,11 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  if (!session || session.status !== SessionStatus.RUNNING) {
+  if (
+    !session ||
+    (session.status !== SessionStatus.RUNNING &&
+      session.status !== SessionStatus.STARTING)
+  ) {
     return (
       <>
         <Box
@@ -630,7 +636,7 @@ const SessionDetails: React.FC = () => {
     );
   }
 
-  if (session.status === SessionStatus.RUNNING && !healthCheck.allReady) {
+  if (isStartingOrRunning && !healthCheck.allReady) {
     return (
       <>
         <Box

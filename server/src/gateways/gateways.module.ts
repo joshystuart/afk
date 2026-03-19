@@ -6,6 +6,8 @@ import { RepositoriesModule } from '../services/repositories/repositories.module
 import { DomainModule } from '../domain/domain.module';
 import { GitWatcherModule } from '../services/git-watcher/git-watcher.module';
 import { ChatModule } from '../services/chat/chat.module';
+import { ScheduledJobsDomainModule } from '../domain/scheduled-jobs/scheduled-jobs.module';
+import { ScheduledJobsInteractorModule } from '../interactors/scheduled-jobs/scheduled-jobs.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { ChatModule } from '../services/chat/chat.module';
     DomainModule,
     GitWatcherModule,
     ChatModule,
+    ScheduledJobsDomainModule,
+    ScheduledJobsInteractorModule,
   ],
   providers: [SessionGateway, SessionSubscriptionService],
   exports: [SessionGateway, SessionSubscriptionService],

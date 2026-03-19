@@ -198,3 +198,101 @@ export interface CreateDockerImageRequest {
   name: string;
   image: string;
 }
+
+// Scheduled Jobs
+
+export const ScheduleType = {
+  CRON: 'cron',
+  INTERVAL: 'interval',
+} as const;
+
+export type ScheduleType = (typeof ScheduleType)[keyof typeof ScheduleType];
+
+export const ScheduledJobRunStatus = {
+  PENDING: 'pending',
+  RUNNING: 'running',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const;
+
+export type ScheduledJobRunStatus =
+  (typeof ScheduledJobRunStatus)[keyof typeof ScheduledJobRunStatus];
+
+export interface ScheduledJobRunSummary {
+  id: string;
+  jobId: string;
+  status: ScheduledJobRunStatus;
+  branch?: string;
+  startedAt?: string;
+  createdAt: string;
+}
+
+export interface ScheduledJob {
+  id: string;
+  name: string;
+  repoUrl: string;
+  branch: string;
+  createNewBranch: boolean;
+  newBranchPrefix?: string;
+  imageId: string;
+  prompt: string;
+  model?: string;
+  scheduleType: ScheduleType;
+  cronExpression?: string;
+  intervalMs?: number;
+  commitAndPush: boolean;
+  enabled: boolean;
+  lastRunAt?: string;
+  nextRunAt?: string;
+  currentRun?: ScheduledJobRunSummary;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScheduledJobRun {
+  id: string;
+  jobId: string;
+  status: ScheduledJobRunStatus;
+  branch?: string;
+  containerId?: string;
+  streamEvents?: ChatStreamEvent[];
+  errorMessage?: string;
+  committed: boolean;
+  filesChanged?: number;
+  commitSha?: string;
+  durationMs?: number;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface CreateScheduledJobRequest {
+  name: string;
+  repoUrl: string;
+  branch: string;
+  createNewBranch?: boolean;
+  newBranchPrefix?: string;
+  imageId: string;
+  prompt: string;
+  model: string;
+  scheduleType: ScheduleType;
+  cronExpression?: string;
+  intervalMs?: number;
+  commitAndPush?: boolean;
+}
+
+export interface UpdateScheduledJobRequest {
+  name?: string;
+  repoUrl?: string;
+  branch?: string;
+  createNewBranch?: boolean;
+  newBranchPrefix?: string;
+  imageId?: string;
+  prompt?: string;
+  model?: string | null;
+  scheduleType?: ScheduleType;
+  cronExpression?: string;
+  intervalMs?: number;
+  commitAndPush?: boolean;
+  enabled?: boolean;
+}

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatService } from './chat.service';
+import { ClaudeStreamRunnerService } from './claude-stream-runner.service';
 import { ChatMessage } from '../../domain/chat/chat-message.entity';
 import { ChatMessageRepository } from '../../domain/chat/chat-message.repository';
 import { DockerModule } from '../docker/docker.module';
@@ -14,7 +15,7 @@ import { DomainModule } from '../../domain/domain.module';
     RepositoriesModule,
     DomainModule,
   ],
-  providers: [ChatService, ChatMessageRepository],
-  exports: [ChatService, ChatMessageRepository],
+  providers: [ChatService, ChatMessageRepository, ClaudeStreamRunnerService],
+  exports: [ChatService, ChatMessageRepository, ClaudeStreamRunnerService],
 })
 export class ChatModule {}

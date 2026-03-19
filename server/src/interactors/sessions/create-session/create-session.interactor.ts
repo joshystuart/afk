@@ -16,6 +16,7 @@ import { DockerImageRepository } from '../../../domain/docker-images/docker-imag
 import { DockerImageStatus } from '../../../domain/docker-images/docker-image-status.enum';
 import { MountPathValidator } from '../../../libs/validators/mount-path.validator';
 import { MountPathValidationError } from '../../../libs/validators/mount-path-validation.error';
+import { SessionLifecycleInteractor } from '../session-lifecycle.interactor';
 
 @Injectable()
 export class CreateSessionInteractor {
@@ -33,6 +34,7 @@ export class CreateSessionInteractor {
     private readonly settingsRepository: SettingsRepository,
     private readonly dockerImageRepository: DockerImageRepository,
     private readonly mountPathValidator: MountPathValidator,
+    private readonly sessionLifecycle: SessionLifecycleInteractor,
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
@@ -150,24 +152,22 @@ export class CreateSessionInteractor {
       session.imageId = dockerImage.id;
       session.imageName = dockerImage.image;
 
-      // Update session with container info
+      // Update session with container info (transitions to STARTING)
       session.assignContainer(container.id, ports);
-
-      // Save session immediately after container assignment (in STARTING state)
       await this.sessionRepository.save(session);
 
-      // Wait for container to be ready
-      await this.waitForContainerReady(container.id);
+      // Optimistically mark as running so the frontend can show the loading UI
       session.markAsRunning();
-
-      // Update session status to running
       await this.sessionRepository.save(session);
 
-      this.logger.log('Session created successfully', {
+      this.logger.log('Session created successfully (awaiting readiness)', {
         sessionId: session.id.toString(),
         containerId: container.id,
         ports: ports.toJSON(),
       });
+
+      // Monitor readiness in the background; marks ERROR if it never succeeds
+      this.sessionLifecycle.performBackgroundHealthCheck(session);
 
       return session;
     } catch (error) {
@@ -274,24 +274,6 @@ export class CreateSessionInteractor {
     }
 
     // SSH key validation is now handled at the settings level
-  }
-
-  private async waitForContainerReady(
-    containerId: string,
-    maxAttempts: number = 30,
-  ): Promise<void> {
-    for (let i = 0; i < maxAttempts; i++) {
-      const info = await this.dockerEngine.getContainerInfo(containerId);
-
-      if (info.state === 'running') {
-        // Additional health check can be added here
-        return;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
-
-    throw new Error('Container failed to start within timeout');
   }
 
   private deriveSessionName(repoUrl?: string, branch?: string): string {

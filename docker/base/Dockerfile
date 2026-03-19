@@ -58,4 +58,7 @@ ENV HOME=/home/afk
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
     && claude --version
 
+HEALTHCHECK --interval=2s --timeout=3s --start-period=60s --retries=3 \
+  CMD test -f /tmp/afk-ready && curl -sf http://localhost:${TERMINAL_PORT:-7681}/ > /dev/null || exit 1
+
 CMD ["/home/afk/scripts/entrypoint.sh"]

@@ -7,7 +7,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { GitInteractor, GitStatusResult } from './git.interactor';
+import {
+  GitStatusResult,
+  SessionGitInteractor,
+} from './session-git.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -22,7 +25,7 @@ export class GitStatusController {
   private readonly logger = new Logger(GitStatusController.name);
 
   constructor(
-    private readonly gitInteractor: GitInteractor,
+    private readonly gitInteractor: SessionGitInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}

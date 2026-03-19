@@ -15,6 +15,9 @@ import { ROUTES } from './utils/constants';
 import { Dashboard } from './pages/Dashboard';
 import { SessionDetails } from './pages/SessionDetails';
 import { CreateSession } from './pages/CreateSession';
+import { ScheduledJobs } from './pages/ScheduledJobs';
+import { CreateScheduledJob } from './pages/CreateScheduledJob';
+import { ScheduledJobDetails } from './pages/ScheduledJobDetails';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 
@@ -72,6 +75,46 @@ const AppContent = () => {
               <ProtectedRoute>
                 <Layout>
                   <CreateSession />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.SCHEDULED_JOBS}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ScheduledJobs />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.CREATE_SCHEDULED_JOB}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateScheduledJob />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.EDIT_SCHEDULED_JOB}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CreateScheduledJob />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.SCHEDULED_JOB_DETAILS}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ScheduledJobDetails />
                 </Layout>
               </ProtectedRoute>
             }

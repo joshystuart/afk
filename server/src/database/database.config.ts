@@ -3,9 +3,18 @@ import { Session } from '../domain/sessions/session.entity';
 import { Settings } from '../domain/settings/settings.entity';
 import { ChatMessage } from '../domain/chat/chat-message.entity';
 import { DockerImage } from '../domain/docker-images/docker-image.entity';
+import { ScheduledJob } from '../domain/scheduled-jobs/scheduled-job.entity';
+import { ScheduledJobRun } from '../domain/scheduled-jobs/scheduled-job-run.entity';
 import { DatabaseConfig } from '../libs/config/database/database.config';
 
-const entities = [Session, Settings, ChatMessage, DockerImage];
+const entities = [
+  Session,
+  Settings,
+  ChatMessage,
+  DockerImage,
+  ScheduledJob,
+  ScheduledJobRun,
+];
 
 export const createTypeOrmOptions = (
   databaseConfig: DatabaseConfig,

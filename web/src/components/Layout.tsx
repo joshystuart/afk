@@ -10,7 +10,7 @@ import {
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  Add as AddIcon,
+  Schedule as ScheduleIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   FiberManualRecord as DotIcon,
@@ -60,15 +60,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const menuItems = [
     {
       id: 'dashboard',
-      title: 'Dashboard',
+      title: 'Sessions',
       url: ROUTES.DASHBOARD,
       icon: DashboardIcon,
     },
     {
-      id: 'create-session',
-      title: 'New Session',
-      url: ROUTES.CREATE_SESSION,
-      icon: AddIcon,
+      id: 'jobs',
+      title: 'Jobs',
+      url: ROUTES.SCHEDULED_JOBS,
+      icon: ScheduleIcon,
     },
     {
       id: 'settings',
@@ -98,7 +98,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
           {menuItems.map((item) => {
-            const isSelected = location.pathname === item.url;
+            const isSelected =
+              location.pathname === item.url ||
+              location.pathname.startsWith(item.url + '/');
 
             return (
               <Box

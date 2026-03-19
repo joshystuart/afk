@@ -154,4 +154,3 @@ Good one-liners to say out loud:
 6. Trigger a run manually
 7. Open the run output/history
 8. Close by explaining when you would use each mode
-

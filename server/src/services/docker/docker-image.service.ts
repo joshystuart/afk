@@ -73,7 +73,8 @@ export class DockerImageService implements OnModuleInit {
         await this.repository.save(image);
         changed = true;
       } else if (
-        image.status === DockerImageStatus.NOT_PULLED &&
+        (image.status === DockerImageStatus.NOT_PULLED ||
+          image.status === DockerImageStatus.ERROR) &&
         existsLocally
       ) {
         this.logger.log(
@@ -152,6 +153,18 @@ export class DockerImageService implements OnModuleInit {
     }
     if (image.status === DockerImageStatus.PULLING) {
       throw new Error('Image is already being pulled');
+    }
+
+    if (await this.imageExistsLocally(image.image)) {
+      this.logger.log(
+        `Image "${image.image}" already exists locally — skipping pull`,
+      );
+      image.markAsAvailable();
+      if (!(await this.repository.findDefault())) {
+        image.setAsDefault();
+      }
+      await this.repository.save(image);
+      return image;
     }
 
     image.markAsPulling();

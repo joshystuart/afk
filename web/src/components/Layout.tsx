@@ -65,8 +65,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: DashboardIcon,
     },
     {
-      id: 'scheduled-jobs',
-      title: 'Scheduled Jobs',
+      id: 'jobs',
+      title: 'Jobs',
       url: ROUTES.SCHEDULED_JOBS,
       icon: ScheduleIcon,
     },

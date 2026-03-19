@@ -1,4 +1,4 @@
-`*/5 * * * *`
+Schedule: `*/5 * * * *`
 
 # Daily Security Audit Prompt
 

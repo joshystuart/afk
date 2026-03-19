@@ -106,7 +106,7 @@ const ScheduledJobs: React.FC = () => {
             mb: 3,
           }}
         >
-          <Typography variant="h3">Scheduled Jobs</Typography>
+          <Typography variant="h3">Jobs</Typography>
         </Box>
         <Box
           sx={{
@@ -142,7 +142,7 @@ const ScheduledJobs: React.FC = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h3">Scheduled Jobs</Typography>
+        <Typography variant="h3">Jobs</Typography>
         <Button
           component={Link}
           to={ROUTES.CREATE_SCHEDULED_JOB}

@@ -36,6 +36,7 @@ import { CLAUDE_MODELS, DEFAULT_CLAUDE_MODEL } from '../utils/claude-models';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
+import { CronScheduleBuilder } from '../components/scheduled-jobs/CronScheduleBuilder';
 
 type RepoSource = 'github' | 'manual';
 
@@ -874,62 +875,13 @@ const CreateScheduledJob: React.FC = () => {
             <Controller
               name="cronExpression"
               control={control}
-              rules={{ required: 'Cron expression is required' }}
-              render={({ field }) => (
-                <Box
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}
-                >
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Cron Expression"
-                    placeholder="0 9 * * *"
-                    helperText={
-                      errors.cronExpression?.message ||
-                      'Standard 5-field cron (min hour dom month dow)'
-                    }
-                    error={!!errors.cronExpression}
-                    sx={{
-                      '& input': {
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontSize: '0.875rem',
-                      },
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    {[
-                      { label: 'Daily 9am', value: '0 9 * * *' },
-                      { label: 'Weekdays 9am', value: '0 9 * * 1-5' },
-                      { label: 'Weekly Mon 9am', value: '0 9 * * 1' },
-                      { label: 'Every 6h', value: '0 */6 * * *' },
-                      { label: 'Monthly 1st', value: '0 9 1 * *' },
-                    ].map((preset) => (
-                      <Chip
-                        key={preset.value}
-                        label={preset.label}
-                        size="small"
-                        onClick={() => field.onChange(preset.value)}
-                        variant={
-                          field.value === preset.value ? 'filled' : 'outlined'
-                        }
-                        sx={{
-                          cursor: 'pointer',
-                          fontSize: '0.75rem',
-                          ...(field.value === preset.value
-                            ? {
-                                bgcolor: afkColors.accentMuted,
-                                color: afkColors.accent,
-                                borderColor: afkColors.accent,
-                              }
-                            : {
-                                borderColor: afkColors.border,
-                                color: afkColors.textSecondary,
-                              }),
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
+              rules={{ required: 'Schedule is required' }}
+              render={({ field, fieldState }) => (
+                <CronScheduleBuilder
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={fieldState.error?.message}
+                />
               )}
             />
           ) : (

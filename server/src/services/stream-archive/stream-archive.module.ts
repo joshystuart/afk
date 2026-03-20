@@ -15,6 +15,10 @@ import { ClaudeEventArchiveService } from './claude-event-archive.service';
     ScheduledJobRunStreamChunkRepository,
     ClaudeEventArchiveService,
   ],
-  exports: [ClaudeEventArchiveService],
+  exports: [
+    ClaudeEventArchiveService,
+    ChatStreamChunkRepository,
+    ScheduledJobRunStreamChunkRepository,
+  ],
 })
 export class StreamArchiveModule {}

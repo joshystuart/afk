@@ -7,5 +7,6 @@ import { SessionsModule } from '../../interactors/sessions/sessions.module';
 @Module({
   imports: [RepositoriesModule, SettingsModule, SessionsModule],
   providers: [SessionIdleCleanupService],
+  exports: [SessionIdleCleanupService],
 })
 export class SessionServicesModule {}

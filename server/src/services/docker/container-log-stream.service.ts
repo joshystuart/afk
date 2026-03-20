@@ -164,6 +164,47 @@ export class ContainerLogStreamService implements OnModuleDestroy {
     this.destroyDockerStream(state.stream);
   }
 
+  getMetrics(): {
+    activeStreams: number;
+    totalSubscribers: number;
+    streams: Array<{
+      sessionId: string;
+      containerId: string;
+      subscriberCount: number;
+      bytesSeen: number;
+      startedAt: number;
+      lastActivityAt: number;
+    }>;
+  } {
+    const streams: Array<{
+      sessionId: string;
+      containerId: string;
+      subscriberCount: number;
+      bytesSeen: number;
+      startedAt: number;
+      lastActivityAt: number;
+    }> = [];
+    let totalSubscribers = 0;
+
+    for (const state of this.streams.values()) {
+      totalSubscribers += state.subscribers.size;
+      streams.push({
+        sessionId: state.sessionId,
+        containerId: state.containerId,
+        subscriberCount: state.subscribers.size,
+        bytesSeen: state.bytesSeen,
+        startedAt: state.startedAt,
+        lastActivityAt: state.lastActivityAt,
+      });
+    }
+
+    return {
+      activeStreams: this.streams.size,
+      totalSubscribers,
+      streams,
+    };
+  }
+
   private destroyDockerStream(stream: NodeJS.ReadableStream): void {
     const s = stream as NodeJS.ReadableStream & {
       destroy?: (error?: Error) => void;

@@ -260,4 +260,12 @@ export class ChatService {
       ? { assistantMessageId: execution.assistantMessageId }
       : null;
   }
+
+  getActiveExecutionCount(): number {
+    return this.activeExecutions.size;
+  }
+
+  getActiveSessionIds(): string[] {
+    return [...this.activeExecutions.keys()];
+  }
 }

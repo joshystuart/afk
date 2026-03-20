@@ -82,9 +82,23 @@ class NdjsonChunkWriter implements StreamArchiveWriter {
   }
 }
 
+export interface ArchiveMetrics {
+  totalChunksWritten: number;
+  totalBytesArchived: number;
+  chatChunksWritten: number;
+  chatBytesArchived: number;
+  jobRunChunksWritten: number;
+  jobRunBytesArchived: number;
+}
+
 @Injectable()
 export class ClaudeEventArchiveService {
   private readonly logger = new Logger(ClaudeEventArchiveService.name);
+
+  private _chatChunksWritten = 0;
+  private _chatBytesArchived = 0;
+  private _jobRunChunksWritten = 0;
+  private _jobRunBytesArchived = 0;
 
   constructor(
     private readonly chatStreamChunkRepository: ChatStreamChunkRepository,
@@ -105,6 +119,8 @@ export class ClaudeEventArchiveService {
             byteLength: args.byteLength,
           }),
         );
+        this._chatChunksWritten++;
+        this._chatBytesArchived += args.byteLength;
       },
     );
   }
@@ -123,8 +139,21 @@ export class ClaudeEventArchiveService {
             byteLength: args.byteLength,
           }),
         );
+        this._jobRunChunksWritten++;
+        this._jobRunBytesArchived += args.byteLength;
       },
     );
+  }
+
+  getMetrics(): ArchiveMetrics {
+    return {
+      totalChunksWritten: this._chatChunksWritten + this._jobRunChunksWritten,
+      totalBytesArchived: this._chatBytesArchived + this._jobRunBytesArchived,
+      chatChunksWritten: this._chatChunksWritten,
+      chatBytesArchived: this._chatBytesArchived,
+      jobRunChunksWritten: this._jobRunChunksWritten,
+      jobRunBytesArchived: this._jobRunBytesArchived,
+    };
   }
 
   async loadEventsForMessage(messageId: string): Promise<any[]> {

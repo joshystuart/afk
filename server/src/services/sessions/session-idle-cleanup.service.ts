@@ -12,6 +12,7 @@ const CLEANUP_INTERVAL_MS = 60_000;
 export class SessionIdleCleanupService implements OnModuleDestroy {
   private readonly logger = new Logger(SessionIdleCleanupService.name);
   private running = false;
+  private _sessionsAutoStopped = 0;
 
   constructor(
     private readonly sessionRepository: SessionRepository,
@@ -68,9 +69,11 @@ export class SessionIdleCleanupService implements OnModuleDestroy {
   ): Promise<void> {
     try {
       await this.sessionLifecycle.stopSession(new SessionIdDto(sessionId));
+      this._sessionsAutoStopped++;
       this.logger.log('Auto-stopped idle session', {
         sessionId,
         reason: `inactive for >${timeoutMinutes}m`,
+        totalAutoStopped: this._sessionsAutoStopped,
       });
     } catch (error) {
       this.logger.warn('Failed to auto-stop idle session', {
@@ -78,5 +81,9 @@ export class SessionIdleCleanupService implements OnModuleDestroy {
         error: error instanceof Error ? error.message : String(error),
       });
     }
+  }
+
+  getSessionsAutoStoppedCount(): number {
+    return this._sessionsAutoStopped;
   }
 }

@@ -159,19 +159,42 @@ export class ClaudeEventArchiveService {
   async loadEventsForMessage(messageId: string): Promise<any[]> {
     const chunks =
       await this.chatStreamChunkRepository.findByMessageIdOrdered(messageId);
-    return this.parseChunks(chunks.map((c) => c.payload));
+    return this.parseChunks(
+      chunks.map((chunk) => ({
+        payload: chunk.payload,
+        sequence: chunk.sequence,
+      })),
+      {
+        streamType: 'chat-message',
+        parentId: messageId,
+      },
+    );
   }
 
   async loadEventsForJobRun(runId: string): Promise<any[]> {
     const chunks =
       await this.scheduledJobRunStreamChunkRepository.findByRunIdOrdered(runId);
-    return this.parseChunks(chunks.map((c) => c.payload));
+    return this.parseChunks(
+      chunks.map((chunk) => ({
+        payload: chunk.payload,
+        sequence: chunk.sequence,
+      })),
+      {
+        streamType: 'scheduled-job-run',
+        parentId: runId,
+      },
+    );
   }
 
-  private parseChunks(payloads: string[]): any[] {
+  private parseChunks(
+    chunks: Array<{ payload: string; sequence: number }>,
+    context: { streamType: string; parentId: string },
+  ): any[] {
     const events: any[] = [];
-    for (const payload of payloads) {
-      for (const line of payload.split('\n')) {
+    for (const chunk of chunks) {
+      let lineNumber = 0;
+      for (const line of chunk.payload.split('\n')) {
+        lineNumber++;
         if (line.trim() === '') {
           continue;
         }
@@ -179,6 +202,10 @@ export class ClaudeEventArchiveService {
           events.push(JSON.parse(line));
         } catch (err) {
           this.logger.warn('Failed to parse archived stream line', {
+            streamType: context.streamType,
+            parentId: context.parentId,
+            chunkSequence: chunk.sequence,
+            lineNumber,
             error: err instanceof Error ? err.message : String(err),
           });
         }

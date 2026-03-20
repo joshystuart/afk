@@ -39,6 +39,9 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
     null,
   );
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
+  const [transcriptLoadError, setTranscriptLoadError] = useState<string | null>(
+    null,
+  );
 
   const hasArchivedTranscript =
     !streamEvents?.length && (streamEventCount ?? 0) > 0;
@@ -51,15 +54,20 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
 
     if (!loadedEvents && sessionId && messageId) {
       setIsLoadingTranscript(true);
+      setTranscriptLoadError(null);
       try {
         const events = await sessionsApi.getMessageStream(sessionId, messageId);
         setLoadedEvents(events);
+        setShowTranscript(true);
       } catch (err) {
         console.error('Failed to load transcript:', err);
+        setTranscriptLoadError('Unable to load transcript. Please try again.');
       } finally {
         setIsLoadingTranscript(false);
       }
+      return;
     }
+    setTranscriptLoadError(null);
     setShowTranscript(true);
   }, [showTranscript, loadedEvents, sessionId, messageId]);
 
@@ -156,6 +164,20 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
                   ? 'Hide transcript'
                   : 'Show transcript'}
             </ButtonBase>
+            {transcriptLoadError && !showTranscript && (
+              <Typography
+                variant="caption"
+                sx={{
+                  display: 'block',
+                  mt: 0.5,
+                  px: 1,
+                  color: afkColors.danger,
+                  fontSize: '0.6875rem',
+                }}
+              >
+                {transcriptLoadError}
+              </Typography>
+            )}
           </Box>
         )}
 

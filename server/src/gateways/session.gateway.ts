@@ -124,6 +124,23 @@ export class SessionGateway
     return `${ROOM_PREFIX}${sessionId}`;
   }
 
+  private async touchSession(sessionId: string): Promise<void> {
+    try {
+      const session = await this.sessionRepository.findById(
+        this.sessionIdFactory.fromString(sessionId),
+      );
+      if (session?.isRunning()) {
+        session.markAsAccessed();
+        await this.sessionRepository.save(session);
+      }
+    } catch (error) {
+      this.logger.warn('Failed to mark session as accessed', {
+        sessionId,
+        error: error.message,
+      });
+    }
+  }
+
   private getJobRunRoom(runId: string): string {
     return `${JOB_RUN_ROOM_PREFIX}${runId}`;
   }
@@ -172,6 +189,8 @@ export class SessionGateway
       );
 
       client.join(this.getSessionRoom(data.sessionId));
+
+      this.touchSession(data.sessionId).catch(() => {});
 
       // Start git watcher if session is running
       this.startGitWatcherIfRunning(data.sessionId).catch((error) => {
@@ -243,6 +262,8 @@ export class SessionGateway
           data: { error: 'No container found for session' },
         };
       }
+
+      this.touchSession(data.sessionId).catch(() => {});
 
       await this.containerLogStream.ensureRunningLogStream(
         data.sessionId,
@@ -443,6 +464,8 @@ export class SessionGateway
       continueConversation,
     });
 
+    this.touchSession(sessionId).catch(() => {});
+
     try {
       const result = await this.chatService.sendMessage(
         sessionId,
@@ -503,6 +526,8 @@ export class SessionGateway
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    this.touchSession(data.sessionId).catch(() => {});
+
     try {
       await this.chatService.cancelExecution(data.sessionId);
       return {

@@ -31,6 +31,8 @@ export class UpdateSettingsInteractor {
         githubClientSecret: request.githubClientSecret,
         githubCallbackUrl: request.githubCallbackUrl,
         githubFrontendRedirectUrl: request.githubFrontendRedirectUrl,
+        idleCleanupEnabled: request.idleCleanupEnabled,
+        idleTimeoutMinutes: request.idleTimeoutMinutes,
       });
     } catch (error) {
       if (error instanceof SettingsValidationError) {

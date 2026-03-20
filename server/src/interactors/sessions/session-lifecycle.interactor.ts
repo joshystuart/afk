@@ -91,6 +91,7 @@ export class SessionLifecycleInteractor {
         session.start();
         await this.sessionRepository.save(session);
         session.markAsRunning();
+        session.markAsAccessed();
         await this.sessionRepository.save(session);
 
         // Start health check in background
@@ -114,6 +115,7 @@ export class SessionLifecycleInteractor {
         session.start();
         await this.sessionRepository.save(session);
         session.markAsRunning();
+        session.markAsAccessed();
         await this.sessionRepository.save(session);
 
         // Start health check in background
@@ -130,6 +132,7 @@ export class SessionLifecycleInteractor {
 
       // Optimistically mark as running immediately
       session.markAsRunning();
+      session.markAsAccessed();
       await this.sessionRepository.save(session);
 
       await this.containerLogStream.ensureRunningLogStream(

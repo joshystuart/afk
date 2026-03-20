@@ -20,6 +20,7 @@ import { ClaudeEventArchiveService } from '../stream-archive/claude-event-archiv
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 import { EphemeralContainerCreateOptions } from '../../domain/containers/container.entity';
 import { GitService } from '../git/git.service';
+import { ScheduledJobTimingService } from './scheduled-job-timing.service';
 
 const DEDUP_WINDOW_MS = 60_000;
 const WORKSPACE_DIR = '/workspace/repo';
@@ -50,11 +51,12 @@ export class JobExecutorService {
     private readonly claudeStreamRunner: ClaudeStreamRunnerService,
     private readonly claudeEventArchive: ClaudeEventArchiveService,
     private readonly gitService: GitService,
+    private readonly scheduledJobTimingService: ScheduledJobTimingService,
   ) {}
 
   async execute(
     jobId: string,
-    options: { ignoreEnabled?: boolean } = {},
+    options: { ignoreEnabled?: boolean; scheduledTrigger?: boolean } = {},
   ): Promise<void> {
     const job = await this.scheduledJobRepository.findById(jobId);
     if (!job) {
@@ -103,6 +105,13 @@ export class JobExecutorService {
     try {
       run.markRunning();
       await this.scheduledJobRunRepository.save(run);
+      job.recordRun(run.startedAt ?? new Date());
+      if (options.scheduledTrigger) {
+        job.nextRunAt = this.scheduledJobTimingService.calculateNextRunAt(job, {
+          fromDate: run.startedAt ?? new Date(),
+        });
+      }
+      await this.scheduledJobRepository.save(job);
       this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
         jobId,
         runId: run.id,
@@ -206,13 +215,6 @@ export class JobExecutorService {
 
       run.markCompleted();
       await this.scheduledJobRunRepository.save(run);
-      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-        jobId,
-        runId: run.id,
-      });
-
-      job.recordRun(new Date());
-      await this.scheduledJobRepository.save(job);
       this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
         jobId,
         runId: run.id,

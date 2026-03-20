@@ -10,6 +10,7 @@ import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-jo
 import { ScheduledJob } from '../../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduleType } from '../../domain/scheduled-jobs/schedule-type.enum';
 import { JobExecutorService } from './job-executor.service';
+import { ScheduledJobTimingService } from './scheduled-job-timing.service';
 
 const JOB_PREFIX = 'scheduled-job:';
 
@@ -22,6 +23,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly scheduledJobRepository: ScheduledJobRepository,
     private readonly jobExecutor: JobExecutorService,
+    private readonly scheduledJobTimingService: ScheduledJobTimingService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -89,8 +91,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
     this.schedulerRegistry.addCronJob(schedulerKey, cronJob);
 
-    const nextDate = cronJob.nextDate();
-    job.nextRunAt = nextDate ? nextDate.toJSDate() : null;
+    job.nextRunAt = this.scheduledJobTimingService.calculateNextRunAt(job);
     void this.persistNextRunAt(job, job.nextRunAt);
 
     this.logger.log('Registered cron job', {
@@ -105,7 +106,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
 
     this.intervalHandles.set(job.id, handle);
 
-    job.nextRunAt = new Date(Date.now() + job.intervalMs!);
+    job.nextRunAt = this.scheduledJobTimingService.calculateNextRunAt(job);
     void this.persistNextRunAt(job, job.nextRunAt);
 
     this.logger.log('Registered interval job', {
@@ -116,7 +117,7 @@ export class JobSchedulerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private executeJob(jobId: string): void {
-    this.jobExecutor.execute(jobId).catch((err) => {
+    this.jobExecutor.execute(jobId, { scheduledTrigger: true }).catch((err) => {
       this.logger.error('Unhandled error during job execution', {
         jobId,
         error: err instanceof Error ? err.message : String(err),

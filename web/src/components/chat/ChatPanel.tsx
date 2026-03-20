@@ -154,6 +154,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
                   msg.role === 'assistant' &&
                   index === messages.length - 1
                 }
+                sessionId={sessionId}
+                messageId={msg.id}
+                streamEventCount={msg.streamEventCount}
               />
             ))}
             {isProcessing && streamingEvents.length > 0 && (

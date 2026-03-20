@@ -236,29 +236,18 @@ export class ChatService {
   }
 
   async getHistory(sessionId: string): Promise<ChatMessage[]> {
-    const messages =
-      await this.chatMessageRepository.findBySessionId(sessionId);
-    return Promise.all(
-      messages.map((m) => this.hydrateAssistantStreamEvents(m)),
-    );
+    return this.chatMessageRepository.findBySessionIdSummaries(sessionId);
   }
 
-  private async hydrateAssistantStreamEvents(
-    message: ChatMessage,
-  ): Promise<ChatMessage> {
-    if (message.role !== 'assistant') {
-      return message;
+  async loadStreamEventsForMessage(
+    sessionId: string,
+    messageId: string,
+  ): Promise<any[]> {
+    const message = await this.chatMessageRepository.findById(messageId);
+    if (!message || message.sessionId !== sessionId) {
+      throw new Error('Message not found');
     }
-    if (message.streamEvents && message.streamEvents.length > 0) {
-      return message;
-    }
-    if (!message.streamEventCount || message.streamEventCount <= 0) {
-      return message;
-    }
-    message.streamEvents = await this.claudeEventArchive.loadEventsForMessage(
-      message.id,
-    );
-    return message;
+    return this.claudeEventArchive.loadEventsForMessage(messageId);
   }
 
   isExecuting(sessionId: string): boolean {

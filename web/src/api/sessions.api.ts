@@ -7,6 +7,7 @@ import type {
   CommitAndPushRequest,
   CommitAndPushResponse,
   ChatHistoryResponse,
+  ChatStreamEvent,
 } from './types';
 
 export const sessionsApi = {
@@ -167,5 +168,15 @@ export const sessionsApi = {
   getChatHistory: async (sessionId: string): Promise<ChatHistoryResponse> => {
     const response = await apiClient.get(`/sessions/${sessionId}/messages`);
     return response as unknown as ChatHistoryResponse;
+  },
+
+  getMessageStream: async (
+    sessionId: string,
+    messageId: string,
+  ): Promise<ChatStreamEvent[]> => {
+    const response = await apiClient.get(
+      `/sessions/${sessionId}/messages/${messageId}/stream`,
+    );
+    return (response as unknown as { events: ChatStreamEvent[] }).events;
   },
 };

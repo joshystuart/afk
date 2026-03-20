@@ -1,9 +1,14 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import React, { useState, useCallback } from 'react';
+import { Box, Typography, ButtonBase, CircularProgress } from '@mui/material';
+import {
+  UnfoldMore as ExpandIcon,
+  UnfoldLess as CollapseIcon,
+} from '@mui/icons-material';
 import { afkColors } from '../../themes/afk';
 import { AssistantEventList } from './AssistantEventList';
 import { StreamingIndicator } from './StreamingIndicator';
 import { MarkdownContent } from './MarkdownContent';
+import { sessionsApi } from '../../api/sessions.api';
 import type { ChatStreamEvent } from '../../api/types';
 
 interface ChatMessageBubbleProps {
@@ -13,6 +18,9 @@ interface ChatMessageBubbleProps {
   costUsd?: number;
   durationMs?: number;
   isStreaming?: boolean;
+  sessionId?: string;
+  messageId?: string;
+  streamEventCount?: number;
 }
 
 export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
@@ -22,7 +30,39 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
   costUsd,
   durationMs,
   isStreaming = false,
+  sessionId,
+  messageId,
+  streamEventCount,
 }) => {
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [loadedEvents, setLoadedEvents] = useState<ChatStreamEvent[] | null>(
+    null,
+  );
+  const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
+
+  const hasArchivedTranscript =
+    !streamEvents?.length && (streamEventCount ?? 0) > 0;
+
+  const handleToggleTranscript = useCallback(async () => {
+    if (showTranscript) {
+      setShowTranscript(false);
+      return;
+    }
+
+    if (!loadedEvents && sessionId && messageId) {
+      setIsLoadingTranscript(true);
+      try {
+        const events = await sessionsApi.getMessageStream(sessionId, messageId);
+        setLoadedEvents(events);
+      } catch (err) {
+        console.error('Failed to load transcript:', err);
+      } finally {
+        setIsLoadingTranscript(false);
+      }
+    }
+    setShowTranscript(true);
+  }, [showTranscript, loadedEvents, sessionId, messageId]);
+
   if (role === 'user') {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -47,6 +87,8 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
     );
   }
 
+  const displayEvents = streamEvents || (showTranscript ? loadedEvents : null);
+
   return (
     <Box sx={{ mb: 2 }}>
       <Box
@@ -61,12 +103,60 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
           overflow: 'hidden',
         }}
       >
-        {streamEvents && streamEvents.length > 0 ? (
-          <AssistantEventList events={streamEvents} isStreaming={isStreaming} />
+        {displayEvents && displayEvents.length > 0 ? (
+          <AssistantEventList
+            events={displayEvents}
+            isStreaming={isStreaming}
+          />
         ) : isStreaming ? (
           <StreamingIndicator />
         ) : (
           <MarkdownContent content={content} />
+        )}
+
+        {hasArchivedTranscript && (
+          <Box
+            sx={{
+              mt: 1,
+              pt: 1,
+              borderTop: `1px solid ${afkColors.borderSubtle}`,
+            }}
+          >
+            <ButtonBase
+              onClick={() => {
+                void handleToggleTranscript();
+              }}
+              disabled={isLoadingTranscript}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                color: afkColors.textTertiary,
+                fontSize: '0.6875rem',
+                fontFamily: '"JetBrains Mono", monospace',
+                '&:hover': {
+                  color: afkColors.textSecondary,
+                  bgcolor: 'rgba(255, 255, 255, 0.04)',
+                },
+              }}
+            >
+              {isLoadingTranscript ? (
+                <CircularProgress size={12} sx={{ color: 'inherit' }} />
+              ) : showTranscript ? (
+                <CollapseIcon sx={{ fontSize: 14 }} />
+              ) : (
+                <ExpandIcon sx={{ fontSize: 14 }} />
+              )}
+              {isLoadingTranscript
+                ? 'Loading transcript...'
+                : showTranscript
+                  ? 'Hide transcript'
+                  : 'Show transcript'}
+            </ButtonBase>
+          </Box>
         )}
 
         {!isStreaming && (costUsd != null || durationMs != null) && (
@@ -75,8 +165,10 @@ export const ChatMessageBubble: React.FC<ChatMessageBubbleProps> = ({
               display: 'flex',
               gap: 2,
               mt: 1,
-              pt: 1,
-              borderTop: `1px solid ${afkColors.borderSubtle}`,
+              pt: hasArchivedTranscript ? 0 : 1,
+              borderTop: hasArchivedTranscript
+                ? 'none'
+                : `1px solid ${afkColors.borderSubtle}`,
             }}
           >
             {durationMs != null && (

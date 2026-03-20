@@ -162,6 +162,8 @@ export interface ChatMessage {
   isContinuation: boolean;
   costUsd?: number;
   durationMs?: number;
+  streamEventCount?: number;
+  streamByteCount?: number;
   createdAt: string;
 }
 
@@ -256,6 +258,8 @@ export interface ScheduledJobRun {
   branch?: string;
   containerId?: string;
   streamEvents?: ChatStreamEvent[];
+  streamEventCount?: number;
+  streamByteCount?: number;
   errorMessage?: string;
   committed: boolean;
   filesChanged?: number;

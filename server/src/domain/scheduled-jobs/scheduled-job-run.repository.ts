@@ -26,6 +26,30 @@ export class ScheduledJobRunRepository {
     });
   }
 
+  async findByJobIdSummaries(jobId: string): Promise<ScheduledJobRun[]> {
+    return await this.repository.find({
+      where: { jobId },
+      order: { createdAt: 'DESC' },
+      select: [
+        'id',
+        'jobId',
+        'status',
+        'branch',
+        'containerId',
+        'streamEventCount',
+        'streamByteCount',
+        'errorMessage',
+        'committed',
+        'filesChanged',
+        'commitSha',
+        'durationMs',
+        'startedAt',
+        'completedAt',
+        'createdAt',
+      ],
+    });
+  }
+
   async findActiveByJobId(jobId: string): Promise<ScheduledJobRun | null> {
     return await this.repository.findOne({
       where: [

@@ -7,7 +7,8 @@ export class ScheduledJobRunResponseDto {
   status!: ScheduledJobRunStatus;
   branch?: string;
   containerId?: string;
-  streamEvents?: any[];
+  streamEventCount?: number;
+  streamByteCount?: number;
   errorMessage?: string;
   committed!: boolean;
   filesChanged?: number;
@@ -24,7 +25,8 @@ export class ScheduledJobRunResponseDto {
     dto.status = run.status;
     dto.branch = run.branch || undefined;
     dto.containerId = run.containerId || undefined;
-    dto.streamEvents = run.streamEvents || undefined;
+    dto.streamEventCount = run.streamEventCount ?? undefined;
+    dto.streamByteCount = run.streamByteCount ?? undefined;
     dto.errorMessage = run.errorMessage || undefined;
     dto.committed = run.committed;
     dto.filesChanged = run.filesChanged ?? undefined;

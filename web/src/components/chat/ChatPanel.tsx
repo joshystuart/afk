@@ -18,7 +18,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     streamingEvents,
     isProcessing,
     isLoadingHistory,
-    sendMessage,
+    sendMessage: sendChatMessage,
     cancelExecution,
   } = useChat(sessionId);
 
@@ -32,6 +32,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
   const [selectedModel, setSelectedModel] =
     React.useState<ModelId>(DEFAULT_MODEL);
   const initializedForSessionRef = React.useRef<string | null>(null);
+  const shouldJumpToBottomRef = React.useRef(true);
+  const isPinnedToBottomRef = React.useRef(true);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (initializedForSessionRef.current !== sessionId) {
@@ -46,6 +50,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
       initializedForSessionRef.current = sessionId;
     }
   }, [session, sessionId]);
+
+  React.useEffect(() => {
+    shouldJumpToBottomRef.current = true;
+    isPinnedToBottomRef.current = true;
+  }, [sessionId]);
 
   const handleModelChange = React.useCallback(
     (model: ModelId) => {
@@ -62,11 +71,50 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     [sessionId, queryClient],
   );
 
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const updatePinnedToBottom = React.useCallback(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
 
-  React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingEvents]);
+    const distanceFromBottom =
+      scrollContainer.scrollHeight -
+      scrollContainer.scrollTop -
+      scrollContainer.clientHeight;
+
+    isPinnedToBottomRef.current = distanceFromBottom <= 48;
+  }, []);
+
+  const handleMessagesScroll = React.useCallback(() => {
+    updatePinnedToBottom();
+  }, [updatePinnedToBottom]);
+
+  const handleSendMessage = React.useCallback(
+    (content: string, continueConversation: boolean, model?: string) => {
+      shouldJumpToBottomRef.current = true;
+      isPinnedToBottomRef.current = true;
+      sendChatMessage(content, continueConversation, model);
+    },
+    [sendChatMessage],
+  );
+
+  React.useLayoutEffect(() => {
+    const hasChatContent =
+      messages.length > 0 || streamingEvents.length > 0 || isProcessing;
+    if (!hasChatContent) return;
+    if (!shouldJumpToBottomRef.current && !isPinnedToBottomRef.current) return;
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: 'auto',
+      block: 'end',
+    });
+    shouldJumpToBottomRef.current = false;
+    isPinnedToBottomRef.current = true;
+  }, [messages, streamingEvents, isProcessing]);
+
+  const shouldShowInitialLoadingState =
+    isLoadingHistory &&
+    messages.length === 0 &&
+    streamingEvents.length === 0 &&
+    !isProcessing;
 
   return (
     <Box
@@ -79,6 +127,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     >
       {/* Messages area */}
       <Box
+        ref={scrollContainerRef}
+        onScroll={handleMessagesScroll}
         sx={{
           flex: 1,
           overflowY: 'auto',
@@ -94,7 +144,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
           '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
         }}
       >
-        {isLoadingHistory ? (
+        {shouldShowInitialLoadingState ? (
           <Box
             sx={{
               display: 'flex',
@@ -154,6 +204,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
                   msg.role === 'assistant' &&
                   index === messages.length - 1
                 }
+                sessionId={sessionId}
+                messageId={msg.id}
+                streamEventCount={msg.streamEventCount}
               />
             ))}
             {isProcessing && streamingEvents.length > 0 && (
@@ -177,7 +230,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
 
       {/* Input area */}
       <ChatInput
-        onSend={sendMessage}
+        onSend={handleSendMessage}
         onCancel={cancelExecution}
         isProcessing={isProcessing}
         selectedModel={selectedModel}

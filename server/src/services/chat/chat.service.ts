@@ -9,6 +9,7 @@ import {
   ClaudeStreamExecutionError,
   ClaudeStreamRunnerService,
 } from './claude-stream-runner.service';
+import { ClaudeEventArchiveService } from '../stream-archive/claude-event-archive.service';
 
 export interface ChatStreamEvent {
   type: string;
@@ -33,8 +34,6 @@ interface ActiveExecution {
 
 @Injectable()
 export class ChatService {
-  private static readonly PERSIST_INTERVAL_EVENTS = 15;
-
   private readonly logger = new Logger(ChatService.name);
   private readonly activeExecutions = new Map<string, ActiveExecution>();
 
@@ -43,6 +42,7 @@ export class ChatService {
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly claudeStreamRunner: ClaudeStreamRunnerService,
+    private readonly claudeEventArchive: ClaudeEventArchiveService,
   ) {}
 
   async sendMessage(
@@ -91,7 +91,6 @@ export class ChatService {
       continueConversation: options.continueConversation,
       model: options.model,
       includePartialMessages: true,
-      persistEveryEvents: ChatService.PERSIST_INTERVAL_EVENTS,
       workingDir: '/workspace/repo',
     };
 
@@ -110,7 +109,9 @@ export class ChatService {
         sessionId,
         role: 'assistant',
         content: '',
-        streamEvents: [],
+        streamEvents: null,
+        streamEventCount: null,
+        streamByteCount: null,
         conversationId: null,
         isContinuation: options.continueConversation,
         costUsd: null,
@@ -118,15 +119,14 @@ export class ChatService {
       }),
     );
 
+    const archiveWriter =
+      this.claudeEventArchive.createChatWriter(assistantMessageId);
+
     try {
       const execution = await this.claudeStreamRunner.startPrompt({
         ...executionOptions,
         onEvent: onStreamEvent,
-        onPersistSnapshot: async (streamEvents) => {
-          await this.chatMessageRepository.updateMessage(assistantMessageId, {
-            streamEvents,
-          });
-        },
+        archiveWriter,
       });
 
       this.activeExecutions.set(sessionId, {
@@ -144,7 +144,9 @@ export class ChatService {
           try {
             await this.chatMessageRepository.updateMessage(assistantMessageId, {
               content: result.resultContent,
-              streamEvents: result.streamEvents,
+              streamEvents: null,
+              streamEventCount: result.streamEventCount,
+              streamByteCount: result.streamByteCount,
               conversationId: result.conversationId,
               costUsd: result.costUsd,
               durationMs: result.durationMs,
@@ -184,11 +186,13 @@ export class ChatService {
             error: error.message,
           });
 
-          if (partialResult && partialResult.streamEvents.length > 0) {
+          if (partialResult && partialResult.streamEventCount > 0) {
             await this.chatMessageRepository
               .updateMessage(assistantMessageId, {
                 content: partialResult.resultContent || '(interrupted)',
-                streamEvents: partialResult.streamEvents,
+                streamEvents: null,
+                streamEventCount: partialResult.streamEventCount,
+                streamByteCount: partialResult.streamByteCount,
                 conversationId: partialResult.conversationId,
                 costUsd: partialResult.costUsd,
                 durationMs: partialResult.durationMs || Date.now() - startTime,
@@ -232,7 +236,18 @@ export class ChatService {
   }
 
   async getHistory(sessionId: string): Promise<ChatMessage[]> {
-    return this.chatMessageRepository.findBySessionId(sessionId);
+    return this.chatMessageRepository.findBySessionIdSummaries(sessionId);
+  }
+
+  async loadStreamEventsForMessage(
+    sessionId: string,
+    messageId: string,
+  ): Promise<any[]> {
+    const message = await this.chatMessageRepository.findById(messageId);
+    if (!message || message.sessionId !== sessionId) {
+      throw new Error('Message not found');
+    }
+    return this.claudeEventArchive.loadEventsForMessage(messageId);
   }
 
   isExecuting(sessionId: string): boolean {
@@ -244,5 +259,13 @@ export class ChatService {
     return execution
       ? { assistantMessageId: execution.assistantMessageId }
       : null;
+  }
+
+  getActiveExecutionCount(): number {
+    return this.activeExecutions.size;
+  }
+
+  getActiveSessionIds(): string[] {
+    return [...this.activeExecutions.keys()];
   }
 }

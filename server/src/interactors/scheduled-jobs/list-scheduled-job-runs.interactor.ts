@@ -18,7 +18,8 @@ export class ListScheduledJobRunsInteractor {
       throw new Error('Scheduled job not found');
     }
 
-    const runs = await this.scheduledJobRunRepository.findByJobId(jobId);
+    const runs =
+      await this.scheduledJobRunRepository.findByJobIdSummaries(jobId);
     this.logger.log(`Found ${runs.length} runs for job ${jobId}`);
     return runs;
   }

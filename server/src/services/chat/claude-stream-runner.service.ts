@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DockerEngineService } from '../docker/docker-engine.service';
 import { NdjsonParser } from './ndjson-parser';
+import type { StreamArchiveWriter } from '../stream-archive/claude-event-archive.service';
 
 export interface ClaudeStreamRunnerOptions {
   containerId: string;
@@ -9,13 +10,13 @@ export interface ClaudeStreamRunnerOptions {
   continueConversation?: boolean;
   model?: string;
   includePartialMessages?: boolean;
-  persistEveryEvents?: number;
   onEvent?: (event: any) => void | Promise<void>;
-  onPersistSnapshot?: (streamEvents: any[]) => Promise<void>;
+  archiveWriter?: StreamArchiveWriter;
 }
 
 export interface ClaudeStreamRunnerResult {
-  streamEvents: any[];
+  streamEventCount: number;
+  streamByteCount: number;
   conversationId: string | null;
   costUsd: number | null;
   resultContent: string;
@@ -47,25 +48,37 @@ export class ClaudeStreamRunnerService {
     options: ClaudeStreamRunnerOptions,
   ): Promise<ClaudeStreamRunnerHandle> {
     const parser = new NdjsonParser();
-    const streamEvents: any[] = [];
-    const persistEveryEvents = options.persistEveryEvents ?? 15;
     const startTime = Date.now();
 
     let conversationId: string | null = null;
     let costUsd: number | null = null;
     let resultContent = '';
     let completed = false;
-    let lastPersistedCount = 0;
-    let pendingPersist: Promise<void> | null = null;
+    let streamEventCount = 0;
+    let streamByteCount = 0;
     let finalizeExecution: (() => void) | null = null;
 
-    const buildResult = (): ClaudeStreamRunnerResult => ({
-      streamEvents: [...streamEvents],
-      conversationId,
-      costUsd,
-      resultContent,
-      durationMs: Date.now() - startTime,
-    });
+    let processChain: Promise<void> = Promise.resolve();
+
+    const schedule = (fn: () => Promise<void>) => {
+      processChain = processChain.then(fn);
+    };
+
+    const countEvent = (event: any) => {
+      const line = JSON.stringify(event) + '\n';
+      streamEventCount++;
+      streamByteCount += Buffer.byteLength(line, 'utf8');
+    };
+
+    const finalizeArchive = async (): Promise<{
+      eventCount: number;
+      byteCount: number;
+    }> => {
+      if (options.archiveWriter) {
+        return options.archiveWriter.finalize();
+      }
+      return { eventCount: streamEventCount, byteCount: streamByteCount };
+    };
 
     const notifyEvent = (event: any) => {
       if (!options.onEvent) {
@@ -80,27 +93,11 @@ export class ClaudeStreamRunnerService {
       });
     };
 
-    const persistSnapshot = () => {
-      if (!options.onPersistSnapshot) {
-        return;
+    const handleEvent = async (event: any) => {
+      countEvent(event);
+      if (options.archiveWriter) {
+        await options.archiveWriter.appendEvent(event);
       }
-
-      const snapshot = [...streamEvents];
-      pendingPersist = options
-        .onPersistSnapshot(snapshot)
-        .catch((error: unknown) => {
-          this.logger.warn('Failed to persist partial Claude stream', {
-            containerId: options.containerId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        })
-        .finally(() => {
-          pendingPersist = null;
-        });
-    };
-
-    const handleEvent = (event: any) => {
-      streamEvents.push(event);
       notifyEvent(event);
 
       if (event.type === 'result') {
@@ -108,17 +105,6 @@ export class ClaudeStreamRunnerService {
         costUsd = event.cost_usd ?? null;
         resultContent = event.result ?? '';
         finalizeExecution?.();
-      }
-
-      const delta = streamEvents.length - lastPersistedCount;
-      if (
-        options.onPersistSnapshot &&
-        persistEveryEvents > 0 &&
-        delta >= persistEveryEvents &&
-        !pendingPersist
-      ) {
-        lastPersistedCount = streamEvents.length;
-        persistSnapshot();
       }
     };
 
@@ -129,7 +115,7 @@ export class ClaudeStreamRunnerService {
       (chunk: string) => {
         const events = parser.parse(chunk);
         for (const event of events) {
-          handleEvent(event);
+          schedule(() => handleEvent(event));
         }
       },
       options.workingDir,
@@ -142,11 +128,16 @@ export class ClaudeStreamRunnerService {
         }
         completed = true;
 
-        if (pendingPersist) {
-          await pendingPersist.catch(() => {});
-        }
+        const archiveTotals = await finalizeArchive();
 
-        resolve(buildResult());
+        resolve({
+          streamEventCount: archiveTotals.eventCount,
+          streamByteCount: archiveTotals.byteCount,
+          conversationId,
+          costUsd,
+          resultContent,
+          durationMs: Date.now() - startTime,
+        });
 
         kill().catch((error: unknown) => {
           this.logger.warn('Failed to kill Claude exec stream', {
@@ -157,7 +148,7 @@ export class ClaudeStreamRunnerService {
       };
 
       finalizeExecution = () => {
-        void finalize();
+        schedule(finalize);
       };
 
       const fail = async (error: Error) => {
@@ -166,20 +157,29 @@ export class ClaudeStreamRunnerService {
         }
         completed = true;
 
-        if (pendingPersist) {
-          await pendingPersist.catch(() => {});
-        }
+        const archiveTotals = await finalizeArchive().catch(() => ({
+          eventCount: streamEventCount,
+          byteCount: streamByteCount,
+        }));
 
-        reject(new ClaudeStreamExecutionError(error.message, buildResult()));
+        reject(
+          new ClaudeStreamExecutionError(error.message, {
+            streamEventCount: archiveTotals.eventCount,
+            streamByteCount: archiveTotals.byteCount,
+            conversationId,
+            costUsd,
+            resultContent,
+            durationMs: Date.now() - startTime,
+          }),
+        );
       };
 
       stream.on('end', () => {
         const remaining = parser.flush();
         for (const event of remaining) {
-          handleEvent(event);
+          schedule(() => handleEvent(event));
         }
-
-        void finalize();
+        schedule(finalize);
       });
 
       stream.on('error', (error: Error) => {
@@ -187,7 +187,7 @@ export class ClaudeStreamRunnerService {
           return;
         }
 
-        void fail(error);
+        schedule(() => fail(error));
       });
     });
 

@@ -13,11 +13,14 @@ import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 import {
   ClaudeStreamExecutionError,
+  ClaudeStreamRunnerResult,
   ClaudeStreamRunnerService,
 } from '../chat/claude-stream-runner.service';
+import { ClaudeEventArchiveService } from '../stream-archive/claude-event-archive.service';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
 import { EphemeralContainerCreateOptions } from '../../domain/containers/container.entity';
 import { GitService } from '../git/git.service';
+import { ScheduledJobTimingService } from './scheduled-job-timing.service';
 
 const DEDUP_WINDOW_MS = 60_000;
 const WORKSPACE_DIR = '/workspace/repo';
@@ -46,12 +49,14 @@ export class JobExecutorService {
     private readonly settingsRepository: SettingsRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly claudeStreamRunner: ClaudeStreamRunnerService,
+    private readonly claudeEventArchive: ClaudeEventArchiveService,
     private readonly gitService: GitService,
+    private readonly scheduledJobTimingService: ScheduledJobTimingService,
   ) {}
 
   async execute(
     jobId: string,
-    options: { ignoreEnabled?: boolean } = {},
+    options: { ignoreEnabled?: boolean; scheduledTrigger?: boolean } = {},
   ): Promise<void> {
     const job = await this.scheduledJobRepository.findById(jobId);
     if (!job) {
@@ -81,7 +86,9 @@ export class JobExecutorService {
     run.status = ScheduledJobRunStatus.PENDING;
     run.branch = job.branch;
     run.committed = false;
-    run.streamEvents = [];
+    run.streamEvents = null;
+    run.streamEventCount = null;
+    run.streamByteCount = null;
     await this.scheduledJobRunRepository.save(run);
 
     this.eventEmitter.emit(JOB_RUN_EVENTS.started, {
@@ -98,6 +105,13 @@ export class JobExecutorService {
     try {
       run.markRunning();
       await this.scheduledJobRunRepository.save(run);
+      job.recordRun(run.startedAt ?? new Date());
+      if (options.scheduledTrigger) {
+        job.nextRunAt = this.scheduledJobTimingService.calculateNextRunAt(job, {
+          fromDate: run.startedAt ?? new Date(),
+        });
+      }
+      await this.scheduledJobRepository.save(job);
       this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
         jobId,
         runId: run.id,
@@ -184,7 +198,9 @@ export class JobExecutorService {
         job.prompt,
         job.model,
       );
-      run.streamEvents = streamResult.streamEvents;
+      run.streamEventCount = streamResult.streamEventCount;
+      run.streamByteCount = streamResult.streamByteCount;
+      run.streamEvents = null;
 
       if (job.commitAndPush) {
         const commitResult = await this.gitService.commitAndPush(container.id, {
@@ -204,13 +220,6 @@ export class JobExecutorService {
         runId: run.id,
       });
 
-      job.recordRun(new Date());
-      await this.scheduledJobRepository.save(job);
-      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-        jobId,
-        runId: run.id,
-      });
-
       this.logger.log('Job run completed successfully', {
         jobId,
         runId: run.id,
@@ -223,7 +232,9 @@ export class JobExecutorService {
       });
     } catch (error) {
       if (error instanceof ClaudeStreamExecutionError) {
-        run.streamEvents = error.partialResult.streamEvents;
+        run.streamEventCount = error.partialResult.streamEventCount;
+        run.streamByteCount = error.partialResult.streamByteCount;
+        run.streamEvents = null;
       }
 
       const message = error instanceof Error ? error.message : String(error);
@@ -340,13 +351,15 @@ export class JobExecutorService {
     jobId: string,
     prompt: string,
     model?: string | null,
-  ): Promise<{ streamEvents: any[] }> {
+  ): Promise<ClaudeStreamRunnerResult> {
+    const archiveWriter = this.claudeEventArchive.createJobRunWriter(runId);
     const execution = await this.claudeStreamRunner.startPrompt({
       containerId,
       prompt,
       model: model ?? undefined,
       workingDir: WORKSPACE_DIR,
       includePartialMessages: true,
+      archiveWriter,
       onEvent: (event) => {
         this.eventEmitter.emit(JOB_RUN_EVENTS.stream, {
           jobId,
@@ -354,19 +367,9 @@ export class JobExecutorService {
           event: event as unknown,
         });
       },
-      onPersistSnapshot: async (streamEvents) => {
-        const run = await this.scheduledJobRunRepository.findById(runId);
-        if (!run) {
-          return;
-        }
-
-        run.streamEvents = streamEvents;
-        await this.scheduledJobRunRepository.save(run);
-      },
     });
 
-    const result = await execution.result;
-    return { streamEvents: result.streamEvents };
+    return execution.result;
   }
 
   private generateBranchName(prefix: string): string {

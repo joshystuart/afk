@@ -86,6 +86,10 @@ export class AppTestHelper {
         listContainers: jest.fn().mockResolvedValue([]),
         createNetwork: jest.fn().mockResolvedValue({ id: 'test-network-id' }),
         removeNetwork: jest.fn().mockResolvedValue(undefined),
+        openContainerFollowLogStream: jest.fn().mockResolvedValue({
+          on: jest.fn(),
+          destroy: jest.fn(),
+        }),
       })
       // Mock Port Manager service (external dependency)
       .overrideProvider(PortManagerService)

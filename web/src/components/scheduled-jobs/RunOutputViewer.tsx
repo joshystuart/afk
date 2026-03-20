@@ -1,18 +1,108 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
   IconButton,
   Dialog,
   DialogContent,
+  CircularProgress,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { afkColors } from '../../themes/afk';
-import { ScheduledJobRunStatus, type ScheduledJobRun } from '../../api/types';
+import {
+  ScheduledJobRunStatus,
+  type ScheduledJobRun,
+  type ChatStreamEvent,
+} from '../../api/types';
+import { scheduledJobsApi } from '../../api/scheduled-jobs.api';
 import { AssistantEventList } from '../chat/AssistantEventList';
 
 const RunOutputContent: React.FC<{ run: ScheduledJobRun }> = ({ run }) => {
-  if (run.errorMessage && !run.streamEvents?.length) {
+  const [loadedEvents, setLoadedEvents] = useState<ChatStreamEvent[] | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const events = run.streamEvents || loadedEvents;
+  const isRunning = run.status === ScheduledJobRunStatus.RUNNING;
+  const hasArchivedEvents =
+    !run.streamEvents?.length && (run.streamEventCount ?? 0) > 0;
+
+  useEffect(() => {
+    if (!hasArchivedEvents || isRunning) return;
+
+    let cancelled = false;
+    setIsLoading(true);
+    setLoadError(null);
+
+    scheduledJobsApi
+      .getRunStream(run.id)
+      .then((result) => {
+        if (!cancelled) setLoadedEvents(result);
+      })
+      .catch((err) => {
+        if (!cancelled)
+          setLoadError(err instanceof Error ? err.message : 'Failed to load');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [run.id, hasArchivedEvents, isRunning]);
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 4,
+          gap: 1.5,
+        }}
+      >
+        <CircularProgress size={16} sx={{ color: afkColors.textTertiary }} />
+        <Typography
+          sx={{
+            color: afkColors.textTertiary,
+            fontSize: '0.8125rem',
+            fontFamily: '"JetBrains Mono", monospace',
+          }}
+        >
+          Loading run output...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Box
+        sx={{
+          p: 2,
+          borderRadius: '6px',
+          bgcolor: afkColors.dangerMuted,
+          border: `1px solid rgba(239, 68, 68, 0.2)`,
+        }}
+      >
+        <Typography
+          sx={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: '0.8125rem',
+            color: '#fca5a5',
+          }}
+        >
+          Failed to load run output: {loadError}
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (run.errorMessage && !events?.length) {
     return (
       <Box
         sx={{
@@ -36,7 +126,7 @@ const RunOutputContent: React.FC<{ run: ScheduledJobRun }> = ({ run }) => {
     );
   }
 
-  if (!run.streamEvents?.length) {
+  if (!events?.length) {
     return (
       <Typography
         sx={{
@@ -52,10 +142,7 @@ const RunOutputContent: React.FC<{ run: ScheduledJobRun }> = ({ run }) => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-      <AssistantEventList
-        events={run.streamEvents}
-        isStreaming={run.status === ScheduledJobRunStatus.RUNNING}
-      />
+      <AssistantEventList events={events} isStreaming={isRunning} />
 
       {run.errorMessage && (
         <Box

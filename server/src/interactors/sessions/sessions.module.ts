@@ -14,6 +14,7 @@ import { DeleteSessionController } from './delete-session.controller';
 import { GitStatusController } from './git-status.controller';
 import { GitCommitPushController } from './git-commit-push.controller';
 import { ChatMessagesController } from './chat-messages.controller';
+import { GetChatMessageStreamController } from './get-chat-message-stream.controller';
 import { UpdateSessionController } from './update-session/update-session.controller';
 import { UpdateSessionInteractor } from './update-session/update-session.interactor';
 import { DockerModule } from '../../services/docker/docker.module';
@@ -52,6 +53,7 @@ import { Session } from '../../domain/sessions/session.entity';
     GitStatusController,
     GitCommitPushController,
     ChatMessagesController,
+    GetChatMessageStreamController,
     UpdateSessionController,
   ],
   providers: [

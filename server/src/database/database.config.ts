@@ -5,15 +5,19 @@ import { ChatMessage } from '../domain/chat/chat-message.entity';
 import { DockerImage } from '../domain/docker-images/docker-image.entity';
 import { ScheduledJob } from '../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduledJobRun } from '../domain/scheduled-jobs/scheduled-job-run.entity';
+import { ChatStreamChunk } from '../domain/chat/chat-stream-chunk.entity';
+import { ScheduledJobRunStreamChunk } from '../domain/scheduled-jobs/scheduled-job-run-stream-chunk.entity';
 import { DatabaseConfig } from '../libs/config/database/database.config';
 
-const entities = [
+export const typeormEntities = [
   Session,
   Settings,
   ChatMessage,
+  ChatStreamChunk,
   DockerImage,
   ScheduledJob,
   ScheduledJobRun,
+  ScheduledJobRunStreamChunk,
 ];
 
 export const createTypeOrmOptions = (
@@ -36,7 +40,7 @@ export const createTypeOrmOptions = (
         username: postgresConfig.username,
         password: postgresConfig.password,
         database: postgresConfig.database,
-        entities,
+        entities: typeormEntities,
         synchronize: postgresConfig.synchronize ?? false,
         logging: postgresConfig.logging ?? false,
       };
@@ -51,7 +55,7 @@ export const createTypeOrmOptions = (
       return {
         type: 'sqlite',
         database: sqliteConfig.database,
-        entities,
+        entities: typeormEntities,
         synchronize: sqliteConfig.synchronize ?? true,
         logging: sqliteConfig.logging ?? false,
       };

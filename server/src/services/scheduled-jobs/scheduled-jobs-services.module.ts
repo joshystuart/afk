@@ -6,9 +6,11 @@ import { DockerImagesModule } from '../../domain/docker-images/docker-images.mod
 import { SettingsModule } from '../../interactors/settings/settings.module';
 import { ChatModule } from '../chat/chat.module';
 import { GitModule } from '../git/git.module';
+import { StreamArchiveModule } from '../stream-archive/stream-archive.module';
 import { JobExecutorService } from './job-executor.service';
 import { JobSchedulerService } from './job-scheduler.service';
 import { LaunchdService } from './launchd.service';
+import { ScheduledJobTimingService } from './scheduled-job-timing.service';
 
 @Module({
   imports: [
@@ -19,8 +21,19 @@ import { LaunchdService } from './launchd.service';
     SettingsModule,
     ChatModule,
     GitModule,
+    StreamArchiveModule,
   ],
-  providers: [JobExecutorService, JobSchedulerService, LaunchdService],
-  exports: [JobExecutorService, JobSchedulerService, LaunchdService],
+  providers: [
+    JobExecutorService,
+    JobSchedulerService,
+    LaunchdService,
+    ScheduledJobTimingService,
+  ],
+  exports: [
+    JobExecutorService,
+    JobSchedulerService,
+    LaunchdService,
+    ScheduledJobTimingService,
+  ],
 })
 export class ScheduledJobsServicesModule {}

@@ -1,6 +1,7 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import * as fs from 'fs';
 import { DockerEngineService } from '../../../services/docker/docker-engine.service';
+import { ContainerLogStreamService } from '../../../services/docker/container-log-stream.service';
 import { PortManagerService } from '../../../services/docker/port-manager.service';
 import { SessionRepository } from '../../../services/repositories/session.repository';
 import { SessionFactory } from '../../../domain/sessions/session.factory';
@@ -25,6 +26,7 @@ export class CreateSessionInteractor {
 
   constructor(
     private readonly dockerEngine: DockerEngineService,
+    private readonly containerLogStream: ContainerLogStreamService,
     private readonly portManager: PortManagerService,
     private readonly sessionRepository: SessionRepository,
     private readonly sessionFactory: SessionFactory,
@@ -160,6 +162,11 @@ export class CreateSessionInteractor {
       session.markAsRunning();
       await this.sessionRepository.save(session);
 
+      await this.containerLogStream.ensureRunningLogStream(
+        session.id,
+        container.id,
+      );
+
       this.logger.log('Session created successfully (awaiting readiness)', {
         sessionId: session.id.toString(),
         containerId: container.id,
@@ -176,6 +183,9 @@ export class CreateSessionInteractor {
         await this.portManager.releasePortPair(session.ports);
       }
       if (session.containerId) {
+        await this.containerLogStream
+          .releaseSession(session.id)
+          .catch(() => {});
         await this.dockerEngine
           .removeContainer(session.containerId)
           .catch(() => {});
@@ -306,27 +316,5 @@ export class CreateSessionInteractor {
   private isValidRepoUrl(url: string): boolean {
     const patterns = [/^https?:\/\/.+$/, /^git@.+:.+\.git$/, /^ssh:\/\/.+$/];
     return patterns.some((pattern) => pattern.test(url));
-  }
-
-  private isValidSSHKey(key: string): boolean {
-    try {
-      // Validate SSH key format (supports various key types)
-      const keyPatterns = [
-        /-----BEGIN OPENSSH PRIVATE KEY-----/,
-        /-----BEGIN RSA PRIVATE KEY-----/,
-        /-----BEGIN DSA PRIVATE KEY-----/,
-        /-----BEGIN EC PRIVATE KEY-----/,
-        /-----BEGIN PRIVATE KEY-----/,
-      ];
-
-      const hasBeginMarker = keyPatterns.some((pattern) => pattern.test(key));
-      const hasEndMarker =
-        key.includes('-----END') && key.includes('PRIVATE KEY-----');
-
-      return hasBeginMarker && hasEndMarker;
-    } catch (error) {
-      this.logger.warn('SSH key validation failed', { error: error.message });
-      return false;
-    }
   }
 }

@@ -4,6 +4,7 @@ import type {
   ScheduledJobRun,
   CreateScheduledJobRequest,
   UpdateScheduledJobRequest,
+  ChatStreamEvent,
 } from './types';
 
 const BASE = '/scheduled-jobs';
@@ -43,5 +44,10 @@ export const scheduledJobsApi = {
 
   trigger: async (id: string): Promise<void> => {
     await apiClient.post(`${BASE}/${id}/trigger`);
+  },
+
+  getRunStream: async (runId: string): Promise<ChatStreamEvent[]> => {
+    const response = await apiClient.get(`${BASE}/runs/${runId}/stream`);
+    return (response as unknown as { events: ChatStreamEvent[] }).events;
   },
 };

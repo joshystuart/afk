@@ -12,7 +12,7 @@ import {
 } from '../../libs/response/response.service';
 import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
 import { ChatService } from '../../services/chat/chat.service';
-import { ChatMessage } from '../../domain/chat/chat-message.entity';
+import { ChatMessageResponseDto } from './chat-message-response.dto';
 import { SessionRoutes, SessionRouteParams } from './session.routes';
 
 @ApiTags('Sessions')
@@ -33,7 +33,7 @@ export class ChatMessagesController {
   })
   async getMessages(@Param(SessionRouteParams.ITEM_ID) id: string): Promise<
     ApiResponseType<{
-      messages: ChatMessage[];
+      messages: ChatMessageResponseDto[];
       isExecuting: boolean;
       activeMessageId: string | null;
     }>
@@ -43,7 +43,7 @@ export class ChatMessagesController {
       const messages = await this.chatService.getHistory(id);
       const executionInfo = this.chatService.getExecutionInfo(id);
       return this.responseService.success({
-        messages,
+        messages: messages.map(ChatMessageResponseDto.fromDomain),
         isExecuting: executionInfo !== null,
         activeMessageId: executionInfo?.assistantMessageId ?? null,
       });

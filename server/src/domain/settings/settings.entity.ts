@@ -20,6 +20,8 @@ export interface SettingsUpdateData {
   githubClientSecret?: string;
   githubCallbackUrl?: string;
   githubFrontendRedirectUrl?: string;
+  idleCleanupEnabled?: boolean;
+  idleTimeoutMinutes?: number;
 }
 
 export class SettingsValidationError extends Error {
@@ -93,9 +95,24 @@ export class Settings {
     if (data.githubFrontendRedirectUrl !== undefined) {
       this.git.githubFrontendRedirectUrl = data.githubFrontendRedirectUrl;
     }
+    if (data.idleCleanupEnabled !== undefined) {
+      this.general.idleCleanupEnabled = data.idleCleanupEnabled;
+    }
+    if (data.idleTimeoutMinutes !== undefined) {
+      this.validateIdleTimeout(data.idleTimeoutMinutes);
+      this.general.idleTimeoutMinutes = data.idleTimeoutMinutes;
+    }
 
     this.validatePortRange();
     this.updatedAt = new Date();
+  }
+
+  private validateIdleTimeout(minutes: number): void {
+    if (!Number.isInteger(minutes) || minutes < 1) {
+      throw new SettingsValidationError(
+        'Idle timeout must be a positive integer (minutes)',
+      );
+    }
   }
 
   private validatePortRange(): void {

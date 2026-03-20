@@ -11,7 +11,7 @@ import { Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { SessionSubscriptionService } from './session-subscription.service';
-import { DockerEngineService } from '../services/docker/docker-engine.service';
+import { ContainerLogStreamService } from '../services/docker/container-log-stream.service';
 import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
 import { GitStatusResult } from '../services/git/git.service';
 import { SessionRepository } from '../services/repositories/session.repository';
@@ -110,7 +110,7 @@ export class SessionGateway
 
   constructor(
     private readonly sessionSubscriptionService: SessionSubscriptionService,
-    private readonly dockerEngine: DockerEngineService,
+    private readonly containerLogStream: ContainerLogStreamService,
     private readonly gitWatcherService: GitWatcherService,
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
@@ -122,6 +122,23 @@ export class SessionGateway
 
   private getSessionRoom(sessionId: string): string {
     return `${ROOM_PREFIX}${sessionId}`;
+  }
+
+  private async touchSession(sessionId: string): Promise<void> {
+    try {
+      const session = await this.sessionRepository.findById(
+        this.sessionIdFactory.fromString(sessionId),
+      );
+      if (session?.isRunning()) {
+        session.markAsAccessed();
+        await this.sessionRepository.save(session);
+      }
+    } catch (error) {
+      this.logger.warn('Failed to mark session as accessed', {
+        sessionId,
+        error: error.message,
+      });
+    }
   }
 
   private getJobRunRoom(runId: string): string {
@@ -139,6 +156,8 @@ export class SessionGateway
   }
 
   async handleDisconnect(client: Socket) {
+    this.containerLogStream.removeAllSubscribersForSocket(client.id);
+
     // Get sessions this client was subscribed to before unsubscribing
     const sessions = this.sessionSubscriptionService.getSessionsForClient(
       client.id,
@@ -170,6 +189,8 @@ export class SessionGateway
       );
 
       client.join(this.getSessionRoom(data.sessionId));
+
+      this.touchSession(data.sessionId).catch(() => {});
 
       // Start git watcher if session is running
       this.startGitWatcherIfRunning(data.sessionId).catch((error) => {
@@ -242,8 +263,16 @@ export class SessionGateway
         };
       }
 
-      const stream = await this.dockerEngine.streamContainerLogs(
+      this.touchSession(data.sessionId).catch(() => {});
+
+      await this.containerLogStream.ensureRunningLogStream(
+        data.sessionId,
         session.containerId,
+      );
+      this.containerLogStream.addSubscriber(
+        data.sessionId,
+        session.containerId,
+        client.id,
         (log: string) => {
           client.emit(SOCKET_EVENTS.logData, {
             sessionId: data.sessionId,
@@ -252,8 +281,6 @@ export class SessionGateway
           });
         },
       );
-
-      (client as any).logStream = stream;
 
       return {
         event: SOCKET_EVENTS.logsSubscribed,
@@ -269,11 +296,7 @@ export class SessionGateway
 
   @SubscribeMessage(SOCKET_EVENTS.unsubscribeLogs)
   async handleLogUnsubscription(@ConnectedSocket() client: Socket) {
-    const stream = (client as any).logStream;
-    if (stream) {
-      stream.destroy();
-      delete (client as any).logStream;
-    }
+    this.containerLogStream.removeSubscriber(client.id);
 
     return {
       event: SOCKET_EVENTS.logsUnsubscribed,
@@ -441,6 +464,8 @@ export class SessionGateway
       continueConversation,
     });
 
+    this.touchSession(sessionId).catch(() => {});
+
     try {
       const result = await this.chatService.sendMessage(
         sessionId,
@@ -501,6 +526,8 @@ export class SessionGateway
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    this.touchSession(data.sessionId).catch(() => {});
+
     try {
       await this.chatService.cancelExecution(data.sessionId);
       return {

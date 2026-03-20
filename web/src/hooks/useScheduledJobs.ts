@@ -231,7 +231,10 @@ export const useScheduledJobRunStream = (
         return;
       }
 
-      updateRun(() => data.run);
+      updateRun((existingRun) => ({
+        ...data.run,
+        streamEvents: data.run.streamEvents ?? existingRun.streamEvents,
+      }));
     };
 
     socket.on('job.run.stream', handleRunStream);

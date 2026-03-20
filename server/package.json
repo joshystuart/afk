@@ -8,6 +8,8 @@
   "scripts": {
     "build": "nest build",
     "db:reset": "ts-node -r tsconfig-paths/register src/scripts/reset-database.ts",
+    "db:reset:sessions": "ts-node -r tsconfig-paths/register src/scripts/reset-sessions.ts",
+    "db:reset:jobs": "ts-node -r tsconfig-paths/register src/scripts/reset-jobs.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

@@ -19,17 +19,47 @@ export class ChatMessageRepository {
     partial: Partial<
       Pick<
         ChatMessage,
-        'streamEvents' | 'content' | 'conversationId' | 'costUsd' | 'durationMs'
+        | 'streamEvents'
+        | 'content'
+        | 'conversationId'
+        | 'costUsd'
+        | 'durationMs'
+        | 'streamEventCount'
+        | 'streamByteCount'
       >
     >,
   ): Promise<void> {
     await this.repository.update(id, partial);
   }
 
+  async findById(id: string): Promise<ChatMessage | null> {
+    return this.repository.findOne({ where: { id } });
+  }
+
   async findBySessionId(sessionId: string): Promise<ChatMessage[]> {
     return this.repository.find({
       where: { sessionId },
       order: { createdAt: 'ASC' },
+    });
+  }
+
+  async findBySessionIdSummaries(sessionId: string): Promise<ChatMessage[]> {
+    return this.repository.find({
+      where: { sessionId },
+      order: { createdAt: 'ASC' },
+      select: [
+        'id',
+        'sessionId',
+        'role',
+        'content',
+        'streamEventCount',
+        'streamByteCount',
+        'conversationId',
+        'isContinuation',
+        'costUsd',
+        'durationMs',
+        'createdAt',
+      ],
     });
   }
 

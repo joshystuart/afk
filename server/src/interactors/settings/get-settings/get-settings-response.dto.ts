@@ -54,6 +54,14 @@ export class GetSettingsResponseDto {
   @ApiProperty({ description: 'Frontend redirect URL after GitHub OAuth' })
   githubFrontendRedirectUrl!: string;
 
+  @ApiProperty({ description: 'Whether idle session cleanup is enabled' })
+  idleCleanupEnabled!: boolean;
+
+  @ApiProperty({
+    description: 'Minutes of inactivity before a session is auto-stopped',
+  })
+  idleTimeoutMinutes!: number;
+
   @ApiProperty()
   updatedAt!: string;
 
@@ -88,6 +96,8 @@ export class GetSettingsResponseDto {
     dto.hasGithubClientSecret = !!settings.git.githubClientSecret;
     dto.githubCallbackUrl = settings.git.githubCallbackUrl;
     dto.githubFrontendRedirectUrl = settings.git.githubFrontendRedirectUrl;
+    dto.idleCleanupEnabled = settings.general.idleCleanupEnabled;
+    dto.idleTimeoutMinutes = settings.general.idleTimeoutMinutes;
     dto.updatedAt = settings.updatedAt.toISOString();
     return dto;
   }

@@ -1,4 +1,11 @@
-import { IsString, IsEmail, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -91,4 +98,22 @@ export class UpdateSettingsRequest {
     description: 'Frontend redirect URL after GitHub OAuth',
   })
   githubFrontendRedirectUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({
+    required: false,
+    description: 'Whether idle session cleanup is enabled',
+  })
+  idleCleanupEnabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Type(() => Number)
+  @ApiProperty({
+    required: false,
+    description: 'Minutes of inactivity before a session is auto-stopped',
+  })
+  idleTimeoutMinutes?: number;
 }

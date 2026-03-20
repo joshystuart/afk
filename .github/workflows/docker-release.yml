@@ -33,15 +33,4 @@ jobs:
           DOCKERHUB_NAMESPACE: awayfromklaude
         run: |
           set -euo pipefail
-
-          # Build base first so language images can use FROM awayfromklaude/afk-base:latest.
-          docker build -t "${DOCKERHUB_NAMESPACE}/afk-base:latest" -f docker/base/Dockerfile docker
-          docker push "${DOCKERHUB_NAMESPACE}/afk-base:latest"
-
-          for image in node python go rust dotnet java; do
-            docker build \
-              --build-arg BASE_TAG=latest \
-              -t "${DOCKERHUB_NAMESPACE}/afk-${image}:latest" \
-              -f "docker/${image}/Dockerfile" docker
-            docker push "${DOCKERHUB_NAMESPACE}/afk-${image}:latest"
-          done
+          make -C docker all push

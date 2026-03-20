@@ -9,7 +9,7 @@ services:
     build:
       context: .
       dockerfile: node/Dockerfile
-    image: afk-node:latest
+    image: awayfromklaude/afk-node:latest
     depends_on:
       afk-base:
         condition: service_completed_successfully
@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: python/Dockerfile
-    image: afk-python:latest
+    image: awayfromklaude/afk-python:latest
     depends_on:
       afk-base:
         condition: service_completed_successfully
@@ -27,7 +27,7 @@ services:
     build:
       context: .
       dockerfile: go/Dockerfile
-    image: afk-go:latest
+    image: awayfromklaude/afk-go:latest
     depends_on:
       afk-base:
         condition: service_completed_successfully
@@ -36,7 +36,7 @@ services:
     build:
       context: .
       dockerfile: rust/Dockerfile
-    image: afk-rust:latest
+    image: awayfromklaude/afk-rust:latest
     depends_on:
       afk-base:
         condition: service_completed_successfully
@@ -45,7 +45,7 @@ services:
     build:
       context: .
       dockerfile: dotnet/Dockerfile
-    image: afk-dotnet:latest
+    image: awayfromklaude/afk-dotnet:latest
     depends_on:
       afk-base:
         condition: service_completed_successfully
@@ -54,7 +54,7 @@ services:
     build:
       context: .
       dockerfile: java/Dockerfile
-    image: afk-java:latest
+    image: awayfromklaude/afk-java:latest
     depends_on:
       afk-base:
         condition: service_completed_successfully

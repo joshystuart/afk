@@ -181,6 +181,7 @@ start_terminal() {
     fi
     
     exec ttyd \
+        --debug 0 \
         --port "$TERMINAL_PORT" \
         --writable \
         --interface 0.0.0.0 \

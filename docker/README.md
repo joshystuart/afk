@@ -61,7 +61,14 @@ make rust
 make dotnet
 make java
 
-# Remove all afk images
+# Optional: registry namespace and tag (defaults: awayfromklaude, latest)
+# GitHub Actions use the same Makefile with TAG=alpha for alpha releases.
+make all DOCKERHUB_NAMESPACE=myorg TAG=dev
+
+# Push images after build (CI runs: make all push)
+make push
+
+# Remove images for the current NAMESPACE and TAG
 make clean
 ```
 

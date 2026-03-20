@@ -1,26 +1,41 @@
+DOCKERHUB_NAMESPACE ?= awayfromklaude
+TAG ?= latest
+
 IMAGES = node python go rust dotnet java
 
-.PHONY: all base $(IMAGES) clean help
+.PHONY: all base $(IMAGES) clean help push
 
 all: base $(IMAGES)
 
 base:
-	docker build -t awayfromklaude/afk-base:latest -f base/Dockerfile .
+	docker build -t $(DOCKERHUB_NAMESPACE)/afk-base:$(TAG) -f base/Dockerfile .
 
 $(IMAGES): base
-	docker build -t afk-$@:latest -f $@/Dockerfile .
+	docker build \
+		--build-arg BASE_TAG=$(TAG) \
+		-t $(DOCKERHUB_NAMESPACE)/afk-$@:$(TAG) \
+		-f $@/Dockerfile .
+
+push:
+	docker push $(DOCKERHUB_NAMESPACE)/afk-base:$(TAG)
+	@for img in $(IMAGES); do \
+		docker push $(DOCKERHUB_NAMESPACE)/afk-$$img:$(TAG); \
+	done
 
 clean:
-	-docker rmi $(addprefix afk-,$(addsuffix :latest,$(IMAGES))) awayfromklaude/afk-base:latest 2>/dev/null
+	-docker rmi \
+		$(addprefix $(DOCKERHUB_NAMESPACE)/afk-,$(addsuffix :$(TAG),$(IMAGES))) \
+		$(DOCKERHUB_NAMESPACE)/afk-base:$(TAG) \
+		2>/dev/null
 
 help:
-	@echo "Usage:"
-	@echo "  make all       Build all images (base + language)"
-	@echo "  make base      Build the base image only"
-	@echo "  make node      Build afk-node image"
-	@echo "  make python    Build afk-python image"
-	@echo "  make go        Build afk-go image"
-	@echo "  make rust      Build afk-rust image"
-	@echo "  make dotnet    Build afk-dotnet image"
-	@echo "  make java      Build afk-java image"
-	@echo "  make clean     Remove all afk images"
+	@echo "Variables (environment or make VAR=value):"
+	@echo "  DOCKERHUB_NAMESPACE  default: awayfromklaude"
+	@echo "  TAG                  default: latest (e.g. alpha for pre-releases)"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make all       Build base + all language images"
+	@echo "  make base      Base image only"
+	@echo "  make node      Build one language image (python, go, rust, dotnet, java)"
+	@echo "  make push      Push all images for this NAMESPACE and TAG (after make all)"
+	@echo "  make clean     Remove images for this NAMESPACE and TAG"

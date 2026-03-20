@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -46,13 +46,6 @@ const WEEKDAYS = [
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 
-const CRON_PRESETS = [
-  { label: 'Daily 9am', value: '0 9 * * *' },
-  { label: 'Weekdays 9am', value: '0 9 * * 1-5' },
-  { label: 'Weekly Mon 9am', value: '0 9 * * 1' },
-  { label: 'Monthly 1st', value: '0 9 1 * *' },
-];
-
 export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
   value,
   onChange,
@@ -71,29 +64,12 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
     );
   });
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const syncingFromProp = useRef(false);
 
   useEffect(() => {
-    const parsed = parseCronExpression(value);
-    if (parsed) {
-      syncingFromProp.current = true;
-      setMode('simple');
-      setSimpleConfig(parsed);
-    } else {
-      setMode('advanced');
-    }
-  }, [value]);
-
-  useEffect(() => {
-    if (syncingFromProp.current) {
-      syncingFromProp.current = false;
-      return;
-    }
-    if (mode === 'simple') {
-      const cronExpr = buildCronExpression(simpleConfig);
-      if (cronExpr !== value) {
-        onChange(cronExpr);
-      }
+    if (mode !== 'simple') return;
+    const cronExpr = buildCronExpression(simpleConfig);
+    if (cronExpr !== value) {
+      onChange(cronExpr);
     }
   }, [mode, simpleConfig, onChange, value]);
 
@@ -435,33 +411,6 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
             },
           }}
         />
-
-        {/* Preset chips */}
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          {CRON_PRESETS.map((preset) => (
-            <Chip
-              key={preset.value}
-              label={preset.label}
-              size="small"
-              onClick={() => handleAdvancedChange(preset.value)}
-              variant={value === preset.value ? 'filled' : 'outlined'}
-              sx={{
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                ...(value === preset.value
-                  ? {
-                      bgcolor: afkColors.accentMuted,
-                      color: afkColors.accent,
-                      borderColor: afkColors.accent,
-                    }
-                  : {
-                      borderColor: afkColors.border,
-                      color: afkColors.textSecondary,
-                    }),
-              }}
-            />
-          ))}
-        </Box>
       </Box>
     );
   };

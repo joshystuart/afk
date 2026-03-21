@@ -16,10 +16,7 @@ export interface SettingsUpdateData {
   dockerSocketPath?: string;
   dockerStartPort?: number;
   dockerEndPort?: number;
-  githubClientId?: string;
-  githubClientSecret?: string;
-  githubCallbackUrl?: string;
-  githubFrontendRedirectUrl?: string;
+  githubAccessToken?: string;
   idleCleanupEnabled?: boolean;
   idleTimeoutMinutes?: number;
 }
@@ -49,7 +46,6 @@ export class Settings {
   updatedAt: Date;
 
   applyDefaults(): this {
-    this.git.applyDefaults();
     this.docker.applyDefaults();
     return this;
   }
@@ -83,17 +79,11 @@ export class Settings {
     if (data.dockerEndPort !== undefined) {
       this.docker.endPort = data.dockerEndPort;
     }
-    if (data.githubClientId !== undefined) {
-      this.git.githubClientId = data.githubClientId;
-    }
-    if (data.githubClientSecret !== undefined) {
-      this.git.githubClientSecret = data.githubClientSecret;
-    }
-    if (data.githubCallbackUrl !== undefined) {
-      this.git.githubCallbackUrl = data.githubCallbackUrl;
-    }
-    if (data.githubFrontendRedirectUrl !== undefined) {
-      this.git.githubFrontendRedirectUrl = data.githubFrontendRedirectUrl;
+    if (data.githubAccessToken !== undefined) {
+      this.git.githubAccessToken = data.githubAccessToken || null;
+      if (!data.githubAccessToken) {
+        this.git.githubUsername = null;
+      }
     }
     if (data.idleCleanupEnabled !== undefined) {
       this.general.idleCleanupEnabled = data.idleCleanupEnabled;

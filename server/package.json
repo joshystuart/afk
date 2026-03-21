@@ -33,7 +33,6 @@
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.5",
-    "@octokit/oauth-methods": "^6.0.2",
     "@octokit/rest": "^22.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",

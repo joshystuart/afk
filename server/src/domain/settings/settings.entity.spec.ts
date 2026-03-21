@@ -35,20 +35,6 @@ describe('Settings', () => {
       expect(settings.docker.endPort).toBe(7780);
     });
 
-    it('should apply git defaults', () => {
-      settings.git.githubCallbackUrl = null as any;
-      settings.git.githubFrontendRedirectUrl = null as any;
-
-      settings.applyDefaults();
-
-      expect(settings.git.githubCallbackUrl).toBe(
-        'http://localhost:4919/api/github/callback',
-      );
-      expect(settings.git.githubFrontendRedirectUrl).toBe(
-        'http://localhost:5173/settings',
-      );
-    });
-
     it('should not overwrite existing values', () => {
       settings.docker.socketPath = '/custom/socket.sock';
       settings.docker.startPort = 9000;
@@ -102,22 +88,24 @@ describe('Settings', () => {
       expect(settings.docker.endPort).toBe(9000);
     });
 
-    it('should update github OAuth fields', () => {
+    it('should update github access token', () => {
       settings.update({
-        githubClientId: 'client-123',
-        githubClientSecret: 'secret-456',
-        githubCallbackUrl: 'https://example.com/callback',
-        githubFrontendRedirectUrl: 'https://example.com/settings',
+        githubAccessToken: 'ghp_test123',
       });
 
-      expect(settings.git.githubClientId).toBe('client-123');
-      expect(settings.git.githubClientSecret).toBe('secret-456');
-      expect(settings.git.githubCallbackUrl).toBe(
-        'https://example.com/callback',
-      );
-      expect(settings.git.githubFrontendRedirectUrl).toBe(
-        'https://example.com/settings',
-      );
+      expect(settings.git.githubAccessToken).toBe('ghp_test123');
+    });
+
+    it('should clear github username when token is cleared', () => {
+      settings.git.githubAccessToken = 'ghp_test123';
+      settings.git.githubUsername = 'testuser';
+
+      settings.update({
+        githubAccessToken: '',
+      });
+
+      expect(settings.git.githubAccessToken).toBeNull();
+      expect(settings.git.githubUsername).toBeNull();
     });
 
     it('should not modify fields that are not in the update data', () => {

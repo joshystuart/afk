@@ -7,9 +7,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  IconButton,
-  InputAdornment,
-  Tooltip,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -17,7 +14,6 @@ import {
   Lock as LockIcon,
   GitHub as GitHubIcon,
   LinkOff as LinkOffIcon,
-  ContentCopy as ContentCopyIcon,
 } from '@mui/icons-material';
 import { useSettingsStore } from '../../stores/settings.store';
 import { useGitHub } from '../../hooks/useGitHub';
@@ -41,13 +37,7 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 const GitSettings: React.FC = () => {
   const { settings, error, updateSettings, clearError } = useSettingsStore();
   const {
-    isConnected,
     username,
-    isElectron,
-    authUrl,
-    startAuth,
-    isAuthenticating,
-    cancelAuth,
     disconnect,
     isDisconnecting,
   } = useGitHub();
@@ -56,17 +46,14 @@ const GitSettings: React.FC = () => {
     gitUserName: '',
     gitUserEmail: '',
     sshPrivateKey: '',
-    githubClientId: '',
-    githubClientSecret: '',
-    githubCallbackUrl: '',
-    githubFrontendRedirectUrl: '',
+    githubAccessToken: '',
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isEditingSshKey, setIsEditingSshKey] = useState(false);
   const [sshKeyModified, setSshKeyModified] = useState(false);
-  const [isEditingClientSecret, setIsEditingClientSecret] = useState(false);
-  const [clientSecretModified, setClientSecretModified] = useState(false);
+  const [isEditingToken, setIsEditingToken] = useState(false);
+  const [tokenModified, setTokenModified] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -74,15 +61,12 @@ const GitSettings: React.FC = () => {
         gitUserName: settings.gitUserName || '',
         gitUserEmail: settings.gitUserEmail || '',
         sshPrivateKey: '',
-        githubClientId: settings.githubClientId || '',
-        githubClientSecret: '',
-        githubCallbackUrl: settings.githubCallbackUrl || '',
-        githubFrontendRedirectUrl: settings.githubFrontendRedirectUrl || '',
+        githubAccessToken: '',
       });
       setIsEditingSshKey(false);
       setSshKeyModified(false);
-      setIsEditingClientSecret(false);
-      setClientSecretModified(false);
+      setIsEditingToken(false);
+      setTokenModified(false);
     }
   }, [settings]);
 
@@ -103,15 +87,12 @@ const GitSettings: React.FC = () => {
       const submitData: UpdateSettingsRequest = {
         gitUserName: formData.gitUserName,
         gitUserEmail: formData.gitUserEmail,
-        githubClientId: formData.githubClientId,
-        githubCallbackUrl: formData.githubCallbackUrl,
-        githubFrontendRedirectUrl: formData.githubFrontendRedirectUrl,
       };
       if (sshKeyModified) {
         submitData.sshPrivateKey = formData.sshPrivateKey;
       }
-      if (clientSecretModified) {
-        submitData.githubClientSecret = formData.githubClientSecret;
+      if (tokenModified) {
+        submitData.githubAccessToken = formData.githubAccessToken;
       }
       await updateSettings(submitData);
       setSuccessMessage('Settings saved successfully!');
@@ -264,9 +245,9 @@ const GitSettings: React.FC = () => {
           )}
         </Box>
 
-        {/* GitHub OAuth Settings */}
+        {/* GitHub Personal Access Token */}
         <Box sx={{ mb: 4 }}>
-          <SectionHeader title="GitHub OAuth Settings" />
+          <SectionHeader title="GitHub Token" />
           <Typography
             variant="caption"
             sx={{
@@ -275,125 +256,102 @@ const GitSettings: React.FC = () => {
               display: 'block',
             }}
           >
-            Configure your GitHub OAuth App credentials to enable GitHub
-            integration. Create an OAuth App at{' '}
+            Add a GitHub Personal Access Token to enable GitHub integration
+            (browse repos, clone via HTTPS). Create a token at{' '}
             <a
-              href="https://github.com/settings/developers"
+              href="https://github.com/settings/tokens"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: afkColors.accent }}
             >
-              github.com/settings/developers
-            </a>
+              github.com/settings/tokens
+            </a>{' '}
+            with the <strong>repo</strong> scope.
           </Typography>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                gap: 2,
-              }}
-            >
-              <TextField
-                fullWidth
-                label="Client ID"
-                value={formData.githubClientId}
-                onChange={handleInputChange('githubClientId')}
-                placeholder="Ov23li..."
-                helperText="GitHub OAuth App client ID"
-              />
-              {settings?.hasGithubClientSecret && !isEditingClientSecret ? (
-                <Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      p: 2,
-                      border: `1px solid ${afkColors.border}`,
-                      borderRadius: 1,
-                      bgcolor: afkColors.surfaceElevated,
-                      height: 56,
-                    }}
-                  >
-                    <LockIcon sx={{ fontSize: 18, color: afkColors.accent }} />
-                    <Typography
-                      variant="body2"
-                      sx={{ color: afkColors.textSecondary, flex: 1 }}
-                    >
-                      Client secret is set
-                    </Typography>
-                    <Button
+          {settings?.hasGitHubToken && !isEditingToken ? (
+            <Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  p: 2,
+                  border: `1px solid ${afkColors.border}`,
+                  borderRadius: 1,
+                  bgcolor: afkColors.surfaceElevated,
+                }}
+              >
+                <GitHubIcon sx={{ fontSize: 20, color: afkColors.textPrimary }} />
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {username && (
+                      <Typography
+                        variant="body2"
+                        sx={{ color: afkColors.textPrimary, fontWeight: 500 }}
+                      >
+                        {username}
+                      </Typography>
+                    )}
+                    <Chip
+                      label="Connected"
                       size="small"
-                      onClick={() => setIsEditingClientSecret(true)}
-                      sx={{ fontSize: '0.75rem' }}
-                    >
-                      Replace
-                    </Button>
+                      sx={{
+                        height: 20,
+                        fontSize: '0.6875rem',
+                        bgcolor: afkColors.accentMuted,
+                        color: afkColors.accent,
+                      }}
+                    />
                   </Box>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: afkColors.textTertiary }}
+                  >
+                    You can browse and select repositories when creating sessions
+                  </Typography>
                 </Box>
-              ) : (
-                <TextField
-                  fullWidth
-                  label="Client Secret"
-                  type="password"
-                  value={formData.githubClientSecret}
-                  onChange={(e) => {
-                    handleInputChange('githubClientSecret')(e);
-                    setClientSecretModified(true);
+                <Button
+                  size="small"
+                  onClick={() => setIsEditingToken(true)}
+                  sx={{ fontSize: '0.75rem' }}
+                >
+                  Replace
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={
+                    isDisconnecting ? (
+                      <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                    ) : (
+                      <LinkOffIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
+                  onClick={() => disconnect()}
+                  disabled={isDisconnecting}
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: afkColors.danger,
+                    '&:hover': { bgcolor: afkColors.dangerMuted },
                   }}
-                  placeholder="GitHub OAuth App client secret"
-                  helperText="GitHub OAuth App client secret"
-                />
-              )}
+                >
+                  Remove
+                </Button>
+              </Box>
             </Box>
-            <TextField
-              fullWidth
-              label="Callback URL"
-              value={formData.githubCallbackUrl}
-              onChange={handleInputChange('githubCallbackUrl')}
-              placeholder="http://localhost:4919/api/github/callback"
-              helperText="OAuth callback URL (must match your GitHub OAuth App settings)"
-              slotProps={{
-                input: {
-                  readOnly: isElectron,
-                  ...(isElectron && {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <Tooltip title="Copy to clipboard">
-                          <IconButton
-                            size="small"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                formData.githubCallbackUrl,
-                              )
-                            }
-                            edge="end"
-                          >
-                            <ContentCopyIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    ),
-                  }),
-                },
-              }}
-              sx={{
-                '& .MuiInputBase-input': {
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.8125rem',
-                },
-              }}
-            />
-            {!isElectron && (
+          ) : (
+            <>
               <TextField
                 fullWidth
-                label="Frontend Redirect URL"
-                value={formData.githubFrontendRedirectUrl}
-                onChange={handleInputChange('githubFrontendRedirectUrl')}
-                placeholder="http://localhost:5173/settings"
-                helperText="Where to redirect after OAuth completes"
+                label="Personal Access Token"
+                type="password"
+                value={formData.githubAccessToken}
+                onChange={(e) => {
+                  handleInputChange('githubAccessToken')(e);
+                  setTokenModified(true);
+                }}
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                helperText="GitHub Personal Access Token with repo scope"
                 sx={{
                   '& .MuiInputBase-input': {
                     fontFamily: '"JetBrains Mono", monospace',
@@ -401,140 +359,24 @@ const GitSettings: React.FC = () => {
                   },
                 }}
               />
-            )}
-          </Box>
-        </Box>
-
-        {/* GitHub Connection */}
-        <Box sx={{ mb: 4 }}>
-          <SectionHeader title="GitHub Connection" />
-
-          {isConnected ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                p: 2,
-                border: `1px solid ${afkColors.border}`,
-                borderRadius: 1,
-                bgcolor: afkColors.surfaceElevated,
-              }}
-            >
-              <GitHubIcon sx={{ fontSize: 20, color: afkColors.textPrimary }} />
-              <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: afkColors.textPrimary, fontWeight: 500 }}
-                  >
-                    {username}
-                  </Typography>
-                  <Chip
-                    label="Connected"
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '0.6875rem',
-                      bgcolor: afkColors.accentMuted,
-                      color: afkColors.accent,
-                    }}
-                  />
-                </Box>
-                <Typography
-                  variant="caption"
-                  sx={{ color: afkColors.textTertiary }}
-                >
-                  You can browse and select repositories when creating sessions
-                </Typography>
-              </Box>
-              <Button
-                size="small"
-                startIcon={
-                  isDisconnecting ? (
-                    <CircularProgress size={14} sx={{ color: 'inherit' }} />
-                  ) : (
-                    <LinkOffIcon sx={{ fontSize: 16 }} />
-                  )
-                }
-                onClick={() => disconnect()}
-                disabled={isDisconnecting}
-                sx={{
-                  fontSize: '0.75rem',
-                  color: afkColors.danger,
-                  '&:hover': { bgcolor: afkColors.dangerMuted },
-                }}
-              >
-                Disconnect
-              </Button>
-            </Box>
-          ) : (
-            <Box>
-              {isAuthenticating ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    p: 2,
-                    border: `1px solid ${afkColors.border}`,
-                    borderRadius: 1,
-                    bgcolor: afkColors.surfaceElevated,
-                  }}
-                >
-                  <CircularProgress
-                    size={18}
-                    sx={{ color: afkColors.accent }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{ color: afkColors.textSecondary, flex: 1 }}
-                  >
-                    Waiting for GitHub authorization&hellip;
-                  </Typography>
-                  <Button
-                    size="small"
-                    onClick={cancelAuth}
-                    sx={{
-                      fontSize: '0.75rem',
-                      color: afkColors.textTertiary,
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </Box>
-              ) : (
+              {isEditingToken && !formData.githubAccessToken && (
                 <Button
-                  variant="outlined"
-                  startIcon={<GitHubIcon />}
-                  {...(isElectron
-                    ? { onClick: () => startAuth() }
-                    : { href: authUrl })}
+                  size="small"
+                  onClick={() => {
+                    setIsEditingToken(false);
+                    setTokenModified(false);
+                    setFormData((prev) => ({ ...prev, githubAccessToken: '' }));
+                  }}
                   sx={{
-                    borderColor: afkColors.border,
-                    color: afkColors.textPrimary,
-                    '&:hover': {
-                      borderColor: afkColors.textSecondary,
-                      bgcolor: 'rgba(255, 255, 255, 0.04)',
-                    },
+                    mt: 1,
+                    fontSize: '0.75rem',
+                    color: afkColors.textTertiary,
                   }}
                 >
-                  Connect GitHub
+                  Cancel
                 </Button>
               )}
-              <Typography
-                variant="caption"
-                sx={{
-                  color: afkColors.textTertiary,
-                  mt: 1,
-                  display: 'block',
-                  ml: 0.5,
-                }}
-              >
-                Connect your GitHub account to browse and select repositories
-                when creating sessions
-              </Typography>
-            </Box>
+            </>
           )}
         </Box>
 

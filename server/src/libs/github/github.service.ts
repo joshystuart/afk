@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Octokit } from '@octokit/rest';
-import { exchangeWebFlowCode } from '@octokit/oauth-methods';
 import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types';
 
 const octokit = new Octokit();
@@ -29,32 +28,6 @@ export class GitHubService {
       auth: token,
       userAgent: 'AFK-App',
     });
-  }
-
-  getAuthUrl(clientId: string, callbackUrl: string, state: string): string {
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: callbackUrl,
-      scope: 'repo',
-      state,
-    });
-
-    return `https://github.com/login/oauth/authorize?${params.toString()}`;
-  }
-
-  async exchangeCodeForToken(
-    clientId: string,
-    clientSecret: string,
-    code: string,
-  ): Promise<string> {
-    const { authentication } = await exchangeWebFlowCode({
-      clientType: 'oauth-app',
-      clientId,
-      clientSecret,
-      code,
-    });
-
-    return authentication.token;
   }
 
   async getUser(token: string): Promise<GitHubUser> {

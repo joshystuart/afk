@@ -7,6 +7,7 @@ import { SettingsRepositoryImpl } from '../../services/repositories/settings.rep
 import { ResponseService } from '../../libs/response/response.service';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 import { Settings } from '../../domain/settings/settings.entity';
+import { GitHubService } from '../../libs/github/github.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Settings])],
@@ -15,6 +16,7 @@ import { Settings } from '../../domain/settings/settings.entity';
     GetSettingsInteractor,
     UpdateSettingsInteractor,
     ResponseService,
+    GitHubService,
     {
       provide: SETTINGS_REPOSITORY,
       useClass: SettingsRepositoryImpl,

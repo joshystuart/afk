@@ -17,13 +17,9 @@ const baseSettings: Settings = {
   hasSshPrivateKey: false,
   hasClaudeToken: false,
   hasGitHubToken: false,
-  hasGithubClientSecret: false,
   dockerSocketPath: null,
   dockerStartPort: null,
   dockerEndPort: null,
-  githubClientId: null,
-  githubCallbackUrl: null,
-  githubFrontendRedirectUrl: null,
   updatedAt: now,
 };
 

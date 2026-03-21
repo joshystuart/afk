@@ -5,6 +5,7 @@ import { ChatMessageRepository } from '../../domain/chat/chat-message.repository
 import { SessionRepository } from '../repositories/session.repository';
 import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { type SessionPermissionMode } from '../../domain/sessions/permission-mode';
 import {
   ClaudeStreamExecutionError,
   ClaudeStreamRunnerService,
@@ -19,7 +20,7 @@ export interface ChatStreamEvent {
 export interface SendMessageOptions {
   continueConversation: boolean;
   model?: string;
-  permissionMode?: string;
+  permissionMode?: SessionPermissionMode;
 }
 
 export interface SendMessageResult {

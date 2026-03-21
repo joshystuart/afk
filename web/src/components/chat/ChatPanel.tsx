@@ -54,8 +54,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
 
   React.useEffect(() => {
     if (session && initializedForSessionRef.current !== sessionId) {
-      setSelectedModel((session.model as ModelId) || DEFAULT_MODEL);
-      setSelectedMode((session.permissionMode as ModeId) || DEFAULT_MODE);
+      setSelectedModel((session.model as ModelId) ?? DEFAULT_MODEL);
+      setSelectedMode((session.permissionMode as ModeId) ?? DEFAULT_MODE);
       initializedForSessionRef.current = sessionId;
     }
   }, [session, sessionId]);

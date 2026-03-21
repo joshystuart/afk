@@ -50,7 +50,7 @@ export interface CreateSessionRequest {
 export interface UpdateSessionRequest {
   name?: string;
   model?: string | null;
-  permissionMode?: string | null;
+  permissionMode?: string;
 }
 
 export interface CreateSessionResponse {

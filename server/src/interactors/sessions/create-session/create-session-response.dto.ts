@@ -1,4 +1,5 @@
 import { Session } from '../../../domain/sessions/session.entity';
+import { type SessionPermissionMode } from '../../../domain/sessions/permission-mode';
 import { SessionStatus } from '../../../domain/sessions/session-status.enum';
 
 export class CreateSessionResponseDto {
@@ -13,7 +14,7 @@ export class CreateSessionResponseDto {
   imageName?: string;
   hostMountPath?: string;
   model?: string;
-  permissionMode?: string;
+  permissionMode!: SessionPermissionMode;
   createdAt!: string;
   updatedAt!: string;
 
@@ -31,7 +32,7 @@ export class CreateSessionResponseDto {
     dto.imageName = session.imageName || undefined;
     dto.hostMountPath = session.config.hostMountPath || undefined;
     dto.model = session.model || undefined;
-    dto.permissionMode = session.permissionMode || undefined;
+    dto.permissionMode = session.permissionMode;
     dto.createdAt = session.createdAt.toISOString();
     dto.updatedAt = session.updatedAt.toISOString();
 

@@ -16,6 +16,7 @@ import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
 import { GitStatusResult } from '../services/git/git.service';
 import { SessionRepository } from '../services/repositories/session.repository';
 import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
+import { type SessionPermissionMode } from '../domain/sessions/permission-mode';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
 import { ChatService } from '../services/chat/chat.service';
 import { ScheduledJobRepository } from '../domain/scheduled-jobs/scheduled-job.repository';
@@ -455,7 +456,7 @@ export class SessionGateway
       content: string;
       continueConversation: boolean;
       model?: string;
-      permissionMode?: string;
+      permissionMode?: SessionPermissionMode;
     },
     @ConnectedSocket() client: Socket,
   ) {

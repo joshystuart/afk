@@ -7,6 +7,10 @@ import {
   ValueTransformer,
 } from 'typeorm';
 import { SessionIdDto } from './session-id.dto';
+import {
+  DEFAULT_SESSION_PERMISSION_MODE,
+  type SessionPermissionMode,
+} from './permission-mode';
 import { SessionStatus } from './session-status.enum';
 import { SessionConfigDto } from './session-config.dto';
 import { PortPairDto } from '../containers/port-pair.dto';
@@ -75,7 +79,7 @@ export class Session {
   model: string | null;
 
   @Column('varchar', { length: 50, nullable: true })
-  permissionMode: string | null;
+  permissionMode: SessionPermissionMode;
 
   constructor(
     id?: SessionIdDto | string,
@@ -90,7 +94,7 @@ export class Session {
     imageId?: string | null,
     imageName?: string | null,
     model?: string | null,
-    permissionMode?: string | null,
+    permissionMode?: SessionPermissionMode,
   ) {
     if (id) {
       this.id = typeof id === 'string' ? id : id.toString();
@@ -106,7 +110,7 @@ export class Session {
     if (imageId !== undefined) this.imageId = imageId;
     if (imageName !== undefined) this.imageName = imageName;
     if (model !== undefined) this.model = model;
-    if (permissionMode !== undefined) this.permissionMode = permissionMode;
+    this.permissionMode = permissionMode ?? DEFAULT_SESSION_PERMISSION_MODE;
   }
 
   // Getter to maintain compatibility with existing SessionIdDto usage

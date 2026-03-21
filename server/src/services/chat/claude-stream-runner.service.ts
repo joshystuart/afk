@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DockerEngineService } from '../docker/docker-engine.service';
 import { NdjsonParser } from './ndjson-parser';
 import type { StreamArchiveWriter } from '../stream-archive/claude-event-archive.service';
+import {
+  isSessionPermissionMode,
+  type SessionPermissionMode,
+} from '../../domain/sessions/permission-mode';
 
 export interface ClaudeStreamRunnerOptions {
   containerId: string;
@@ -9,7 +13,7 @@ export interface ClaudeStreamRunnerOptions {
   workingDir: string;
   continueConversation?: boolean;
   model?: string;
-  permissionMode?: string;
+  permissionMode?: SessionPermissionMode;
   includePartialMessages?: boolean;
   onEvent?: (event: any) => void | Promise<void>;
   archiveWriter?: StreamArchiveWriter;
@@ -199,6 +203,7 @@ export class ClaudeStreamRunnerService {
   }
 
   private buildClaudeCommand(options: ClaudeStreamRunnerOptions): string[] {
+    const permissionMode = this.resolvePermissionMode(options.permissionMode);
     const cmd = [
       'claude',
       '-p',
@@ -208,7 +213,7 @@ export class ClaudeStreamRunnerService {
       '--verbose',
     ];
 
-    if (options.permissionMode === 'plan') {
+    if (permissionMode === 'plan') {
       cmd.push(
         '--permission-mode',
         'plan',
@@ -231,5 +236,19 @@ export class ClaudeStreamRunnerService {
     }
 
     return cmd;
+  }
+
+  private resolvePermissionMode(
+    permissionMode?: string,
+  ): SessionPermissionMode | undefined {
+    if (permissionMode === undefined) {
+      return undefined;
+    }
+
+    if (!isSessionPermissionMode(permissionMode)) {
+      throw new Error(`Invalid permission mode: ${permissionMode}`);
+    }
+
+    return permissionMode;
   }
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Session } from './session.entity';
 import { SessionIdDtoFactory } from './session-id-dto.factory';
 import { SessionConfigDto } from './session-config.dto';
+import { DEFAULT_SESSION_PERMISSION_MODE } from './permission-mode';
 import { SessionStatus } from './session-status.enum';
 import { SessionIdDto } from './session-id.dto';
 import { PortPairDto } from '../containers/port-pair.dto';
@@ -22,6 +23,9 @@ export class SessionFactory {
       new Date(),
       new Date(),
       null,
+      undefined,
+      undefined,
+      DEFAULT_SESSION_PERMISSION_MODE,
     );
   }
 

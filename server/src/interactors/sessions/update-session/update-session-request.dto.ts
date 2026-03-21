@@ -1,4 +1,14 @@
-import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import {
+  SESSION_PERMISSION_MODES,
+  type SessionPermissionMode,
+} from '../../../domain/sessions/permission-mode';
 
 export class UpdateSessionRequest {
   @IsString()
@@ -15,5 +25,6 @@ export class UpdateSessionRequest {
   @IsString()
   @IsOptional()
   @MaxLength(50)
-  permissionMode?: string | null;
+  @IsIn(SESSION_PERMISSION_MODES)
+  permissionMode?: SessionPermissionMode;
 }

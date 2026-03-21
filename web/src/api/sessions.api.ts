@@ -127,6 +127,20 @@ export const sessionsApi = {
     await apiClient.delete(`/sessions/${sessionId}`);
   },
 
+  // Clear all sessions (stop running ones, then delete all)
+  clearAll: async (): Promise<{
+    stopped: number;
+    deleted: number;
+    failed: number;
+  }> => {
+    const response = await apiClient.delete('/sessions/clear-all');
+    return response as unknown as {
+      stopped: number;
+      deleted: number;
+      failed: number;
+    };
+  },
+
   // Get session logs
   getSessionLogs: async (sessionId: string): Promise<string[]> => {
     const response = await apiClient.get(`/sessions/${sessionId}/logs`);

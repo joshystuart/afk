@@ -13,6 +13,8 @@ import { GetScheduledJobController } from './get-scheduled-job.controller';
 import { GetScheduledJobInteractor } from './get-scheduled-job.interactor';
 import { UpdateScheduledJobController } from './update-scheduled-job/update-scheduled-job.controller';
 import { UpdateScheduledJobInteractor } from './update-scheduled-job/update-scheduled-job.interactor';
+import { ClearAllScheduledJobsController } from './clear-all-scheduled-jobs.controller';
+import { ClearAllScheduledJobsInteractor } from './clear-all-scheduled-jobs.interactor';
 import { DeleteScheduledJobController } from './delete-scheduled-job.controller';
 import { DeleteScheduledJobInteractor } from './delete-scheduled-job.interactor';
 import { ListScheduledJobRunsController } from './list-scheduled-job-runs.controller';
@@ -37,6 +39,7 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     ListScheduledJobsController,
     GetScheduledJobController,
     UpdateScheduledJobController,
+    ClearAllScheduledJobsController,
     DeleteScheduledJobController,
     ListScheduledJobRunsController,
     GetScheduledJobRunStreamController,
@@ -48,6 +51,7 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     GetScheduledJobInteractor,
     UpdateScheduledJobInteractor,
     DeleteScheduledJobInteractor,
+    ClearAllScheduledJobsInteractor,
     ListScheduledJobRunsInteractor,
     TriggerScheduledJobInteractor,
     ScheduledJobDefinitionService,

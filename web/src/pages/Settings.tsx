@@ -6,8 +6,9 @@ import { useSearchParams } from 'react-router-dom';
 import { GeneralSettings } from './settings/GeneralSettings';
 import { GitSettings } from './settings/GitSettings';
 import { DockerSettings } from './settings/DockerSettings';
+import { DataManagementSettings } from './settings/DataManagementSettings';
 
-const TAB_KEYS = ['general', 'git', 'docker'] as const;
+const TAB_KEYS = ['general', 'git', 'docker', 'data'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const Settings: React.FC = () => {
@@ -87,11 +88,13 @@ const Settings: React.FC = () => {
         <Tab label="General" />
         <Tab label="Git" />
         <Tab label="Docker" />
+        <Tab label="Data" />
       </Tabs>
 
       {activeTab === 0 && <GeneralSettings />}
       {activeTab === 1 && <GitSettings />}
       {activeTab === 2 && <DockerSettings />}
+      {activeTab === 3 && <DataManagementSettings />}
     </Box>
   );
 };

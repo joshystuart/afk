@@ -1,5 +1,6 @@
 export enum SessionRoutes {
   BASE = '/sessions',
+  CLEAR_ALL = '/clear-all',
   ITEM = '/:id',
   START = '/:id/start',
   STOP = '/:id/stop',

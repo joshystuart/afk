@@ -11,4 +11,9 @@ export class UpdateSessionRequest {
   @IsOptional()
   @MaxLength(50)
   model?: string | null;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  permissionMode?: string | null;
 }

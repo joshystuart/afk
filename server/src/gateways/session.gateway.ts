@@ -455,10 +455,12 @@ export class SessionGateway
       content: string;
       continueConversation: boolean;
       model?: string;
+      permissionMode?: string;
     },
     @ConnectedSocket() client: Socket,
   ) {
-    const { sessionId, content, continueConversation, model } = data;
+    const { sessionId, content, continueConversation, model, permissionMode } =
+      data;
     this.logger.log('Chat message received', {
       sessionId,
       continueConversation,
@@ -470,7 +472,7 @@ export class SessionGateway
       const result = await this.chatService.sendMessage(
         sessionId,
         content,
-        { continueConversation, model },
+        { continueConversation, model, permissionMode },
         (event) => {
           this.server
             .to(this.getSessionRoom(sessionId))

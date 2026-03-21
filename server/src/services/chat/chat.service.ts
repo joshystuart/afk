@@ -19,6 +19,7 @@ export interface ChatStreamEvent {
 export interface SendMessageOptions {
   continueConversation: boolean;
   model?: string;
+  permissionMode?: string;
 }
 
 export interface SendMessageResult {
@@ -90,6 +91,7 @@ export class ChatService {
       prompt: content,
       continueConversation: options.continueConversation,
       model: options.model,
+      permissionMode: options.permissionMode,
       includePartialMessages: true,
       workingDir: '/workspace/repo',
     };
@@ -100,6 +102,7 @@ export class ChatService {
       promptLength: content.length,
       continueConversation: options.continueConversation,
       model: options.model,
+      permissionMode: options.permissionMode,
     });
 
     // Persist placeholder so partial output survives navigation away or server restart

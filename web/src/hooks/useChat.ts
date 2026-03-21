@@ -44,6 +44,7 @@ interface UseChatReturn {
     content: string,
     continueConversation: boolean,
     model?: string,
+    permissionMode?: string,
   ) => void;
   cancelExecution: () => void;
 }
@@ -300,7 +301,12 @@ export const useChat = (sessionId: string): UseChatReturn => {
   }, [queryClient, sessionId, setStreamingEvents, token, updateChatHistory]);
 
   const sendMessage = useCallback(
-    (content: string, continueConversation: boolean, model?: string) => {
+    (
+      content: string,
+      continueConversation: boolean,
+      model?: string,
+      permissionMode?: string,
+    ) => {
       if (!socketRef.current || isProcessing) return;
 
       const userMessage: ChatMessage = {
@@ -324,6 +330,7 @@ export const useChat = (sessionId: string): UseChatReturn => {
         content,
         continueConversation,
         model: model || undefined,
+        permissionMode: permissionMode || undefined,
       });
     },
     [

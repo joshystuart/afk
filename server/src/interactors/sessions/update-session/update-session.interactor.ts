@@ -30,6 +30,10 @@ export class UpdateSessionInteractor {
       session.model = request.model;
     }
 
+    if (request.permissionMode !== undefined) {
+      session.permissionMode = request.permissionMode;
+    }
+
     await this.sessionRepository.save(session);
 
     const updatedSession = await this.sessionRepository.findById(sessionId);

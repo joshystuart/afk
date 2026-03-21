@@ -28,6 +28,7 @@ export const sessionsApi = {
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
       model: sessionData.model,
+      permissionMode: sessionData.permissionMode,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -54,6 +55,7 @@ export const sessionsApi = {
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
       model: sessionData.model,
+      permissionMode: sessionData.permissionMode,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     })) as Session[];
@@ -77,6 +79,7 @@ export const sessionsApi = {
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
       model: sessionData.model,
+      permissionMode: sessionData.permissionMode,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;
@@ -102,6 +105,7 @@ export const sessionsApi = {
       imageName: sessionData.imageName,
       hostMountPath: sessionData.hostMountPath,
       model: sessionData.model,
+      permissionMode: sessionData.permissionMode,
       createdAt: sessionData.createdAt,
       updatedAt: sessionData.updatedAt,
     } as Session;

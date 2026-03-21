@@ -3,7 +3,13 @@ import { Box, Typography } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { afkColors } from '../../themes/afk';
 import { ChatMessageBubble } from './ChatMessageBubble';
-import { ChatInput, DEFAULT_MODEL, type ModelId } from './ChatInput';
+import {
+  ChatInput,
+  DEFAULT_MODEL,
+  DEFAULT_MODE,
+  type ModelId,
+  type ModeId,
+} from './ChatInput';
 import { StreamingIndicator } from './StreamingIndicator';
 import { useChat } from '../../hooks/useChat';
 import { sessionsApi } from '../../api/sessions.api';
@@ -31,6 +37,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
 
   const [selectedModel, setSelectedModel] =
     React.useState<ModelId>(DEFAULT_MODEL);
+  const [selectedMode, setSelectedMode] = React.useState<ModeId>(DEFAULT_MODE);
   const initializedForSessionRef = React.useRef<string | null>(null);
   const shouldJumpToBottomRef = React.useRef(true);
   const isPinnedToBottomRef = React.useRef(true);
@@ -41,12 +48,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     if (initializedForSessionRef.current !== sessionId) {
       initializedForSessionRef.current = null;
       setSelectedModel(DEFAULT_MODEL);
+      setSelectedMode(DEFAULT_MODE);
     }
   }, [sessionId]);
 
   React.useEffect(() => {
     if (session && initializedForSessionRef.current !== sessionId) {
       setSelectedModel((session.model as ModelId) || DEFAULT_MODEL);
+      setSelectedMode((session.permissionMode as ModeId) || DEFAULT_MODE);
       initializedForSessionRef.current = sessionId;
     }
   }, [session, sessionId]);
@@ -71,6 +80,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     [sessionId, queryClient],
   );
 
+  const handleModeChange = React.useCallback(
+    (permissionMode: ModeId) => {
+      setSelectedMode(permissionMode);
+      sessionsApi
+        .updateSession(sessionId, { permissionMode })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        })
+        .catch((err) => {
+          console.error('Failed to persist mode selection:', err);
+        });
+    },
+    [sessionId, queryClient],
+  );
+
   const updatePinnedToBottom = React.useCallback(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
@@ -88,10 +112,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
   }, [updatePinnedToBottom]);
 
   const handleSendMessage = React.useCallback(
-    (content: string, continueConversation: boolean, model?: string) => {
+    (
+      content: string,
+      continueConversation: boolean,
+      model?: string,
+      permissionMode?: string,
+    ) => {
       shouldJumpToBottomRef.current = true;
       isPinnedToBottomRef.current = true;
-      sendChatMessage(content, continueConversation, model);
+      sendChatMessage(content, continueConversation, model, permissionMode);
     },
     [sendChatMessage],
   );
@@ -235,6 +264,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         isProcessing={isProcessing}
         selectedModel={selectedModel}
         onModelChange={handleModelChange}
+        selectedMode={selectedMode}
+        onModeChange={handleModeChange}
       />
     </Box>
   );

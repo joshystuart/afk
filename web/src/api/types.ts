@@ -30,6 +30,7 @@ export interface Session {
   imageName?: string;
   hostMountPath?: string;
   model?: string;
+  permissionMode?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -49,6 +50,7 @@ export interface CreateSessionRequest {
 export interface UpdateSessionRequest {
   name?: string;
   model?: string | null;
+  permissionMode?: string | null;
 }
 
 export interface CreateSessionResponse {

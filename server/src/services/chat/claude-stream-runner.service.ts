@@ -9,6 +9,7 @@ export interface ClaudeStreamRunnerOptions {
   workingDir: string;
   continueConversation?: boolean;
   model?: string;
+  permissionMode?: string;
   includePartialMessages?: boolean;
   onEvent?: (event: any) => void | Promise<void>;
   archiveWriter?: StreamArchiveWriter;
@@ -205,8 +206,17 @@ export class ClaudeStreamRunnerService {
       '--output-format',
       'stream-json',
       '--verbose',
-      '--dangerously-skip-permissions',
     ];
+
+    if (options.permissionMode === 'plan') {
+      cmd.push(
+        '--permission-mode',
+        'plan',
+        '--allow-dangerously-skip-permissions',
+      );
+    } else {
+      cmd.push('--dangerously-skip-permissions');
+    }
 
     if (options.includePartialMessages) {
       cmd.push('--include-partial-messages');

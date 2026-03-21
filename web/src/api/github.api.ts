@@ -1,15 +1,7 @@
 import { apiClient } from './client';
 import type { GitHubRepo, GitHubStatus } from './types';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:4919/api';
-
 export const githubApi = {
-  /** Get the full auth URL to redirect to (direct browser navigation) */
-  getAuthUrl(): string {
-    return `${API_BASE_URL}/github/auth`;
-  },
-
   /** Get GitHub connection status */
   async getStatus(): Promise<GitHubStatus> {
     const response = await apiClient.get<GitHubStatus>('/github/status');

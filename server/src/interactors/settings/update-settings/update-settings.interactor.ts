@@ -1,4 +1,9 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import {
   Settings,
@@ -6,16 +11,35 @@ import {
 } from '../../../domain/settings/settings.entity';
 import { UpdateSettingsRequest } from './update-settings-request.dto';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
+import { GitHubService } from '../../../libs/github/github.service';
 
 @Injectable()
 export class UpdateSettingsInteractor {
+  private readonly logger = new Logger(UpdateSettingsInteractor.name);
+
   constructor(
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
+    private readonly githubService: GitHubService,
   ) {}
 
   async execute(request: UpdateSettingsRequest): Promise<Settings> {
     const currentSettings = await this.settingsRepository.get();
+
+    // If a new GitHub token is being set, resolve the username
+    if (request.githubAccessToken) {
+      try {
+        const user = await this.githubService.getUser(
+          request.githubAccessToken,
+        );
+        currentSettings.git.githubUsername = user.login;
+        this.logger.log(`GitHub token validated for user: ${user.login}`);
+      } catch (error) {
+        throw new BadRequestException(
+          'Invalid GitHub Personal Access Token. Please check the token and try again.',
+        );
+      }
+    }
 
     try {
       currentSettings.update({
@@ -27,10 +51,7 @@ export class UpdateSettingsInteractor {
         dockerSocketPath: request.dockerSocketPath,
         dockerStartPort: request.dockerStartPort,
         dockerEndPort: request.dockerEndPort,
-        githubClientId: request.githubClientId,
-        githubClientSecret: request.githubClientSecret,
-        githubCallbackUrl: request.githubCallbackUrl,
-        githubFrontendRedirectUrl: request.githubFrontendRedirectUrl,
+        githubAccessToken: request.githubAccessToken,
         idleCleanupEnabled: request.idleCleanupEnabled,
         idleTimeoutMinutes: request.idleTimeoutMinutes,
       });

@@ -71,33 +71,9 @@ export class UpdateSettingsRequest {
   @IsString()
   @ApiProperty({
     required: false,
-    description: 'GitHub OAuth App client ID',
+    description: 'GitHub Personal Access Token',
   })
-  githubClientId?: string;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    required: false,
-    description: 'GitHub OAuth App client secret',
-  })
-  githubClientSecret?: string;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    required: false,
-    description: 'GitHub OAuth callback URL',
-  })
-  githubCallbackUrl?: string;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({
-    required: false,
-    description: 'Frontend redirect URL after GitHub OAuth',
-  })
-  githubFrontendRedirectUrl?: string;
+  githubAccessToken?: string;
 
   @IsOptional()
   @IsBoolean()

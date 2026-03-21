@@ -80,10 +80,6 @@ export interface Settings {
   dockerSocketPath?: string | null;
   dockerStartPort?: number | null;
   dockerEndPort?: number | null;
-  githubClientId?: string | null;
-  hasGithubClientSecret: boolean;
-  githubCallbackUrl?: string | null;
-  githubFrontendRedirectUrl?: string | null;
   updatedAt: string;
 }
 
@@ -121,10 +117,7 @@ export interface UpdateSettingsRequest {
   dockerSocketPath?: string;
   dockerStartPort?: number;
   dockerEndPort?: number;
-  githubClientId?: string;
-  githubClientSecret?: string;
-  githubCallbackUrl?: string;
-  githubFrontendRedirectUrl?: string;
+  githubAccessToken?: string;
 }
 
 export interface ApiError {

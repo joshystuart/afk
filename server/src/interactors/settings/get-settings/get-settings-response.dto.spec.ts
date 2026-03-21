@@ -73,17 +73,6 @@ describe('GetSettingsResponseDto', () => {
       expect(dto.dockerEndPort).toBe(7780);
     });
 
-    it('should map github OAuth settings', () => {
-      const dto = GetSettingsResponseDto.fromDomain(settings);
-
-      expect(dto.githubCallbackUrl).toBe(
-        'http://localhost:4919/api/github/callback',
-      );
-      expect(dto.githubFrontendRedirectUrl).toBe(
-        'http://localhost:5173/settings',
-      );
-    });
-
     it('should obfuscate claude token in response', () => {
       settings.general.claudeToken = 'sk-ant-very-long-token-value';
       const dto = GetSettingsResponseDto.fromDomain(settings);
@@ -97,14 +86,12 @@ describe('GetSettingsResponseDto', () => {
       settings.git.sshPrivateKey = 'some-key';
       settings.general.claudeToken = 'some-token';
       settings.git.githubAccessToken = 'gh-token';
-      settings.git.githubClientSecret = 'gh-secret';
 
       const dto = GetSettingsResponseDto.fromDomain(settings);
 
       expect(dto.hasSshPrivateKey).toBe(true);
       expect(dto.hasClaudeToken).toBe(true);
       expect(dto.hasGitHubToken).toBe(true);
-      expect(dto.hasGithubClientSecret).toBe(true);
     });
 
     it('should serialize updatedAt as ISO string', () => {

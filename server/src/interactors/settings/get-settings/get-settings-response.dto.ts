@@ -20,7 +20,7 @@ export class GetSettingsResponseDto {
   @ApiProperty({ required: false, nullable: true })
   gitUserEmail?: string | null;
 
-  @ApiProperty({ description: 'Whether GitHub is connected' })
+  @ApiProperty({ description: 'Whether GitHub is connected via PAT' })
   hasGitHubToken!: boolean;
 
   @ApiProperty({ required: false, description: 'Connected GitHub username' })
@@ -37,22 +37,6 @@ export class GetSettingsResponseDto {
 
   @ApiProperty({ description: 'End of port range for Docker containers' })
   dockerEndPort!: number;
-
-  @ApiProperty({ required: false, nullable: true })
-  githubClientId?: string | null;
-
-  @ApiProperty({
-    required: false,
-    nullable: true,
-    description: 'Whether a GitHub client secret is configured',
-  })
-  hasGithubClientSecret!: boolean;
-
-  @ApiProperty({ description: 'GitHub OAuth callback URL' })
-  githubCallbackUrl!: string;
-
-  @ApiProperty({ description: 'Frontend redirect URL after GitHub OAuth' })
-  githubFrontendRedirectUrl!: string;
 
   @ApiProperty({ description: 'Whether idle session cleanup is enabled' })
   idleCleanupEnabled!: boolean;
@@ -92,10 +76,6 @@ export class GetSettingsResponseDto {
     dto.dockerSocketPath = settings.docker.socketPath;
     dto.dockerStartPort = settings.docker.startPort;
     dto.dockerEndPort = settings.docker.endPort;
-    dto.githubClientId = settings.git.githubClientId ?? null;
-    dto.hasGithubClientSecret = !!settings.git.githubClientSecret;
-    dto.githubCallbackUrl = settings.git.githubCallbackUrl;
-    dto.githubFrontendRedirectUrl = settings.git.githubFrontendRedirectUrl;
     dto.idleCleanupEnabled = settings.general.idleCleanupEnabled;
     dto.idleTimeoutMinutes = settings.general.idleTimeoutMinutes;
     dto.updatedAt = settings.updatedAt.toISOString();

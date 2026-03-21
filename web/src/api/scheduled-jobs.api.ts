@@ -37,6 +37,11 @@ export const scheduledJobsApi = {
     await apiClient.delete(`${BASE}/${id}`);
   },
 
+  clearAll: async (): Promise<{ deleted: number; failed: number }> => {
+    const response = await apiClient.delete(`${BASE}/clear-all`);
+    return response as unknown as { deleted: number; failed: number };
+  },
+
   listRuns: async (jobId: string): Promise<ScheduledJobRun[]> => {
     const response = await apiClient.get(`${BASE}/${jobId}/runs`);
     return (Array.isArray(response) ? response : []) as ScheduledJobRun[];

@@ -10,6 +10,7 @@ import { GetSessionController } from './get-session.controller';
 import { CheckSessionHealthController } from './check-session-health.controller';
 import { StartSessionController } from './start-session.controller';
 import { StopSessionController } from './stop-session.controller';
+import { ClearAllSessionsController } from './clear-all-sessions.controller';
 import { DeleteSessionController } from './delete-session.controller';
 import { GitStatusController } from './git-status.controller';
 import { GitCommitPushController } from './git-commit-push.controller';
@@ -25,6 +26,7 @@ import { SettingsModule } from '../settings/settings.module';
 import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
 import { GitModule } from '../../services/git/git.module';
 import { ChatModule } from '../../services/chat/chat.module';
+import { ClearAllSessionsInteractor } from './clear-all-sessions.interactor';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseService } from '../../libs/response/response.service';
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
@@ -49,6 +51,7 @@ import { Session } from '../../domain/sessions/session.entity';
     CheckSessionHealthController,
     StartSessionController,
     StopSessionController,
+    ClearAllSessionsController,
     DeleteSessionController,
     GitStatusController,
     GitCommitPushController,
@@ -60,6 +63,7 @@ import { Session } from '../../domain/sessions/session.entity';
     CreateSessionInteractor,
     ListSessionsInteractor,
     SessionLifecycleInteractor,
+    ClearAllSessionsInteractor,
     SessionGitInteractor,
     UpdateSessionInteractor,
     SessionConfig,

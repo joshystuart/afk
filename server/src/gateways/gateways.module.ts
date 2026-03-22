@@ -8,6 +8,7 @@ import { GitWatcherModule } from '../services/git-watcher/git-watcher.module';
 import { ChatModule } from '../services/chat/chat.module';
 import { ScheduledJobsDomainModule } from '../domain/scheduled-jobs/scheduled-jobs.module';
 import { ScheduledJobGatewayResponseFactory } from './scheduled-job-gateway-response.factory';
+import { SessionGatewaySubscriptionsService } from './session-gateway-subscriptions.service';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ScheduledJobGatewayResponseFactory } from './scheduled-job-gateway-resp
   providers: [
     SessionGateway,
     SessionSubscriptionService,
+    SessionGatewaySubscriptionsService,
     ScheduledJobGatewayResponseFactory,
   ],
   exports: [SessionGateway, SessionSubscriptionService],

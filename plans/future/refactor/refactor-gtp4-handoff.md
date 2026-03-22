@@ -4,7 +4,7 @@
 
 Continue the server refactor from `plans/future/refactor/refactor-gtp4.md`.
 
-The session lifecycle split that was the previous phase 3 target is now complete. The next high-value slice is still within the broader "split large coordinators/adapters" phase, but it should now move to the oversized realtime adapter in `server/src/gateways/session.gateway.ts`.
+The session lifecycle split that was the previous phase 3 target is complete, and the first `session.gateway.ts` extraction pass is now complete too. The next high-value slice is still within the broader "split large coordinators/adapters" phase, but it should continue reducing `server/src/gateways/session.gateway.ts` by extracting the remaining chat and scheduled-job websocket behavior.
 
 ## What Was Completed
 
@@ -55,29 +55,34 @@ The session lifecycle split that was the previous phase 3 target is now complete
   - `server/src/interactors/sessions/create-session/create-session.interactor.ts`
 - Removed the obsolete lifecycle coordinator:
   - `server/src/interactors/sessions/session-lifecycle.interactor.ts`
+- Extracted session/log subscription and disconnect cleanup behavior out of `SessionGateway` into a gateway-local collaborator:
+  - `server/src/gateways/session-gateway-subscriptions.service.ts`
+- Added focused unit coverage for the extracted gateway collaborator:
+  - `server/src/gateways/session-gateway-subscriptions.service.spec.ts`
+- Rewired the main gateway to delegate session/log subscription behavior while preserving the existing websocket namespace and event contract:
+  - `server/src/gateways/session.gateway.ts`
+  - `server/src/gateways/gateways.module.ts`
 
 ## Validation Already Run
 
 - `npm run format`: passed
-- `npm run server:build`: passed
-- `ReadLints` on `server/src/interactors/sessions`: no diagnostics reported
-- Focused automated tests were not added or rerun in this slice
-- Runtime boot sanity was not rerun in this slice
+- server package build (`npm run build`): passed
+- `npx jest src/gateways/session-gateway-subscriptions.service.spec.ts`: passed
+- `ReadLints` on touched gateway files: no diagnostics reported
+- Quick runtime boot sanity: existing `npm run start:prod` boot log showed the app started successfully and `SessionGateway` subscribed to the expected websocket handlers
 
 ## Current Status
 
 There is no known blocker from this refactor slice.
 
-The session lifecycle coordinator has been removed, the sessions module still builds cleanly, and the create/start flows now share readiness polling through `SessionHealthMonitorService`.
+The session lifecycle coordinator has been removed, the sessions module still builds cleanly, the create/start flows now share readiness polling through `SessionHealthMonitorService`, and `SessionGateway` no longer owns the session/log subscription bookkeeping directly.
 
 ## Next Phase Target
 
-The next highest-value refactor target is `server/src/gateways/session.gateway.ts`.
+The next highest-value refactor target is still `server/src/gateways/session.gateway.ts`, but the session/log subscription slice is already extracted.
 
-That gateway still owns too many responsibilities for a single transport adapter:
+The remaining gateway responsibilities are still too broad for a single transport adapter:
 
-- session subscription orchestration
-- log stream fanout
 - chat event handling
 - git/status related websocket behavior
 - scheduled-job run streaming
@@ -88,25 +93,28 @@ That gateway still owns too many responsibilities for a single transport adapter
 ### Keep
 
 - Keep `SessionSubscriptionService` as the narrow subscription/state fanout seam if it continues to reduce duplication.
+- Keep `SessionGatewaySubscriptionsService` as the gateway-local seam for session/log subscription handling, git watcher lifecycle, and disconnect cleanup.
 - Keep websocket event names and payload contracts stable while moving logic behind smaller collaborators.
 
-### Extract First
+### Already Extracted
 
 1. Session/log subscription handling
-   - move pure subscription bookkeeping and log stream lifecycle out of the main gateway class
+   - `SessionGatewaySubscriptionsService` now owns subscription bookkeeping delegation, log stream subscription setup, session activity touching, disconnect cleanup, and watcher start/stop decisions
 
-2. Chat websocket behavior
+### Extract Next
+
+1. Chat websocket behavior
    - isolate chat-specific socket handlers from session lifecycle and log concerns
 
-3. Scheduled-job run streaming
+2. Scheduled-job run streaming
    - keep the existing gateway-owned response mapping, but move the run-stream event handling out of the main gateway
 
-4. Remaining session control handlers
+3. Remaining session/global event fanout
    - leave the top-level gateway as a thin namespace shell if Nest websocket decorators make that simpler
 
 ### Optional Helper
 
-- If the gateway split still needs shared event fanout logic, extract a small gateway-local collaborator rather than letting the main gateway regain coordinator behavior.
+- If the gateway split still needs shared room or event fanout logic, extract a small gateway-local collaborator rather than letting the main gateway regain coordinator behavior.
 
 ## Constraints For The Next Slice
 
@@ -119,10 +127,10 @@ That gateway still owns too many responsibilities for a single transport adapter
 
 ## Suggested Next Steps
 
-1. Inspect `server/src/gateways/session.gateway.ts` and list its responsibilities by socket concern.
-2. Extract the first gateway collaborator behind the existing websocket namespace without changing client-facing events.
-3. Keep any shared payload mapping or subscription plumbing in small helpers instead of another large adapter class.
-4. Add focused tests where practical for any extracted gateway-local collaborators.
+1. Extract chat websocket behavior next, likely behind a `SessionGatewayChatService`-style collaborator that owns `chat.send`/`chat.cancel` transport orchestration and the stream/complete/error fanout callbacks.
+2. After chat is isolated, extract scheduled-job run subscription/update streaming out of the gateway while keeping `ScheduledJobGatewayResponseFactory` as the payload mapper.
+3. Leave git-status fanout and generic session/global emit helpers in the top-level gateway only if they stay thin; otherwise extract a small event emitter helper.
+4. Add focused tests where practical for each extracted gateway-local collaborator.
 5. Run:
    - `npm run format`
    - `npm run server:build`
@@ -135,5 +143,6 @@ That gateway still owns too many responsibilities for a single transport adapter
 - `server/src/services/sessions/session-runtime.service.ts` still owns the low-level stop-session/runtime path and remains the precedent for keeping shared runtime code out of transport adapters.
 - `server/src/interactors/sessions/session-health-monitor.service.ts` is now the shared seam for background readiness polling.
 - `server/src/interactors/sessions/create-session/create-session.interactor.ts` still has room for future cleanup, but it is no longer coupled to a lifecycle god-object.
+- `server/src/gateways/session-gateway-subscriptions.service.ts` now owns the session/log subscription slice; extend the split from there instead of pulling that logic back into `SessionGateway`.
 - `npm run lint` is still noisy from pre-existing repo-wide issues; use `ReadLints` or file-scoped validation for touched files.
-- The next slice should probably stay adapter-focused rather than doing another large folder move; prioritize reducing `session.gateway.ts` size and clarifying its collaborator boundaries.
+- The next slice should stay adapter-focused rather than doing another large folder move; prioritize extracting chat transport behavior first, then scheduled-job streaming, while preserving websocket event names and payloads.

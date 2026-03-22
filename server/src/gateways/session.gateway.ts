@@ -7,17 +7,15 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Inject, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
-import { SessionSubscriptionService } from './session-subscription.service';
-import { ContainerLogStreamService } from '../services/docker/container-log-stream.service';
-import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
+import {
+  SessionGatewayLogPayload,
+  SessionGatewaySubscriptionsService,
+} from './session-gateway-subscriptions.service';
 import { GitStatusResult } from '../services/git/git.service';
-import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
-import { SessionRepository } from '../domain/sessions/session.repository';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
-import { SESSION_REPOSITORY } from '../domain/sessions/session.tokens';
 import { ChatService } from '../services/chat/chat.service';
 import { ScheduledJobRepository } from '../domain/scheduled-jobs/scheduled-job.repository';
 import { ScheduledJobRunRepository } from '../domain/scheduled-jobs/scheduled-job-run.repository';
@@ -109,12 +107,7 @@ export class SessionGateway
   private readonly logger = new Logger(SessionGateway.name);
 
   constructor(
-    private readonly sessionSubscriptionService: SessionSubscriptionService,
-    private readonly containerLogStream: ContainerLogStreamService,
-    private readonly gitWatcherService: GitWatcherService,
-    @Inject(SESSION_REPOSITORY)
-    private readonly sessionRepository: SessionRepository,
-    private readonly sessionIdFactory: SessionIdDtoFactory,
+    private readonly sessionGatewaySubscriptionsService: SessionGatewaySubscriptionsService,
     private readonly chatService: ChatService,
     private readonly scheduledJobRepository: ScheduledJobRepository,
     private readonly scheduledJobRunRepository: ScheduledJobRunRepository,
@@ -123,23 +116,6 @@ export class SessionGateway
 
   private getSessionRoom(sessionId: string): string {
     return `${ROOM_PREFIX}${sessionId}`;
-  }
-
-  private async touchSession(sessionId: string): Promise<void> {
-    try {
-      const session = await this.sessionRepository.findById(
-        this.sessionIdFactory.fromString(sessionId),
-      );
-      if (session?.isRunning()) {
-        session.markAsAccessed();
-        await this.sessionRepository.save(session);
-      }
-    } catch (error) {
-      this.logger.warn('Failed to mark session as accessed', {
-        sessionId,
-        error: error.message,
-      });
-    }
   }
 
   private getJobRunRoom(runId: string): string {
@@ -157,23 +133,7 @@ export class SessionGateway
   }
 
   async handleDisconnect(client: Socket) {
-    this.containerLogStream.removeAllSubscribersForSocket(client.id);
-
-    // Get sessions this client was subscribed to before unsubscribing
-    const sessions = this.sessionSubscriptionService.getSessionsForClient(
-      client.id,
-    );
-
-    await this.sessionSubscriptionService.unsubscribeAll(client.id);
-
-    // Check if any sessions now have zero subscribers and stop watching
-    for (const sessionId of sessions) {
-      const remaining =
-        this.sessionSubscriptionService.getSubscribersForSession(sessionId);
-      if (remaining.length === 0) {
-        await this.gitWatcherService.stopWatching(sessionId);
-      }
-    }
+    await this.sessionGatewaySubscriptionsService.handleDisconnect(client.id);
 
     this.logger.log('Client disconnected', { clientId: client.id });
   }
@@ -184,22 +144,12 @@ export class SessionGateway
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      await this.sessionSubscriptionService.subscribe(
+      await this.sessionGatewaySubscriptionsService.subscribeToSession(
         client.id,
         data.sessionId,
       );
 
       client.join(this.getSessionRoom(data.sessionId));
-
-      this.touchSession(data.sessionId).catch(() => {});
-
-      // Start git watcher if session is running
-      this.startGitWatcherIfRunning(data.sessionId).catch((error) => {
-        this.logger.warn('Failed to start git watcher on subscribe', {
-          sessionId: data.sessionId,
-          error: error.message,
-        });
-      });
 
       // Sync current chat execution state so reconnecting clients
       // immediately know if Claude is mid-run
@@ -227,19 +177,11 @@ export class SessionGateway
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    await this.sessionSubscriptionService.unsubscribe(
+    await this.sessionGatewaySubscriptionsService.unsubscribeFromSession(
       client.id,
       data.sessionId,
     );
     client.leave(this.getSessionRoom(data.sessionId));
-
-    // Stop watcher if no subscribers remain
-    const remaining = this.sessionSubscriptionService.getSubscribersForSession(
-      data.sessionId,
-    );
-    if (remaining.length === 0) {
-      await this.gitWatcherService.stopWatching(data.sessionId);
-    }
 
     return {
       event: SOCKET_EVENTS.unsubscriptionSuccess,
@@ -253,32 +195,14 @@ export class SessionGateway
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const session = await this.sessionRepository.findById(
-        this.sessionIdFactory.fromString(data.sessionId),
-      );
-
-      if (!session?.containerId) {
-        return {
-          event: SOCKET_EVENTS.logsError,
-          data: { error: 'No container found for session' },
-        };
-      }
-
-      this.touchSession(data.sessionId).catch(() => {});
-
-      await this.containerLogStream.ensureRunningLogStream(
-        data.sessionId,
-        session.containerId,
-      );
-      this.containerLogStream.addSubscriber(
-        data.sessionId,
-        session.containerId,
+      await this.sessionGatewaySubscriptionsService.subscribeToLogs(
         client.id,
-        (log: string) => {
+        data.sessionId,
+        (payload: SessionGatewayLogPayload) => {
           client.emit(SOCKET_EVENTS.logData, {
-            sessionId: data.sessionId,
-            log,
-            timestamp: this.nowIso(),
+            sessionId: payload.sessionId,
+            log: payload.log,
+            timestamp: payload.timestamp,
           });
         },
       );
@@ -297,7 +221,7 @@ export class SessionGateway
 
   @SubscribeMessage(SOCKET_EVENTS.unsubscribeLogs)
   async handleLogUnsubscription(@ConnectedSocket() client: Socket) {
-    this.containerLogStream.removeSubscriber(client.id);
+    this.sessionGatewaySubscriptionsService.unsubscribeFromLogs(client.id);
 
     return {
       event: SOCKET_EVENTS.logsUnsubscribed,
@@ -459,7 +383,7 @@ export class SessionGateway
       continueConversation: boolean;
       model?: string;
     },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
   ) {
     const { sessionId, content, continueConversation, model } = data;
     this.logger.log('Chat message received', {
@@ -467,7 +391,7 @@ export class SessionGateway
       continueConversation,
     });
 
-    this.touchSession(sessionId).catch(() => {});
+    this.sessionGatewaySubscriptionsService.recordSessionActivity(sessionId);
 
     try {
       const result = await this.chatService.sendMessage(
@@ -527,9 +451,11 @@ export class SessionGateway
   @SubscribeMessage(SOCKET_EVENTS.chatCancel)
   async handleChatCancel(
     @MessageBody() data: { sessionId: string },
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() _client: Socket,
   ) {
-    this.touchSession(data.sessionId).catch(() => {});
+    this.sessionGatewaySubscriptionsService.recordSessionActivity(
+      data.sessionId,
+    );
 
     try {
       await this.chatService.cancelExecution(data.sessionId);
@@ -592,26 +518,5 @@ export class SessionGateway
       error: payload.error,
       timestamp: this.nowIso(),
     });
-  }
-
-  private async startGitWatcherIfRunning(sessionId: string): Promise<void> {
-    if (this.gitWatcherService.isWatching(sessionId)) {
-      return;
-    }
-
-    const session = await this.sessionRepository.findById(
-      this.sessionIdFactory.fromString(sessionId),
-    );
-
-    if (
-      session &&
-      session.status === SessionStatus.RUNNING &&
-      session.containerId
-    ) {
-      await this.gitWatcherService.startWatching(
-        sessionId,
-        session.containerId,
-      );
-    }
   }
 }

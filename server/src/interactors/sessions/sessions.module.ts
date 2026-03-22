@@ -22,13 +22,13 @@ import { DockerModule } from '../../services/docker/docker.module';
 import { RepositoriesModule } from '../../services/repositories/repositories.module';
 import { DomainModule } from '../../domain/domain.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
-import { SettingsModule } from '../settings/settings.module';
 import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
 import { GitModule } from '../../services/git/git.module';
 import { ChatModule } from '../../services/chat/chat.module';
 import { ClearAllSessionsInteractor } from './clear-all-sessions.interactor';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseModule } from '../../libs/response/response.module';
+import { SettingsPersistenceModule } from '../../libs/settings/settings-persistence.module';
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
 import { Session } from '../../domain/sessions/session.entity';
 import { SessionServicesModule } from '../../services/sessions/session-services.module';
@@ -41,7 +41,7 @@ import { SessionServicesModule } from '../../services/sessions/session-services.
     RepositoriesModule,
     DomainModule,
     DockerImagesModule,
-    SettingsModule,
+    SettingsPersistenceModule,
     GitWatcherModule,
     GitModule,
     ChatModule,

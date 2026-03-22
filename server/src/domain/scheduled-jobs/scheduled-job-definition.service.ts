@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { ScheduleType } from '../../domain/scheduled-jobs/schedule-type.enum';
-import { ScheduledJob } from '../../domain/scheduled-jobs/scheduled-job.entity';
+import { ScheduleType } from './schedule-type.enum';
+import { ScheduledJob } from './scheduled-job.entity';
 
 interface ScheduledJobDefinition {
   name: string;

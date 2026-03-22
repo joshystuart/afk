@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entity';
+import { ScheduledJobDefinitionService } from '../../../domain/scheduled-jobs/scheduled-job-definition.service';
 import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
 import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
 import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
 import { CreateScheduledJobRequest } from './create-scheduled-job-request.dto';
-import { ScheduledJobDefinitionService } from '../scheduled-job-definition.service';
 
 @Injectable()
 export class CreateScheduledJobInteractor {

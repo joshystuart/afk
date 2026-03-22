@@ -23,7 +23,6 @@ import { GetScheduledJobRunStreamController } from './get-scheduled-job-run-stre
 import { TriggerScheduledJobController } from './trigger-scheduled-job/trigger-scheduled-job.controller';
 import { TriggerScheduledJobInteractor } from './trigger-scheduled-job/trigger-scheduled-job.interactor';
 import { TriggerTokenGuard } from './trigger-scheduled-job/trigger-token.guard';
-import { ScheduledJobDefinitionService } from './scheduled-job-definition.service';
 import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
 
 @Module({
@@ -55,7 +54,6 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     ClearAllScheduledJobsInteractor,
     ListScheduledJobRunsInteractor,
     TriggerScheduledJobInteractor,
-    ScheduledJobDefinitionService,
     ScheduledJobResponseFactory,
     TriggerTokenGuard,
   ],

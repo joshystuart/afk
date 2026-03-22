@@ -9,13 +9,13 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { ScheduledJobRunRepository } from '../../domain/scheduled-jobs/scheduled-job-run.repository';
-import { ClaudeEventArchiveService } from '../../libs/stream-archive/claude-event-archive.service';
+} from '../../../libs/response/response.service';
+import { ScheduledJobRunRepository } from '../../../domain/scheduled-jobs/scheduled-job-run.repository';
+import { ClaudeEventArchiveService } from '../../../libs/stream-archive/claude-event-archive.service';
 import {
   ScheduledJobRoutes,
   ScheduledJobRouteParams,
-} from './scheduled-job.routes';
+} from '../scheduled-job.routes';
 
 @ApiTags('Scheduled Jobs')
 @Controller(ScheduledJobRoutes.BASE)

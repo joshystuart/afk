@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
-import { JobSchedulerService } from './runtime/job-scheduler.service';
-import { LaunchdService } from './runtime/launchd.service';
+import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
+import { JobSchedulerService } from '../runtime/job-scheduler.service';
+import { LaunchdService } from '../runtime/launchd.service';
 
 @Injectable()
 export class DeleteScheduledJobInteractor {

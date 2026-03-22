@@ -36,11 +36,7 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 
 const GitSettings: React.FC = () => {
   const { settings, error, updateSettings, clearError } = useSettingsStore();
-  const {
-    username,
-    disconnect,
-    isDisconnecting,
-  } = useGitHub();
+  const { username, disconnect, isDisconnecting } = useGitHub();
 
   const [formData, setFormData] = useState({
     gitUserName: '',
@@ -282,7 +278,9 @@ const GitSettings: React.FC = () => {
                   bgcolor: afkColors.surfaceElevated,
                 }}
               >
-                <GitHubIcon sx={{ fontSize: 20, color: afkColors.textPrimary }} />
+                <GitHubIcon
+                  sx={{ fontSize: 20, color: afkColors.textPrimary }}
+                />
                 <Box sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {username && (
@@ -308,7 +306,8 @@ const GitSettings: React.FC = () => {
                     variant="caption"
                     sx={{ color: afkColors.textTertiary }}
                   >
-                    You can browse and select repositories when creating sessions
+                    You can browse and select repositories when creating
+                    sessions
                   </Typography>
                 </Box>
                 <Button

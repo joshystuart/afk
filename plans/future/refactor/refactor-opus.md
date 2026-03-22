@@ -3,25 +3,25 @@ name: Server Clean Architecture Refactor
 overview: Eliminate the ambiguous `./services` directory, enforce the libs/interactors convention, fix repository placement inconsistencies, split oversized files, and ensure controllers always go through interactors -- following Uncle Bob's clean architecture with vertical use-case slicing.
 todos:
   - id: phase-1-infra-to-libs
-    content: "Phase 1: Move infrastructure services (docker, git, claude runner, stream-archive, launchd, observability) from services/ to libs/"
+    content: 'Phase 1: Move infrastructure services (docker, git, claude runner, stream-archive, launchd, observability) from services/ to libs/'
     status: pending
   - id: phase-2-domain-to-interactors
-    content: "Phase 2: Move domain services (chat, idle-cleanup, git-watcher, job-executor, job-scheduler, job-timing, docker-image) from services/ to interactors/"
+    content: 'Phase 2: Move domain services (chat, idle-cleanup, git-watcher, job-executor, job-scheduler, job-timing, docker-image) from services/ to interactors/'
     status: pending
   - id: phase-3-repos-to-domain
-    content: "Phase 3: Consolidate repositories from services/repositories/ into domain/, delete RepositoriesModule"
+    content: 'Phase 3: Consolidate repositories from services/repositories/ into domain/, delete RepositoriesModule'
     status: pending
   - id: phase-4-split-lifecycle
-    content: "Phase 4: Split SessionLifecycleInteractor (451 lines) into focused per-use-case interactors (start, stop, delete, get, health-check)"
+    content: 'Phase 4: Split SessionLifecycleInteractor (451 lines) into focused per-use-case interactors (start, stop, delete, get, health-check)'
     status: pending
   - id: phase-5-split-gateway
-    content: "Phase 5: Split SessionGateway (615 lines) into session, chat, log-stream, and job-run gateways"
+    content: 'Phase 5: Split SessionGateway (615 lines) into session, chat, log-stream, and job-run gateways'
     status: pending
   - id: phase-6-controller-interactor
-    content: "Phase 6: Fix controllers that bypass interactors (DockerImages, ChatMessages, JobRunStream)"
+    content: 'Phase 6: Fix controllers that bypass interactors (DockerImages, ChatMessages, JobRunStream)'
     status: pending
   - id: phase-7-cleanup
-    content: "Phase 7: Format, lint, verify tests, rename container.entity.ts to container.types.ts"
+    content: 'Phase 7: Format, lint, verify tests, rename container.entity.ts to container.types.ts'
     status: pending
 isProject: false
 ---
@@ -85,7 +85,6 @@ Additionally, several controllers bypass interactors and call services directly,
 
 ### 4. Oversized files
 
-
 | File                                                               | Lines | Issue                                                            |
 | ------------------------------------------------------------------ | ----- | ---------------------------------------------------------------- |
 | `gateways/session.gateway.ts`                                      | 615   | Handles sessions, logs, chat, git, job runs -- too many concerns |
@@ -93,7 +92,6 @@ Additionally, several controllers bypass interactors and call services directly,
 | `interactors/sessions/session-lifecycle.interactor.ts`             | 451   | Mixes stop/start/delete/health                                   |
 | `services/scheduled-jobs/job-executor.service.ts`                  | 384   | Complex orchestration                                            |
 | `interactors/sessions/create-session/create-session.interactor.ts` | 320   | Could extract validation/config steps                            |
-
 
 ### 5. `SessionLifecycleInteractor` violates SRP
 
@@ -141,8 +139,6 @@ graph TD
     interactors --> domain
     libs --> domain
 ```
-
-
 
 ### Directory structure after refactor
 
@@ -334,4 +330,3 @@ Extract into focused gateways that share the same WebSocket namespace:
 - **The `domain/` folder is untouched** except for consolidating repositories into it
 - **Each phase is independently shippable** -- import paths change but behavior doesn't
 - **No behavior changes** -- this is pure structural refactoring
-

@@ -7,9 +7,9 @@ import {
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
-import { ScheduledJobRoutes } from './scheduled-job.routes';
+} from '../../../libs/response/response.service';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
+import { ScheduledJobRoutes } from '../scheduled-job.routes';
 
 @ApiTags('Scheduled Jobs')
 @Controller(ScheduledJobRoutes.BASE)

@@ -54,8 +54,6 @@ flowchart LR
   libs --> domain
 ```
 
-
-
 ## Refactor Phases
 
 ### 1. Stabilize the dependency rules first
@@ -110,4 +108,3 @@ flowchart LR
   - no `services/**` imports from `interactors/**`
   - no `gateways/**` imports from interactor DTO/factory files
 - Once that milestone is done, the remaining feature-by-feature moves become much safer and more mechanical.
-

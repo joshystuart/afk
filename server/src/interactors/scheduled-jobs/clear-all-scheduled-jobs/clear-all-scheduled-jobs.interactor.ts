@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
-import { DeleteScheduledJobInteractor } from './delete-scheduled-job.interactor';
+import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
+import { DeleteScheduledJobInteractor } from '../delete-scheduled-job/delete-scheduled-job.interactor';
 
 export interface ClearAllScheduledJobsResult {
   deleted: number;

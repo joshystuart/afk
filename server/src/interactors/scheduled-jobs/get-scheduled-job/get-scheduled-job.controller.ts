@@ -10,14 +10,14 @@ import { GetScheduledJobInteractor } from './get-scheduled-job.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { ScheduledJobResponseDto } from './scheduled-job-response.dto';
-import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
+} from '../../../libs/response/response.service';
+import { ScheduledJobResponseDto } from '../scheduled-job-response.dto';
+import { ScheduledJobResponseFactory } from '../scheduled-job-response.factory';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
 import {
   ScheduledJobRoutes,
   ScheduledJobRouteParams,
-} from './scheduled-job.routes';
+} from '../scheduled-job.routes';
 
 @ApiTags('Scheduled Jobs')
 @Controller(ScheduledJobRoutes.BASE)

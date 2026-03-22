@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ScheduledJob } from '../../domain/scheduled-jobs/scheduled-job.entity';
-import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
+import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entity';
+import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
 
 @Injectable()
 export class GetScheduledJobInteractor {

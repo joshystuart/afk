@@ -10,12 +10,12 @@ import { DeleteScheduledJobInteractor } from './delete-scheduled-job.interactor'
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
+} from '../../../libs/response/response.service';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
 import {
   ScheduledJobRoutes,
   ScheduledJobRouteParams,
-} from './scheduled-job.routes';
+} from '../scheduled-job.routes';
 
 @ApiTags('Scheduled Jobs')
 @Controller(ScheduledJobRoutes.BASE)

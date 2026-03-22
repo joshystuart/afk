@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ScheduledJobRun } from '../../domain/scheduled-jobs/scheduled-job-run.entity';
-import { ScheduledJobRunRepository } from '../../domain/scheduled-jobs/scheduled-job-run.repository';
-import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
+import { ScheduledJobRun } from '../../../domain/scheduled-jobs/scheduled-job-run.entity';
+import { ScheduledJobRunRepository } from '../../../domain/scheduled-jobs/scheduled-job-run.repository';
+import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
 
 @Injectable()
 export class ListScheduledJobRunsInteractor {

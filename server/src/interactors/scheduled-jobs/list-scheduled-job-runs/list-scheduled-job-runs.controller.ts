@@ -10,13 +10,13 @@ import { ListScheduledJobRunsInteractor } from './list-scheduled-job-runs.intera
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { ScheduledJobRunResponseDto } from './scheduled-job-run-response.dto';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
+} from '../../../libs/response/response.service';
+import { ScheduledJobRunResponseDto } from '../scheduled-job-run-response.dto';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
 import {
   ScheduledJobRoutes,
   ScheduledJobRouteParams,
-} from './scheduled-job.routes';
+} from '../scheduled-job.routes';
 
 @ApiTags('Scheduled Jobs')
 @Controller(ScheduledJobRoutes.BASE)

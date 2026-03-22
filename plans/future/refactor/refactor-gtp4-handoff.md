@@ -4,7 +4,7 @@
 
 Continue the server refactor from `plans/future/refactor/refactor-gtp4.md`.
 
-The session lifecycle split that was the previous phase 3 target is complete, and the first `session.gateway.ts` extraction pass is now complete too. The next high-value slice is still within the broader "split large coordinators/adapters" phase, but it should continue reducing `server/src/gateways/session.gateway.ts` by extracting the remaining chat and scheduled-job websocket behavior.
+The session lifecycle split that was the previous phase 3 target is complete, the first `session.gateway.ts` extraction pass is complete, and the chat websocket extraction pass is now complete too. The next high-value slice is still within the broader "split large coordinators/adapters" phase, but it should continue reducing `server/src/gateways/session.gateway.ts` by extracting the remaining scheduled-job websocket behavior and any thin fanout helpers that still belong nearby.
 
 ## What Was Completed
 
@@ -62,28 +62,37 @@ The session lifecycle split that was the previous phase 3 target is complete, an
 - Rewired the main gateway to delegate session/log subscription behavior while preserving the existing websocket namespace and event contract:
   - `server/src/gateways/session.gateway.ts`
   - `server/src/gateways/gateways.module.ts`
+- Extracted chat websocket transport behavior out of `SessionGateway` into a focused gateway-local collaborator:
+  - `server/src/gateways/session-gateway-chat.service.ts`
+- Moved shared websocket event names and room helpers into a gateway-local contract so extracted collaborators can share the same transport constants without circular coupling:
+  - `server/src/gateways/session-gateway.events.ts`
+- Added focused unit coverage for the extracted chat collaborator:
+  - `server/src/gateways/session-gateway-chat.service.spec.ts`
+- Rewired the main gateway to delegate chat send/cancel handling and reconnect status fanout while preserving the existing websocket namespace and event contract:
+  - `server/src/gateways/session.gateway.ts`
+  - `server/src/gateways/gateways.module.ts`
 
 ## Validation Already Run
 
 - `npm run format`: passed
 - server package build (`npm run build`): passed
 - `npx jest src/gateways/session-gateway-subscriptions.service.spec.ts`: passed
+- `npx jest src/gateways/session-gateway-chat.service.spec.ts src/gateways/session-gateway-subscriptions.service.spec.ts`: passed
 - `ReadLints` on touched gateway files: no diagnostics reported
-- Quick runtime boot sanity: existing `npm run start:prod` boot log showed the app started successfully and `SessionGateway` subscribed to the expected websocket handlers
+- Quick runtime boot sanity: `npm run start:prod` started successfully and `SessionGateway` subscribed to the expected websocket handlers, including `chat.send` and `chat.cancel`
 
 ## Current Status
 
 There is no known blocker from this refactor slice.
 
-The session lifecycle coordinator has been removed, the sessions module still builds cleanly, the create/start flows now share readiness polling through `SessionHealthMonitorService`, and `SessionGateway` no longer owns the session/log subscription bookkeeping directly.
+The session lifecycle coordinator has been removed, the sessions module still builds cleanly, the create/start flows now share readiness polling through `SessionHealthMonitorService`, and `SessionGateway` no longer owns either the session/log subscription bookkeeping or the chat websocket orchestration directly.
 
 ## Next Phase Target
 
-The next highest-value refactor target is still `server/src/gateways/session.gateway.ts`, but the session/log subscription slice is already extracted.
+The next highest-value refactor target is still `server/src/gateways/session.gateway.ts`, but the session/log subscription slice and chat slice are already extracted.
 
 The remaining gateway responsibilities are still too broad for a single transport adapter:
 
-- chat event handling
 - git/status related websocket behavior
 - scheduled-job run streaming
 - cross-feature event wiring
@@ -94,6 +103,7 @@ The remaining gateway responsibilities are still too broad for a single transpor
 
 - Keep `SessionSubscriptionService` as the narrow subscription/state fanout seam if it continues to reduce duplication.
 - Keep `SessionGatewaySubscriptionsService` as the gateway-local seam for session/log subscription handling, git watcher lifecycle, and disconnect cleanup.
+- Keep `SessionGatewayChatService` as the gateway-local seam for chat send/cancel transport orchestration and reconnect status fanout.
 - Keep websocket event names and payload contracts stable while moving logic behind smaller collaborators.
 
 ### Already Extracted
@@ -101,15 +111,15 @@ The remaining gateway responsibilities are still too broad for a single transpor
 1. Session/log subscription handling
    - `SessionGatewaySubscriptionsService` now owns subscription bookkeeping delegation, log stream subscription setup, session activity touching, disconnect cleanup, and watcher start/stop decisions
 
+2. Chat websocket behavior
+   - `SessionGatewayChatService` now owns `chat.send`/`chat.cancel` transport orchestration plus reconnect chat-status sync
+
 ### Extract Next
 
-1. Chat websocket behavior
-   - isolate chat-specific socket handlers from session lifecycle and log concerns
-
-2. Scheduled-job run streaming
+1. Scheduled-job run streaming
    - keep the existing gateway-owned response mapping, but move the run-stream event handling out of the main gateway
 
-3. Remaining session/global event fanout
+2. Remaining session/global event fanout
    - leave the top-level gateway as a thin namespace shell if Nest websocket decorators make that simpler
 
 ### Optional Helper
@@ -127,13 +137,13 @@ The remaining gateway responsibilities are still too broad for a single transpor
 
 ## Suggested Next Steps
 
-1. Extract chat websocket behavior next, likely behind a `SessionGatewayChatService`-style collaborator that owns `chat.send`/`chat.cancel` transport orchestration and the stream/complete/error fanout callbacks.
-2. After chat is isolated, extract scheduled-job run subscription/update streaming out of the gateway while keeping `ScheduledJobGatewayResponseFactory` as the payload mapper.
+1. Extract scheduled-job run subscription/update streaming next while keeping `ScheduledJobGatewayResponseFactory` as the payload mapper.
+2. After scheduled-job streaming is isolated, revisit git-status fanout and generic session/global emit helpers only if `SessionGateway` is still carrying too much transport coordination.
 3. Leave git-status fanout and generic session/global emit helpers in the top-level gateway only if they stay thin; otherwise extract a small event emitter helper.
 4. Add focused tests where practical for each extracted gateway-local collaborator.
 5. Run:
    - `npm run format`
-   - `npm run server:build`
+   - `npm run build`
    - targeted tests for the affected gateway/session slice
    - a quick runtime boot check
 
@@ -144,5 +154,7 @@ The remaining gateway responsibilities are still too broad for a single transpor
 - `server/src/interactors/sessions/session-health-monitor.service.ts` is now the shared seam for background readiness polling.
 - `server/src/interactors/sessions/create-session/create-session.interactor.ts` still has room for future cleanup, but it is no longer coupled to a lifecycle god-object.
 - `server/src/gateways/session-gateway-subscriptions.service.ts` now owns the session/log subscription slice; extend the split from there instead of pulling that logic back into `SessionGateway`.
+- `server/src/gateways/session-gateway-chat.service.ts` now owns the chat websocket slice; extend from that seam instead of reintroducing chat orchestration into `SessionGateway`.
+- `server/src/gateways/session-gateway.events.ts` is the shared gateway-local contract for websocket event names and room helpers.
 - `npm run lint` is still noisy from pre-existing repo-wide issues; use `ReadLints` or file-scoped validation for touched files.
-- The next slice should stay adapter-focused rather than doing another large folder move; prioritize extracting chat transport behavior first, then scheduled-job streaming, while preserving websocket event names and payloads.
+- The next slice should stay adapter-focused rather than doing another large folder move; prioritize extracting scheduled-job streaming next, then only extract remaining fanout helpers if they still buy clarity, while preserving websocket event names and payloads.

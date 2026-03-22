@@ -14,63 +14,20 @@ import {
   SessionGatewayLogPayload,
   SessionGatewaySubscriptionsService,
 } from './session-gateway-subscriptions.service';
+import {
+  GATEWAY_EVENTS,
+  getJobRunRoom,
+  getSessionRoom,
+  SOCKET_EVENTS,
+} from './session-gateway.events';
 import { GitStatusResult } from '../services/git/git.service';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
-import { ChatService } from '../services/chat/chat.service';
 import { ScheduledJobRepository } from '../domain/scheduled-jobs/scheduled-job.repository';
 import { ScheduledJobRunRepository } from '../domain/scheduled-jobs/scheduled-job-run.repository';
 import { ScheduledJobRunStatus } from '../domain/scheduled-jobs/scheduled-job-run-status.enum';
 import { JOB_RUN_EVENTS } from '../libs/scheduled-jobs/job-run-events';
 import { ScheduledJobGatewayResponseFactory } from './scheduled-job-gateway-response.factory';
-
-const ROOM_PREFIX = 'session:';
-const JOB_RUN_ROOM_PREFIX = 'job-run:';
-
-const SOCKET_EVENTS = {
-  subscribeSession: 'subscribe.session',
-  unsubscribeSession: 'unsubscribe.session',
-  subscribeLogs: 'subscribe.logs',
-  unsubscribeLogs: 'unsubscribe.logs',
-  subscribeJobRun: 'subscribe.job.run',
-  unsubscribeJobRun: 'unsubscribe.job.run',
-  chatSend: 'chat.send',
-  chatCancel: 'chat.cancel',
-  chatStatus: 'chat.status',
-  chatStarted: 'chat.started',
-  chatStream: 'chat.stream',
-  chatComplete: 'chat.complete',
-  chatError: 'chat.error',
-  chatCancelled: 'chat.cancelled',
-  logData: 'log.data',
-  logsError: 'logs.error',
-  logsSubscribed: 'logs.subscribed',
-  logsUnsubscribed: 'logs.unsubscribed',
-  jobRunSubscribed: 'job.run.subscribed',
-  jobRunUnsubscribed: 'job.run.unsubscribed',
-  jobRunStream: 'job.run.stream',
-  jobRunUpdated: 'job.run.updated',
-  jobRunError: 'job.run.error',
-  scheduledJobUpdated: 'scheduled.job.updated',
-  scheduledJobRunUpdated: 'scheduled.job.run.updated',
-  subscriptionSuccess: 'subscription.success',
-  subscriptionError: 'subscription.error',
-  unsubscriptionSuccess: 'unsubscription.success',
-  sessionGitStatus: 'session.git.status',
-  sessionUpdated: 'session.updated',
-  sessionStatusChanged: 'session.status.changed',
-  sessionDeleteProgress: 'session.delete.progress',
-  sessionDeleted: 'session.deleted',
-  sessionDeleteFailed: 'session.delete.failed',
-} as const;
-
-const CHAT_STATUS = {
-  executing: 'executing',
-  idle: 'idle',
-} as const;
-
-const GATEWAY_EVENTS = {
-  gitStatusChanged: 'git.status.changed',
-} as const;
+import { SessionGatewayChatService } from './session-gateway-chat.service';
 
 export interface SessionUpdate {
   type: 'status' | 'container' | 'logs';
@@ -108,19 +65,11 @@ export class SessionGateway
 
   constructor(
     private readonly sessionGatewaySubscriptionsService: SessionGatewaySubscriptionsService,
-    private readonly chatService: ChatService,
+    private readonly sessionGatewayChatService: SessionGatewayChatService,
     private readonly scheduledJobRepository: ScheduledJobRepository,
     private readonly scheduledJobRunRepository: ScheduledJobRunRepository,
     private readonly scheduledJobGatewayResponseFactory: ScheduledJobGatewayResponseFactory,
   ) {}
-
-  private getSessionRoom(sessionId: string): string {
-    return `${ROOM_PREFIX}${sessionId}`;
-  }
-
-  private getJobRunRoom(runId: string): string {
-    return `${JOB_RUN_ROOM_PREFIX}${runId}`;
-  }
 
   private nowIso(): string {
     return new Date().toISOString();
@@ -149,16 +98,8 @@ export class SessionGateway
         data.sessionId,
       );
 
-      client.join(this.getSessionRoom(data.sessionId));
-
-      // Sync current chat execution state so reconnecting clients
-      // immediately know if Claude is mid-run
-      const executionInfo = this.chatService.getExecutionInfo(data.sessionId);
-      client.emit(SOCKET_EVENTS.chatStatus, {
-        sessionId: data.sessionId,
-        status: executionInfo ? CHAT_STATUS.executing : CHAT_STATUS.idle,
-        assistantMessageId: executionInfo?.assistantMessageId ?? null,
-      });
+      client.join(getSessionRoom(data.sessionId));
+      this.sessionGatewayChatService.emitChatStatus(client, data.sessionId);
 
       return {
         event: SOCKET_EVENTS.subscriptionSuccess,
@@ -181,7 +122,7 @@ export class SessionGateway
       client.id,
       data.sessionId,
     );
-    client.leave(this.getSessionRoom(data.sessionId));
+    client.leave(getSessionRoom(data.sessionId));
 
     return {
       event: SOCKET_EVENTS.unsubscriptionSuccess,
@@ -254,7 +195,7 @@ export class SessionGateway
       };
     }
 
-    await client.join(this.getJobRunRoom(data.runId));
+    await client.join(getJobRunRoom(data.runId));
 
     return {
       event: SOCKET_EVENTS.jobRunSubscribed,
@@ -267,7 +208,7 @@ export class SessionGateway
     @MessageBody() data: { runId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    await client.leave(this.getJobRunRoom(data.runId));
+    await client.leave(getJobRunRoom(data.runId));
 
     return {
       event: SOCKET_EVENTS.jobRunUnsubscribed,
@@ -282,7 +223,7 @@ export class SessionGateway
     event: unknown;
   }) {
     this.server
-      .to(this.getJobRunRoom(payload.runId))
+      .to(getJobRunRoom(payload.runId))
       .emit(SOCKET_EVENTS.jobRunStream, {
         jobId: payload.jobId,
         runId: payload.runId,
@@ -306,7 +247,7 @@ export class SessionGateway
         this.scheduledJobGatewayResponseFactory.createRun(run);
 
       this.server
-        .to(this.getJobRunRoom(payload.runId))
+        .to(getJobRunRoom(payload.runId))
         .emit(SOCKET_EVENTS.jobRunUpdated, {
           run: runResponse,
           timestamp: this.nowIso(),
@@ -338,7 +279,7 @@ export class SessionGateway
     status: GitStatusResult;
   }) {
     this.server
-      .to(this.getSessionRoom(payload.sessionId))
+      .to(getSessionRoom(payload.sessionId))
       .emit(SOCKET_EVENTS.sessionGitStatus, {
         sessionId: payload.sessionId,
         ...payload.status,
@@ -349,7 +290,7 @@ export class SessionGateway
   // Emit session status updates
   emitSessionUpdate(sessionId: string, update: SessionUpdate) {
     this.server
-      .to(this.getSessionRoom(sessionId))
+      .to(getSessionRoom(sessionId))
       .emit(SOCKET_EVENTS.sessionUpdated, {
         sessionId,
         update,
@@ -359,7 +300,7 @@ export class SessionGateway
 
   emitSessionStatusChange(sessionId: string, status: SessionStatus) {
     this.server
-      .to(this.getSessionRoom(sessionId))
+      .to(getSessionRoom(sessionId))
       .emit(SOCKET_EVENTS.sessionStatusChanged, {
         sessionId,
         status,
@@ -385,67 +326,7 @@ export class SessionGateway
     },
     @ConnectedSocket() _client: Socket,
   ) {
-    const { sessionId, content, continueConversation, model } = data;
-    this.logger.log('Chat message received', {
-      sessionId,
-      continueConversation,
-    });
-
-    this.sessionGatewaySubscriptionsService.recordSessionActivity(sessionId);
-
-    try {
-      const result = await this.chatService.sendMessage(
-        sessionId,
-        content,
-        { continueConversation, model },
-        (event) => {
-          this.server
-            .to(this.getSessionRoom(sessionId))
-            .emit(SOCKET_EVENTS.chatStream, {
-              sessionId,
-              messageId: result.assistantMessageId,
-              event,
-            });
-        },
-        (info) => {
-          this.server
-            .to(this.getSessionRoom(sessionId))
-            .emit(SOCKET_EVENTS.chatComplete, {
-              sessionId,
-              messageId: info.assistantMessageId,
-              conversationId: info.conversationId,
-              costUsd: info.costUsd,
-              durationMs: info.durationMs,
-            });
-        },
-        (error) => {
-          this.server
-            .to(this.getSessionRoom(sessionId))
-            .emit(SOCKET_EVENTS.chatError, {
-              sessionId,
-              error: error.message,
-            });
-        },
-      );
-
-      return {
-        event: SOCKET_EVENTS.chatStarted,
-        data: {
-          sessionId,
-          userMessageId: result.userMessageId,
-          assistantMessageId: result.assistantMessageId,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Failed to start chat execution', {
-        sessionId,
-        error: error.message,
-      });
-      return {
-        event: SOCKET_EVENTS.chatError,
-        data: { sessionId, error: error.message },
-      };
-    }
+    return this.sessionGatewayChatService.handleChatSend(this.server, data);
   }
 
   @SubscribeMessage(SOCKET_EVENTS.chatCancel)
@@ -453,28 +334,13 @@ export class SessionGateway
     @MessageBody() data: { sessionId: string },
     @ConnectedSocket() _client: Socket,
   ) {
-    this.sessionGatewaySubscriptionsService.recordSessionActivity(
-      data.sessionId,
-    );
-
-    try {
-      await this.chatService.cancelExecution(data.sessionId);
-      return {
-        event: SOCKET_EVENTS.chatCancelled,
-        data: { sessionId: data.sessionId },
-      };
-    } catch (error) {
-      return {
-        event: SOCKET_EVENTS.chatError,
-        data: { sessionId: data.sessionId, error: error.message },
-      };
-    }
+    return this.sessionGatewayChatService.handleChatCancel(data);
   }
 
   @OnEvent(SOCKET_EVENTS.sessionDeleteProgress)
   handleDeleteProgress(payload: DeleteProgressPayload) {
     this.server
-      .to(this.getSessionRoom(payload.sessionId))
+      .to(getSessionRoom(payload.sessionId))
       .emit(SOCKET_EVENTS.sessionDeleteProgress, {
         sessionId: payload.sessionId,
         message: payload.message,
@@ -491,7 +357,7 @@ export class SessionGateway
   @OnEvent(SOCKET_EVENTS.sessionDeleted)
   handleSessionDeleted(payload: DeleteCompletedPayload) {
     this.server
-      .to(this.getSessionRoom(payload.sessionId))
+      .to(getSessionRoom(payload.sessionId))
       .emit(SOCKET_EVENTS.sessionDeleted, {
         sessionId: payload.sessionId,
         timestamp: this.nowIso(),
@@ -506,7 +372,7 @@ export class SessionGateway
   @OnEvent(SOCKET_EVENTS.sessionDeleteFailed)
   handleDeleteFailed(payload: DeleteFailedPayload) {
     this.server
-      .to(this.getSessionRoom(payload.sessionId))
+      .to(getSessionRoom(payload.sessionId))
       .emit(SOCKET_EVENTS.sessionDeleteFailed, {
         sessionId: payload.sessionId,
         error: payload.error,

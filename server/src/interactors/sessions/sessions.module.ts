@@ -28,13 +28,15 @@ import { GitModule } from '../../services/git/git.module';
 import { ChatModule } from '../../services/chat/chat.module';
 import { ClearAllSessionsInteractor } from './clear-all-sessions.interactor';
 import { SessionConfig } from '../../libs/config/session.config';
-import { ResponseService } from '../../libs/response/response.service';
+import { ResponseModule } from '../../libs/response/response.module';
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
 import { Session } from '../../domain/sessions/session.entity';
+import { SessionServicesModule } from '../../services/sessions/session-services.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Session]),
+    ResponseModule,
     DockerModule,
     RepositoriesModule,
     DomainModule,
@@ -43,6 +45,7 @@ import { Session } from '../../domain/sessions/session.entity';
     GitWatcherModule,
     GitModule,
     ChatModule,
+    SessionServicesModule,
   ],
   controllers: [
     CreateSessionController,
@@ -67,7 +70,6 @@ import { Session } from '../../domain/sessions/session.entity';
     SessionGitInteractor,
     UpdateSessionInteractor,
     SessionConfig,
-    ResponseService,
     MountPathValidator,
   ],
   exports: [

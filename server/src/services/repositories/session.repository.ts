@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import {
+  SessionFilters,
+  SessionRepository,
+} from '../../domain/sessions/session.repository';
 import { Session } from '../../domain/sessions/session.entity';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
 
-export interface SessionFilters {
-  status?: SessionStatus;
-  userId?: string;
-}
-
 @Injectable()
-export class SessionRepository {
+export class SessionRepositoryImpl implements SessionRepository {
   constructor(
     @InjectRepository(Session)
     private readonly repository: Repository<Session>,

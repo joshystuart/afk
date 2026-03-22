@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { GitHubController } from './github.controller';
 import { GitHubService } from './github.service';
-import { ResponseService } from '../response/response.service';
-import { SettingsModule } from '../../interactors/settings/settings.module';
+import { ResponseModule } from '../response/response.module';
+import { SettingsPersistenceModule } from '../settings/settings-persistence.module';
 
 @Module({
-  imports: [SettingsModule],
+  imports: [ResponseModule, SettingsPersistenceModule],
   controllers: [GitHubController],
-  providers: [GitHubService, ResponseService],
+  providers: [GitHubService],
   exports: [GitHubService],
 })
 export class GitHubModule {}

@@ -1,7 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { ResponseService } from './libs/response/response.service';
 import { HttpExceptionFilter } from './libs/common/filters/http-exception.filter';
 import { ConfigModule } from './libs/config/config.module';
 import { SessionsModule } from './interactors/sessions/sessions.module';
@@ -21,6 +20,7 @@ import { ScheduledJobsInteractorModule } from './interactors/scheduled-jobs/sche
 import { ScheduledJobsServicesModule } from './services/scheduled-jobs/scheduled-jobs-services.module';
 import { SessionServicesModule } from './services/sessions/session-services.module';
 import { ObservabilityModule } from './services/observability/observability.module';
+import { ResponseModule } from './libs/response/response.module';
 
 export interface AppModuleOptions {
   configPath?: string;
@@ -39,6 +39,7 @@ export class AppModule {
       }),
       EventEmitterModule.forRoot(),
       LoggerModule.forRootAsync(),
+      ResponseModule,
       AuthModule,
       SessionsModule,
       SettingsModule,
@@ -67,7 +68,7 @@ export class AppModule {
       module: AppModule,
       imports,
       controllers: [],
-      providers: [ResponseService, HttpExceptionFilter],
+      providers: [HttpExceptionFilter],
     };
   }
 }

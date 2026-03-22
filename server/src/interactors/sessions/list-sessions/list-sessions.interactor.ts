@@ -1,13 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { SessionRepository } from '../../../services/repositories/session.repository';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { SessionRepository } from '../../../domain/sessions/session.repository';
 import { Session } from '../../../domain/sessions/session.entity';
+import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
 import { ListSessionsRequest } from './list-sessions-request.dto';
 
 @Injectable()
 export class ListSessionsInteractor {
   private readonly logger = new Logger(ListSessionsInteractor.name);
 
-  constructor(private readonly sessionRepository: SessionRepository) {}
+  constructor(
+    @Inject(SESSION_REPOSITORY)
+    private readonly sessionRepository: SessionRepository,
+  ) {}
 
   async execute(request: ListSessionsRequest): Promise<Session[]> {
     this.logger.log('Listing sessions', { filters: request });

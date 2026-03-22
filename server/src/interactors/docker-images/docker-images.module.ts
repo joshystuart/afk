@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DockerImagesController } from './docker-images.controller';
 import { DockerModule } from '../../services/docker/docker.module';
-import { ResponseService } from '../../libs/response/response.service';
+import { ResponseModule } from '../../libs/response/response.module';
 
 @Module({
-  imports: [DockerModule],
+  imports: [DockerModule, ResponseModule],
   controllers: [DockerImagesController],
-  providers: [ResponseService],
 })
 export class DockerImagesInteractorModule {}

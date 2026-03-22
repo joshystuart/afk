@@ -1,10 +1,11 @@
 import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { SessionRepository } from '../repositories/session.repository';
-import { SessionLifecycleInteractor } from '../../interactors/sessions/session-lifecycle.interactor';
 import { SettingsRepository } from '../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
+import { SessionRepository } from '../../domain/sessions/session.repository';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
+import { SessionRuntimeService } from './session-runtime.service';
 
 const CLEANUP_INTERVAL_MS = 60_000;
 
@@ -15,8 +16,9 @@ export class SessionIdleCleanupService implements OnModuleDestroy {
   private _sessionsAutoStopped = 0;
 
   constructor(
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
-    private readonly sessionLifecycle: SessionLifecycleInteractor,
+    private readonly sessionRuntime: SessionRuntimeService,
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
   ) {}
@@ -68,7 +70,7 @@ export class SessionIdleCleanupService implements OnModuleDestroy {
     timeoutMinutes: number,
   ): Promise<void> {
     try {
-      await this.sessionLifecycle.stopSession(new SessionIdDto(sessionId));
+      await this.sessionRuntime.stopSession(new SessionIdDto(sessionId));
       this._sessionsAutoStopped++;
       this.logger.log('Auto-stopped idle session', {
         sessionId,

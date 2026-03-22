@@ -3,7 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledJobsDomainModule } from '../../domain/scheduled-jobs/scheduled-jobs.module';
 import { DockerModule } from '../docker/docker.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
-import { SettingsModule } from '../../interactors/settings/settings.module';
+import { SettingsPersistenceModule } from '../../libs/settings/settings-persistence.module';
 import { ChatModule } from '../chat/chat.module';
 import { GitModule } from '../git/git.module';
 import { StreamArchiveModule } from '../stream-archive/stream-archive.module';
@@ -18,7 +18,7 @@ import { ScheduledJobTimingService } from './scheduled-job-timing.service';
     ScheduledJobsDomainModule,
     DockerModule,
     DockerImagesModule,
-    SettingsModule,
+    SettingsPersistenceModule,
     ChatModule,
     GitModule,
     StreamArchiveModule,

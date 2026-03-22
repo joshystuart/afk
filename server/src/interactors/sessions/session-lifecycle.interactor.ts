@@ -1,17 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DockerEngineService } from '../../services/docker/docker-engine.service';
 import { ContainerLogStreamService } from '../../services/docker/container-log-stream.service';
 import { ContainerNotFoundError } from '../../services/docker/container-not-found.error';
-import { SessionRepository } from '../../services/repositories/session.repository';
 import { PortManagerService } from '../../services/docker/port-manager.service';
 import { GitWatcherService } from '../../services/git-watcher/git-watcher.service';
 import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
 import { ChatMessageRepository } from '../../domain/chat/chat-message.repository';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
+import { SessionRepository } from '../../domain/sessions/session.repository';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
+import { SessionRuntimeService } from '../../services/sessions/session-runtime.service';
 
 @Injectable()
 export class SessionLifecycleInteractor {
@@ -20,6 +22,7 @@ export class SessionLifecycleInteractor {
   constructor(
     private readonly dockerEngine: DockerEngineService,
     private readonly containerLogStream: ContainerLogStreamService,
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly portManager: PortManagerService,
     private readonly gitWatcherService: GitWatcherService,
@@ -27,34 +30,11 @@ export class SessionLifecycleInteractor {
     private readonly eventEmitter: EventEmitter2,
     private readonly chatMessageRepository: ChatMessageRepository,
     private readonly mountPathValidator: MountPathValidator,
+    private readonly sessionRuntime: SessionRuntimeService,
   ) {}
 
   async stopSession(sessionId: SessionIdDto): Promise<void> {
-    const session = await this.sessionRepository.findById(sessionId);
-
-    if (!session) {
-      throw new Error('Session not found');
-    }
-
-    if (session.status !== SessionStatus.RUNNING) {
-      throw new Error('Session is not running');
-    }
-
-    try {
-      // Stop git watcher before stopping container
-      await this.gitWatcherService.stopWatching(sessionId.toString());
-
-      await this.containerLogStream.releaseSession(sessionId.toString());
-
-      await this.dockerEngine.stopContainer(session.containerId!);
-      session.stop();
-      await this.sessionRepository.save(session);
-
-      this.logger.log('Session stopped', { sessionId: sessionId.toString() });
-    } catch (error) {
-      this.logger.error('Failed to stop session', error);
-      throw error;
-    }
+    await this.sessionRuntime.stopSession(sessionId);
   }
 
   async startSession(sessionId: SessionIdDto): Promise<void> {

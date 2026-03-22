@@ -7,7 +7,7 @@ import { DomainModule } from '../domain/domain.module';
 import { GitWatcherModule } from '../services/git-watcher/git-watcher.module';
 import { ChatModule } from '../services/chat/chat.module';
 import { ScheduledJobsDomainModule } from '../domain/scheduled-jobs/scheduled-jobs.module';
-import { ScheduledJobsInteractorModule } from '../interactors/scheduled-jobs/scheduled-jobs.module';
+import { ScheduledJobGatewayResponseFactory } from './scheduled-job-gateway-response.factory';
 
 @Module({
   imports: [
@@ -17,9 +17,12 @@ import { ScheduledJobsInteractorModule } from '../interactors/scheduled-jobs/sch
     GitWatcherModule,
     ChatModule,
     ScheduledJobsDomainModule,
-    ScheduledJobsInteractorModule,
   ],
-  providers: [SessionGateway, SessionSubscriptionService],
+  providers: [
+    SessionGateway,
+    SessionSubscriptionService,
+    ScheduledJobGatewayResponseFactory,
+  ],
   exports: [SessionGateway, SessionSubscriptionService],
 })
 export class GatewaysModule {}

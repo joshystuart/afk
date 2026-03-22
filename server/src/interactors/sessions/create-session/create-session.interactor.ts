@@ -3,13 +3,14 @@ import * as fs from 'fs';
 import { DockerEngineService } from '../../../services/docker/docker-engine.service';
 import { ContainerLogStreamService } from '../../../services/docker/container-log-stream.service';
 import { PortManagerService } from '../../../services/docker/port-manager.service';
-import { SessionRepository } from '../../../services/repositories/session.repository';
 import { SessionFactory } from '../../../domain/sessions/session.factory';
 import { SessionConfigDtoFactory } from '../../../domain/sessions/session-config-dto.factory';
+import { SessionRepository } from '../../../domain/sessions/session.repository';
 import { SessionConfig } from '../../../libs/config/session.config';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { Session } from '../../../domain/sessions/session.entity';
 import { SessionStatus } from '../../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
 import { Settings } from '../../../domain/settings/settings.entity';
 import { SettingsRepository } from '../../../domain/settings/settings.repository';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
@@ -28,6 +29,7 @@ export class CreateSessionInteractor {
     private readonly dockerEngine: DockerEngineService,
     private readonly containerLogStream: ContainerLogStreamService,
     private readonly portManager: PortManagerService,
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly sessionFactory: SessionFactory,
     private readonly sessionConfigFactory: SessionConfigDtoFactory,

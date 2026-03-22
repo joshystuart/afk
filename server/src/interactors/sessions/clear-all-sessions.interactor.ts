@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { SessionRepository } from '../../services/repositories/session.repository';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
+import { SessionRepository } from '../../domain/sessions/session.repository';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
 
 export interface ClearAllSessionsResult {
   stopped: number;
@@ -15,6 +16,7 @@ export class ClearAllSessionsInteractor {
   private readonly logger = new Logger(ClearAllSessionsInteractor.name);
 
   constructor(
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly sessionLifecycle: SessionLifecycleInteractor,
   ) {}

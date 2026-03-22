@@ -1,6 +1,12 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { SessionRepository } from '../repositories/session.repository';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { SessionRepository } from '../../domain/sessions/session.repository';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
 import { DockerEngineService } from '../docker/docker-engine.service';
 import { ContainerInfo } from '../../domain/containers/container.entity';
 import { ChatMessageRepository } from '../../domain/chat/chat-message.repository';
@@ -11,6 +17,7 @@ export class StartupReconciliationService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StartupReconciliationService.name);
 
   constructor(
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly dockerEngine: DockerEngineService,
     private readonly chatMessageRepository: ChatMessageRepository,

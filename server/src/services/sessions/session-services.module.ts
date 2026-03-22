@@ -1,12 +1,19 @@
 import { Module } from '@nestjs/common';
 import { SessionIdleCleanupService } from './session-idle-cleanup.service';
 import { RepositoriesModule } from '../repositories/repositories.module';
-import { SettingsModule } from '../../interactors/settings/settings.module';
-import { SessionsModule } from '../../interactors/sessions/sessions.module';
+import { SettingsPersistenceModule } from '../../libs/settings/settings-persistence.module';
+import { DockerModule } from '../docker/docker.module';
+import { GitWatcherModule } from '../git-watcher/git-watcher.module';
+import { SessionRuntimeService } from './session-runtime.service';
 
 @Module({
-  imports: [RepositoriesModule, SettingsModule, SessionsModule],
-  providers: [SessionIdleCleanupService],
-  exports: [SessionIdleCleanupService],
+  imports: [
+    RepositoriesModule,
+    SettingsPersistenceModule,
+    DockerModule,
+    GitWatcherModule,
+  ],
+  providers: [SessionIdleCleanupService, SessionRuntimeService],
+  exports: [SessionIdleCleanupService, SessionRuntimeService],
 })
 export class SessionServicesModule {}

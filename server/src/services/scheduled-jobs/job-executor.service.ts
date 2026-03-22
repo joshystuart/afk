@@ -21,19 +21,12 @@ import { PortPairDto } from '../../domain/containers/port-pair.dto';
 import { EphemeralContainerCreateOptions } from '../../domain/containers/container.entity';
 import { GitService } from '../git/git.service';
 import { ScheduledJobTimingService } from './scheduled-job-timing.service';
+import { JOB_RUN_EVENTS } from '../../libs/scheduled-jobs/job-run-events';
 
 const DEDUP_WINDOW_MS = 60_000;
 const WORKSPACE_DIR = '/workspace/repo';
 const MAX_CONTAINER_START_RETRIES = 3;
 const CONTAINER_RETRY_BASE_DELAY_MS = 5_000;
-
-export const JOB_RUN_EVENTS = {
-  started: 'job.run.started',
-  updated: 'job.run.updated',
-  stream: 'job.run.stream',
-  completed: 'job.run.completed',
-  failed: 'job.run.failed',
-} as const;
 
 @Injectable()
 export class JobExecutorService {

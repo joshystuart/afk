@@ -7,23 +7,23 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { Server, Socket } from 'socket.io';
 import { SessionSubscriptionService } from './session-subscription.service';
 import { ContainerLogStreamService } from '../services/docker/container-log-stream.service';
 import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
 import { GitStatusResult } from '../services/git/git.service';
-import { SessionRepository } from '../services/repositories/session.repository';
 import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
+import { SessionRepository } from '../domain/sessions/session.repository';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../domain/sessions/session.tokens';
 import { ChatService } from '../services/chat/chat.service';
 import { ScheduledJobRepository } from '../domain/scheduled-jobs/scheduled-job.repository';
 import { ScheduledJobRunRepository } from '../domain/scheduled-jobs/scheduled-job-run.repository';
 import { ScheduledJobRunStatus } from '../domain/scheduled-jobs/scheduled-job-run-status.enum';
-import { ScheduledJobResponseFactory } from '../interactors/scheduled-jobs/scheduled-job-response.factory';
-import { ScheduledJobRunResponseDto } from '../interactors/scheduled-jobs/scheduled-job-run-response.dto';
-import { JOB_RUN_EVENTS } from '../services/scheduled-jobs/job-executor.service';
+import { JOB_RUN_EVENTS } from '../libs/scheduled-jobs/job-run-events';
+import { ScheduledJobGatewayResponseFactory } from './scheduled-job-gateway-response.factory';
 
 const ROOM_PREFIX = 'session:';
 const JOB_RUN_ROOM_PREFIX = 'job-run:';
@@ -112,12 +112,13 @@ export class SessionGateway
     private readonly sessionSubscriptionService: SessionSubscriptionService,
     private readonly containerLogStream: ContainerLogStreamService,
     private readonly gitWatcherService: GitWatcherService,
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly chatService: ChatService,
     private readonly scheduledJobRepository: ScheduledJobRepository,
     private readonly scheduledJobRunRepository: ScheduledJobRunRepository,
-    private readonly scheduledJobResponseFactory: ScheduledJobResponseFactory,
+    private readonly scheduledJobGatewayResponseFactory: ScheduledJobGatewayResponseFactory,
   ) {}
 
   private getSessionRoom(sessionId: string): string {
@@ -318,7 +319,7 @@ export class SessionGateway
     }
 
     client.emit(SOCKET_EVENTS.jobRunUpdated, {
-      run: ScheduledJobRunResponseDto.fromDomain(run),
+      run: this.scheduledJobGatewayResponseFactory.createRun(run),
       timestamp: this.nowIso(),
     });
 
@@ -377,7 +378,8 @@ export class SessionGateway
     ]);
 
     if (run) {
-      const runResponse = ScheduledJobRunResponseDto.fromDomain(run);
+      const runResponse =
+        this.scheduledJobGatewayResponseFactory.createRun(run);
 
       this.server
         .to(this.getJobRunRoom(payload.runId))
@@ -396,7 +398,8 @@ export class SessionGateway
       return;
     }
 
-    const jobResponse = await this.scheduledJobResponseFactory.create(job);
+    const jobResponse =
+      await this.scheduledJobGatewayResponseFactory.createJob(job);
 
     this.server.emit(SOCKET_EVENTS.scheduledJobUpdated, {
       job: jobResponse,

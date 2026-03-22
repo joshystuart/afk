@@ -5,10 +5,10 @@ import { PortManagerService } from './port-manager.service';
 import { ContainerLogStreamService } from './container-log-stream.service';
 import { PortPairDtoFactory } from '../../domain/containers/port-pair-dto.factory';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
-import { SettingsModule } from '../../interactors/settings/settings.module';
+import { SettingsPersistenceModule } from '../../libs/settings/settings-persistence.module';
 
 @Module({
-  imports: [DockerImagesModule, SettingsModule],
+  imports: [DockerImagesModule, SettingsPersistenceModule],
   providers: [
     DockerEngineService,
     ContainerLogStreamService,

@@ -4,7 +4,7 @@ import { DockerImagesModule } from '../../domain/docker-images/docker-images.mod
 import { ScheduledJobsServicesModule } from '../../services/scheduled-jobs/scheduled-jobs-services.module';
 import { StreamArchiveModule } from '../../services/stream-archive/stream-archive.module';
 import { AuthModule } from '../../libs/auth/auth.module';
-import { ResponseService } from '../../libs/response/response.service';
+import { ResponseModule } from '../../libs/response/response.module';
 import { CreateScheduledJobController } from './create-scheduled-job/create-scheduled-job.controller';
 import { CreateScheduledJobInteractor } from './create-scheduled-job/create-scheduled-job.interactor';
 import { ListScheduledJobsController } from './list-scheduled-jobs/list-scheduled-jobs.controller';
@@ -33,6 +33,7 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     ScheduledJobsServicesModule,
     StreamArchiveModule,
     AuthModule,
+    ResponseModule,
   ],
   controllers: [
     CreateScheduledJobController,
@@ -57,7 +58,6 @@ import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
     ScheduledJobDefinitionService,
     ScheduledJobResponseFactory,
     TriggerTokenGuard,
-    ResponseService,
   ],
   exports: [
     CreateScheduledJobInteractor,

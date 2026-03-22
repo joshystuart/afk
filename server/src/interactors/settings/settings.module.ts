@@ -1,27 +1,14 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { SettingsController } from './settings.controller';
 import { GetSettingsInteractor } from './get-settings/get-settings.interactor';
 import { UpdateSettingsInteractor } from './update-settings/update-settings.interactor';
-import { SettingsRepositoryImpl } from '../../services/repositories/settings.repository';
-import { ResponseService } from '../../libs/response/response.service';
-import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
-import { Settings } from '../../domain/settings/settings.entity';
-import { GitHubService } from '../../libs/github/github.service';
+import { ResponseModule } from '../../libs/response/response.module';
+import { SettingsPersistenceModule } from '../../libs/settings/settings-persistence.module';
+import { GitHubModule } from '../../libs/github/github.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Settings])],
+  imports: [ResponseModule, SettingsPersistenceModule, GitHubModule],
   controllers: [SettingsController],
-  providers: [
-    GetSettingsInteractor,
-    UpdateSettingsInteractor,
-    ResponseService,
-    GitHubService,
-    {
-      provide: SETTINGS_REPOSITORY,
-      useClass: SettingsRepositoryImpl,
-    },
-  ],
-  exports: [SETTINGS_REPOSITORY],
+  providers: [GetSettingsInteractor, UpdateSettingsInteractor],
 })
 export class SettingsModule {}

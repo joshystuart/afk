@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage } from '../../domain/chat/chat-message.entity';
 import { ChatMessageRepository } from '../../domain/chat/chat-message.repository';
-import { SessionRepository } from '../repositories/session.repository';
 import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
+import { SessionRepository } from '../../domain/sessions/session.repository';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
 import {
   ClaudeStreamExecutionError,
   ClaudeStreamRunnerService,
@@ -39,6 +40,7 @@ export class ChatService {
 
   constructor(
     private readonly chatMessageRepository: ChatMessageRepository,
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly claudeStreamRunner: ClaudeStreamRunnerService,

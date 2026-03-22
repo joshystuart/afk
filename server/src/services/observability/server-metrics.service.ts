@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ContainerLogStreamService } from '../docker/container-log-stream.service';
 import { ChatService } from '../chat/chat.service';
 import {
@@ -7,8 +7,9 @@ import {
 } from '../stream-archive/claude-event-archive.service';
 import { SessionIdleCleanupService } from '../sessions/session-idle-cleanup.service';
 import { SessionSubscriptionService } from '../../gateways/session-subscription.service';
-import { SessionRepository } from '../repositories/session.repository';
+import { SessionRepository } from '../../domain/sessions/session.repository';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
 
 export interface ServerMetricsSnapshot {
   timestamp: string;
@@ -52,6 +53,7 @@ export class ServerMetricsService {
     private readonly claudeEventArchive: ClaudeEventArchiveService,
     private readonly sessionIdleCleanup: SessionIdleCleanupService,
     private readonly sessionSubscription: SessionSubscriptionService,
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
   ) {}
 

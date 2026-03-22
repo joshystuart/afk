@@ -4,7 +4,7 @@
 
 Continue the server refactor from `plans/future/refactor/refactor-gtp4.md`.
 
-The session lifecycle split that was the previous phase 3 target is complete, and the `session.gateway.ts` extraction work is now substantially complete too: session/log subscriptions, chat websocket orchestration, scheduled-job run streaming, and the remaining thin fanout helpers have been split into gateway-local collaborators. The next high-value slice should move on from the gateway and continue the broader "split large coordinators/adapters" phase by targeting the remaining large scheduled-job runtime coordinator.
+The session lifecycle split and the main `session.gateway.ts` extraction work are now complete enough that the highest-value refactor target has shifted fully to the scheduled-job runtime coordinator. This slice started that move by carving run-state persistence and scheduled-job event publishing out of `JobExecutorService`, and the next phase should continue from that seam by extracting the remaining runtime/container/Claude/git pipeline responsibilities.
 
 ## What Was Completed
 
@@ -36,77 +36,41 @@ The session lifecycle split that was the previous phase 3 target is complete, an
 
 ### New In This Slice
 
-- Replaced the large `SessionLifecycleInteractor` coordinator with focused session use-case classes:
-  - `server/src/interactors/sessions/start-session/start-session.interactor.ts`
-  - `server/src/interactors/sessions/stop-session/stop-session.interactor.ts`
-  - `server/src/interactors/sessions/delete-session/delete-session.interactor.ts`
-  - `server/src/interactors/sessions/check-session-health/check-session-health.interactor.ts`
-  - `server/src/interactors/sessions/get-session-info/get-session-info.interactor.ts`
-- Added a reusable session readiness helper so create/start flows share the background polling logic without a god-object:
-  - `server/src/interactors/sessions/session-health-monitor.service.ts`
-- Rewired the existing session controllers and bulk-clear flow to depend on the dedicated interactors instead of the old lifecycle coordinator:
-  - `server/src/interactors/sessions/start-session.controller.ts`
-  - `server/src/interactors/sessions/stop-session.controller.ts`
-  - `server/src/interactors/sessions/delete-session.controller.ts`
-  - `server/src/interactors/sessions/check-session-health.controller.ts`
-  - `server/src/interactors/sessions/get-session.controller.ts`
-  - `server/src/interactors/sessions/clear-all-sessions.interactor.ts`
-- Updated create-session to use the shared health monitor directly:
-  - `server/src/interactors/sessions/create-session/create-session.interactor.ts`
-- Removed the obsolete lifecycle coordinator:
-  - `server/src/interactors/sessions/session-lifecycle.interactor.ts`
-- Extracted session/log subscription and disconnect cleanup behavior out of `SessionGateway` into a gateway-local collaborator:
-  - `server/src/gateways/session-gateway-subscriptions.service.ts`
-- Added focused unit coverage for the extracted gateway collaborator:
-  - `server/src/gateways/session-gateway-subscriptions.service.spec.ts`
-- Rewired the main gateway to delegate session/log subscription behavior while preserving the existing websocket namespace and event contract:
-  - `server/src/gateways/session.gateway.ts`
-  - `server/src/gateways/gateways.module.ts`
-- Extracted chat websocket transport behavior out of `SessionGateway` into a focused gateway-local collaborator:
-  - `server/src/gateways/session-gateway-chat.service.ts`
-- Moved shared websocket event names and room helpers into a gateway-local contract so extracted collaborators can share the same transport constants without circular coupling:
-  - `server/src/gateways/session-gateway.events.ts`
-- Added focused unit coverage for the extracted chat collaborator:
-  - `server/src/gateways/session-gateway-chat.service.spec.ts`
-- Rewired the main gateway to delegate chat send/cancel handling and reconnect status fanout while preserving the existing websocket namespace and event contract:
-  - `server/src/gateways/session.gateway.ts`
-  - `server/src/gateways/gateways.module.ts`
-- Extracted scheduled-job websocket subscription and event fanout behavior out of `SessionGateway` into a focused gateway-local collaborator:
-  - `server/src/gateways/session-gateway-job-runs.service.ts`
-- Extracted the remaining git/session/delete websocket fanout helpers into a narrow gateway-local collaborator so the gateway no longer owns direct room/global emit orchestration:
-  - `server/src/gateways/session-gateway-fanout.service.ts`
-- Added focused unit coverage for the newly extracted scheduled-job and fanout collaborators:
-  - `server/src/gateways/session-gateway-job-runs.service.spec.ts`
-  - `server/src/gateways/session-gateway-fanout.service.spec.ts`
-- Rewired the main gateway to delegate scheduled-job websocket behavior plus shared room/global fanout helpers while preserving the existing websocket namespace and event contract:
-  - `server/src/gateways/session.gateway.ts`
-  - `server/src/gateways/gateways.module.ts`
+- Extracted scheduled-job run lifecycle persistence and state mutation out of `JobExecutorService` into a focused collaborator:
+  - `server/src/services/scheduled-jobs/scheduled-job-run-state.service.ts`
+- Extracted scheduled-job event publishing out of `JobExecutorService` into a narrow publisher so the executor no longer emits directly:
+  - `server/src/services/scheduled-jobs/scheduled-job-run-events.service.ts`
+- Rewired `JobExecutorService` to delegate run creation, run/job status persistence, stream summary tracking, commit result application, failure persistence, and lifecycle event publishing while preserving the existing execution flow:
+  - `server/src/services/scheduled-jobs/job-executor.service.ts`
+- Registered the new scheduled-job collaborators in the scheduled-jobs services module:
+  - `server/src/services/scheduled-jobs/scheduled-jobs-services.module.ts`
+- Added focused unit coverage for the new scheduled-job seams:
+  - `server/src/services/scheduled-jobs/scheduled-job-run-state.service.spec.ts`
+  - `server/src/services/scheduled-jobs/scheduled-job-run-events.service.spec.ts`
 
 ## Validation Already Run
 
 - `npm run format`: passed
 - server package build (`npm run build`): passed
-- `npx jest src/gateways/session-gateway-subscriptions.service.spec.ts`: passed
-- `npx jest src/gateways/session-gateway-chat.service.spec.ts src/gateways/session-gateway-subscriptions.service.spec.ts`: passed
-- `npx jest src/gateways/session-gateway-chat.service.spec.ts src/gateways/session-gateway-subscriptions.service.spec.ts src/gateways/session-gateway-job-runs.service.spec.ts src/gateways/session-gateway-fanout.service.spec.ts`: passed
-- `ReadLints` on touched gateway files: no diagnostics reported
-- Quick runtime boot sanity from the previous slice remains good, but it was not re-run in this slice because there were already active prod server terminals when this handoff was updated
+- `npx jest src/services/scheduled-jobs/scheduled-job-run-events.service.spec.ts src/services/scheduled-jobs/scheduled-job-run-state.service.spec.ts`: passed
+- `ReadLints` on touched scheduled-job files: no diagnostics reported
+- Quick runtime boot sanity was not re-run in this slice because there were already active prod server terminals when this handoff was updated
 
 ## Current Status
 
 There is no known blocker from this refactor slice.
 
-The session lifecycle coordinator has been removed, the sessions module still builds cleanly, the create/start flows now share readiness polling through `SessionHealthMonitorService`, and `SessionGateway` is now mostly a decorator shell that delegates session/log subscription bookkeeping, chat transport orchestration, scheduled-job run streaming, and the shared websocket fanout helpers to smaller collaborators.
+`JobExecutorService` no longer owns direct job-run persistence or direct event-emitter orchestration. Those responsibilities now live behind `ScheduledJobRunStateService` and `ScheduledJobRunEventsService`, while the executor still coordinates the remaining runtime flow: docker image validation, settings lookup, container provisioning/retries, branch creation, Claude execution, git commit/push, and cleanup.
 
 ## Next Phase Target
 
-The next highest-value refactor target is no longer `server/src/gateways/session.gateway.ts`; that adapter split is now in a good incremental state.
+The next highest-value refactor target remains `server/src/services/scheduled-jobs/job-executor.service.ts`.
 
-The next large coordinator called out in `plans/future/refactor/refactor-gtp4.md` is:
+This service is smaller than before, but it is still the main large coordinator called out in `plans/future/refactor/refactor-gtp4.md`:
 
 - `server/src/services/scheduled-jobs/job-executor.service.ts`
 
-That service still appears to bundle job-run lifecycle persistence, container provisioning, Claude execution, git post-processing, and event publishing in one place.
+After this slice, the remaining responsibilities still bundled there are container/runtime setup, branch/runtime preparation, Claude execution streaming orchestration, git post-processing, and cleanup.
 
 ## Recommended Split
 
@@ -133,13 +97,22 @@ That service still appears to bundle job-run lifecycle persistence, container pr
 4. Shared websocket fanout helpers
    - `SessionGatewayFanoutService` now owns git status, session status/update emits, and delete progress/completion/failure fanout
 
+5. Scheduled-job run-state persistence
+   - `ScheduledJobRunStateService` now owns pending-run creation, running/completed/failed persistence, job timing updates during scheduled triggers, container attachment persistence, and run metadata mutation helpers
+
+6. Scheduled-job event publishing
+   - `ScheduledJobRunEventsService` now owns started/updated/completed/failed/stream event emission for scheduled-job runs
+
 ### Extract Next
 
 1. `JobExecutorService` pipeline seams
-   - split job-run lifecycle/state persistence from container/Claude/git execution steps
+   - split the remaining runtime/container preparation and retry logic from Claude/git execution steps
 
-2. Scheduled-job event publishing
-   - if `job-executor.service.ts` still owns too much websocket- or event-shaped coordination after the first split, extract a narrow publisher/collaborator rather than creating another god-object
+2. Container/runtime provisioning collaborator
+   - extract the docker-ready check, port allocation, settings-derived container options assembly, and ephemeral container retry/start logic behind a focused collaborator
+
+3. Claude/git execution collaborator
+   - extract prompt execution plus optional commit/push post-processing so `JobExecutorService` becomes a thin pipeline orchestrator over well-named steps
 
 ## Constraints For The Next Slice
 
@@ -153,9 +126,9 @@ That service still appears to bundle job-run lifecycle persistence, container pr
 
 ## Suggested Next Steps
 
-1. Start the next phase on `server/src/services/scheduled-jobs/job-executor.service.ts`, aiming to separate run-state persistence, runtime/container setup, Claude execution, git post-processing, and event publishing into smaller collaborators.
-2. Keep `ScheduledJobGatewayResponseFactory` and the new gateway-local collaborators in place; the websocket adapter is no longer the highest-value target.
-3. Add focused tests where practical for each newly extracted scheduled-job collaborator.
+1. Continue on `server/src/services/scheduled-jobs/job-executor.service.ts`, starting from the new state/event seams rather than reopening the gateway work.
+2. Extract a runtime/container collaborator next, especially around docker readiness, port allocation, settings-derived container options, and `createContainerWithRetries()`.
+3. After that seam is stable, consider a second collaborator for Claude prompt execution plus optional git commit/push post-processing.
 4. Run:
    - `npm run format`
    - `npm run build`
@@ -173,5 +146,7 @@ That service still appears to bundle job-run lifecycle persistence, container pr
 - `server/src/gateways/session-gateway-job-runs.service.ts` now owns the scheduled-job websocket slice; extend from that seam instead of reintroducing job-run orchestration into `SessionGateway`.
 - `server/src/gateways/session-gateway-fanout.service.ts` now owns the shared room/global emit helpers for git/session/delete fanout.
 - `server/src/gateways/session-gateway.events.ts` is the shared gateway-local contract for websocket event names and room helpers.
+- `server/src/services/scheduled-jobs/scheduled-job-run-state.service.ts` is now the seam for scheduled-job run persistence and status transitions; extend it instead of pushing run lifecycle writes back into `JobExecutorService`.
+- `server/src/services/scheduled-jobs/scheduled-job-run-events.service.ts` is now the seam for scheduled-job lifecycle and stream event emission; keep event names/payloads stable behind that publisher.
 - `npm run lint` is still noisy from pre-existing repo-wide issues; use `ReadLints` or file-scoped validation for touched files.
-- The next slice should move off the gateway and back to the remaining scheduled-jobs runtime coordinator; keep the work incremental and avoid coupling new collaborators directly to transport adapters.
+- The next slice should stay on the scheduled-jobs runtime coordinator; keep the work incremental and avoid coupling new collaborators directly to transport adapters.

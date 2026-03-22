@@ -7,7 +7,11 @@ import { SettingsPersistenceModule } from '../../libs/settings/settings-persiste
 import { ChatModule } from '../chat/chat.module';
 import { GitModule } from '../git/git.module';
 import { StreamArchiveModule } from '../stream-archive/stream-archive.module';
+import { ScheduledJobClaudeGitService } from './scheduled-job-claude-git.service';
 import { JobExecutorService } from './job-executor.service';
+import { ScheduledJobRunEventsService } from './scheduled-job-run-events.service';
+import { ScheduledJobRuntimeService } from './scheduled-job-runtime.service';
+import { ScheduledJobRunStateService } from './scheduled-job-run-state.service';
 import { JobSchedulerService } from './job-scheduler.service';
 import { LaunchdService } from './launchd.service';
 import { ScheduledJobTimingService } from './scheduled-job-timing.service';
@@ -24,13 +28,21 @@ import { ScheduledJobTimingService } from './scheduled-job-timing.service';
     StreamArchiveModule,
   ],
   providers: [
+    ScheduledJobClaudeGitService,
     JobExecutorService,
+    ScheduledJobRunEventsService,
+    ScheduledJobRuntimeService,
+    ScheduledJobRunStateService,
     JobSchedulerService,
     LaunchdService,
     ScheduledJobTimingService,
   ],
   exports: [
+    ScheduledJobClaudeGitService,
     JobExecutorService,
+    ScheduledJobRunEventsService,
+    ScheduledJobRuntimeService,
+    ScheduledJobRunStateService,
     JobSchedulerService,
     LaunchdService,
     ScheduledJobTimingService,

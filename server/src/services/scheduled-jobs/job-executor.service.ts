@@ -1,32 +1,16 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { v4 as uuidv4 } from 'uuid';
+import { Injectable, Logger } from '@nestjs/common';
 import { ScheduledJobRepository } from '../../domain/scheduled-jobs/scheduled-job.repository';
 import { ScheduledJobRunRepository } from '../../domain/scheduled-jobs/scheduled-job-run.repository';
-import { ScheduledJobRun } from '../../domain/scheduled-jobs/scheduled-job-run.entity';
-import { ScheduledJobRunStatus } from '../../domain/scheduled-jobs/scheduled-job-run-status.enum';
 import { DockerEngineService } from '../docker/docker-engine.service';
 import { PortManagerService } from '../docker/port-manager.service';
-import { DockerImageRepository } from '../../domain/docker-images/docker-image.repository';
-import { DockerImageStatus } from '../../domain/docker-images/docker-image-status.enum';
-import { SettingsRepository } from '../../domain/settings/settings.repository';
-import { SETTINGS_REPOSITORY } from '../../domain/settings/settings.tokens';
-import {
-  ClaudeStreamExecutionError,
-  ClaudeStreamRunnerResult,
-  ClaudeStreamRunnerService,
-} from '../chat/claude-stream-runner.service';
-import { ClaudeEventArchiveService } from '../stream-archive/claude-event-archive.service';
+import { ClaudeStreamExecutionError } from '../chat/claude-stream-runner.service';
 import { PortPairDto } from '../../domain/containers/port-pair.dto';
-import { EphemeralContainerCreateOptions } from '../../domain/containers/container.entity';
-import { GitService } from '../git/git.service';
-import { ScheduledJobTimingService } from './scheduled-job-timing.service';
-import { JOB_RUN_EVENTS } from '../../libs/scheduled-jobs/job-run-events';
+import { ScheduledJobClaudeGitService } from './scheduled-job-claude-git.service';
+import { ScheduledJobRunEventsService } from './scheduled-job-run-events.service';
+import { ScheduledJobRuntimeService } from './scheduled-job-runtime.service';
+import { ScheduledJobRunStateService } from './scheduled-job-run-state.service';
 
 const DEDUP_WINDOW_MS = 60_000;
-const WORKSPACE_DIR = '/workspace/repo';
-const MAX_CONTAINER_START_RETRIES = 3;
-const CONTAINER_RETRY_BASE_DELAY_MS = 5_000;
 
 @Injectable()
 export class JobExecutorService {
@@ -37,14 +21,10 @@ export class JobExecutorService {
     private readonly scheduledJobRunRepository: ScheduledJobRunRepository,
     private readonly dockerEngine: DockerEngineService,
     private readonly portManager: PortManagerService,
-    private readonly dockerImageRepository: DockerImageRepository,
-    @Inject(SETTINGS_REPOSITORY)
-    private readonly settingsRepository: SettingsRepository,
-    private readonly eventEmitter: EventEmitter2,
-    private readonly claudeStreamRunner: ClaudeStreamRunnerService,
-    private readonly claudeEventArchive: ClaudeEventArchiveService,
-    private readonly gitService: GitService,
-    private readonly scheduledJobTimingService: ScheduledJobTimingService,
+    private readonly scheduledJobClaudeGit: ScheduledJobClaudeGitService,
+    private readonly scheduledJobRunEvents: ScheduledJobRunEventsService,
+    private readonly scheduledJobRuntime: ScheduledJobRuntimeService,
+    private readonly scheduledJobRunState: ScheduledJobRunStateService,
   ) {}
 
   async execute(
@@ -73,145 +53,39 @@ export class JobExecutorService {
       return;
     }
 
-    const run = new ScheduledJobRun();
-    run.id = uuidv4();
-    run.jobId = jobId;
-    run.status = ScheduledJobRunStatus.PENDING;
-    run.branch = job.branch;
-    run.committed = false;
-    run.streamEvents = null;
-    run.streamEventCount = null;
-    run.streamByteCount = null;
-    await this.scheduledJobRunRepository.save(run);
-
-    this.eventEmitter.emit(JOB_RUN_EVENTS.started, {
-      jobId,
-      runId: run.id,
-    });
-    this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-      jobId,
-      runId: run.id,
-    });
+    const run = await this.scheduledJobRunState.createPendingRun(job);
+    this.scheduledJobRunEvents.publishStarted(jobId, run.id);
 
     let ports: PortPairDto | null = null;
 
     try {
-      run.markRunning();
-      await this.scheduledJobRunRepository.save(run);
-      job.recordRun(run.startedAt ?? new Date());
-      if (options.scheduledTrigger) {
-        job.nextRunAt = this.scheduledJobTimingService.calculateNextRunAt(job, {
-          fromDate: run.startedAt ?? new Date(),
-        });
-      }
-      await this.scheduledJobRepository.save(job);
-      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-        jobId,
-        runId: run.id,
-      });
+      await this.scheduledJobRunState.markRunning(job, run, options);
+      this.scheduledJobRunEvents.publishUpdated(jobId, run.id);
 
-      const dockerImage = await this.dockerImageRepository.findById(
-        job.imageId,
-      );
-      if (!dockerImage) {
-        throw new Error(`Docker image not found: ${job.imageId}`);
-      }
-      if (dockerImage.status !== DockerImageStatus.AVAILABLE) {
-        throw new Error(
-          `Docker image "${dockerImage.name}" is not available (status: ${dockerImage.status})`,
-        );
-      }
+      const runtime = await this.scheduledJobRuntime.prepare(job, run);
+      ports = runtime.ports;
 
-      await this.dockerEngine.waitForDockerReady();
+      this.scheduledJobRunState.setBranch(run, runtime.branchName);
+      await this.scheduledJobRunState.attachContainer(run, runtime.containerId);
+      this.scheduledJobRunEvents.publishUpdated(jobId, run.id);
 
-      ports = await this.portManager.allocatePortPair();
-
-      const settings = await this.settingsRepository.get();
-
-      let branchName = job.branch;
-      if (job.createNewBranch && job.newBranchPrefix) {
-        branchName = this.generateBranchName(job.newBranchPrefix);
-      }
-      run.branch = branchName;
-
-      const isGitHubHttpsUrl = job.repoUrl.startsWith('https://github.com');
-      const githubToken =
-        isGitHubHttpsUrl && settings.git.githubAccessToken
-          ? settings.git.githubAccessToken
-          : undefined;
-
-      const containerCreateOptions = {
-        jobId: job.id,
-        runId: run.id,
-        imageName: dockerImage.image,
-        repoUrl: job.repoUrl,
-        branch: job.createNewBranch ? job.branch : branchName,
-        gitUserName: settings.git.userName || 'AFK Bot',
-        gitUserEmail: settings.git.userEmail || 'bot@afk.local',
-        sshPrivateKey: settings.git.sshPrivateKey,
-        ports,
-        claudeToken: settings.general.claudeToken,
-        githubToken,
-      };
-
-      const container = await this.createContainerWithRetries(
-        containerCreateOptions,
+      const execution = await this.scheduledJobClaudeGit.execute(
+        job,
         run,
+        runtime.containerId,
+        runtime.branchName,
       );
+      this.scheduledJobRunState.applyStreamResult(run, execution.streamResult);
 
-      run.containerId = container.id;
-      await this.scheduledJobRunRepository.save(run);
-      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-        jobId,
-        runId: run.id,
-      });
-
-      if (job.createNewBranch) {
-        this.logger.log('Creating new branch', {
-          jobId,
-          runId: run.id,
-          branchName,
-        });
-        await this.gitService.createBranch(
-          container.id,
-          branchName,
-          WORKSPACE_DIR,
+      if (execution.commitResult) {
+        this.scheduledJobRunState.applyCommitResult(
+          run,
+          execution.commitResult,
         );
       }
 
-      this.logger.log('Executing Claude prompt', {
-        jobId,
-        runId: run.id,
-        promptLength: job.prompt.length,
-      });
-      const streamResult = await this.runClaudePrompt(
-        container.id,
-        run.id,
-        jobId,
-        job.prompt,
-        job.model,
-      );
-      run.streamEventCount = streamResult.streamEventCount;
-      run.streamByteCount = streamResult.streamByteCount;
-      run.streamEvents = null;
-
-      if (job.commitAndPush) {
-        const commitResult = await this.gitService.commitAndPush(container.id, {
-          message: 'AFK scheduled job: automated changes',
-          branchName,
-          workingDir: WORKSPACE_DIR,
-        });
-        run.committed = commitResult.committed;
-        run.filesChanged = commitResult.filesChanged;
-        run.commitSha = commitResult.commitSha;
-      }
-
-      run.markCompleted();
-      await this.scheduledJobRunRepository.save(run);
-      this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-        jobId,
-        runId: run.id,
-      });
+      await this.scheduledJobRunState.markCompleted(run);
+      this.scheduledJobRunEvents.publishUpdated(jobId, run.id);
 
       this.logger.log('Job run completed successfully', {
         jobId,
@@ -219,15 +93,10 @@ export class JobExecutorService {
         durationMs: run.durationMs,
       });
 
-      this.eventEmitter.emit(JOB_RUN_EVENTS.completed, {
-        jobId,
-        runId: run.id,
-      });
+      this.scheduledJobRunEvents.publishCompleted(jobId, run.id);
     } catch (error) {
       if (error instanceof ClaudeStreamExecutionError) {
-        run.streamEventCount = error.partialResult.streamEventCount;
-        run.streamByteCount = error.partialResult.streamByteCount;
-        run.streamEvents = null;
+        this.scheduledJobRunState.applyStreamResult(run, error.partialResult);
       }
 
       const message = error instanceof Error ? error.message : String(error);
@@ -237,27 +106,15 @@ export class JobExecutorService {
         error: message,
       });
 
-      run.markFailed(message);
-      let failurePersisted = true;
-      await this.scheduledJobRunRepository.save(run).catch((saveErr) => {
-        failurePersisted = false;
-        this.logger.error('Failed to persist run failure', {
-          runId: run.id,
-          error: saveErr instanceof Error ? saveErr.message : String(saveErr),
-        });
-      });
+      const failurePersisted = await this.scheduledJobRunState.markFailed(
+        run,
+        message,
+      );
       if (failurePersisted) {
-        this.eventEmitter.emit(JOB_RUN_EVENTS.updated, {
-          jobId,
-          runId: run.id,
-        });
+        this.scheduledJobRunEvents.publishUpdated(jobId, run.id);
       }
 
-      this.eventEmitter.emit(JOB_RUN_EVENTS.failed, {
-        jobId,
-        runId: run.id,
-        error: message,
-      });
+      this.scheduledJobRunEvents.publishFailed(jobId, run.id, message);
     } finally {
       if (run.containerId) {
         await this.dockerEngine.stopContainer(run.containerId).catch((err) =>
@@ -278,107 +135,5 @@ export class JobExecutorService {
         await this.portManager.releasePortPair(ports);
       }
     }
-  }
-
-  private async createContainerWithRetries(
-    options: EphemeralContainerCreateOptions,
-    run: ScheduledJobRun,
-  ): Promise<{ id: string }> {
-    let lastError: Error | undefined;
-
-    for (let attempt = 1; attempt <= MAX_CONTAINER_START_RETRIES; attempt++) {
-      try {
-        const container =
-          await this.dockerEngine.createEphemeralContainer(options);
-
-        this.logger.log('Waiting for container to be ready', {
-          jobId: options.jobId,
-          runId: run.id,
-          containerId: container.id,
-          attempt,
-        });
-        await this.dockerEngine.waitForContainerReady(container.id);
-        this.logger.log('Container is ready', {
-          jobId: options.jobId,
-          runId: run.id,
-          attempt,
-        });
-
-        return container;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        this.logger.warn('Container start attempt failed', {
-          jobId: options.jobId,
-          runId: run.id,
-          attempt,
-          maxAttempts: MAX_CONTAINER_START_RETRIES,
-          error: lastError.message,
-        });
-
-        if (run.containerId) {
-          await this.dockerEngine
-            .removeContainer(run.containerId)
-            .catch(() => {});
-          run.containerId = undefined as unknown as string;
-        }
-
-        if (attempt < MAX_CONTAINER_START_RETRIES) {
-          const delayMs = CONTAINER_RETRY_BASE_DELAY_MS * attempt;
-          this.logger.log('Retrying container creation', {
-            jobId: options.jobId,
-            runId: run.id,
-            nextAttemptIn: `${delayMs}ms`,
-          });
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-          await this.dockerEngine.waitForDockerReady();
-        }
-      }
-    }
-
-    throw lastError ?? new Error('Container creation failed after retries');
-  }
-
-  private async runClaudePrompt(
-    containerId: string,
-    runId: string,
-    jobId: string,
-    prompt: string,
-    model?: string | null,
-  ): Promise<ClaudeStreamRunnerResult> {
-    const archiveWriter = this.claudeEventArchive.createJobRunWriter(runId);
-    const execution = await this.claudeStreamRunner.startPrompt({
-      containerId,
-      prompt,
-      model: model ?? undefined,
-      workingDir: WORKSPACE_DIR,
-      includePartialMessages: true,
-      archiveWriter,
-      onEvent: (event) => {
-        this.eventEmitter.emit(JOB_RUN_EVENTS.stream, {
-          jobId,
-          runId,
-          event: event as unknown,
-        });
-      },
-    });
-
-    return execution.result;
-  }
-
-  private generateBranchName(prefix: string): string {
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const timestamp = [
-      now.getFullYear(),
-      '-',
-      pad(now.getMonth() + 1),
-      '-',
-      pad(now.getDate()),
-      '-',
-      pad(now.getHours()),
-      pad(now.getMinutes()),
-      pad(now.getSeconds()),
-    ].join('');
-    return `${prefix}-${timestamp}`;
   }
 }

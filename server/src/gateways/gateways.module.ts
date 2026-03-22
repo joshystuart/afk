@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { SessionGateway } from './session.gateway';
-import { SessionSubscriptionService } from './session-subscription.service';
 import { DockerModule } from '../services/docker/docker.module';
 import { RepositoriesModule } from '../services/repositories/repositories.module';
 import { DomainModule } from '../domain/domain.module';
@@ -12,6 +11,7 @@ import { SessionGatewayChatService } from './session-gateway-chat.service';
 import { SessionGatewayFanoutService } from './session-gateway-fanout.service';
 import { SessionGatewayJobRunsService } from './session-gateway-job-runs.service';
 import { SessionGatewaySubscriptionsService } from './session-gateway-subscriptions.service';
+import { SessionSubscriptionsModule } from './session-subscriptions.module';
 
 @Module({
   imports: [
@@ -21,16 +21,16 @@ import { SessionGatewaySubscriptionsService } from './session-gateway-subscripti
     GitWatcherModule,
     ChatModule,
     ScheduledJobsDomainModule,
+    SessionSubscriptionsModule,
   ],
   providers: [
     SessionGateway,
-    SessionSubscriptionService,
     SessionGatewayChatService,
     SessionGatewayFanoutService,
     SessionGatewayJobRunsService,
     SessionGatewaySubscriptionsService,
     ScheduledJobGatewayResponseFactory,
   ],
-  exports: [SessionGateway, SessionSubscriptionService],
+  exports: [SessionGateway, SessionSubscriptionsModule],
 })
 export class GatewaysModule {}

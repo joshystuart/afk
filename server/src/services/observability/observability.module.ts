@@ -6,7 +6,7 @@ import { DockerModule } from '../docker/docker.module';
 import { ChatModule } from '../chat/chat.module';
 import { StreamArchiveModule } from '../stream-archive/stream-archive.module';
 import { SessionServicesModule } from '../sessions/session-services.module';
-import { GatewaysModule } from '../../gateways/gateways.module';
+import { SessionSubscriptionsModule } from '../../gateways/session-subscriptions.module';
 import { RepositoriesModule } from '../repositories/repositories.module';
 
 @Module({
@@ -15,7 +15,7 @@ import { RepositoriesModule } from '../repositories/repositories.module';
     ChatModule,
     StreamArchiveModule,
     SessionServicesModule,
-    GatewaysModule,
+    SessionSubscriptionsModule,
     RepositoriesModule,
   ],
   controllers: [MetricsController],

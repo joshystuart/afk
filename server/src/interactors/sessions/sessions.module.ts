@@ -4,6 +4,8 @@ import { CreateSessionInteractor } from './create-session/create-session.interac
 import { ListSessionsInteractor } from './list-sessions/list-sessions.interactor';
 import { SessionGitInteractor } from './session-git.interactor';
 import { CreateSessionController } from './create-session/create-session.controller';
+import { CreateSessionRequestService } from './create-session/create-session-request.service';
+import { CreateSessionStartupService } from './create-session/create-session-startup.service';
 import { ListSessionsController } from './list-sessions/list-sessions.controller';
 import { GetSessionController } from './get-session.controller';
 import { CheckSessionHealthController } from './check-session-health.controller';
@@ -69,6 +71,8 @@ import { StopSessionInteractor } from './stop-session/stop-session.interactor';
   ],
   providers: [
     CreateSessionInteractor,
+    CreateSessionRequestService,
+    CreateSessionStartupService,
     ListSessionsInteractor,
     ClearAllSessionsInteractor,
     SessionGitInteractor,

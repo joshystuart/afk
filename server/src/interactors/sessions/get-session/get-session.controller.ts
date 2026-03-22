@@ -6,16 +6,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { GetSessionInfoInteractor } from './get-session-info/get-session-info.interactor';
+import { GetSessionInfoInteractor } from '../get-session-info/get-session-info.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
-import { CreateSessionResponseDto } from './create-session/create-session-response.dto';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
-import { AppConfig } from '../../libs/config/app.config';
-import { SessionRoutes, SessionRouteParams } from './session.routes';
+} from '../../../libs/response/response.service';
+import { SessionIdDtoFactory } from '../../../domain/sessions/session-id-dto.factory';
+import { CreateSessionResponseDto } from '../create-session/create-session-response.dto';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
+import { AppConfig } from '../../../libs/config/app.config';
+import { SessionRoutes, SessionRouteParams } from '../session.routes';
 
 @ApiTags('Sessions')
 @Controller(SessionRoutes.BASE)

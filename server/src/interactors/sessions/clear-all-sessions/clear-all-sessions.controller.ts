@@ -7,9 +7,9 @@ import {
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
-import { SessionRoutes } from './session.routes';
+} from '../../../libs/response/response.service';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
+import { SessionRoutes } from '../session.routes';
 
 @ApiTags('Sessions')
 @Controller(SessionRoutes.BASE)

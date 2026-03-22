@@ -1,35 +1,35 @@
 import {
   Controller,
-  Delete,
+  Post,
   Param,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { DeleteSessionInteractor } from './delete-session/delete-session.interactor';
+import { StartSessionInteractor } from './start-session.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
-import { SessionRoutes, SessionRouteParams } from './session.routes';
+} from '../../../libs/response/response.service';
+import { SessionIdDtoFactory } from '../../../domain/sessions/session-id-dto.factory';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
+import { SessionRoutes, SessionRouteParams } from '../session.routes';
 
 @ApiTags('Sessions')
 @Controller(SessionRoutes.BASE)
-export class DeleteSessionController {
+export class StartSessionController {
   constructor(
-    private readonly deleteSessionInteractor: DeleteSessionInteractor,
+    private readonly startSessionInteractor: StartSessionInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}
 
-  @Delete(SessionRoutes.ITEM)
-  @ApiOperation({ summary: 'Delete session' })
+  @Post(SessionRoutes.START)
+  @ApiOperation({ summary: 'Start session' })
   @ApiParam({ name: SessionRouteParams.ITEM_ID, description: 'Session ID' })
   @ApiResponse({
     status: 200,
-    description: 'Session deleted successfully',
+    description: 'Session started successfully',
   })
   @ApiResponse({
     status: 404,
@@ -41,15 +41,15 @@ export class DeleteSessionController {
     description: 'Invalid session ID or operation failed',
     type: ApiErrorResponseDto,
   })
-  async deleteSession(
+  async startSession(
     @Param(SessionRouteParams.ITEM_ID) id: string,
   ): Promise<ApiResponseType<{ message: string }>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
-      await this.deleteSessionInteractor.execute(sessionId);
+      await this.startSessionInteractor.execute(sessionId);
 
       return this.responseService.success({
-        message: 'Session deleted successfully',
+        message: 'Session started successfully',
       });
     } catch (error) {
       if (error.message === 'Session not found') {

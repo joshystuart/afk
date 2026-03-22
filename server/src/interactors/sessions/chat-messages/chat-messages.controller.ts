@@ -1,19 +1,13 @@
-import {
-  Controller,
-  Get,
-  Param,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Param, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
-import { ChatService } from './chat/chat.service';
-import { ChatMessageResponseDto } from './chat-message-response.dto';
-import { SessionRoutes, SessionRouteParams } from './session.routes';
+} from '../../../libs/response/response.service';
+import { SessionIdDtoFactory } from '../../../domain/sessions/session-id-dto.factory';
+import { ChatService } from '../chat/chat.service';
+import { ChatMessageResponseDto } from '../chat-message-response.dto';
+import { SessionRoutes, SessionRouteParams } from '../session.routes';
 
 @ApiTags('Sessions')
 @Controller(SessionRoutes.BASE)

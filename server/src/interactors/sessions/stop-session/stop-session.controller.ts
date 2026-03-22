@@ -6,14 +6,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { StopSessionInteractor } from './stop-session/stop-session.interactor';
+import { StopSessionInteractor } from './stop-session.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
-import { SessionRoutes, SessionRouteParams } from './session.routes';
+} from '../../../libs/response/response.service';
+import { SessionIdDtoFactory } from '../../../domain/sessions/session-id-dto.factory';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
+import { SessionRoutes, SessionRouteParams } from '../session.routes';
 
 @ApiTags('Sessions')
 @Controller(SessionRoutes.BASE)

@@ -12,14 +12,14 @@ import { IsString, IsNotEmpty } from 'class-validator';
 import {
   CommitAndPushResult,
   SessionGitInteractor,
-} from './session-git.interactor';
+} from '../session-git.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
-} from '../../libs/response/response.service';
-import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
-import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
-import { SessionRoutes, SessionRouteParams } from './session.routes';
+} from '../../../libs/response/response.service';
+import { SessionIdDtoFactory } from '../../../domain/sessions/session-id-dto.factory';
+import { ApiErrorResponseDto } from '../../../libs/response/api-error-response.dto';
+import { SessionRoutes, SessionRouteParams } from '../session.routes';
 
 class CommitAndPushDto {
   @IsString()

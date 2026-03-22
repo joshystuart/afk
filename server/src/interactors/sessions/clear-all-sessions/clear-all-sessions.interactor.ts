@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { SessionIdDto } from '../../domain/sessions/session-id.dto';
-import { SessionRepository } from '../../domain/sessions/session.repository';
-import { SessionStatus } from '../../domain/sessions/session-status.enum';
-import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
-import { DeleteSessionInteractor } from './delete-session/delete-session.interactor';
-import { StopSessionInteractor } from './stop-session/stop-session.interactor';
+import { SessionIdDto } from '../../../domain/sessions/session-id.dto';
+import { SessionRepository } from '../../../domain/sessions/session.repository';
+import { SessionStatus } from '../../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
+import { DeleteSessionInteractor } from '../delete-session/delete-session.interactor';
+import { StopSessionInteractor } from '../stop-session/stop-session.interactor';
 
 export interface ClearAllSessionsResult {
   stopped: number;

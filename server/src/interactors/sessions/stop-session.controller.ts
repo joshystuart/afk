@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
+import { StopSessionInteractor } from './stop-session/stop-session.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -19,7 +19,7 @@ import { SessionRoutes, SessionRouteParams } from './session.routes';
 @Controller(SessionRoutes.BASE)
 export class StopSessionController {
   constructor(
-    private readonly sessionLifecycleInteractor: SessionLifecycleInteractor,
+    private readonly stopSessionInteractor: StopSessionInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}
@@ -46,7 +46,7 @@ export class StopSessionController {
   ): Promise<ApiResponseType<{ message: string }>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
-      await this.sessionLifecycleInteractor.stopSession(sessionId);
+      await this.stopSessionInteractor.execute(sessionId);
 
       return this.responseService.success({
         message: 'Session stopped successfully',

@@ -1,9 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
 import { SessionRepository } from '../../domain/sessions/session.repository';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
 import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
+import { DeleteSessionInteractor } from './delete-session/delete-session.interactor';
+import { StopSessionInteractor } from './stop-session/stop-session.interactor';
 
 export interface ClearAllSessionsResult {
   stopped: number;
@@ -18,7 +19,8 @@ export class ClearAllSessionsInteractor {
   constructor(
     @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
-    private readonly sessionLifecycle: SessionLifecycleInteractor,
+    private readonly stopSession: StopSessionInteractor,
+    private readonly deleteSession: DeleteSessionInteractor,
   ) {}
 
   async execute(): Promise<ClearAllSessionsResult> {
@@ -34,7 +36,7 @@ export class ClearAllSessionsInteractor {
         session.status === SessionStatus.STARTING
       ) {
         try {
-          await this.sessionLifecycle.stopSession(new SessionIdDto(session.id));
+          await this.stopSession.execute(new SessionIdDto(session.id));
           stopped++;
         } catch (error) {
           this.logger.error(`Failed to stop session ${session.id}`, error);
@@ -50,9 +52,7 @@ export class ClearAllSessionsInteractor {
     for (const session of updatedSessions) {
       if (session.canBeDeleted()) {
         try {
-          await this.sessionLifecycle.deleteSession(
-            new SessionIdDto(session.id),
-          );
+          await this.deleteSession.execute(new SessionIdDto(session.id));
           deleted++;
         } catch (error) {
           this.logger.error(`Failed to delete session ${session.id}`, error);

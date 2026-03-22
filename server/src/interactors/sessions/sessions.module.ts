@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreateSessionInteractor } from './create-session/create-session.interactor';
 import { ListSessionsInteractor } from './list-sessions/list-sessions.interactor';
-import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
 import { SessionGitInteractor } from './session-git.interactor';
 import { CreateSessionController } from './create-session/create-session.controller';
 import { ListSessionsController } from './list-sessions/list-sessions.controller';
@@ -32,6 +31,12 @@ import { SettingsPersistenceModule } from '../../libs/settings/settings-persiste
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
 import { Session } from '../../domain/sessions/session.entity';
 import { SessionServicesModule } from '../../services/sessions/session-services.module';
+import { CheckSessionHealthInteractor } from './check-session-health/check-session-health.interactor';
+import { DeleteSessionInteractor } from './delete-session/delete-session.interactor';
+import { GetSessionInfoInteractor } from './get-session-info/get-session-info.interactor';
+import { SessionHealthMonitorService } from './session-health-monitor.service';
+import { StartSessionInteractor } from './start-session/start-session.interactor';
+import { StopSessionInteractor } from './stop-session/stop-session.interactor';
 
 @Module({
   imports: [
@@ -65,17 +70,21 @@ import { SessionServicesModule } from '../../services/sessions/session-services.
   providers: [
     CreateSessionInteractor,
     ListSessionsInteractor,
-    SessionLifecycleInteractor,
     ClearAllSessionsInteractor,
     SessionGitInteractor,
     UpdateSessionInteractor,
+    StartSessionInteractor,
+    StopSessionInteractor,
+    DeleteSessionInteractor,
+    CheckSessionHealthInteractor,
+    GetSessionInfoInteractor,
+    SessionHealthMonitorService,
     SessionConfig,
     MountPathValidator,
   ],
   exports: [
     CreateSessionInteractor,
     ListSessionsInteractor,
-    SessionLifecycleInteractor,
     SessionGitInteractor,
   ],
 })

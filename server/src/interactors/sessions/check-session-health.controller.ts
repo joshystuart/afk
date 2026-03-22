@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
+import { CheckSessionHealthInteractor } from './check-session-health/check-session-health.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -19,7 +19,7 @@ import { SessionRoutes, SessionRouteParams } from './session.routes';
 @Controller(SessionRoutes.BASE)
 export class CheckSessionHealthController {
   constructor(
-    private readonly sessionLifecycleInteractor: SessionLifecycleInteractor,
+    private readonly checkSessionHealthInteractor: CheckSessionHealthInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}
@@ -54,7 +54,7 @@ export class CheckSessionHealthController {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
       const healthStatus =
-        await this.sessionLifecycleInteractor.checkTerminalHealth(sessionId);
+        await this.checkSessionHealthInteractor.execute(sessionId);
 
       return this.responseService.success(healthStatus);
     } catch (error) {

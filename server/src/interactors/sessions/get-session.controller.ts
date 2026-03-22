@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
+import { GetSessionInfoInteractor } from './get-session-info/get-session-info.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -21,7 +21,7 @@ import { SessionRoutes, SessionRouteParams } from './session.routes';
 @Controller(SessionRoutes.BASE)
 export class GetSessionController {
   constructor(
-    private readonly sessionLifecycleInteractor: SessionLifecycleInteractor,
+    private readonly getSessionInfoInteractor: GetSessionInfoInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
     private readonly appConfig: AppConfig,
@@ -51,7 +51,7 @@ export class GetSessionController {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
       const sessionInfo =
-        await this.sessionLifecycleInteractor.getSessionInfo(sessionId);
+        await this.getSessionInfoInteractor.execute(sessionId);
 
       const response = CreateSessionResponseDto.fromDomain(
         sessionInfo.session,

@@ -18,7 +18,7 @@ import { DockerImageRepository } from '../../../domain/docker-images/docker-imag
 import { DockerImageStatus } from '../../../domain/docker-images/docker-image-status.enum';
 import { MountPathValidator } from '../../../libs/validators/mount-path.validator';
 import { MountPathValidationError } from '../../../libs/validators/mount-path-validation.error';
-import { SessionLifecycleInteractor } from '../session-lifecycle.interactor';
+import { SessionHealthMonitorService } from '../session-health-monitor.service';
 
 @Injectable()
 export class CreateSessionInteractor {
@@ -38,7 +38,7 @@ export class CreateSessionInteractor {
     private readonly settingsRepository: SettingsRepository,
     private readonly dockerImageRepository: DockerImageRepository,
     private readonly mountPathValidator: MountPathValidator,
-    private readonly sessionLifecycle: SessionLifecycleInteractor,
+    private readonly sessionHealthMonitor: SessionHealthMonitorService,
   ) {}
 
   async execute(request: CreateSessionRequest): Promise<Session> {
@@ -176,7 +176,7 @@ export class CreateSessionInteractor {
       });
 
       // Monitor readiness in the background; marks ERROR if it never succeeds
-      this.sessionLifecycle.performBackgroundHealthCheck(session);
+      this.sessionHealthMonitor.performBackgroundHealthCheck(session);
 
       return session;
     } catch (error) {

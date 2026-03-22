@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { SessionLifecycleInteractor } from './session-lifecycle.interactor';
+import { StartSessionInteractor } from './start-session/start-session.interactor';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -19,7 +19,7 @@ import { SessionRoutes, SessionRouteParams } from './session.routes';
 @Controller(SessionRoutes.BASE)
 export class StartSessionController {
   constructor(
-    private readonly sessionLifecycleInteractor: SessionLifecycleInteractor,
+    private readonly startSessionInteractor: StartSessionInteractor,
     private readonly responseService: ResponseService,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}
@@ -46,7 +46,7 @@ export class StartSessionController {
   ): Promise<ApiResponseType<{ message: string }>> {
     try {
       const sessionId = this.sessionIdFactory.fromString(id);
-      await this.sessionLifecycleInteractor.startSession(sessionId);
+      await this.startSessionInteractor.execute(sessionId);
 
       return this.responseService.success({
         message: 'Session started successfully',

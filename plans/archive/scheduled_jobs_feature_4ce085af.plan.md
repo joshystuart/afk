@@ -91,8 +91,8 @@ Two new TypeORM entities:
 
 **Files to modify:**
 
-- [electron/src/main.ts](../electron/src/main.ts) -- change `window-all-closed` to hide to tray instead of quit
-- [electron/src/window.ts](../electron/src/window.ts) -- add tray creation logic
+- [electron/src/main.ts](../../electron/src/main.ts) -- change `window-all-closed` to hide to tray instead of quit
+- [electron/src/window.ts](../../electron/src/window.ts) -- add tray creation logic
 - New: `electron/src/tray.ts` -- tray icon, context menu (Show Window, Quit)
 
 **Key changes:**
@@ -112,9 +112,9 @@ Two new TypeORM entities:
 
 **Files to modify:**
 
-- [web/src/utils/constants.ts](../web/src/utils/constants.ts) -- add routes: `SCHEDULED_JOBS: '/jobs'`, `CREATE_SCHEDULED_JOB: '/jobs/create'`, `SCHEDULED_JOB_DETAILS: '/jobs/:id'`
-- [web/src/components/Layout.tsx](../web/src/components/Layout.tsx) -- add "Scheduled Jobs" to `menuItems` array (use `Schedule` icon from MUI)
-- [web/src/App.tsx](../web/src/App.tsx) -- add routes for the three new pages
+- [web/src/utils/constants.ts](../../web/src/utils/constants.ts) -- add routes: `SCHEDULED_JOBS: '/jobs'`, `CREATE_SCHEDULED_JOB: '/jobs/create'`, `SCHEDULED_JOB_DETAILS: '/jobs/:id'`
+- [web/src/components/Layout.tsx](../../web/src/components/Layout.tsx) -- add "Scheduled Jobs" to `menuItems` array (use `Schedule` icon from MUI)
+- [web/src/App.tsx](../../web/src/App.tsx) -- add routes for the three new pages
 - New: `web/src/pages/ScheduledJobs.tsx` -- empty list page with "No scheduled jobs" state and "Create Job" button
 - New: `web/src/pages/CreateScheduledJob.tsx` -- empty form placeholder
 - New: `web/src/pages/ScheduledJobDetails.tsx` -- empty detail placeholder with tabs (Settings / History)
@@ -139,7 +139,7 @@ Two new TypeORM entities:
   - `list-scheduled-job-runs.controller.ts` / `list-scheduled-job-runs.interactor.ts`
   - DTOs: `create-scheduled-job.dto.ts`, `update-scheduled-job.dto.ts`
   - `scheduled-jobs.module.ts` -- interactor module
-- Modify [server/src/app.module.ts](../server/src/app.module.ts) to import new modules
+- Modify [server/src/app.module.ts](../../server/src/app.module.ts) to import new modules
 
 **Follows the same pattern as sessions:** separate controller per action, interactor for business logic, repository via TypeORM.
 
@@ -159,7 +159,7 @@ Two new TypeORM entities:
 
 **Form sections (mirroring CreateSession.tsx):**
 
-1. **Repository** -- reuse the GitHub Autocomplete / manual URL toggle pattern from [web/src/pages/CreateSession.tsx](../web/src/pages/CreateSession.tsx) lines 425-560
+1. **Repository** -- reuse the GitHub Autocomplete / manual URL toggle pattern from [web/src/pages/CreateSession.tsx](../../web/src/pages/CreateSession.tsx) lines 425-560
 2. **Branch** -- branch input + "Create new branch" toggle with prefix field
 3. **Environment** -- Docker image selector (same pattern as CreateSession)
 4. **Schedule** -- toggle between "Specific time" (date/time picker + recurrence: daily/weekly/monthly) and "Every X" (number + unit dropdown: minutes/hours/days)
@@ -199,7 +199,7 @@ Orchestrates a single job run:
 - Uses `CronJob` from `cron` package for cron-type, `setInterval` wrapper for interval-type
 - Each registered job calls `JobExecutorService.execute(jobId)` when triggered
 
-**Modify:** [server/src/app.module.ts](../server/src/app.module.ts) to import `ScheduleModule.forRoot()` from `@nestjs/schedule`
+**Modify:** [server/src/app.module.ts](../../server/src/app.module.ts) to import `ScheduleModule.forRoot()` from `@nestjs/schedule`
 
 #### 5c: macOS LaunchAgent Integration (Electron only)
 

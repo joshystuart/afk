@@ -16,37 +16,26 @@ import {
 } from './session-gateway-subscriptions.service';
 import {
   GATEWAY_EVENTS,
-  getJobRunRoom,
   getSessionRoom,
   SOCKET_EVENTS,
 } from './session-gateway.events';
-import { GitStatusResult } from '../services/git/git.service';
-import { SessionStatus } from '../domain/sessions/session-status.enum';
-import { ScheduledJobRepository } from '../domain/scheduled-jobs/scheduled-job.repository';
-import { ScheduledJobRunRepository } from '../domain/scheduled-jobs/scheduled-job-run.repository';
-import { ScheduledJobRunStatus } from '../domain/scheduled-jobs/scheduled-job-run-status.enum';
 import { JOB_RUN_EVENTS } from '../libs/scheduled-jobs/job-run-events';
-import { ScheduledJobGatewayResponseFactory } from './scheduled-job-gateway-response.factory';
+import { SessionStatus } from '../domain/sessions/session-status.enum';
 import { SessionGatewayChatService } from './session-gateway-chat.service';
-
-export interface SessionUpdate {
-  type: 'status' | 'container' | 'logs';
-  data: any;
-}
-
-export interface DeleteProgressPayload {
-  sessionId: string;
-  message: string;
-}
-
-export interface DeleteCompletedPayload {
-  sessionId: string;
-}
-
-export interface DeleteFailedPayload {
-  sessionId: string;
-  error: string;
-}
+import {
+  DeleteCompletedPayload,
+  DeleteFailedPayload,
+  DeleteProgressPayload,
+  GitStatusChangedPayload,
+  SessionGatewayFanoutService,
+  SessionUpdate,
+} from './session-gateway-fanout.service';
+import {
+  JobRunStreamPayload,
+  JobRunSubscriptionPayload,
+  JobRunUpdatedPayload,
+  SessionGatewayJobRunsService,
+} from './session-gateway-job-runs.service';
 
 @WebSocketGateway({
   namespace: '/sessions',
@@ -66,14 +55,9 @@ export class SessionGateway
   constructor(
     private readonly sessionGatewaySubscriptionsService: SessionGatewaySubscriptionsService,
     private readonly sessionGatewayChatService: SessionGatewayChatService,
-    private readonly scheduledJobRepository: ScheduledJobRepository,
-    private readonly scheduledJobRunRepository: ScheduledJobRunRepository,
-    private readonly scheduledJobGatewayResponseFactory: ScheduledJobGatewayResponseFactory,
+    private readonly sessionGatewayJobRunsService: SessionGatewayJobRunsService,
+    private readonly sessionGatewayFanoutService: SessionGatewayFanoutService,
   ) {}
-
-  private nowIso(): string {
-    return new Date().toISOString();
-  }
 
   async handleConnection(client: Socket) {
     this.logger.log('Client connected', {
@@ -172,147 +156,67 @@ export class SessionGateway
 
   @SubscribeMessage(SOCKET_EVENTS.subscribeJobRun)
   async handleJobRunSubscription(
-    @MessageBody() data: { runId: string },
+    @MessageBody() data: JobRunSubscriptionPayload,
     @ConnectedSocket() client: Socket,
   ) {
-    const run = await this.scheduledJobRunRepository.findById(data.runId);
-    if (!run) {
-      return {
-        event: SOCKET_EVENTS.jobRunError,
-        data: { runId: data.runId, error: 'Scheduled job run not found' },
-      };
-    }
-
-    client.emit(SOCKET_EVENTS.jobRunUpdated, {
-      run: this.scheduledJobGatewayResponseFactory.createRun(run),
-      timestamp: this.nowIso(),
-    });
-
-    if (run.status !== ScheduledJobRunStatus.RUNNING) {
-      return {
-        event: SOCKET_EVENTS.jobRunSubscribed,
-        data: { runId: data.runId, active: false },
-      };
-    }
-
-    await client.join(getJobRunRoom(data.runId));
-
-    return {
-      event: SOCKET_EVENTS.jobRunSubscribed,
-      data: { runId: data.runId, active: true },
-    };
+    return this.sessionGatewayJobRunsService.handleJobRunSubscription(
+      client,
+      data,
+    );
   }
 
   @SubscribeMessage(SOCKET_EVENTS.unsubscribeJobRun)
   async handleJobRunUnsubscription(
-    @MessageBody() data: { runId: string },
+    @MessageBody() data: JobRunSubscriptionPayload,
     @ConnectedSocket() client: Socket,
   ) {
-    await client.leave(getJobRunRoom(data.runId));
-
-    return {
-      event: SOCKET_EVENTS.jobRunUnsubscribed,
-      data: { runId: data.runId },
-    };
+    return this.sessionGatewayJobRunsService.handleJobRunUnsubscription(
+      client,
+      data,
+    );
   }
 
   @OnEvent(JOB_RUN_EVENTS.stream)
-  handleJobRunStream(payload: {
-    jobId: string;
-    runId: string;
-    event: unknown;
-  }) {
-    this.server
-      .to(getJobRunRoom(payload.runId))
-      .emit(SOCKET_EVENTS.jobRunStream, {
-        jobId: payload.jobId,
-        runId: payload.runId,
-        event: payload.event,
-        timestamp: this.nowIso(),
-      });
+  handleJobRunStream(payload: JobRunStreamPayload) {
+    this.sessionGatewayJobRunsService.handleJobRunStream(this.server, payload);
   }
 
   @OnEvent(JOB_RUN_EVENTS.updated)
-  async handleScheduledJobRunUpdated(payload: {
-    jobId: string;
-    runId: string;
-  }) {
-    const [job, run] = await Promise.all([
-      this.scheduledJobRepository.findById(payload.jobId),
-      this.scheduledJobRunRepository.findById(payload.runId),
-    ]);
-
-    if (run) {
-      const runResponse =
-        this.scheduledJobGatewayResponseFactory.createRun(run);
-
-      this.server
-        .to(getJobRunRoom(payload.runId))
-        .emit(SOCKET_EVENTS.jobRunUpdated, {
-          run: runResponse,
-          timestamp: this.nowIso(),
-        });
-
-      this.server.emit(SOCKET_EVENTS.scheduledJobRunUpdated, {
-        run: runResponse,
-        timestamp: this.nowIso(),
-      });
-    }
-
-    if (!job) {
-      return;
-    }
-
-    const jobResponse =
-      await this.scheduledJobGatewayResponseFactory.createJob(job);
-
-    this.server.emit(SOCKET_EVENTS.scheduledJobUpdated, {
-      job: jobResponse,
-      timestamp: this.nowIso(),
-    });
+  async handleScheduledJobRunUpdated(payload: JobRunUpdatedPayload) {
+    await this.sessionGatewayJobRunsService.handleScheduledJobRunUpdated(
+      this.server,
+      payload,
+    );
   }
 
   // Listen for git status changes from GitWatcherService
   @OnEvent(GATEWAY_EVENTS.gitStatusChanged)
-  handleGitStatusChanged(payload: {
-    sessionId: string;
-    status: GitStatusResult;
-  }) {
-    this.server
-      .to(getSessionRoom(payload.sessionId))
-      .emit(SOCKET_EVENTS.sessionGitStatus, {
-        sessionId: payload.sessionId,
-        ...payload.status,
-        timestamp: this.nowIso(),
-      });
+  handleGitStatusChanged(payload: GitStatusChangedPayload) {
+    this.sessionGatewayFanoutService.handleGitStatusChanged(
+      this.server,
+      payload,
+    );
   }
 
   // Emit session status updates
   emitSessionUpdate(sessionId: string, update: SessionUpdate) {
-    this.server
-      .to(getSessionRoom(sessionId))
-      .emit(SOCKET_EVENTS.sessionUpdated, {
-        sessionId,
-        update,
-        timestamp: this.nowIso(),
-      });
+    this.sessionGatewayFanoutService.emitSessionUpdate(
+      this.server,
+      sessionId,
+      update,
+    );
   }
 
   emitSessionStatusChange(sessionId: string, status: SessionStatus) {
-    this.server
-      .to(getSessionRoom(sessionId))
-      .emit(SOCKET_EVENTS.sessionStatusChanged, {
-        sessionId,
-        status,
-        timestamp: this.nowIso(),
-      });
+    this.sessionGatewayFanoutService.emitSessionStatusChange(
+      this.server,
+      sessionId,
+      status,
+    );
   }
 
-  emitGlobalUpdate(event: string, data: any) {
-    this.server.emit(event, {
-      ...data,
-      timestamp: this.nowIso(),
-    });
+  emitGlobalUpdate(event: string, data: Record<string, unknown>) {
+    this.sessionGatewayFanoutService.emitGlobalUpdate(this.server, event, data);
   }
 
   @SubscribeMessage(SOCKET_EVENTS.chatSend)
@@ -339,50 +243,16 @@ export class SessionGateway
 
   @OnEvent(SOCKET_EVENTS.sessionDeleteProgress)
   handleDeleteProgress(payload: DeleteProgressPayload) {
-    this.server
-      .to(getSessionRoom(payload.sessionId))
-      .emit(SOCKET_EVENTS.sessionDeleteProgress, {
-        sessionId: payload.sessionId,
-        message: payload.message,
-        timestamp: this.nowIso(),
-      });
-
-    this.server.emit(SOCKET_EVENTS.sessionDeleteProgress, {
-      sessionId: payload.sessionId,
-      message: payload.message,
-      timestamp: this.nowIso(),
-    });
+    this.sessionGatewayFanoutService.handleDeleteProgress(this.server, payload);
   }
 
   @OnEvent(SOCKET_EVENTS.sessionDeleted)
   handleSessionDeleted(payload: DeleteCompletedPayload) {
-    this.server
-      .to(getSessionRoom(payload.sessionId))
-      .emit(SOCKET_EVENTS.sessionDeleted, {
-        sessionId: payload.sessionId,
-        timestamp: this.nowIso(),
-      });
-
-    this.server.emit(SOCKET_EVENTS.sessionDeleted, {
-      sessionId: payload.sessionId,
-      timestamp: this.nowIso(),
-    });
+    this.sessionGatewayFanoutService.handleSessionDeleted(this.server, payload);
   }
 
   @OnEvent(SOCKET_EVENTS.sessionDeleteFailed)
   handleDeleteFailed(payload: DeleteFailedPayload) {
-    this.server
-      .to(getSessionRoom(payload.sessionId))
-      .emit(SOCKET_EVENTS.sessionDeleteFailed, {
-        sessionId: payload.sessionId,
-        error: payload.error,
-        timestamp: this.nowIso(),
-      });
-
-    this.server.emit(SOCKET_EVENTS.sessionDeleteFailed, {
-      sessionId: payload.sessionId,
-      error: payload.error,
-      timestamp: this.nowIso(),
-    });
+    this.sessionGatewayFanoutService.handleDeleteFailed(this.server, payload);
   }
 }

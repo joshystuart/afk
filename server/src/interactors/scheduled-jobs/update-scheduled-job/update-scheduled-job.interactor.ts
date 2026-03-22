@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduledJobDefinitionService } from '../../../domain/scheduled-jobs/scheduled-job-definition.service';
 import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
-import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
-import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
+import { JobSchedulerService } from '../runtime/job-scheduler.service';
+import { LaunchdService } from '../runtime/launchd.service';
 import { UpdateScheduledJobRequest } from './update-scheduled-job-request.dto';
 
 @Injectable()

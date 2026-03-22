@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { DockerEngineService } from '../../../services/docker/docker-engine.service';
-import { ContainerLogStreamService } from '../../../services/docker/container-log-stream.service';
+import { DockerEngineService } from '../../../libs/docker/docker-engine.service';
+import { ContainerLogStreamService } from '../../../libs/docker/container-log-stream.service';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
 import { Session } from '../../../domain/sessions/session.entity';
 import { SessionIdDto } from '../../../domain/sessions/session-id.dto';

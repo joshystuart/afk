@@ -3,8 +3,8 @@ import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
 import { SessionRepository } from '../domain/sessions/session.repository';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
 import { SESSION_REPOSITORY } from '../domain/sessions/session.tokens';
-import { ContainerLogStreamService } from '../services/docker/container-log-stream.service';
-import { GitWatcherService } from '../services/git-watcher/git-watcher.service';
+import { ContainerLogStreamService } from '../libs/docker/container-log-stream.service';
+import { GitWatcherService } from '../libs/git-watcher/git-watcher.service';
 import { SessionSubscriptionService } from './session-subscription.service';
 
 export interface SessionGatewayLogPayload {

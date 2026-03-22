@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ScheduledJobsDomainModule } from '../../domain/scheduled-jobs/scheduled-jobs.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
-import { ScheduledJobsServicesModule } from '../../services/scheduled-jobs/scheduled-jobs-services.module';
-import { StreamArchiveModule } from '../../services/stream-archive/stream-archive.module';
+import { StreamArchiveModule } from '../../libs/stream-archive/stream-archive.module';
 import { AuthModule } from '../../libs/auth/auth.module';
 import { ResponseModule } from '../../libs/response/response.module';
 import { CreateScheduledJobController } from './create-scheduled-job/create-scheduled-job.controller';
@@ -24,12 +23,13 @@ import { TriggerScheduledJobController } from './trigger-scheduled-job/trigger-s
 import { TriggerScheduledJobInteractor } from './trigger-scheduled-job/trigger-scheduled-job.interactor';
 import { TriggerTokenGuard } from './trigger-scheduled-job/trigger-token.guard';
 import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
+import { ScheduledJobsRuntimeModule } from './runtime/scheduled-jobs-runtime.module';
 
 @Module({
   imports: [
     ScheduledJobsDomainModule,
     DockerImagesModule,
-    ScheduledJobsServicesModule,
+    ScheduledJobsRuntimeModule,
     StreamArchiveModule,
     AuthModule,
     ResponseModule,

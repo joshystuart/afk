@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DockerImageService } from '../../services/docker/docker-image.service';
+import { DockerImageService } from '../../libs/docker/docker-image.service';
 
 @Injectable()
 export class DeleteDockerImageInteractor {

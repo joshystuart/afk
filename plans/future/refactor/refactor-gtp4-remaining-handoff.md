@@ -53,6 +53,21 @@ The original dependency cleanup milestone is now largely complete, the gateway s
   - `server/src/services/scheduled-jobs/scheduled-job-runtime.service.ts`
   - `server/src/services/scheduled-jobs/scheduled-job-claude-git.service.ts`
 
+### Docker
+
+- The largest Docker runtime responsibilities are no longer bundled in one class.
+- Reusable Docker infrastructure seams now live in:
+  - `server/src/libs/docker/docker-client.service.ts`
+  - `server/src/libs/docker/docker-image-runtime.service.ts`
+  - `server/src/libs/docker/docker-container-provisioning.service.ts`
+  - `server/src/libs/docker/docker-container-exec.service.ts`
+  - `server/src/libs/docker/docker-container-state.service.ts`
+  - `server/src/libs/docker/docker-container-readiness.service.ts`
+- `server/src/services/docker/docker-engine.service.ts`
+  - now acts as a thin facade over the smaller Docker collaborators so existing callers keep the same API
+- `server/src/services/docker/docker-image.service.ts`
+  - now reuses the shared Docker client/image seams instead of owning its own Docker client lifecycle
+
 ### Observability
 
 - Observability no longer imports the full gateway module.
@@ -74,6 +89,7 @@ The original dependency cleanup milestone is now largely complete, the gateway s
 - `npm run build`: passed
 - `npx jest src/services/scheduled-jobs/scheduled-job-run-state.service.spec.ts src/services/scheduled-jobs/scheduled-job-run-events.service.spec.ts src/services/scheduled-jobs/scheduled-job-runtime.service.spec.ts src/services/scheduled-jobs/scheduled-job-claude-git.service.spec.ts`: passed
 - `npx jest src/interactors/sessions/create-session/create-session-request.service.spec.ts src/interactors/sessions/create-session/create-session-startup.service.spec.ts src/services/sessions/session-runtime.service.spec.ts src/services/scheduled-jobs/scheduled-job-run-state.service.spec.ts src/services/scheduled-jobs/scheduled-job-run-events.service.spec.ts src/services/scheduled-jobs/scheduled-job-runtime.service.spec.ts src/services/scheduled-jobs/scheduled-job-claude-git.service.spec.ts`: passed
+- `npx jest src/libs/docker/docker-container-provisioning.service.spec.ts src/libs/docker/docker-container-readiness.service.spec.ts src/libs/docker/docker-container-state.service.spec.ts`: passed
 - Runtime boot sanity: passed
   - existing dev server reached `Nest application successfully started`
 
@@ -81,11 +97,10 @@ The original dependency cleanup milestone is now largely complete, the gateway s
 
 There is no known blocker in the just-finished scheduled-jobs slice.
 
-The main unfinished work from the original plan is no longer the scheduled-job executor. The remaining architectural debt is now concentrated in:
+The main unfinished work from the original plan is no longer the scheduled-job executor or the Docker engine god-object. The remaining architectural debt is now concentrated in:
 
-1. the very large `DockerEngineService`
-2. the broader feature-by-feature migration out of the generic `services/**` folder
-3. exception/HTTP mapping cleanup
+1. the broader feature-by-feature migration out of the generic `services/**` folder
+2. exception/HTTP mapping cleanup
 
 ## Remaining Work
 
@@ -121,34 +136,31 @@ Recommended direction:
 - extract narrow collaborators before moving folders
 - avoid reintroducing a shared session god-object
 
-### 2. Break Up `DockerEngineService`
+### 2. Docker Engine Breakup
 
-This is still the largest unresolved infrastructure class from the original plan and now stands out more clearly because the scheduled-job executor is smaller.
+This slice is now complete enough that the original Docker engine concern is no longer the best next target.
 
-Primary target:
+Completed in this slice:
 
+- `server/src/libs/docker/docker-client.service.ts`
+  - owns Docker client creation and socket-path rebinding
+- `server/src/libs/docker/docker-image-runtime.service.ts`
+  - owns image existence checks and pull orchestration
+- `server/src/libs/docker/docker-container-provisioning.service.ts`
+  - owns normal and ephemeral container creation plus environment/port/mount assembly
+- `server/src/libs/docker/docker-container-exec.service.ts`
+  - owns exec and follow-log helpers
+- `server/src/libs/docker/docker-container-state.service.ts`
+  - owns container start/stop/remove, info/stats, and volume cleanup helpers
+- `server/src/libs/docker/docker-container-readiness.service.ts`
+  - owns Docker readiness and container health polling
 - `server/src/services/docker/docker-engine.service.ts`
+  - remains only as a compatibility facade for existing callers while the reusable Docker behavior now lives in `libs`
 
-This service still owns too many concerns at once:
+Follow-up targets that still make sense later:
 
-- Docker client creation and socket-path management
-- image existence/pull behavior
-- normal container creation
-- ephemeral container creation
-- exec/log helpers
-- readiness and health polling
-- stats and inspection helpers
-- path/environment assembly
-
-Recommended split:
-
-1. Docker client factory / connection seam
-2. image management seam
-3. container provisioning seam
-4. exec/log helpers
-5. health/readiness helpers
-
-Do this incrementally. The goal is not a full folder move in one shot; the goal is to stop one class from owning the whole Docker runtime surface.
+- move the compatibility facade/module import paths when it becomes worth the churn
+- continue trimming `server/src/services/docker/**` as callers can be rewired incrementally
 
 ### 3. Decouple Observability From Gateways
 
@@ -174,6 +186,11 @@ The next slices should keep moving files one feature at a time into one of two d
 - `server/src/libs/**` for reusable adapters/cross-cutting infrastructure
 - `server/src/interactors/<feature>/<use-case>/**` for feature orchestration
 
+Progress in this slice:
+
+- reusable Docker infrastructure now lives under `server/src/libs/docker/**`
+- the remaining `server/src/services/docker/**` surface is primarily compatibility wiring plus feature-facing entrypoints
+
 Do not mass-rename the repo up front. Continue taking incremental slices and remove empty legacy segments after each migration.
 
 ### 5. Exception And Transport Cleanup
@@ -189,15 +206,14 @@ Good later targets:
 
 ## Recommended Next Slice
 
-Stay on the original feature-migration order:
+Stay on the original feature-migration order, skipping the Docker engine item because it has now landed:
 
-1. Docker engine breakup
-2. continue retiring the generic `services/**` layer
-3. exception and transport cleanup
+1. continue retiring the generic `services/**` layer
+2. exception and transport cleanup
 
-If only one slice is taken next, prefer `DockerEngineService`, because the
-highest-leverage session and observability follow-through called out in this
-handoff has now landed.
+If only one slice is taken next, prefer a bounded feature migration out of
+`services/**` that can fully retire one legacy segment instead of another
+horizontal infrastructure split.
 
 ## Constraints For The Next Agent
 
@@ -214,5 +230,5 @@ handoff has now landed.
 - The old `plans/future/refactor/refactor-gtp4-handoff.md` is now stale on the scheduled-jobs section because the runtime/container and Claude/git seams described there have been completed.
 - The original plan’s “first milestone” is effectively complete enough that the remaining work is feature migration, not boundary triage.
 - The codebase now boots successfully after the latest scheduled-jobs refactor.
-- The create-session interactor is no longer the best next refactor target; the Docker engine surface is now the clearest remaining god-object.
-- The next handoff should be updated after a Docker-focused slice unless a regression appears elsewhere.
+- The create-session interactor is no longer the best next refactor target; the largest completed follow-through items are now scheduled-jobs, observability coupling, and the Docker engine breakup.
+- The next handoff should focus on which legacy `services/**` segment can be retired next, unless exception/transport cleanup becomes urgent first.

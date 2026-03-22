@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DockerImage } from '../../domain/docker-images/docker-image.entity';
-import { DockerImageService } from '../../services/docker/docker-image.service';
+import { DockerImageService } from '../../libs/docker/docker-image.service';
 
 @Injectable()
 export class CreateDockerImageInteractor {

@@ -7,9 +7,9 @@ import {
   GitCommitAndPushResult,
   GitService,
   GitStatusResult,
-} from '../../services/git/git.service';
+} from '../../libs/git/git.service';
 
-export type { GitStatusResult } from '../../services/git/git.service';
+export type { GitStatusResult } from '../../libs/git/git.service';
 
 export interface CommitAndPushResult {
   success: boolean;

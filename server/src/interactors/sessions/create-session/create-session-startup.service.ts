@@ -5,9 +5,9 @@ import { Session } from '../../../domain/sessions/session.entity';
 import { SessionRepository } from '../../../domain/sessions/session.repository';
 import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
 import { Settings } from '../../../domain/settings/settings.entity';
-import { ContainerLogStreamService } from '../../../services/docker/container-log-stream.service';
-import { DockerEngineService } from '../../../services/docker/docker-engine.service';
-import { PortManagerService } from '../../../services/docker/port-manager.service';
+import { ContainerLogStreamService } from '../../../libs/docker/container-log-stream.service';
+import { DockerEngineService } from '../../../libs/docker/docker-engine.service';
+import { PortManagerService } from '../../../libs/docker/port-manager.service';
 import { CreateSessionRequest } from './create-session-request.dto';
 import { SessionHealthMonitorService } from '../session-health-monitor.service';
 

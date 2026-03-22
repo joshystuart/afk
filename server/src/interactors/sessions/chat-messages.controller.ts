@@ -11,7 +11,7 @@ import {
   ApiResponse as ApiResponseType,
 } from '../../libs/response/response.service';
 import { SessionIdDtoFactory } from '../../domain/sessions/session-id-dto.factory';
-import { ChatService } from '../../services/chat/chat.service';
+import { ChatService } from './chat/chat.service';
 import { ChatMessageResponseDto } from './chat-message-response.dto';
 import { SessionRoutes, SessionRouteParams } from './session.routes';
 

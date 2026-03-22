@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { DomainModule } from '../domain/domain.module';
-import { RepositoriesModule } from '../services/repositories/repositories.module';
+import { SessionPersistenceModule } from '../libs/sessions/session-persistence.module';
 import { SessionSubscriptionService } from './session-subscription.service';
 
 @Module({
-  imports: [RepositoriesModule, DomainModule],
+  imports: [SessionPersistenceModule, DomainModule],
   providers: [SessionSubscriptionService],
   exports: [SessionSubscriptionService],
 })

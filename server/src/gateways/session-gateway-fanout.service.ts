@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { SessionStatus } from '../domain/sessions/session-status.enum';
-import { GitStatusResult } from '../services/git/git.service';
+import { GitStatusResult } from '../libs/git/git.service';
 import { getSessionRoom, SOCKET_EVENTS } from './session-gateway.events';
 
 export interface SessionUpdate {

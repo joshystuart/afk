@@ -4,7 +4,7 @@ import { Session } from '../../../domain/sessions/session.entity';
 import { SessionIdDto } from '../../../domain/sessions/session-id.dto';
 import { SessionRepository } from '../../../domain/sessions/session.repository';
 import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
-import { DockerEngineService } from '../../../services/docker/docker-engine.service';
+import { DockerEngineService } from '../../../libs/docker/docker-engine.service';
 
 export interface SessionInfo {
   session: Session;

@@ -17,9 +17,9 @@ import { DockerImagesModule } from './domain/docker-images/docker-images.module'
 import { DockerImagesInteractorModule } from './interactors/docker-images/docker-images.module';
 import { ScheduledJobsDomainModule } from './domain/scheduled-jobs/scheduled-jobs.module';
 import { ScheduledJobsInteractorModule } from './interactors/scheduled-jobs/scheduled-jobs.module';
-import { ScheduledJobsServicesModule } from './services/scheduled-jobs/scheduled-jobs-services.module';
-import { SessionServicesModule } from './services/sessions/session-services.module';
-import { ObservabilityModule } from './services/observability/observability.module';
+import { ScheduledJobsRuntimeModule } from './interactors/scheduled-jobs/runtime/scheduled-jobs-runtime.module';
+import { SessionRuntimeModule } from './interactors/sessions/runtime/session-runtime.module';
+import { ObservabilityModule } from './observability/observability.module';
 import { ResponseModule } from './libs/response/response.module';
 
 export interface AppModuleOptions {
@@ -50,8 +50,8 @@ export class AppModule {
       DockerImagesInteractorModule,
       ScheduledJobsDomainModule,
       ScheduledJobsInteractorModule,
-      ScheduledJobsServicesModule,
-      SessionServicesModule,
+      ScheduledJobsRuntimeModule,
+      SessionRuntimeModule,
       ObservabilityModule,
     ];
 

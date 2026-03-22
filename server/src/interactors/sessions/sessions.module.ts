@@ -19,40 +19,40 @@ import { ChatMessagesController } from './chat-messages.controller';
 import { GetChatMessageStreamController } from './get-chat-message-stream.controller';
 import { UpdateSessionController } from './update-session/update-session.controller';
 import { UpdateSessionInteractor } from './update-session/update-session.interactor';
-import { DockerModule } from '../../services/docker/docker.module';
-import { RepositoriesModule } from '../../services/repositories/repositories.module';
+import { DockerModule } from '../../libs/docker/docker.module';
 import { DomainModule } from '../../domain/domain.module';
 import { DockerImagesModule } from '../../domain/docker-images/docker-images.module';
-import { GitWatcherModule } from '../../services/git-watcher/git-watcher.module';
-import { GitModule } from '../../services/git/git.module';
-import { ChatModule } from '../../services/chat/chat.module';
+import { GitWatcherModule } from '../../libs/git-watcher/git-watcher.module';
+import { GitModule } from '../../libs/git/git.module';
+import { ChatModule } from './chat/chat.module';
 import { ClearAllSessionsInteractor } from './clear-all-sessions.interactor';
 import { SessionConfig } from '../../libs/config/session.config';
 import { ResponseModule } from '../../libs/response/response.module';
 import { SettingsPersistenceModule } from '../../libs/settings/settings-persistence.module';
+import { SessionPersistenceModule } from '../../libs/sessions/session-persistence.module';
 import { MountPathValidator } from '../../libs/validators/mount-path.validator';
 import { Session } from '../../domain/sessions/session.entity';
-import { SessionServicesModule } from '../../services/sessions/session-services.module';
 import { CheckSessionHealthInteractor } from './check-session-health/check-session-health.interactor';
 import { DeleteSessionInteractor } from './delete-session/delete-session.interactor';
 import { GetSessionInfoInteractor } from './get-session-info/get-session-info.interactor';
 import { SessionHealthMonitorService } from './session-health-monitor.service';
 import { StartSessionInteractor } from './start-session/start-session.interactor';
 import { StopSessionInteractor } from './stop-session/stop-session.interactor';
+import { SessionRuntimeModule } from './runtime/session-runtime.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Session]),
     ResponseModule,
     DockerModule,
-    RepositoriesModule,
+    SessionPersistenceModule,
     DomainModule,
     DockerImagesModule,
     SettingsPersistenceModule,
     GitWatcherModule,
     GitModule,
     ChatModule,
-    SessionServicesModule,
+    SessionRuntimeModule,
   ],
   controllers: [
     CreateSessionController,

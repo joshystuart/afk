@@ -7,11 +7,11 @@ import { SessionIdDto } from '../../../domain/sessions/session-id.dto';
 import { SessionRepository } from '../../../domain/sessions/session.repository';
 import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
 import { MountPathValidator } from '../../../libs/validators/mount-path.validator';
-import { ContainerLogStreamService } from '../../../services/docker/container-log-stream.service';
-import { ContainerNotFoundError } from '../../../services/docker/container-not-found.error';
-import { DockerEngineService } from '../../../services/docker/docker-engine.service';
-import { PortManagerService } from '../../../services/docker/port-manager.service';
-import { GitWatcherService } from '../../../services/git-watcher/git-watcher.service';
+import { ContainerLogStreamService } from '../../../libs/docker/container-log-stream.service';
+import { ContainerNotFoundError } from '../../../libs/docker/container-not-found.error';
+import { DockerEngineService } from '../../../libs/docker/docker-engine.service';
+import { PortManagerService } from '../../../libs/docker/port-manager.service';
+import { GitWatcherService } from '../../../libs/git-watcher/git-watcher.service';
 
 @Injectable()
 export class DeleteSessionInteractor {

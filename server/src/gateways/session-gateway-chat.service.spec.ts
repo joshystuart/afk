@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { ChatService } from '../services/chat/chat.service';
+import { ChatService } from '../interactors/sessions/chat/chat.service';
 import { SOCKET_EVENTS } from './session-gateway.events';
 import { SessionGatewayChatService } from './session-gateway-chat.service';
 import { SessionGatewaySubscriptionsService } from './session-gateway-subscriptions.service';

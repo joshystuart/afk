@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { ChatService } from '../services/chat/chat.service';
+import { ChatService } from '../interactors/sessions/chat/chat.service';
 import {
   CHAT_STATUS,
   getSessionRoom,

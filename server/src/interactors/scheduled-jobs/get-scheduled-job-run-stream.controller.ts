@@ -11,7 +11,7 @@ import {
   ApiResponse as ApiResponseType,
 } from '../../libs/response/response.service';
 import { ScheduledJobRunRepository } from '../../domain/scheduled-jobs/scheduled-job-run.repository';
-import { ClaudeEventArchiveService } from '../../services/stream-archive/claude-event-archive.service';
+import { ClaudeEventArchiveService } from '../../libs/stream-archive/claude-event-archive.service';
 import {
   ScheduledJobRoutes,
   ScheduledJobRouteParams,

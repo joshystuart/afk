@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { SessionIdDto } from '../../../domain/sessions/session-id.dto';
-import { SessionRuntimeService } from '../../../services/sessions/session-runtime.service';
+import { SessionRuntimeService } from '../runtime/session-runtime.service';
 
 @Injectable()
 export class StopSessionInteractor {

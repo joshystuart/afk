@@ -4,8 +4,8 @@ import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entit
 import { ScheduledJobDefinitionService } from '../../../domain/scheduled-jobs/scheduled-job-definition.service';
 import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
 import { DockerImageRepository } from '../../../domain/docker-images/docker-image.repository';
-import { JobSchedulerService } from '../../../services/scheduled-jobs/job-scheduler.service';
-import { LaunchdService } from '../../../services/scheduled-jobs/launchd.service';
+import { JobSchedulerService } from '../runtime/job-scheduler.service';
+import { LaunchdService } from '../runtime/launchd.service';
 import { CreateScheduledJobRequest } from './create-scheduled-job-request.dto';
 
 @Injectable()

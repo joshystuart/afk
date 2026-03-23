@@ -48,6 +48,7 @@ const GitSettings: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isEditingSshKey, setIsEditingSshKey] = useState(false);
   const [sshKeyModified, setSshKeyModified] = useState(false);
+  const [isRemovingSshKey, setIsRemovingSshKey] = useState(false);
   const [isEditingToken, setIsEditingToken] = useState(false);
   const [tokenModified, setTokenModified] = useState(false);
 
@@ -73,6 +74,18 @@ const GitSettings: React.FC = () => {
       if (successMessage) setSuccessMessage('');
       if (error) clearError();
     };
+
+  const handleRemoveSshKey = async () => {
+    setIsRemovingSshKey(true);
+    try {
+      await updateSettings({ sshPrivateKey: '' });
+      setSuccessMessage('SSH key removed successfully');
+    } catch {
+      // Error handled by store
+    } finally {
+      setIsRemovingSshKey(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -179,6 +192,25 @@ const GitSettings: React.FC = () => {
                   sx={{ fontSize: '0.75rem' }}
                 >
                   Replace
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={
+                    isRemovingSshKey ? (
+                      <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                    ) : (
+                      <LinkOffIcon sx={{ fontSize: 16 }} />
+                    )
+                  }
+                  onClick={handleRemoveSshKey}
+                  disabled={isRemovingSshKey}
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: afkColors.danger,
+                    '&:hover': { bgcolor: afkColors.dangerMuted },
+                  }}
+                >
+                  Remove
                 </Button>
               </Box>
               <Typography

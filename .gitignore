@@ -23,6 +23,7 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+web/.vite
 
 # Nest CLI output
 .nest-cli.json

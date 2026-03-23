@@ -6,14 +6,14 @@ import * as request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { AppModule } from '../../src/app.module';
 import { ApplicationFactory } from '../../src/libs/app-factory/application.factory';
-import { DockerEngineService } from '../../src/services/docker/docker-engine.service';
-import { PortManagerService } from '../../src/services/docker/port-manager.service';
+import { DockerEngineService } from '../../src/libs/docker/docker-engine.service';
+import { PortManagerService } from '../../src/libs/docker/port-manager.service';
 import { AppConfig } from '../../src/libs/config/app.config';
 import { DockerImageRepository } from '../../src/domain/docker-images/docker-image.repository';
 import { DockerImage } from '../../src/domain/docker-images/docker-image.entity';
 import { DockerImageStatus } from '../../src/domain/docker-images/docker-image-status.enum';
 import { SETTINGS_REPOSITORY } from '../../src/domain/settings/settings.tokens';
-import { SettingsRepositoryImpl } from '../../src/services/repositories/settings.repository';
+import { SettingsRepositoryImpl } from '../../src/libs/settings/settings.repository';
 
 const TEST_ADMIN_USER = {
   username: 'admin',
@@ -78,31 +78,37 @@ export class AppTestHelper {
           ports: { '8080/tcp': 8080 },
           labels: {},
         }),
-        execCommand: jest.fn().mockResolvedValue({
+        execInContainer: jest.fn().mockResolvedValue({
           stdout: 'command output',
           stderr: '',
+          exitCode: 0,
         }),
-        pullImage: jest.fn().mockResolvedValue(undefined),
-        listContainers: jest.fn().mockResolvedValue([]),
-        createNetwork: jest.fn().mockResolvedValue({ id: 'test-network-id' }),
-        removeNetwork: jest.fn().mockResolvedValue(undefined),
+        execStreamInContainer: jest.fn().mockResolvedValue({
+          stream: {
+            on: jest.fn(),
+            destroy: jest.fn(),
+          },
+          kill: jest.fn().mockResolvedValue(undefined),
+        }),
+        listAFKContainers: jest.fn().mockResolvedValue([]),
         openContainerFollowLogStream: jest.fn().mockResolvedValue({
           on: jest.fn(),
           destroy: jest.fn(),
         }),
+        ping: jest.fn().mockResolvedValue(undefined),
+        waitForDockerReady: jest.fn().mockResolvedValue(undefined),
       })
       // Mock Port Manager service (external dependency)
       .overrideProvider(PortManagerService)
       .useValue({
-        allocatePort: jest.fn().mockResolvedValue(8080),
-        releasePort: jest.fn().mockResolvedValue(undefined),
-        isPortAvailable: jest.fn().mockResolvedValue(true),
-        getRandomPort: jest.fn().mockReturnValue(8080),
         allocatePortPair: jest.fn().mockResolvedValue({
           port: 8080,
-          toJSON: () => ({ port: 8080 }),
+          terminalPort: 7681,
+          toJSON: () => ({ port: 8080, terminalPort: 7681 }),
         }),
         releasePortPair: jest.fn().mockResolvedValue(undefined),
+        getAvailablePortCount: jest.fn().mockResolvedValue(100),
+        isPortAvailable: jest.fn().mockResolvedValue(true),
       })
       // Override AppConfig for testing (but keep most settings the same)
       .overrideProvider(AppConfig)

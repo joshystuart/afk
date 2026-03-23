@@ -147,18 +147,20 @@ export class CreateSessionRequestService {
     request: CreateSessionRequest,
     settings: Settings,
   ): Promise<void> {
-    const hasGitHub = !!settings.git.githubAccessToken;
-    const isHttpsUrl =
-      request.repoUrl && request.repoUrl.startsWith('https://');
-    const needsSshKey = !hasGitHub && !isHttpsUrl;
+    if (request.repoUrl) {
+      const hasGitHub = !!settings.git.githubAccessToken;
+      const isHttpsUrl = request.repoUrl.startsWith('https://');
+      const needsSshKey = !hasGitHub && !isHttpsUrl;
 
-    if (
-      needsSshKey &&
-      (!settings.git.sshPrivateKey || settings.git.sshPrivateKey.trim() === '')
-    ) {
-      throw new Error(
-        'SSH Private Key is required for SSH repository URLs. Please configure it in Settings or connect GitHub for HTTPS access.',
-      );
+      if (
+        needsSshKey &&
+        (!settings.git.sshPrivateKey ||
+          settings.git.sshPrivateKey.trim() === '')
+      ) {
+        throw new Error(
+          'SSH Private Key is required for SSH repository URLs. Please configure it in Settings or connect GitHub for HTTPS access.',
+        );
+      }
     }
 
     if (

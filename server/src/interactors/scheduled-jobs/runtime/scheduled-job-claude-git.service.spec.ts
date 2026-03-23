@@ -54,6 +54,7 @@ describe('ScheduledJobClaudeGitService', () => {
     };
     const job = Object.assign(new ScheduledJob(), {
       id: 'job-1',
+      repoUrl: 'https://github.com/acme/repo.git',
       prompt: 'fix things',
       model: 'sonnet',
       createNewBranch: true,
@@ -136,6 +137,7 @@ describe('ScheduledJobClaudeGitService', () => {
     };
     const job = Object.assign(new ScheduledJob(), {
       id: 'job-1',
+      repoUrl: 'https://github.com/acme/repo.git',
       prompt: 'noop',
       model: null,
       createNewBranch: false,

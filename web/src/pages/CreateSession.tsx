@@ -438,7 +438,13 @@ const CreateSession: React.FC = () => {
             }}
           >
             <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
-              Repository
+              Repository (optional)
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: afkColors.textSecondary, mt: 0.5 }}
+            >
+              Skip this section for chat-only sessions without a project.
             </Typography>
           </Box>
 
@@ -878,7 +884,7 @@ const CreateSession: React.FC = () => {
                 label="Session Name"
                 helperText={
                   errors.name?.message ||
-                  'Optional. Defaults to repo name and branch if not provided.'
+                  'Optional. Defaults to repo name and branch when a repository is set; otherwise a timestamped name.'
                 }
                 error={!!errors.name}
               />

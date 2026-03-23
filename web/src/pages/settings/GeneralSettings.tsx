@@ -15,6 +15,7 @@ import {
 import { useSettingsStore } from '../../stores/settings.store';
 import type { UpdateSettingsRequest } from '../../api/types';
 import { afkColors } from '../../themes/afk';
+import { PrimaryCtaButton } from '../../components/PrimaryCtaButton';
 
 const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
   <Box
@@ -200,9 +201,8 @@ const GeneralSettings: React.FC = () => {
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
+          <PrimaryCtaButton
             type="submit"
-            variant="contained"
             startIcon={
               saveLoading ? (
                 <CircularProgress size={16} sx={{ color: 'inherit' }} />
@@ -213,7 +213,7 @@ const GeneralSettings: React.FC = () => {
             disabled={saveLoading}
           >
             {saveLoading ? 'Saving...' : 'Save Settings'}
-          </Button>
+          </PrimaryCtaButton>
         </Box>
       </form>
     </>

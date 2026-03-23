@@ -18,6 +18,7 @@ import {
   type SimpleCronConfig,
 } from '../../utils/cron-helpers';
 import { afkColors } from '../../themes/afk';
+import { PrimaryCtaButton } from '../PrimaryCtaButton';
 
 interface CronScheduleBuilderProps {
   value: string;
@@ -432,9 +433,9 @@ export const CronScheduleBuilder: React.FC<CronScheduleBuilderProps> = ({
           <Button onClick={() => setShowResetDialog(false)} variant="outlined">
             Stay in Advanced
           </Button>
-          <Button onClick={handleResetAndSwitch} variant="contained">
+          <PrimaryCtaButton onClick={handleResetAndSwitch}>
             Reset & Switch
-          </Button>
+          </PrimaryCtaButton>
         </DialogActions>
       </Dialog>
     </>

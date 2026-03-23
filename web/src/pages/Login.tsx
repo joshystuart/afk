@@ -1,11 +1,12 @@
 import React from 'react';
-import { Box, TextField, Button, Typography, Alert } from '@mui/material';
+import { Box, TextField, Typography, Alert } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type LoginCredentials } from '../hooks/useAuth';
 import { useIsElectronMac } from '../hooks/useElectron';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
 const Login: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
@@ -180,10 +181,9 @@ const Login: React.FC = () => {
             )}
           />
 
-          <Button
+          <PrimaryCtaButton
             type="submit"
             fullWidth
-            variant="contained"
             disabled={isLoading}
             sx={{
               py: 1.25,
@@ -192,7 +192,7 @@ const Login: React.FC = () => {
             }}
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
+          </PrimaryCtaButton>
         </Box>
       </Box>
     </Box>

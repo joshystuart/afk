@@ -37,6 +37,7 @@ import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
 import { CronScheduleBuilder } from '../components/scheduled-jobs/CronScheduleBuilder';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
 type RepoSource = 'github' | 'manual';
 
@@ -1010,9 +1011,8 @@ const CreateScheduledJob: React.FC = () => {
 
         {/* Actions */}
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button
+          <PrimaryCtaButton
             type="submit"
-            variant="contained"
             disabled={isSubmitting || missingSettings}
           >
             {isSubmitting
@@ -1022,7 +1022,7 @@ const CreateScheduledJob: React.FC = () => {
               : isEditMode
                 ? 'Save Changes'
                 : 'Create Job'}
-          </Button>
+          </PrimaryCtaButton>
           <Button
             variant="outlined"
             component={Link}

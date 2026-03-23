@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { DockerLogsExpander } from '../components/DockerLogsExpander';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
@@ -375,14 +376,13 @@ const SessionDetails: React.FC = () => {
         >
           Cancel
         </Button>
-        <Button
-          variant="contained"
+        <PrimaryCtaButton
           onClick={handleRenameSubmit}
           disabled={isUpdating || !renameInput.trim()}
           startIcon={<EditIcon sx={{ fontSize: '16px !important' }} />}
         >
           {isUpdating ? 'Saving...' : 'Save'}
-        </Button>
+        </PrimaryCtaButton>
       </DialogActions>
     </Dialog>
   );
@@ -570,8 +570,7 @@ const SessionDetails: React.FC = () => {
 
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
               {canStart && (
-                <Button
-                  variant="contained"
+                <PrimaryCtaButton
                   size="small"
                   startIcon={<PlayIcon sx={{ fontSize: '16px !important' }} />}
                   onClick={() => startSession(session!.id)}
@@ -579,7 +578,7 @@ const SessionDetails: React.FC = () => {
                   sx={{ fontSize: '0.8125rem' }}
                 >
                   {isStarting ? 'Starting...' : 'Start'}
-                </Button>
+                </PrimaryCtaButton>
               )}
 
               <Button

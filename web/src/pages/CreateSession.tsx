@@ -35,6 +35,7 @@ import { ROUTES } from '../utils/constants';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
 interface DuplicateFromState {
   duplicateFrom: Pick<
@@ -894,13 +895,12 @@ const CreateSession: React.FC = () => {
 
         {/* Actions */}
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button
+          <PrimaryCtaButton
             type="submit"
-            variant="contained"
             disabled={isCreating || missingSettings}
           >
             {isCreating ? 'Creating...' : 'Create Session'}
-          </Button>
+          </PrimaryCtaButton>
           <Button
             variant="outlined"
             component={Link}

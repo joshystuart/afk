@@ -1,14 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { SessionRepository } from '../../services/repositories/session.repository';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SessionIdDto } from '../../domain/sessions/session-id.dto';
+import { SessionRepository } from '../../domain/sessions/session.repository';
 import { SessionStatus } from '../../domain/sessions/session-status.enum';
+import { SESSION_REPOSITORY } from '../../domain/sessions/session.tokens';
 import {
   GitCommitAndPushResult,
   GitService,
   GitStatusResult,
-} from '../../services/git/git.service';
+} from '../../libs/git/git.service';
 
-export type { GitStatusResult } from '../../services/git/git.service';
+export type { GitStatusResult } from '../../libs/git/git.service';
 
 export interface CommitAndPushResult {
   success: boolean;
@@ -21,6 +22,7 @@ export class SessionGitInteractor {
 
   constructor(
     private readonly gitService: GitService,
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
   ) {}
 

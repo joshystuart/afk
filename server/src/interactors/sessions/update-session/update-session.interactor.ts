@@ -1,12 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { SessionRepository } from '../../../services/repositories/session.repository';
+import { Inject, Injectable } from '@nestjs/common';
 import { SessionIdDto } from '../../../domain/sessions/session-id.dto';
+import { SessionRepository } from '../../../domain/sessions/session.repository';
 import { Session } from '../../../domain/sessions/session.entity';
+import { SESSION_REPOSITORY } from '../../../domain/sessions/session.tokens';
 import { UpdateSessionRequest } from './update-session-request.dto';
 
 @Injectable()
 export class UpdateSessionInteractor {
-  constructor(private readonly sessionRepository: SessionRepository) {}
+  constructor(
+    @Inject(SESSION_REPOSITORY)
+    private readonly sessionRepository: SessionRepository,
+  ) {}
 
   async execute(
     sessionId: SessionIdDto,

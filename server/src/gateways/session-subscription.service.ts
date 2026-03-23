@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { SessionRepository } from '../services/repositories/session.repository';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { SessionIdDtoFactory } from '../domain/sessions/session-id-dto.factory';
+import { SessionRepository } from '../domain/sessions/session.repository';
+import { SESSION_REPOSITORY } from '../domain/sessions/session.tokens';
 
 @Injectable()
 export class SessionSubscriptionService {
@@ -9,6 +10,7 @@ export class SessionSubscriptionService {
   private readonly logger = new Logger(SessionSubscriptionService.name);
 
   constructor(
+    @Inject(SESSION_REPOSITORY)
     private readonly sessionRepository: SessionRepository,
     private readonly sessionIdFactory: SessionIdDtoFactory,
   ) {}

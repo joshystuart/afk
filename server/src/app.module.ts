@@ -1,7 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { ResponseService } from './libs/response/response.service';
 import { HttpExceptionFilter } from './libs/common/filters/http-exception.filter';
 import { ConfigModule } from './libs/config/config.module';
 import { SessionsModule } from './interactors/sessions/sessions.module';
@@ -18,9 +17,10 @@ import { DockerImagesModule } from './domain/docker-images/docker-images.module'
 import { DockerImagesInteractorModule } from './interactors/docker-images/docker-images.module';
 import { ScheduledJobsDomainModule } from './domain/scheduled-jobs/scheduled-jobs.module';
 import { ScheduledJobsInteractorModule } from './interactors/scheduled-jobs/scheduled-jobs.module';
-import { ScheduledJobsServicesModule } from './services/scheduled-jobs/scheduled-jobs-services.module';
-import { SessionServicesModule } from './services/sessions/session-services.module';
-import { ObservabilityModule } from './services/observability/observability.module';
+import { ScheduledJobsRuntimeModule } from './interactors/scheduled-jobs/runtime/scheduled-jobs-runtime.module';
+import { SessionRuntimeModule } from './interactors/sessions/runtime/session-runtime.module';
+import { ObservabilityModule } from './observability/observability.module';
+import { ResponseModule } from './libs/response/response.module';
 
 export interface AppModuleOptions {
   configPath?: string;
@@ -39,6 +39,7 @@ export class AppModule {
       }),
       EventEmitterModule.forRoot(),
       LoggerModule.forRootAsync(),
+      ResponseModule,
       AuthModule,
       SessionsModule,
       SettingsModule,
@@ -49,8 +50,8 @@ export class AppModule {
       DockerImagesInteractorModule,
       ScheduledJobsDomainModule,
       ScheduledJobsInteractorModule,
-      ScheduledJobsServicesModule,
-      SessionServicesModule,
+      ScheduledJobsRuntimeModule,
+      SessionRuntimeModule,
       ObservabilityModule,
     ];
 
@@ -67,7 +68,7 @@ export class AppModule {
       module: AppModule,
       imports,
       controllers: [],
-      providers: [ResponseService, HttpExceptionFilter],
+      providers: [HttpExceptionFilter],
     };
   }
 }

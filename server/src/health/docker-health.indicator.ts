@@ -4,7 +4,7 @@ import {
   HealthIndicatorResult,
   HealthCheckError,
 } from '@nestjs/terminus';
-import { DockerEngineService } from '../services/docker/docker-engine.service';
+import { DockerEngineService } from '../libs/docker/docker-engine.service';
 
 @Injectable()
 export class DockerHealthIndicator extends HealthIndicator {

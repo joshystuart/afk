@@ -10,7 +10,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { DockerImageService } from '../../services/docker/docker-image.service';
 import {
   ResponseService,
   ApiResponse as ApiResponseType,
@@ -18,12 +17,25 @@ import {
 import { DockerImageResponseDto } from './docker-image-response.dto';
 import { CreateDockerImageRequest } from './create-docker-image-request.dto';
 import { ApiErrorResponseDto } from '../../libs/response/api-error-response.dto';
+import { CreateDockerImageInteractor } from './create-docker-image.interactor';
+import { DeleteDockerImageInteractor } from './delete-docker-image.interactor';
+import { GetDockerImageStatusInteractor } from './get-docker-image-status.interactor';
+import { InstallDockerImageInteractor } from './install-docker-image.interactor';
+import { ListDockerImagesInteractor } from './list-docker-images.interactor';
+import { RetryDockerImageInteractor } from './retry-docker-image.interactor';
+import { SetDefaultDockerImageInteractor } from './set-default-docker-image.interactor';
 
 @ApiTags('Docker Images')
 @Controller('docker/images')
 export class DockerImagesController {
   constructor(
-    private readonly dockerImageService: DockerImageService,
+    private readonly listDockerImages: ListDockerImagesInteractor,
+    private readonly createDockerImage: CreateDockerImageInteractor,
+    private readonly deleteDockerImage: DeleteDockerImageInteractor,
+    private readonly setDefaultDockerImage: SetDefaultDockerImageInteractor,
+    private readonly getDockerImageStatus: GetDockerImageStatusInteractor,
+    private readonly installDockerImage: InstallDockerImageInteractor,
+    private readonly retryDockerImage: RetryDockerImageInteractor,
     private readonly responseService: ResponseService,
   ) {}
 
@@ -35,7 +47,7 @@ export class DockerImagesController {
     type: [DockerImageResponseDto],
   })
   async list(): Promise<ApiResponseType<DockerImageResponseDto[]>> {
-    const images = await this.dockerImageService.listAll();
+    const images = await this.listDockerImages.execute();
     const dtos = images.map(DockerImageResponseDto.fromDomain);
     return this.responseService.success(dtos);
   }
@@ -61,7 +73,7 @@ export class DockerImagesController {
     @Body() request: CreateDockerImageRequest,
   ): Promise<ApiResponseType<DockerImageResponseDto>> {
     try {
-      const image = await this.dockerImageService.registerAndPull(
+      const image = await this.createDockerImage.execute(
         request.name,
         request.image,
       );
@@ -92,7 +104,7 @@ export class DockerImagesController {
     @Param('id') id: string,
   ): Promise<ApiResponseType<{ deleted: boolean }>> {
     try {
-      await this.dockerImageService.deleteImage(id);
+      await this.deleteDockerImage.execute(id);
       return this.responseService.success({ deleted: true });
     } catch (error) {
       if (error.message === 'Image not found') {
@@ -127,7 +139,7 @@ export class DockerImagesController {
     @Param('id') id: string,
   ): Promise<ApiResponseType<DockerImageResponseDto>> {
     try {
-      const image = await this.dockerImageService.setDefault(id);
+      const image = await this.setDefaultDockerImage.execute(id);
       const dto = DockerImageResponseDto.fromDomain(image);
       return this.responseService.success(dto);
     } catch (error) {
@@ -157,7 +169,7 @@ export class DockerImagesController {
   async getStatus(
     @Param('id') id: string,
   ): Promise<ApiResponseType<DockerImageResponseDto>> {
-    const image = await this.dockerImageService.findById(id);
+    const image = await this.getDockerImageStatus.execute(id);
     if (!image) {
       throw new NotFoundException('Image not found');
     }
@@ -190,7 +202,7 @@ export class DockerImagesController {
     @Param('id') id: string,
   ): Promise<ApiResponseType<DockerImageResponseDto>> {
     try {
-      const image = await this.dockerImageService.installImage(id);
+      const image = await this.installDockerImage.execute(id);
       const dto = DockerImageResponseDto.fromDomain(image);
       return this.responseService.success(dto);
     } catch (error) {
@@ -225,7 +237,7 @@ export class DockerImagesController {
     @Param('id') id: string,
   ): Promise<ApiResponseType<DockerImageResponseDto>> {
     try {
-      const image = await this.dockerImageService.retryPull(id);
+      const image = await this.retryDockerImage.execute(id);
       const dto = DockerImageResponseDto.fromDomain(image);
       return this.responseService.success(dto);
     } catch (error) {

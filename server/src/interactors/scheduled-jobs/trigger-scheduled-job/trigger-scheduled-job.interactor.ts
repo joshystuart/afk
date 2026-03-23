@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ScheduledJobRepository } from '../../../domain/scheduled-jobs/scheduled-job.repository';
-import { JobExecutorService } from '../../../services/scheduled-jobs/job-executor.service';
+import { JobExecutorService } from '../runtime/job-executor.service';
 
 @Injectable()
 export class TriggerScheduledJobInteractor {

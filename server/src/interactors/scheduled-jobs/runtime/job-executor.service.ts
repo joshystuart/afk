@@ -10,8 +10,6 @@ import { ScheduledJobRunEventsService } from './scheduled-job-run-events.service
 import { ScheduledJobRuntimeService } from './scheduled-job-runtime.service';
 import { ScheduledJobRunStateService } from './scheduled-job-run-state.service';
 
-const DEDUP_WINDOW_MS = 60_000;
-
 @Injectable()
 export class JobExecutorService {
   private readonly logger = new Logger(JobExecutorService.name);
@@ -41,14 +39,12 @@ export class JobExecutorService {
       return;
     }
 
-    const recentRuns = await this.scheduledJobRunRepository.findRecentByJobId(
-      jobId,
-      DEDUP_WINDOW_MS,
-    );
-    if (recentRuns.length > 0) {
-      this.logger.log('Dedup: recent run found, skipping', {
+    const activeRun =
+      await this.scheduledJobRunRepository.findActiveByJobId(jobId);
+    if (activeRun) {
+      this.logger.log('Dedup: active run found, skipping', {
         jobId,
-        recentRunId: recentRuns[0].id,
+        activeRunId: activeRun.id,
       });
       return;
     }

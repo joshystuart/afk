@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThan, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ScheduledJobRun } from './scheduled-job-run.entity';
 import { ScheduledJobRunStatus } from './scheduled-job-run-status.enum';
 
@@ -84,20 +84,6 @@ export class ScheduledJobRunRepository {
     }
 
     return runsByJobId;
-  }
-
-  async findRecentByJobId(
-    jobId: string,
-    withinMs: number,
-  ): Promise<ScheduledJobRun[]> {
-    const cutoff = new Date(Date.now() - withinMs);
-    return await this.repository.find({
-      where: {
-        jobId,
-        createdAt: MoreThan(cutoff),
-        status: ScheduledJobRunStatus.RUNNING,
-      },
-    });
   }
 
   async deleteByJobId(jobId: string): Promise<void> {

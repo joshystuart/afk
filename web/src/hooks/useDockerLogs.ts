@@ -1,11 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '../stores/auth.store';
+import { useEffect, useState, useCallback } from 'react';
+import { useWebSocket } from './useWebSocket';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 const MAX_LOG_LINES = 500;
-const CONNECTION_TIMEOUT_MS = 10_000;
-const MAX_RECONNECT_ATTEMPTS = 5;
 
 interface UseDockerLogsReturn {
   logs: string[];
@@ -17,57 +13,25 @@ export const useDockerLogs = (
   sessionId: string,
   enabled: boolean,
 ): UseDockerLogsReturn => {
-  const socketRef = useRef<Socket | null>(null);
-  const cleanedUpRef = useRef(false);
-  const { token } = useAuthStore();
+  const {
+    socket,
+    connected,
+    subscribeToSessionLogs,
+    unsubscribeFromSessionLogs,
+  } = useWebSocket();
   const [logs, setLogs] = useState<string[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
 
   const clear = useCallback(() => setLogs([]), []);
 
   useEffect(() => {
-    if (!enabled || !token || !sessionId) return;
+    if (!enabled || !sessionId || !socket || !connected) {
+      return;
+    }
 
-    cleanedUpRef.current = false;
+    subscribeToSessionLogs(sessionId);
 
-    const socket = io(`${WS_URL}/sessions`, {
-      auth: { token },
-      transports: ['websocket'],
-      timeout: CONNECTION_TIMEOUT_MS,
-      reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-    });
-    socketRef.current = socket;
-
-    const connectionTimer = setTimeout(() => {
-      if (!socket.connected && !cleanedUpRef.current) {
-        socket.disconnect();
-      }
-    }, CONNECTION_TIMEOUT_MS);
-
-    socket.on('connect', () => {
-      clearTimeout(connectionTimer);
-      if (!cleanedUpRef.current) {
-        setIsConnected(true);
-        socket.emit('subscribe.logs', { sessionId });
-      }
-    });
-
-    socket.on('disconnect', () => {
-      if (!cleanedUpRef.current) {
-        setIsConnected(false);
-      }
-    });
-
-    socket.on('connect_error', () => {
-      if (!cleanedUpRef.current) {
-        setIsConnected(false);
-      }
-    });
-
-    socket.on('log.data', (data: { sessionId: string; log: string }) => {
-      if (cleanedUpRef.current || data.sessionId !== sessionId) return;
+    const onLogData = (data: { sessionId: string; log: string }) => {
+      if (data.sessionId !== sessionId) return;
 
       const lines = data.log
         .split('\n')
@@ -82,19 +46,22 @@ export const useDockerLogs = (
           ? next.slice(next.length - MAX_LOG_LINES)
           : next;
       });
-    });
+    };
+
+    socket.on('log.data', onLogData);
 
     return () => {
-      cleanedUpRef.current = true;
-      clearTimeout(connectionTimer);
-      socket.removeAllListeners();
-      if (socket.connected) {
-        socket.emit('unsubscribe.logs');
-      }
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('log.data', onLogData);
+      unsubscribeFromSessionLogs(sessionId);
     };
-  }, [sessionId, enabled, token]);
+  }, [
+    sessionId,
+    enabled,
+    socket,
+    connected,
+    subscribeToSessionLogs,
+    unsubscribeFromSessionLogs,
+  ]);
 
-  return { logs, isConnected, clear };
+  return { logs, isConnected: connected, clear };
 };

@@ -15,6 +15,7 @@ import {
   Stop as StopIcon,
   KeyboardArrowDown as ChevronDownIcon,
 } from '@mui/icons-material';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { afkColors } from '../../themes/afk';
 import {
   CLAUDE_MODELS,
@@ -22,9 +23,18 @@ import {
   getClaudeModelLabel,
   type ClaudeModelId,
 } from '../../utils/claude-models';
+import {
+  AGENT_MODES,
+  DEFAULT_AGENT_MODE,
+  getAgentModeLabel,
+  getNextAgentMode,
+  type AgentModeId,
+} from '../../utils/agent-modes';
 
 export const DEFAULT_MODEL = DEFAULT_CLAUDE_MODEL;
 export type ModelId = ClaudeModelId;
+export { DEFAULT_AGENT_MODE };
+export type { AgentModeId };
 
 interface ChatInputProps {
   onSend: (
@@ -37,6 +47,8 @@ interface ChatInputProps {
   disabled?: boolean;
   selectedModel: ClaudeModelId;
   onModelChange: (model: ClaudeModelId) => void;
+  selectedAgentMode: AgentModeId;
+  onAgentModeChange: (mode: AgentModeId) => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -46,15 +58,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
   selectedModel,
   onModelChange,
+  selectedAgentMode,
+  onAgentModeChange,
 }) => {
   const [value, setValue] = React.useState('');
   const [continueConversation, setContinueConversation] = React.useState(true);
   const [modelAnchorEl, setModelAnchorEl] = React.useState<null | HTMLElement>(
     null,
   );
+  const [agentModeAnchorEl, setAgentModeAnchorEl] =
+    React.useState<null | HTMLElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const selectedModelLabel = getClaudeModelLabel(selectedModel);
+  const selectedAgentModeLabel = getAgentModeLabel(selectedAgentMode);
+
+  useHotkeys(
+    'shift+tab',
+    (e) => {
+      e.preventDefault();
+      if (!isProcessing) {
+        onAgentModeChange(getNextAgentMode(selectedAgentMode));
+      }
+    },
+    { enableOnFormTags: ['TEXTAREA', 'INPUT'] },
+    [selectedAgentMode, isProcessing, onAgentModeChange],
+  );
 
   const handleSend = () => {
     const trimmed = value.trim();
@@ -165,63 +194,125 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           justifyContent: 'space-between',
         }}
       >
-        <Button
-          size="small"
-          onClick={(e) => setModelAnchorEl(e.currentTarget)}
-          disabled={isProcessing}
-          endIcon={<ChevronDownIcon sx={{ fontSize: '14px !important' }} />}
-          sx={{
-            color: afkColors.textSecondary,
-            fontSize: '0.7rem',
-            fontFamily: '"JetBrains Mono", monospace',
-            textTransform: 'none',
-            px: 1,
-            py: 0.25,
-            minWidth: 'auto',
-            borderRadius: '4px',
-            '&:hover': {
-              bgcolor: 'rgba(255, 255, 255, 0.04)',
-              color: afkColors.textPrimary,
-            },
-          }}
-        >
-          {selectedModelLabel}
-        </Button>
-
-        <Menu
-          anchorEl={modelAnchorEl}
-          open={Boolean(modelAnchorEl)}
-          onClose={() => setModelAnchorEl(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          slotProps={{
-            paper: {
-              sx: {
-                bgcolor: afkColors.surface,
-                border: `1px solid ${afkColors.border}`,
-                minWidth: 160,
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Button
+            size="small"
+            onClick={(e) => setModelAnchorEl(e.currentTarget)}
+            disabled={isProcessing}
+            endIcon={<ChevronDownIcon sx={{ fontSize: '14px !important' }} />}
+            sx={{
+              color: afkColors.textSecondary,
+              fontSize: '0.7rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              textTransform: 'none',
+              px: 1,
+              py: 0.25,
+              minWidth: 'auto',
+              borderRadius: '4px',
+              '&:hover': {
+                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                color: afkColors.textPrimary,
               },
-            },
-          }}
-        >
-          {CLAUDE_MODELS.map((model) => (
-            <MenuItem
-              key={model.id}
-              selected={model.id === selectedModel}
-              onClick={() => {
-                onModelChange(model.id);
-                setModelAnchorEl(null);
-              }}
+            }}
+          >
+            {selectedModelLabel}
+          </Button>
+
+          <Menu
+            anchorEl={modelAnchorEl}
+            open={Boolean(modelAnchorEl)}
+            onClose={() => setModelAnchorEl(null)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  bgcolor: afkColors.surface,
+                  border: `1px solid ${afkColors.border}`,
+                  minWidth: 160,
+                },
+              },
+            }}
+          >
+            {CLAUDE_MODELS.map((model) => (
+              <MenuItem
+                key={model.id}
+                selected={model.id === selectedModel}
+                onClick={() => {
+                  onModelChange(model.id);
+                  setModelAnchorEl(null);
+                }}
+                sx={{
+                  fontSize: '0.8rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  py: 0.75,
+                }}
+              >
+                {model.label}
+              </MenuItem>
+            ))}
+          </Menu>
+
+          <Tooltip title="Shift+Tab to cycle">
+            <Button
+              size="small"
+              onClick={(e) => setAgentModeAnchorEl(e.currentTarget)}
+              disabled={isProcessing}
+              endIcon={<ChevronDownIcon sx={{ fontSize: '14px !important' }} />}
               sx={{
-                fontSize: '0.8rem',
+                color: afkColors.textSecondary,
+                fontSize: '0.7rem',
                 fontFamily: '"JetBrains Mono", monospace',
-                py: 0.75,
+                textTransform: 'none',
+                px: 1,
+                py: 0.25,
+                minWidth: 'auto',
+                borderRadius: '4px',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.04)',
+                  color: afkColors.textPrimary,
+                },
               }}
             >
-              {model.label}
-            </MenuItem>
-          ))}
-        </Menu>
+              {selectedAgentModeLabel}
+            </Button>
+          </Tooltip>
+
+          <Menu
+            anchorEl={agentModeAnchorEl}
+            open={Boolean(agentModeAnchorEl)}
+            onClose={() => setAgentModeAnchorEl(null)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  bgcolor: afkColors.surface,
+                  border: `1px solid ${afkColors.border}`,
+                  minWidth: 120,
+                },
+              },
+            }}
+          >
+            {AGENT_MODES.map((mode) => (
+              <MenuItem
+                key={mode.id}
+                selected={mode.id === selectedAgentMode}
+                onClick={() => {
+                  onAgentModeChange(mode.id);
+                  setAgentModeAnchorEl(null);
+                }}
+                sx={{
+                  fontSize: '0.8rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  py: 0.75,
+                }}
+              >
+                {mode.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Typography

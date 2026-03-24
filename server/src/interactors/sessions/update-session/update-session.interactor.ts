@@ -34,6 +34,10 @@ export class UpdateSessionInteractor {
       session.model = request.model;
     }
 
+    if (request.agentMode !== undefined) {
+      session.agentMode = request.agentMode;
+    }
+
     await this.sessionRepository.save(session);
 
     const updatedSession = await this.sessionRepository.findById(sessionId);

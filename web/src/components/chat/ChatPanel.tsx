@@ -3,7 +3,13 @@ import { Box, Typography } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { afkColors } from '../../themes/afk';
 import { ChatMessageBubble } from './ChatMessageBubble';
-import { ChatInput, DEFAULT_MODEL, type ModelId } from './ChatInput';
+import {
+  ChatInput,
+  DEFAULT_MODEL,
+  DEFAULT_AGENT_MODE,
+  type ModelId,
+  type AgentModeId,
+} from './ChatInput';
 import { StreamingIndicator } from './StreamingIndicator';
 import { useChat } from '../../hooks/useChat';
 import { sessionsApi } from '../../api/sessions.api';
@@ -31,6 +37,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
 
   const [selectedModel, setSelectedModel] =
     React.useState<ModelId>(DEFAULT_MODEL);
+  const [selectedAgentMode, setSelectedAgentMode] =
+    React.useState<AgentModeId>(DEFAULT_AGENT_MODE);
   const initializedForSessionRef = React.useRef<string | null>(null);
   const shouldJumpToBottomRef = React.useRef(true);
   const isPinnedToBottomRef = React.useRef(true);
@@ -41,12 +49,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     if (initializedForSessionRef.current !== sessionId) {
       initializedForSessionRef.current = null;
       setSelectedModel(DEFAULT_MODEL);
+      setSelectedAgentMode(DEFAULT_AGENT_MODE);
     }
   }, [sessionId]);
 
   React.useEffect(() => {
     if (session && initializedForSessionRef.current !== sessionId) {
       setSelectedModel((session.model as ModelId) || DEFAULT_MODEL);
+      setSelectedAgentMode(
+        (session.agentMode as AgentModeId) || DEFAULT_AGENT_MODE,
+      );
       initializedForSessionRef.current = sessionId;
     }
   }, [session, sessionId]);
@@ -66,6 +78,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         })
         .catch((err) => {
           console.error('Failed to persist model selection:', err);
+        });
+    },
+    [sessionId, queryClient],
+  );
+
+  const handleAgentModeChange = React.useCallback(
+    (agentMode: AgentModeId) => {
+      setSelectedAgentMode(agentMode);
+      sessionsApi
+        .updateSession(sessionId, { agentMode })
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
+        })
+        .catch((err) => {
+          console.error('Failed to persist agent mode selection:', err);
         });
     },
     [sessionId, queryClient],
@@ -235,6 +262,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         isProcessing={isProcessing}
         selectedModel={selectedModel}
         onModelChange={handleModelChange}
+        selectedAgentMode={selectedAgentMode}
+        onAgentModeChange={handleAgentModeChange}
       />
     </Box>
   );

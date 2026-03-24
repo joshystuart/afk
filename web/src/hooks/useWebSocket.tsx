@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -11,14 +12,17 @@ import { useSessionStore } from '../stores/session.store';
 import { useAuthStore } from '../stores/auth.store';
 import { SessionStatus } from '../api/types';
 import type { GitStatus, Session } from '../api/types';
+import { clearStreamingEventsCache } from './useChat';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 
 interface WebSocketContextValue {
-  socketRef: React.RefObject<Socket | null>;
+  socket: Socket | null;
+  connected: boolean;
   subscribeToSession: (sessionId: string) => void;
   subscribeToSessionLogs: (sessionId: string) => void;
   unsubscribeFromSession: (sessionId: string) => void;
+  unsubscribeFromSessionLogs: (sessionId: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null);
@@ -28,7 +32,12 @@ export const WebSocketProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const sessionSubscriptionsRef = useRef(new Set<string>());
+  const logsSubscriptionsRef = useRef(new Set<string>());
+
   const { isAuthenticated, token } = useAuthStore();
   const {
     handleSessionStatusChange,
@@ -38,48 +47,90 @@ export const WebSocketProvider = ({
   } = useSessionStore();
   const queryClient = useQueryClient();
 
+  const resubscribeAll = useCallback(() => {
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return;
+    }
+    for (const sessionId of sessionSubscriptionsRef.current) {
+      s.emit('subscribe.session', { sessionId });
+    }
+    for (const sessionId of logsSubscriptionsRef.current) {
+      s.emit('subscribe.logs', { sessionId });
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated || !token) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
+      setSocket(null);
+      setConnected(false);
+      sessionSubscriptionsRef.current.clear();
+      logsSubscriptionsRef.current.clear();
       return;
     }
 
-    const socket = io(`${WS_URL}/sessions`, {
+    const newSocket = io(`${WS_URL}/sessions`, {
       auth: {
         token,
       },
       transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
-    socketRef.current = socket;
+    socketRef.current = newSocket;
+    setSocket(newSocket);
 
-    socket.on('connect', () => {
-      console.log('WebSocket connected');
-    });
+    const onConnect = () => {
+      setConnected(true);
+      resubscribeAll();
+    };
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-    });
+    const onDisconnect = () => {
+      setConnected(false);
+    };
 
-    socket.on('connect_error', (error) => {
+    newSocket.on('connect', onConnect);
+    newSocket.on('disconnect', onDisconnect);
+
+    newSocket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error);
     });
 
-    socket.on(
+    newSocket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`WebSocket reconnection attempt ${attemptNumber}`);
+    });
+
+    newSocket.on('reconnect_failed', () => {
+      console.error('WebSocket reconnection failed after all attempts');
+    });
+
+    newSocket.on('reconnect', (attemptNumber) => {
+      console.log(`WebSocket reconnected after ${attemptNumber} attempts`);
+    });
+
+    newSocket.on(
       'session.status',
       (data: { sessionId: string; status: SessionStatus }) => {
         handleSessionStatusChange(data.sessionId, data.status);
       },
     );
 
-    socket.on('session.logs', (data: { sessionId: string; logs: string[] }) => {
-      console.log('Session logs:', data);
-    });
+    newSocket.on(
+      'session.logs',
+      (data: { sessionId: string; logs: string[] }) => {
+        console.log('Session logs:', data);
+      },
+    );
 
-    socket.on(
+    newSocket.on(
       'session.git.status',
       (data: {
         sessionId: string;
@@ -96,22 +147,23 @@ export const WebSocketProvider = ({
       },
     );
 
-    socket.on(
+    newSocket.on(
       'session.delete.progress',
       (data: { sessionId: string; message: string }) => {
         handleDeleteProgress(data.sessionId, data.message);
       },
     );
 
-    socket.on('session.deleted', (data: { sessionId: string }) => {
+    newSocket.on('session.deleted', (data: { sessionId: string }) => {
       handleDeleteCompleted(data.sessionId);
       queryClient.setQueryData<Session[]>(['sessions'], (old) =>
         old ? old.filter((s) => s.id !== data.sessionId) : [],
       );
       queryClient.removeQueries({ queryKey: ['session', data.sessionId] });
+      clearStreamingEventsCache(data.sessionId);
     });
 
-    socket.on(
+    newSocket.on(
       'session.delete.failed',
       (data: { sessionId: string; error: string }) => {
         handleDeleteFailed(data.sessionId, data.error);
@@ -120,8 +172,18 @@ export const WebSocketProvider = ({
     );
 
     return () => {
-      socket.disconnect();
+      newSocket.off('connect', onConnect);
+      newSocket.off('disconnect', onDisconnect);
+      newSocket.off('connect_error');
+      newSocket.off('reconnect_attempt');
+      newSocket.off('reconnect_failed');
+      newSocket.off('reconnect');
+      newSocket.disconnect();
       socketRef.current = null;
+      setSocket(null);
+      setConnected(false);
+      sessionSubscriptionsRef.current.clear();
+      logsSubscriptionsRef.current.clear();
     };
   }, [
     isAuthenticated,
@@ -131,31 +193,53 @@ export const WebSocketProvider = ({
     handleDeleteCompleted,
     handleDeleteFailed,
     queryClient,
+    resubscribeAll,
   ]);
 
   const subscribeToSession = useCallback((sessionId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit('subscribe.session', { sessionId });
+    sessionSubscriptionsRef.current.add(sessionId);
+    const s = socketRef.current;
+    if (s?.connected) {
+      s.emit('subscribe.session', { sessionId });
     }
   }, []);
 
   const subscribeToSessionLogs = useCallback((sessionId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit('subscribe.logs', { sessionId });
+    // Note: Server currently only supports one active log subscription per socket.
+    // Subscribing to a new session will automatically unsubscribe from the previous one.
+    logsSubscriptionsRef.current.clear();
+    logsSubscriptionsRef.current.add(sessionId);
+    const s = socketRef.current;
+    if (s?.connected) {
+      s.emit('subscribe.logs', { sessionId });
     }
   }, []);
 
   const unsubscribeFromSession = useCallback((sessionId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit('unsubscribe.session', { sessionId });
+    sessionSubscriptionsRef.current.delete(sessionId);
+    const s = socketRef.current;
+    if (s?.connected) {
+      s.emit('unsubscribe.session', { sessionId });
     }
   }, []);
 
+  const unsubscribeFromSessionLogs = useCallback((sessionId: string) => {
+    logsSubscriptionsRef.current.delete(sessionId);
+    const s = socketRef.current;
+    if (!s?.connected) {
+      return;
+    }
+    // Server's unsubscribe.logs removes all log subscriptions for this client
+    s.emit('unsubscribe.logs');
+  }, []);
+
   const value: WebSocketContextValue = {
-    socketRef,
+    socket,
+    connected,
     subscribeToSession,
     subscribeToSessionLogs,
     unsubscribeFromSession,
+    unsubscribeFromSessionLogs,
   };
 
   return (
@@ -170,10 +254,5 @@ export const useWebSocket = () => {
   if (!context) {
     throw new Error('useWebSocket must be used within a WebSocketProvider');
   }
-  return {
-    socket: context.socketRef.current,
-    subscribeToSession: context.subscribeToSession,
-    subscribeToSessionLogs: context.subscribeToSessionLogs,
-    unsubscribeFromSession: context.unsubscribeFromSession,
-  };
+  return context;
 };

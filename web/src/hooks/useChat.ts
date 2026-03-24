@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '../stores/auth.store';
 import { sessionsApi } from '../api/sessions.api';
+import { useWebSocket } from './useWebSocket';
 import type {
   ChatHistoryResponse,
   ChatMessage,
   ChatStreamEvent,
 } from '../api/types';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 const CHAT_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
 const CHAT_QUERY_GC_TIME_MS = 30 * 60 * 1000;
 const SESSION_STREAMING_EVENTS_CACHE = new Map<string, ChatStreamEvent[]>();
+const MAX_CACHE_SIZE = 100;
 
 const createEmptyChatHistory = (): ChatHistoryResponse => ({
   messages: [],
@@ -33,6 +32,18 @@ const setCachedStreamingEvents = (
   }
 
   SESSION_STREAMING_EVENTS_CACHE.set(sessionId, [...events]);
+
+  // Implement LRU eviction if cache grows too large
+  if (SESSION_STREAMING_EVENTS_CACHE.size > MAX_CACHE_SIZE) {
+    const firstKey = SESSION_STREAMING_EVENTS_CACHE.keys().next().value;
+    if (firstKey !== undefined) {
+      SESSION_STREAMING_EVENTS_CACHE.delete(firstKey);
+    }
+  }
+};
+
+export const clearStreamingEventsCache = (sessionId: string): void => {
+  SESSION_STREAMING_EVENTS_CACHE.delete(sessionId);
 };
 
 interface UseChatReturn {
@@ -49,11 +60,10 @@ interface UseChatReturn {
 }
 
 export const useChat = (sessionId: string): UseChatReturn => {
-  const socketRef = useRef<Socket | null>(null);
+  const { socket, connected } = useWebSocket();
   const messagesRef = useRef<ChatMessage[]>([]);
   const streamingEventsRef = useRef<ChatStreamEvent[]>([]);
   const queryClient = useQueryClient();
-  const { token } = useAuthStore();
 
   const [streamingEvents, setStreamingEventsState] = useState<
     ChatStreamEvent[]
@@ -125,161 +135,143 @@ export const useChat = (sessionId: string): UseChatReturn => {
   streamingEventsRef.current = streamingEvents;
 
   useEffect(() => {
-    if (!token) return;
+    if (!socket || !connected || !sessionId) {
+      return;
+    }
 
-    const socket = io(`${WS_URL}/sessions`, {
-      auth: { token },
-      transports: ['websocket'],
-    });
-    socketRef.current = socket;
+    const onChatStatus = (data: {
+      sessionId: string;
+      status: 'executing' | 'idle';
+      assistantMessageId: string | null;
+    }) => {
+      if (data.sessionId !== sessionId) return;
+      void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
+      updateChatHistory((current) => ({
+        ...current,
+        isExecuting: data.status === 'executing',
+        activeMessageId:
+          data.status === 'executing'
+            ? (data.assistantMessageId ?? current.activeMessageId)
+            : null,
+      }));
 
-    socket.on('connect', () => {
-      socket.emit('subscribe.session', { sessionId });
-    });
+      if (data.status === 'idle') {
+        void queryClient.invalidateQueries({ queryKey: ['chat', sessionId] });
+      }
+    };
 
-    // Server sends authoritative execution state on subscribe (and reconnect)
-    socket.on(
-      'chat.status',
-      (data: {
-        sessionId: string;
-        status: 'executing' | 'idle';
-        assistantMessageId: string | null;
-      }) => {
-        if (data.sessionId !== sessionId) return;
-        void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
-        updateChatHistory((current) => ({
-          ...current,
-          isExecuting: data.status === 'executing',
-          activeMessageId:
-            data.status === 'executing'
-              ? (data.assistantMessageId ?? current.activeMessageId)
-              : null,
-        }));
+    const onChatStream = (data: {
+      sessionId: string;
+      messageId?: string;
+      event: ChatStreamEvent;
+    }) => {
+      if (data.sessionId !== sessionId) return;
+      const { messageId: assistantMessageId, event } = data;
+      void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
 
-        if (data.status === 'idle') {
-          void queryClient.invalidateQueries({ queryKey: ['chat', sessionId] });
-        }
-      },
-    );
-
-    socket.on(
-      'chat.stream',
-      (data: {
-        sessionId: string;
-        messageId?: string;
-        event: ChatStreamEvent;
-      }) => {
-        if (data.sessionId !== sessionId) return;
-        const { messageId: assistantMessageId, event } = data;
-        void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
-
-        const hasExisting =
-          assistantMessageId !== undefined &&
-          messagesRef.current.some(
-            (m) => m.role === 'assistant' && m.id === assistantMessageId,
-          );
-
-        if (hasExisting) {
-          updateChatHistory((current) => ({
-            ...current,
-            isExecuting: true,
-            activeMessageId: assistantMessageId ?? current.activeMessageId,
-            messages: current.messages.map((message) =>
-              message.role === 'assistant' && message.id === assistantMessageId
-                ? {
-                    ...message,
-                    streamEvents: [...(message.streamEvents ?? []), event],
-                    content:
-                      event.type === 'result' && event.result != null
-                        ? event.result
-                        : message.content,
-                  }
-                : message,
-            ),
-          }));
-        } else {
-          updateChatHistory((current) => ({
-            ...current,
-            isExecuting: true,
-            activeMessageId: assistantMessageId ?? current.activeMessageId,
-          }));
-          setStreamingEvents((currentEvents) => [...currentEvents, event]);
-        }
-      },
-    );
-
-    socket.on(
-      'chat.complete',
-      (data: {
-        sessionId: string;
-        messageId: string;
-        conversationId: string | null;
-        costUsd: number | null;
-        durationMs: number;
-      }) => {
-        if (data.sessionId !== sessionId) return;
-        void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
-
-        const hasExisting = messagesRef.current.some(
-          (m) => m.role === 'assistant' && m.id === data.messageId,
+      const hasExisting =
+        assistantMessageId !== undefined &&
+        messagesRef.current.some(
+          (m) => m.role === 'assistant' && m.id === assistantMessageId,
         );
 
-        if (hasExisting) {
+      if (hasExisting) {
+        updateChatHistory((current) => ({
+          ...current,
+          isExecuting: true,
+          activeMessageId: assistantMessageId ?? current.activeMessageId,
+          messages: current.messages.map((message) =>
+            message.role === 'assistant' && message.id === assistantMessageId
+              ? {
+                  ...message,
+                  streamEvents: [...(message.streamEvents ?? []), event],
+                  content:
+                    event.type === 'result' && event.result != null
+                      ? event.result
+                      : message.content,
+                }
+              : message,
+          ),
+        }));
+      } else {
+        updateChatHistory((current) => ({
+          ...current,
+          isExecuting: true,
+          activeMessageId: assistantMessageId ?? current.activeMessageId,
+        }));
+        setStreamingEvents((currentEvents) => [...currentEvents, event]);
+      }
+    };
+
+    const onChatComplete = (data: {
+      sessionId: string;
+      messageId: string;
+      conversationId: string | null;
+      costUsd: number | null;
+      durationMs: number;
+    }) => {
+      if (data.sessionId !== sessionId) return;
+      void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
+
+      const hasExisting = messagesRef.current.some(
+        (m) => m.role === 'assistant' && m.id === data.messageId,
+      );
+
+      if (hasExisting) {
+        updateChatHistory((current) => ({
+          ...current,
+          isExecuting: false,
+          activeMessageId: null,
+          messages: current.messages.map((message) =>
+            message.role === 'assistant' && message.id === data.messageId
+              ? {
+                  ...message,
+                  conversationId: data.conversationId ?? undefined,
+                  costUsd: data.costUsd ?? undefined,
+                  durationMs: data.durationMs,
+                  content:
+                    message.streamEvents?.find(
+                      (event) => event.type === 'result',
+                    )?.result ?? message.content,
+                }
+              : message,
+          ),
+        }));
+      } else {
+        const currentEvents = streamingEventsRef.current;
+        if (currentEvents.length > 0) {
+          const resultEvent = currentEvents.find((e) => e.type === 'result');
+          const assistantMessage: ChatMessage = {
+            id: data.messageId,
+            sessionId: data.sessionId,
+            role: 'assistant',
+            content: resultEvent?.result || '',
+            streamEvents: [...currentEvents],
+            conversationId: data.conversationId ?? undefined,
+            isContinuation: false,
+            costUsd: data.costUsd ?? undefined,
+            durationMs: data.durationMs,
+            createdAt: new Date().toISOString(),
+          };
           updateChatHistory((current) => ({
             ...current,
             isExecuting: false,
             activeMessageId: null,
-            messages: current.messages.map((message) =>
-              message.role === 'assistant' && message.id === data.messageId
-                ? {
-                    ...message,
-                    conversationId: data.conversationId ?? undefined,
-                    costUsd: data.costUsd ?? undefined,
-                    durationMs: data.durationMs,
-                    content:
-                      message.streamEvents?.find(
-                        (event) => event.type === 'result',
-                      )?.result ?? message.content,
-                  }
-                : message,
-            ),
+            messages: [...current.messages, assistantMessage],
           }));
         } else {
-          const currentEvents = streamingEventsRef.current;
-          if (currentEvents.length > 0) {
-            const resultEvent = currentEvents.find((e) => e.type === 'result');
-            const assistantMessage: ChatMessage = {
-              id: data.messageId,
-              sessionId: data.sessionId,
-              role: 'assistant',
-              content: resultEvent?.result || '',
-              streamEvents: [...currentEvents],
-              conversationId: data.conversationId ?? undefined,
-              isContinuation: false,
-              costUsd: data.costUsd ?? undefined,
-              durationMs: data.durationMs,
-              createdAt: new Date().toISOString(),
-            };
-            updateChatHistory((current) => ({
-              ...current,
-              isExecuting: false,
-              activeMessageId: null,
-              messages: [...current.messages, assistantMessage],
-            }));
-          } else {
-            updateChatHistory((current) => ({
-              ...current,
-              isExecuting: false,
-              activeMessageId: null,
-            }));
-          }
-          setStreamingEvents([]);
+          updateChatHistory((current) => ({
+            ...current,
+            isExecuting: false,
+            activeMessageId: null,
+          }));
         }
-        void queryClient.invalidateQueries({ queryKey: ['chat', sessionId] });
-      },
-    );
+        setStreamingEvents([]);
+      }
+      void queryClient.invalidateQueries({ queryKey: ['chat', sessionId] });
+    };
 
-    socket.on('chat.error', (data: { sessionId: string; error: string }) => {
+    const onChatError = (data: { sessionId: string; error: string }) => {
       if (data.sessionId !== sessionId) return;
       console.error('Chat error:', data.error);
       void queryClient.cancelQueries({ queryKey: ['chat', sessionId] });
@@ -290,18 +282,31 @@ export const useChat = (sessionId: string): UseChatReturn => {
         activeMessageId: null,
       }));
       void queryClient.invalidateQueries({ queryKey: ['chat', sessionId] });
-    });
+    };
+
+    socket.on('chat.status', onChatStatus);
+    socket.on('chat.stream', onChatStream);
+    socket.on('chat.complete', onChatComplete);
+    socket.on('chat.error', onChatError);
 
     return () => {
-      socket.emit('unsubscribe.session', { sessionId });
-      socket.disconnect();
-      socketRef.current = null;
+      socket.off('chat.status', onChatStatus);
+      socket.off('chat.stream', onChatStream);
+      socket.off('chat.complete', onChatComplete);
+      socket.off('chat.error', onChatError);
     };
-  }, [queryClient, sessionId, setStreamingEvents, token, updateChatHistory]);
+  }, [
+    socket,
+    connected,
+    queryClient,
+    sessionId,
+    setStreamingEvents,
+    updateChatHistory,
+  ]);
 
   const sendMessage = useCallback(
     (content: string, continueConversation: boolean, model?: string) => {
-      if (!socketRef.current || isProcessing) return;
+      if (!socket?.connected || isProcessing) return;
 
       const userMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
@@ -319,7 +324,7 @@ export const useChat = (sessionId: string): UseChatReturn => {
       }));
       setStreamingEvents([]);
 
-      socketRef.current.emit('chat.send', {
+      socket.emit('chat.send', {
         sessionId,
         content,
         continueConversation,
@@ -327,6 +332,7 @@ export const useChat = (sessionId: string): UseChatReturn => {
       });
     },
     [
+      socket,
       sessionId,
       isProcessing,
       queryClient,
@@ -336,9 +342,9 @@ export const useChat = (sessionId: string): UseChatReturn => {
   );
 
   const cancelExecution = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('chat.cancel', { sessionId });
-  }, [sessionId]);
+    if (!socket?.connected) return;
+    socket.emit('chat.cancel', { sessionId });
+  }, [socket, sessionId]);
 
   return {
     messages,

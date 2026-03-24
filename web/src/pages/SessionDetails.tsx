@@ -47,10 +47,10 @@ const CONTENT_HEIGHT = 'calc(100vh - 48px)';
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { subscribeToSession, unsubscribeFromSession } = useWebSocket();
+  const { subscribeToSession, unsubscribeFromSession, connected } =
+    useWebSocket();
 
   const {
-    isLoading,
     startSession,
     stopSession,
     deleteSession,
@@ -228,7 +228,7 @@ const SessionDetails: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (id) {
+    if (id && connected) {
       subscribeToSession(id);
     }
     return () => {
@@ -236,7 +236,7 @@ const SessionDetails: React.FC = () => {
         unsubscribeFromSession(id);
       }
     };
-  }, [id, subscribeToSession, unsubscribeFromSession]);
+  }, [id, connected, subscribeToSession, unsubscribeFromSession]);
 
   React.useEffect(() => {
     if (!session) return;
@@ -249,7 +249,7 @@ const SessionDetails: React.FC = () => {
   }, [session?.name, session?.imageName, session?.id]);
 
   // Loading state
-  if (isLoading || sessionQuery?.isLoading) {
+  if (sessionQuery?.isLoading) {
     return (
       <Box
         sx={{

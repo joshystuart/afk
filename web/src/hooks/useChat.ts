@@ -11,6 +11,7 @@ import type {
 const CHAT_QUERY_STALE_TIME_MS = 5 * 60 * 1000;
 const CHAT_QUERY_GC_TIME_MS = 30 * 60 * 1000;
 const SESSION_STREAMING_EVENTS_CACHE = new Map<string, ChatStreamEvent[]>();
+const MAX_CACHE_SIZE = 100;
 
 const createEmptyChatHistory = (): ChatHistoryResponse => ({
   messages: [],
@@ -31,6 +32,18 @@ const setCachedStreamingEvents = (
   }
 
   SESSION_STREAMING_EVENTS_CACHE.set(sessionId, [...events]);
+
+  // Implement LRU eviction if cache grows too large
+  if (SESSION_STREAMING_EVENTS_CACHE.size > MAX_CACHE_SIZE) {
+    const firstKey = SESSION_STREAMING_EVENTS_CACHE.keys().next().value;
+    if (firstKey !== undefined) {
+      SESSION_STREAMING_EVENTS_CACHE.delete(firstKey);
+    }
+  }
+};
+
+export const clearStreamingEventsCache = (sessionId: string): void => {
+  SESSION_STREAMING_EVENTS_CACHE.delete(sessionId);
 };
 
 interface UseChatReturn {

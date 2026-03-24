@@ -12,6 +12,7 @@ import { useSessionStore } from '../stores/session.store';
 import { useAuthStore } from '../stores/auth.store';
 import { SessionStatus } from '../api/types';
 import type { GitStatus, Session } from '../api/types';
+import { clearStreamingEventsCache } from './useChat';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4919';
 
@@ -77,6 +78,11 @@ export const WebSocketProvider = ({
         token,
       },
       transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     socketRef.current = newSocket;
@@ -96,6 +102,18 @@ export const WebSocketProvider = ({
 
     newSocket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error);
+    });
+
+    newSocket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`WebSocket reconnection attempt ${attemptNumber}`);
+    });
+
+    newSocket.on('reconnect_failed', () => {
+      console.error('WebSocket reconnection failed after all attempts');
+    });
+
+    newSocket.on('reconnect', (attemptNumber) => {
+      console.log(`WebSocket reconnected after ${attemptNumber} attempts`);
     });
 
     newSocket.on(
@@ -142,6 +160,7 @@ export const WebSocketProvider = ({
         old ? old.filter((s) => s.id !== data.sessionId) : [],
       );
       queryClient.removeQueries({ queryKey: ['session', data.sessionId] });
+      clearStreamingEventsCache(data.sessionId);
     });
 
     newSocket.on(
@@ -152,14 +171,13 @@ export const WebSocketProvider = ({
       },
     );
 
-    if (newSocket.connected) {
-      setConnected(true);
-      resubscribeAll();
-    }
-
     return () => {
       newSocket.off('connect', onConnect);
       newSocket.off('disconnect', onDisconnect);
+      newSocket.off('connect_error');
+      newSocket.off('reconnect_attempt');
+      newSocket.off('reconnect_failed');
+      newSocket.off('reconnect');
       newSocket.disconnect();
       socketRef.current = null;
       setSocket(null);
@@ -187,6 +205,9 @@ export const WebSocketProvider = ({
   }, []);
 
   const subscribeToSessionLogs = useCallback((sessionId: string) => {
+    // Note: Server currently only supports one active log subscription per socket.
+    // Subscribing to a new session will automatically unsubscribe from the previous one.
+    logsSubscriptionsRef.current.clear();
     logsSubscriptionsRef.current.add(sessionId);
     const s = socketRef.current;
     if (s?.connected) {
@@ -208,10 +229,8 @@ export const WebSocketProvider = ({
     if (!s?.connected) {
       return;
     }
+    // Server's unsubscribe.logs removes all log subscriptions for this client
     s.emit('unsubscribe.logs');
-    for (const id of logsSubscriptionsRef.current) {
-      s.emit('subscribe.logs', { sessionId: id });
-    }
   }, []);
 
   const value: WebSocketContextValue = {

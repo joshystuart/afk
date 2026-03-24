@@ -27,6 +27,7 @@ import { afkColors } from '../themes/afk';
 import { ApprovalModal } from '../components/ApprovalModal';
 import { BulkActionModal } from '../components/BulkActionModal';
 import { TerminalCursor } from '../components/TerminalCursor';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -354,15 +355,14 @@ const Dashboard: React.FC = () => {
               </Button>
             </>
           )}
-          <Button
+          <PrimaryCtaButton
             component={Link}
             to={ROUTES.CREATE_SESSION}
-            variant="contained"
             startIcon={<AddIcon />}
             size="small"
           >
             New Session
-          </Button>
+          </PrimaryCtaButton>
         </Box>
       </Box>
 
@@ -396,15 +396,14 @@ const Dashboard: React.FC = () => {
             No sessions yet
           </Typography>
           <TerminalCursor />
-          <Button
+          <PrimaryCtaButton
             component={Link}
             to={ROUTES.CREATE_SESSION}
-            variant="contained"
             startIcon={<AddIcon />}
             sx={{ mt: 2 }}
           >
             Create Your First Session
-          </Button>
+          </PrimaryCtaButton>
         </Box>
       ) : (
         /* Session Card Grid */

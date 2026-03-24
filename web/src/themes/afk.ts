@@ -212,14 +212,27 @@ export const afkTheme = createTheme({
         },
         contained: {
           backgroundColor: colors.accent,
+          color: '#fff',
           '&:hover': {
             backgroundColor: colors.accentDark,
+            color: '#fff',
+          },
+          '&:active': {
+            color: '#fff',
+          },
+          '& .MuiButton-startIcon, & .MuiButton-endIcon': {
+            color: 'inherit',
           },
         },
         containedError: {
           backgroundColor: colors.danger,
+          color: '#fff',
           '&:hover': {
             backgroundColor: '#dc2626',
+            color: '#fff',
+          },
+          '&:active': {
+            color: '#fff',
           },
         },
         containedWarning: {

@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { CloudUpload as PushIcon } from '@mui/icons-material';
 import { afkColors } from '../themes/afk';
+import { PrimaryCtaButton } from './PrimaryCtaButton';
 
 interface CommitPushDialogProps {
   open: boolean;
@@ -157,8 +158,7 @@ const CommitPushDialog: React.FC<CommitPushDialogProps> = ({
         >
           Cancel
         </Button>
-        <Button
-          variant="contained"
+        <PrimaryCtaButton
           onClick={handleSubmit}
           disabled={isCommitting || !message.trim()}
           startIcon={
@@ -170,7 +170,7 @@ const CommitPushDialog: React.FC<CommitPushDialogProps> = ({
           }
         >
           {isCommitting ? 'Pushing...' : 'Commit & Push'}
-        </Button>
+        </PrimaryCtaButton>
       </DialogActions>
     </Dialog>
   );

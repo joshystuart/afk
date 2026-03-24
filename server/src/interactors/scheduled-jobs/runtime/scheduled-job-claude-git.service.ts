@@ -10,9 +10,8 @@ import {
 import { ClaudeEventArchiveService } from '../../../libs/stream-archive/claude-event-archive.service';
 import { ScheduledJob } from '../../../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduledJobRun } from '../../../domain/scheduled-jobs/scheduled-job-run.entity';
+import { getExecWorkingDir } from '../../../libs/docker/docker.constants';
 import { ScheduledJobRunEventsService } from './scheduled-job-run-events.service';
-
-const WORKSPACE_DIR = '/workspace/repo';
 
 export interface ScheduledJobExecutionResult {
   streamResult: ClaudeStreamRunnerResult;
@@ -36,17 +35,15 @@ export class ScheduledJobClaudeGitService {
     containerId: string,
     branchName: string,
   ): Promise<ScheduledJobExecutionResult> {
+    const workspaceDir = getExecWorkingDir(job.repoUrl);
+
     if (job.createNewBranch) {
       this.logger.log('Creating new branch', {
         jobId: job.id,
         runId: run.id,
         branchName,
       });
-      await this.gitService.createBranch(
-        containerId,
-        branchName,
-        WORKSPACE_DIR,
-      );
+      await this.gitService.createBranch(containerId, branchName, workspaceDir);
     }
 
     this.logger.log('Executing Claude prompt', {
@@ -60,13 +57,14 @@ export class ScheduledJobClaudeGitService {
       job.id,
       job.prompt,
       job.model,
+      workspaceDir,
     );
 
     const commitResult = job.commitAndPush
       ? await this.gitService.commitAndPush(containerId, {
           message: 'AFK scheduled job: automated changes',
           branchName,
-          workingDir: WORKSPACE_DIR,
+          workingDir: workspaceDir,
         })
       : null;
 
@@ -81,14 +79,15 @@ export class ScheduledJobClaudeGitService {
     runId: string,
     jobId: string,
     prompt: string,
-    model?: string | null,
+    model: string | null | undefined,
+    workingDir: string,
   ): Promise<ClaudeStreamRunnerResult> {
     const archiveWriter = this.claudeEventArchive.createJobRunWriter(runId);
     const execution = await this.claudeStreamRunner.startPrompt({
       containerId,
       prompt,
       model: model ?? undefined,
-      workingDir: WORKSPACE_DIR,
+      workingDir,
       includePartialMessages: true,
       archiveWriter,
       onEvent: (event) => {

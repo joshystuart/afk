@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { useSettingsStore } from '../../stores/settings.store';
 import { useDockerImagesStore } from '../../stores/docker-images.store';
+import { PrimaryCtaButton } from '../../components/PrimaryCtaButton';
 import type { UpdateSettingsRequest } from '../../api/types';
 import { afkColors } from '../../themes/afk';
 
@@ -270,9 +271,8 @@ const DockerSettings: React.FC = () => {
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
-          <Button
+          <PrimaryCtaButton
             type="submit"
-            variant="contained"
             startIcon={
               saveLoading ? (
                 <CircularProgress size={16} sx={{ color: 'inherit' }} />
@@ -283,7 +283,7 @@ const DockerSettings: React.FC = () => {
             disabled={saveLoading}
           >
             {saveLoading ? 'Saving...' : 'Save Docker Settings'}
-          </Button>
+          </PrimaryCtaButton>
         </Box>
       </form>
 
@@ -367,9 +367,8 @@ const DockerSettings: React.FC = () => {
               >
                 Cancel
               </Button>
-              <Button
+              <PrimaryCtaButton
                 size="small"
-                variant="contained"
                 onClick={handleAddImage}
                 disabled={
                   addingImage || !newImageName.trim() || !newImageRef.trim()
@@ -382,7 +381,7 @@ const DockerSettings: React.FC = () => {
                 sx={{ fontSize: '0.75rem' }}
               >
                 {addingImage ? 'Adding...' : 'Add'}
-              </Button>
+              </PrimaryCtaButton>
             </Box>
           </Box>
         )}

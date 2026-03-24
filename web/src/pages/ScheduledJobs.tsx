@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Button, Skeleton, Chip, Switch } from '@mui/material';
+import { Box, Typography, Skeleton, Chip, Switch } from '@mui/material';
 import {
   Add as AddIcon,
   Schedule as ScheduleIcon,
@@ -12,6 +12,7 @@ import type { ScheduledJob } from '../api/types';
 import { ScheduledJobRunStatus } from '../api/types';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
 function formatScheduleSummary(job: ScheduledJob): string {
   if (job.scheduleType === 'cron' && job.cronExpression) {
@@ -143,15 +144,14 @@ const ScheduledJobs: React.FC = () => {
         }}
       >
         <Typography variant="h3">Jobs</Typography>
-        <Button
+        <PrimaryCtaButton
           component={Link}
           to={ROUTES.CREATE_SCHEDULED_JOB}
-          variant="contained"
           startIcon={<AddIcon />}
           size="small"
         >
           Create Job
-        </Button>
+        </PrimaryCtaButton>
       </Box>
 
       {jobs.length === 0 ? (
@@ -188,15 +188,14 @@ const ScheduledJobs: React.FC = () => {
             Create recurring jobs that spin up containers, run Claude prompts
             against your repos, and optionally commit changes.
           </Typography>
-          <Button
+          <PrimaryCtaButton
             component={Link}
             to={ROUTES.CREATE_SCHEDULED_JOB}
-            variant="contained"
             startIcon={<AddIcon />}
             sx={{ mt: 2 }}
           >
             Create Your First Job
-          </Button>
+          </PrimaryCtaButton>
         </Box>
       ) : (
         <Box

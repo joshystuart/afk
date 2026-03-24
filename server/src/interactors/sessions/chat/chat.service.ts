@@ -10,6 +10,7 @@ import {
   ClaudeStreamExecutionError,
   ClaudeStreamRunnerService,
 } from '../../../libs/claude/claude-stream-runner.service';
+import { getExecWorkingDir } from '../../../libs/docker/docker.constants';
 import { ClaudeEventArchiveService } from '../../../libs/stream-archive/claude-event-archive.service';
 
 export interface ChatStreamEvent {
@@ -93,7 +94,7 @@ export class ChatService {
       continueConversation: options.continueConversation,
       model: options.model,
       includePartialMessages: true,
-      workingDir: '/workspace/repo',
+      workingDir: getExecWorkingDir(session.config.repoUrl),
     };
 
     this.logger.log('Executing Claude command', {

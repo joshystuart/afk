@@ -53,6 +53,30 @@ describe('CreateSessionRequestService', () => {
     }
   });
 
+  it('allows prepare without repo URL when no GitHub token or SSH key is configured', async () => {
+    settingsRepository.get.mockResolvedValue({
+      git: {
+        userName: 'AFK Bot',
+        userEmail: 'bot@afk.local',
+        sshPrivateKey: '',
+        githubAccessToken: null,
+      },
+      general: {
+        claudeToken: 'claude-token',
+        defaultMountDirectory: null,
+      },
+    } as any);
+    sessionRepository.findAll.mockResolvedValue([]);
+
+    const prepared = await service.prepare({
+      imageId: '11111111-1111-4111-8111-111111111111',
+      mountToHost: false,
+    });
+
+    expect(prepared.sessionConfig.repoUrl).toBeNull();
+    expect(prepared.sessionName).toMatch(/^session-\d+$/);
+  });
+
   it('prepares a session name and config from request defaults', async () => {
     settingsRepository.get.mockResolvedValue({
       git: {

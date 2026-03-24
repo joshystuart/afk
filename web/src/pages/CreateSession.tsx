@@ -35,6 +35,7 @@ import { ROUTES } from '../utils/constants';
 import { useSettingsStore } from '../stores/settings.store';
 import { useDockerImagesStore } from '../stores/docker-images.store';
 import { afkColors } from '../themes/afk';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
 interface DuplicateFromState {
   duplicateFrom: Pick<
@@ -438,7 +439,13 @@ const CreateSession: React.FC = () => {
             }}
           >
             <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
-              Repository
+              Repository (optional)
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: afkColors.textSecondary, mt: 0.5 }}
+            >
+              Skip this section for chat-only sessions without a project.
             </Typography>
           </Box>
 
@@ -878,7 +885,7 @@ const CreateSession: React.FC = () => {
                 label="Session Name"
                 helperText={
                   errors.name?.message ||
-                  'Optional. Defaults to repo name and branch if not provided.'
+                  'Optional. Defaults to repo name and branch when a repository is set; otherwise a timestamped name.'
                 }
                 error={!!errors.name}
               />
@@ -888,13 +895,12 @@ const CreateSession: React.FC = () => {
 
         {/* Actions */}
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button
+          <PrimaryCtaButton
             type="submit"
-            variant="contained"
             disabled={isCreating || missingSettings}
           >
             {isCreating ? 'Creating...' : 'Create Session'}
-          </Button>
+          </PrimaryCtaButton>
           <Button
             variant="outlined"
             component={Link}

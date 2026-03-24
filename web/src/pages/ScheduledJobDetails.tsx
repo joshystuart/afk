@@ -52,6 +52,7 @@ import {
   type ScheduledJobRun,
 } from '../api/types';
 import { ROUTES } from '../utils/constants';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 import { getClaudeModelLabel } from '../utils/claude-models';
 import { afkColors } from '../themes/afk';
 import { RunOutputDialog } from '../components/scheduled-jobs/RunOutputViewer';
@@ -273,8 +274,7 @@ const ScheduledJobDetails: React.FC = () => {
           >
             Edit
           </Button>
-          <Button
-            variant="contained"
+          <PrimaryCtaButton
             size="small"
             startIcon={<RunNowIcon />}
             onClick={() => {
@@ -283,7 +283,7 @@ const ScheduledJobDetails: React.FC = () => {
             disabled={isUpdating || isDeleting || isTriggering}
           >
             Run Now
-          </Button>
+          </PrimaryCtaButton>
           <Button
             variant="outlined"
             size="small"

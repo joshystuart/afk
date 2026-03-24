@@ -32,14 +32,23 @@ body {
   height: 100%;
 }
 
-/* Links */
-a {
+/*
+ * Accent-colored inline links in page content and overlays only.
+ * App chrome (sidebar `Box component={Link}`, top bar) lives outside `main` and
+ * sets its own colors; a broad `a { }` rule would override those.
+ * MUI primary buttons as links use `.MuiButtonBase-root` and are excluded.
+ */
+main a:not(.MuiButtonBase-root),
+.MuiDialog-root a:not(.MuiButtonBase-root),
+.MuiAlert-root a:not(.MuiButtonBase-root) {
   color: #10b981;
   text-decoration: none;
   transition: color 150ms ease;
 }
 
-a:hover {
+main a:not(.MuiButtonBase-root):hover,
+.MuiDialog-root a:not(.MuiButtonBase-root):hover,
+.MuiAlert-root a:not(.MuiButtonBase-root):hover {
   color: #34d399;
 }
 

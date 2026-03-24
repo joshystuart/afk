@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { DockerLogsExpander } from '../components/DockerLogsExpander';
+import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 import { useSession } from '../hooks/useSession';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useSessionHealth } from '../hooks/useSessionHealth';
@@ -83,11 +84,18 @@ const SessionDetails: React.FC = () => {
 
   const isRunning = session?.status === SessionStatus.RUNNING;
   const isReady = isRunning && healthCheck.allReady;
-  const gitStatus = useGitStatus(id || null, isReady);
+  const hasGitRepo = Boolean(session?.repoUrl);
+  const gitStatus = useGitStatus(id || null, isReady && hasGitRepo);
 
   const { deleteProgress } = useSessionStore();
 
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!hasGitRepo) {
+      setCommitDialogOpen(false);
+    }
+  }, [hasGitRepo]);
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false);
   const [renameInput, setRenameInput] = React.useState('');
   const [renameError, setRenameError] = React.useState<string | null>(null);
@@ -368,14 +376,13 @@ const SessionDetails: React.FC = () => {
         >
           Cancel
         </Button>
-        <Button
-          variant="contained"
+        <PrimaryCtaButton
           onClick={handleRenameSubmit}
           disabled={isUpdating || !renameInput.trim()}
           startIcon={<EditIcon sx={{ fontSize: '16px !important' }} />}
         >
           {isUpdating ? 'Saving...' : 'Save'}
-        </Button>
+        </PrimaryCtaButton>
       </DialogActions>
     </Dialog>
   );
@@ -563,8 +570,7 @@ const SessionDetails: React.FC = () => {
 
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
               {canStart && (
-                <Button
-                  variant="contained"
+                <PrimaryCtaButton
                   size="small"
                   startIcon={<PlayIcon sx={{ fontSize: '16px !important' }} />}
                   onClick={() => startSession(session!.id)}
@@ -572,7 +578,7 @@ const SessionDetails: React.FC = () => {
                   sx={{ fontSize: '0.8125rem' }}
                 >
                   {isStarting ? 'Starting...' : 'Start'}
-                </Button>
+                </PrimaryCtaButton>
               )}
 
               <Button
@@ -805,7 +811,7 @@ const SessionDetails: React.FC = () => {
                 animation: 'pulse-dot 2s ease-in-out infinite',
               }}
             />
-            {gitStatus.branch && (
+            {hasGitRepo && gitStatus.branch && (
               <Chip
                 label={gitStatus.branch}
                 size="small"
@@ -855,50 +861,52 @@ const SessionDetails: React.FC = () => {
               </span>
             </Tooltip>
 
-            <Tooltip
-              title={
-                gitStatus.hasChanges
-                  ? `${gitStatus.changedFileCount} file${gitStatus.changedFileCount !== 1 ? 's' : ''} changed`
-                  : 'No changes'
-              }
-            >
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    gitStatus.refetchStatus();
-                    setCommitDialogOpen(true);
-                  }}
-                  disabled={!gitStatus.hasChanges}
-                  sx={{
-                    p: 0.5,
-                    color: gitStatus.hasChanges
-                      ? afkColors.accent
-                      : afkColors.textTertiary,
-                    '&:hover': {
-                      color: gitStatus.hasChanges
-                        ? afkColors.accentLight
-                        : afkColors.textSecondary,
-                    },
-                  }}
-                >
-                  <Badge
-                    variant="dot"
-                    invisible={!gitStatus.hasChanges}
+            {hasGitRepo && (
+              <Tooltip
+                title={
+                  gitStatus.hasChanges
+                    ? `${gitStatus.changedFileCount} file${gitStatus.changedFileCount !== 1 ? 's' : ''} changed`
+                    : 'No changes'
+                }
+              >
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      gitStatus.refetchStatus();
+                      setCommitDialogOpen(true);
+                    }}
+                    disabled={!gitStatus.hasChanges}
                     sx={{
-                      '& .MuiBadge-badge': {
-                        bgcolor: afkColors.accent,
-                        width: 6,
-                        height: 6,
-                        minWidth: 6,
+                      p: 0.5,
+                      color: gitStatus.hasChanges
+                        ? afkColors.accent
+                        : afkColors.textTertiary,
+                      '&:hover': {
+                        color: gitStatus.hasChanges
+                          ? afkColors.accentLight
+                          : afkColors.textSecondary,
                       },
                     }}
                   >
-                    <PushIcon sx={{ fontSize: 16 }} />
-                  </Badge>
-                </IconButton>
-              </span>
-            </Tooltip>
+                    <Badge
+                      variant="dot"
+                      invisible={!gitStatus.hasChanges}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          bgcolor: afkColors.accent,
+                          width: 6,
+                          height: 6,
+                          minWidth: 6,
+                        },
+                      }}
+                    >
+                      <PushIcon sx={{ fontSize: 16 }} />
+                    </Badge>
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
 
             <Button
               size="small"
@@ -942,22 +950,24 @@ const SessionDetails: React.FC = () => {
         }
       />
 
-      <CommitPushDialog
-        open={commitDialogOpen}
-        onClose={() => {
-          setCommitDialogOpen(false);
-          gitStatus.resetCommitState();
-        }}
-        branch={gitStatus.branch}
-        changedFileCount={gitStatus.changedFileCount}
-        isCommitting={gitStatus.isCommitting}
-        error={
-          gitStatus.commitError
-            ? (gitStatus.commitError as Error).message
-            : null
-        }
-        onCommitAndPush={handleCommitAndPush}
-      />
+      {hasGitRepo && (
+        <CommitPushDialog
+          open={commitDialogOpen}
+          onClose={() => {
+            setCommitDialogOpen(false);
+            gitStatus.resetCommitState();
+          }}
+          branch={gitStatus.branch}
+          changedFileCount={gitStatus.changedFileCount}
+          isCommitting={gitStatus.isCommitting}
+          error={
+            gitStatus.commitError
+              ? (gitStatus.commitError as Error).message
+              : null
+          }
+          onCommitAndPush={handleCommitAndPush}
+        />
+      )}
 
       {renameDialog}
 

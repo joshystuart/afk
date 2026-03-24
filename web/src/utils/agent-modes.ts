@@ -18,7 +18,7 @@ export const AGENT_MODES = [
 
 export type AgentModeId = (typeof AGENT_MODES)[number]['id'];
 
-export const DEFAULT_AGENT_MODE: AgentModeId = 'plan';
+export const DEFAULT_AGENT_MODE: AgentModeId = 'agent';
 
 export function getAgentModeLabel(mode?: string | null): string {
   return AGENT_MODES.find((m) => m.id === mode)?.label ?? mode ?? 'Plan';

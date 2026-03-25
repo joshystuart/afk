@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Alert, Box, Snackbar, Typography } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { afkColors } from '../../themes/afk';
 import { ChatMessageBubble } from './ChatMessageBubble';
@@ -39,6 +39,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     React.useState<ModelId>(DEFAULT_MODEL);
   const [selectedAgentMode, setSelectedAgentMode] =
     React.useState<AgentModeId>(DEFAULT_AGENT_MODE);
+  const [snackbarMessage, setSnackbarMessage] = React.useState<string | null>(
+    null,
+  );
   const initializedForSessionRef = React.useRef<string | null>(null);
   const shouldJumpToBottomRef = React.useRef(true);
   const isPinnedToBottomRef = React.useRef(true);
@@ -70,30 +73,42 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
 
   const handleModelChange = React.useCallback(
     (model: ModelId) => {
-      setSelectedModel(model);
-      sessionsApi
-        .updateSession(sessionId, { model })
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-        })
-        .catch((err) => {
-          console.error('Failed to persist model selection:', err);
-        });
+      setSelectedModel((prev) => {
+        sessionsApi
+          .updateSession(sessionId, { model })
+          .then(() => {
+            queryClient.invalidateQueries({
+              queryKey: ['session', sessionId],
+            });
+          })
+          .catch((err) => {
+            console.error('Failed to persist model selection:', err);
+            setSelectedModel(prev);
+            setSnackbarMessage('Failed to update model selection');
+          });
+        return model;
+      });
     },
     [sessionId, queryClient],
   );
 
   const handleAgentModeChange = React.useCallback(
     (agentMode: AgentModeId) => {
-      setSelectedAgentMode(agentMode);
-      sessionsApi
-        .updateSession(sessionId, { agentMode })
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-        })
-        .catch((err) => {
-          console.error('Failed to persist agent mode selection:', err);
-        });
+      setSelectedAgentMode((prev) => {
+        sessionsApi
+          .updateSession(sessionId, { agentMode })
+          .then(() => {
+            queryClient.invalidateQueries({
+              queryKey: ['session', sessionId],
+            });
+          })
+          .catch((err) => {
+            console.error('Failed to persist agent mode selection:', err);
+            setSelectedAgentMode(prev);
+            setSnackbarMessage('Failed to update agent mode');
+          });
+        return agentMode;
+      });
     },
     [sessionId, queryClient],
   );
@@ -265,6 +280,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         selectedAgentMode={selectedAgentMode}
         onAgentModeChange={handleAgentModeChange}
       />
+
+      <Snackbar
+        open={!!snackbarMessage}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarMessage(null)}
+          severity="error"
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

@@ -40,6 +40,7 @@ module.exports = {
   ],
   publish: null,
   afterPack: './scripts/afterPack.js',
+  afterAllArtifactBuild: './scripts/afterAllArtifactBuild.js',
   mac: {
     category: 'public.app-category.developer-tools',
     icon: 'build/icon.icns',

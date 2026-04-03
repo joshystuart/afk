@@ -1,12 +1,9 @@
-const { execSync } = require('child_process');
-
-const isCodeSigned = !!(process.env.CSC_LINK || process.env.CSC_NAME);
-
-function getSignIdentity() {
-  if (process.env.CSC_NAME) return process.env.CSC_NAME;
-  if (process.env.CSC_LINK) return 'Developer ID Application';
-  return null;
-}
+const {
+  buildCodesignArgs,
+  isCodeSigningEnabled,
+  resolveSignIdentity,
+  runCommand,
+} = require('./signing');
 
 /**
  * Signs, notarizes, and staples DMG artifacts after electron-builder creates them.
@@ -15,7 +12,7 @@ function getSignIdentity() {
  * is already notarized so Gatekeeper validates it on extraction.
  */
 exports.default = async function afterAllArtifactBuild(buildResult) {
-  if (!isCodeSigned) {
+  if (!isCodeSigningEnabled()) {
     console.log(
       'Skipping artifact signing/notarization: no code signing identity',
     );
@@ -30,15 +27,16 @@ exports.default = async function afterAllArtifactBuild(buildResult) {
     return buildResult.artifactPaths;
   }
 
-  const identity = getSignIdentity();
+  const identity = resolveSignIdentity();
   const { notarize } = require('@electron/notarize');
 
   for (const artifactPath of buildResult.artifactPaths) {
     if (!artifactPath.endsWith('.dmg')) continue;
 
     console.log(`Signing DMG: ${artifactPath}`);
-    execSync(
-      `codesign --force --sign "${identity}" --timestamp "${artifactPath}"`,
+    runCommand(
+      'codesign',
+      buildCodesignArgs(identity, artifactPath, { timestamp: true }),
       { stdio: 'inherit' },
     );
 

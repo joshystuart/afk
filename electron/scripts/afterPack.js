@@ -1,39 +1,11 @@
 const fs = require('fs');
-const { spawnSync } = require('child_process');
 const path = require('path');
-
-const isCodeSigned = !!(process.env.CSC_LINK || process.env.CSC_NAME);
-
-function getSignIdentity() {
-  if (process.env.CSC_NAME) return process.env.CSC_NAME;
-  if (process.env.CSC_LINK) return 'Developer ID Application';
-  return null;
-}
-
-function runCommand(command, args, options = {}) {
-  const { allowFailure = false, stdio = 'pipe' } = options;
-  const result = spawnSync(command, args, {
-    encoding: 'utf-8',
-    stdio,
-  });
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  if (result.status !== 0 && !allowFailure) {
-    const stderr = result.stderr?.trim();
-    throw new Error(
-      `${command} exited with status ${result.status}${stderr ? `: ${stderr}` : ''}`,
-    );
-  }
-
-  return {
-    stdout: result.stdout ?? '',
-    stderr: result.stderr ?? '',
-    status: result.status ?? 0,
-  };
-}
+const {
+  buildCodesignArgs,
+  isCodeSigningEnabled,
+  resolveSignIdentity,
+  runCommand,
+} = require('./signing');
 
 function listFiles(command, args) {
   const { stdout } = runCommand(command, args, { allowFailure: true });
@@ -128,14 +100,10 @@ function findBundles(appPath) {
 }
 
 function signFile(filePath, identity, entitlements, useRuntime) {
-  const args = ['--force', '--sign', identity];
-  if (useRuntime) {
-    args.push('--options', 'runtime', '--timestamp');
-  }
-  if (entitlements) {
-    args.push('--entitlements', entitlements);
-  }
-  args.push(filePath);
+  const args = buildCodesignArgs(identity, filePath, {
+    entitlements,
+    useRuntime,
+  });
   runCommand('codesign', args, { stdio: 'inherit' });
 }
 
@@ -214,9 +182,10 @@ exports.default = async function afterPack(context) {
     'entitlements.mac.plist',
   );
 
-  const identity = isCodeSigned ? getSignIdentity() : '-';
-  const useRuntime = isCodeSigned;
-  const signingType = isCodeSigned ? 'Developer ID' : 'ad-hoc';
+  const shouldCodeSign = isCodeSigningEnabled();
+  const identity = shouldCodeSign ? resolveSignIdentity() : '-';
+  const useRuntime = shouldCodeSign;
+  const signingType = shouldCodeSign ? identity : 'ad-hoc';
 
   console.log(`Signing app bundle (${signingType}): ${appPath}`);
 
@@ -262,7 +231,7 @@ exports.default = async function afterPack(context) {
 
   console.log('Signing complete');
 
-  if (!isCodeSigned) return;
+  if (!shouldCodeSign) return;
 
   const { APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID } = process.env;
   if (!APPLE_ID || !APPLE_APP_SPECIFIC_PASSWORD || !APPLE_TEAM_ID) {

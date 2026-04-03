@@ -1,10 +1,4 @@
-import {
-  IsString,
-  MinLength,
-  MaxLength,
-  IsOptional,
-  IsIn,
-} from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
 
 export class UpdateSessionRequest {
   @IsString()
@@ -20,6 +14,6 @@ export class UpdateSessionRequest {
 
   @IsString()
   @IsOptional()
-  @IsIn(['plan', 'agent'])
+  @MaxLength(50)
   agentMode?: string | null;
 }

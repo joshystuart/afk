@@ -42,6 +42,17 @@ export const scheduledJobsApi = {
     return response as unknown as { deleted: number; failed: number };
   },
 
+  prepareForUninstall: async (): Promise<{
+    disabledJobs: number;
+    removedLaunchAgents: number;
+  }> => {
+    const response = await apiClient.post(`${BASE}/prepare-uninstall`);
+    return response as unknown as {
+      disabledJobs: number;
+      removedLaunchAgents: number;
+    };
+  },
+
   listRuns: async (jobId: string): Promise<ScheduledJobRun[]> => {
     const response = await apiClient.get(`${BASE}/${jobId}/runs`);
     return (Array.isArray(response) ? response : []) as ScheduledJobRun[];

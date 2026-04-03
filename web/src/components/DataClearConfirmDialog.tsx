@@ -16,7 +16,7 @@ export interface DataClearConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  type: 'sessions' | 'jobs';
+  type: 'sessions' | 'jobs' | 'prepare-uninstall';
   isLoading?: boolean;
 }
 
@@ -30,21 +30,35 @@ const DataClearConfirmDialog: React.FC<DataClearConfirmDialogProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const isSessions = type === 'sessions';
-
-  const title = isLoading
-    ? isSessions
-      ? 'Clearing sessions...'
-      : 'Clearing scheduled jobs...'
-    : isSessions
-      ? 'Clear all sessions?'
-      : 'Clear all scheduled jobs?';
-
-  const description = isSessions
-    ? 'This will stop all running sessions and permanently delete every session, including Docker containers, volumes, and chat history. This action cannot be undone.'
-    : 'This will permanently delete all scheduled jobs, their run history, scheduler registrations, and launchd plists. This action cannot be undone.';
-
-  const confirmText = isSessions ? 'Clear All Sessions' : 'Clear All Jobs';
+  const dialogCopy = {
+    sessions: {
+      loadingTitle: 'Clearing sessions...',
+      title: 'Clear all sessions?',
+      description:
+        'This will stop all running sessions and permanently delete every session, including Docker containers, volumes, and chat history. This action cannot be undone.',
+      confirmText: 'Clear All Sessions',
+      loadingDescription: 'Stopping and deleting all sessions...',
+    },
+    jobs: {
+      loadingTitle: 'Clearing scheduled jobs...',
+      title: 'Clear all scheduled jobs?',
+      description:
+        'This will permanently delete all scheduled jobs, their run history, scheduler registrations, and launchd plists. This action cannot be undone.',
+      confirmText: 'Clear All Jobs',
+      loadingDescription: 'Deleting all scheduled jobs...',
+    },
+    'prepare-uninstall': {
+      loadingTitle: 'Preparing for uninstall...',
+      title: 'Prepare AFK for uninstall?',
+      description:
+        'This will disable all scheduled jobs and remove AFK launchd LaunchAgents so AFK does not relaunch itself after you remove the app from /Applications.',
+      confirmText: 'Prepare for Uninstall',
+      loadingDescription:
+        'Disabling scheduled jobs and removing LaunchAgents...',
+    },
+  } as const;
+  const copy = dialogCopy[type];
+  const title = isLoading ? copy.loadingTitle : copy.title;
 
   return (
     <Dialog
@@ -93,14 +107,12 @@ const DataClearConfirmDialog: React.FC<DataClearConfirmDialogProps> = ({
                 color: afkColors.textSecondary,
               }}
             >
-              {isSessions
-                ? 'Stopping and deleting all sessions...'
-                : 'Deleting all scheduled jobs...'}
+              {copy.loadingDescription}
             </Typography>
           </Box>
         ) : (
           <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
-            {description}
+            {copy.description}
           </Typography>
         )}
       </DialogContent>
@@ -128,7 +140,7 @@ const DataClearConfirmDialog: React.FC<DataClearConfirmDialogProps> = ({
               },
             }}
           >
-            {confirmText}
+            {copy.confirmText}
           </Button>
         </DialogActions>
       )}

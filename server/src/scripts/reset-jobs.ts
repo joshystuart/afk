@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { typeormEntities } from '../database/database.config';
 import { ScheduledJob } from '../domain/scheduled-jobs/scheduled-job.entity';
+import { removeManagedLaunchAgentPlists } from '../interactors/scheduled-jobs/runtime/launchd.service';
 
 /**
  * Deletes all scheduled jobs and their runs (including stream chunks).
@@ -9,6 +10,9 @@ import { ScheduledJob } from '../domain/scheduled-jobs/scheduled-job.entity';
 async function resetJobs(): Promise<void> {
   const dbPath = process.env.DB_SQLITE_DATABASE || 'afk.sqlite';
   console.log(`Connecting to database: ${dbPath}`);
+
+  const removedLaunchAgents = removeManagedLaunchAgentPlists();
+  console.log(`Removed ${removedLaunchAgents} AFK LaunchAgent plist(s).`);
 
   const dataSource = new DataSource({
     type: 'sqlite',

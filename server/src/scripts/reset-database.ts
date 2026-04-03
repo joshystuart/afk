@@ -1,9 +1,13 @@
 import { DataSource } from 'typeorm';
 import { typeormEntities } from '../database/database.config';
+import { removeManagedLaunchAgentPlists } from '../interactors/scheduled-jobs/runtime/launchd.service';
 
 async function resetDatabase(): Promise<void> {
   const dbPath = process.env.DB_SQLITE_DATABASE || 'afk.sqlite';
   console.log(`Connecting to database: ${dbPath}`);
+
+  const removedLaunchAgents = removeManagedLaunchAgentPlists();
+  console.log(`Removed ${removedLaunchAgents} AFK LaunchAgent plist(s).`);
 
   const dataSource = new DataSource({
     type: 'sqlite',

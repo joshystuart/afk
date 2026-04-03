@@ -11,6 +11,7 @@ import { JobExecutorService } from './job-executor.service';
 import { JobSchedulerService } from './job-scheduler.service';
 import { LaunchdService } from './launchd.service';
 import { ScheduledJobClaudeGitService } from './scheduled-job-claude-git.service';
+import { ScheduledJobsLaunchdReconciliationService } from './scheduled-jobs-launchd-reconciliation.service';
 import { ScheduledJobRunEventsService } from './scheduled-job-run-events.service';
 import { ScheduledJobRunStateService } from './scheduled-job-run-state.service';
 import { ScheduledJobRuntimeService } from './scheduled-job-runtime.service';
@@ -35,6 +36,7 @@ import { ScheduledJobTimingService } from './scheduled-job-timing.service';
     ScheduledJobRunStateService,
     JobSchedulerService,
     LaunchdService,
+    ScheduledJobsLaunchdReconciliationService,
     ScheduledJobTimingService,
   ],
   exports: [

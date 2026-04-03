@@ -25,10 +25,11 @@ const DangerSectionHeader: React.FC<{ title: string }> = ({ title }) => (
 
 const DataManagementSettings: React.FC = () => {
   const [confirmDialog, setConfirmDialog] = useState<
-    'sessions' | 'jobs' | null
+    'sessions' | 'jobs' | 'prepare-uninstall' | null
   >(null);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [jobsLoading, setJobsLoading] = useState(false);
+  const [prepareUninstallLoading, setPrepareUninstallLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -80,6 +81,35 @@ const DataManagementSettings: React.FC = () => {
       );
     } finally {
       setJobsLoading(false);
+    }
+  };
+
+  const handlePrepareForUninstall = async () => {
+    setPrepareUninstallLoading(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+    try {
+      const result = await scheduledJobsApi.prepareForUninstall();
+      setConfirmDialog(null);
+      const parts: string[] = [];
+      if (result.disabledJobs > 0) {
+        parts.push(`${result.disabledJobs} job(s) disabled`);
+      }
+      if (result.removedLaunchAgents > 0) {
+        parts.push(`${result.removedLaunchAgents} LaunchAgent(s) removed`);
+      }
+      setSuccessMessage(
+        parts.length > 0
+          ? `AFK is ready for uninstall: ${parts.join(', ')}. You can now remove the app from /Applications.`
+          : 'AFK was already ready for uninstall. You can now remove the app from /Applications.',
+      );
+    } catch {
+      setConfirmDialog(null);
+      setErrorMessage(
+        'Failed to prepare AFK for uninstall. Check server logs for details.',
+      );
+    } finally {
+      setPrepareUninstallLoading(false);
     }
   };
 
@@ -192,16 +222,62 @@ const DataManagementSettings: React.FC = () => {
             Clear Jobs
           </Button>
         </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="body1"
+              sx={{ color: afkColors.textPrimary, fontWeight: 500 }}
+            >
+              Prepare for Uninstall
+            </Typography>
+            <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
+              Disables scheduled jobs and removes AFK launchd LaunchAgents so
+              the desktop app can be safely removed from /Applications without
+              relaunching itself.
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={
+              <DeleteForeverIcon sx={{ fontSize: '16px !important' }} />
+            }
+            onClick={() => setConfirmDialog('prepare-uninstall')}
+            sx={{
+              color: afkColors.danger,
+              borderColor: afkColors.danger,
+              flexShrink: 0,
+              '&:hover': {
+                borderColor: '#dc2626',
+                bgcolor: afkColors.dangerMuted,
+              },
+            }}
+          >
+            Prepare for Uninstall
+          </Button>
+        </Box>
       </Box>
 
       <DataClearConfirmDialog
         open={confirmDialog !== null}
         onClose={() => setConfirmDialog(null)}
         onConfirm={
-          confirmDialog === 'sessions' ? handleClearSessions : handleClearJobs
+          confirmDialog === 'sessions'
+            ? handleClearSessions
+            : confirmDialog === 'jobs'
+              ? handleClearJobs
+              : handlePrepareForUninstall
         }
         type={confirmDialog ?? 'sessions'}
-        isLoading={sessionsLoading || jobsLoading}
+        isLoading={sessionsLoading || jobsLoading || prepareUninstallLoading}
       />
     </Box>
   );

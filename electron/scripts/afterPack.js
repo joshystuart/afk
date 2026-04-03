@@ -1,4 +1,5 @@
-const { execSync } = require('child_process');
+const fs = require('fs');
+const { spawnSync } = require('child_process');
 const path = require('path');
 
 const isCodeSigned = !!(process.env.CSC_LINK || process.env.CSC_NAME);
@@ -9,14 +10,70 @@ function getSignIdentity() {
   return null;
 }
 
+function runCommand(command, args, options = {}) {
+  const { allowFailure = false, stdio = 'pipe' } = options;
+  const result = spawnSync(command, args, {
+    encoding: 'utf-8',
+    stdio,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0 && !allowFailure) {
+    const stderr = result.stderr?.trim();
+    throw new Error(
+      `${command} exited with status ${result.status}${stderr ? `: ${stderr}` : ''}`,
+    );
+  }
+
+  return {
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+    status: result.status ?? 0,
+  };
+}
+
+function listFiles(command, args) {
+  const { stdout } = runCommand(command, args, { allowFailure: true });
+  return stdout.trim() ? stdout.trim().split('\n').filter(Boolean) : [];
+}
+
+function isMachOBinary(filePath) {
+  const { stdout } = runCommand(
+    'file',
+    ['--brief', '--mime-type', '--', filePath],
+    { allowFailure: true },
+  );
+  return stdout.includes('application/x-mach-binary');
+}
+
 function findMachOBinaries(appPath) {
-  const candidates = execSync(
-    `find "${appPath}" -type f \\( -perm +111 -o -name "*.node" -o -name "*.dylib" -o -name "*.so" \\) 2>/dev/null || true`,
-    { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 },
-  )
-    .trim()
-    .split('\n')
-    .filter(Boolean);
+  const candidates = listFiles('find', [
+    appPath,
+    '-type',
+    'f',
+    '(',
+    '-perm',
+    '-u+x',
+    '-o',
+    '-perm',
+    '-g+x',
+    '-o',
+    '-perm',
+    '-o+x',
+    '-o',
+    '-name',
+    '*.node',
+    '-o',
+    '-name',
+    '*.dylib',
+    '-o',
+    '-name',
+    '*.so',
+    ')',
+  ]);
 
   if (candidates.length === 0) return [];
 
@@ -24,12 +81,25 @@ function findMachOBinaries(appPath) {
   const batchSize = 200;
   for (let i = 0; i < candidates.length; i += batchSize) {
     const batch = candidates.slice(i, i + batchSize);
-    const quoted = batch.map((f) => `"${f}"`).join(' ');
-    const output = execSync(`file --brief --mime-type ${quoted} 2>/dev/null`, {
-      encoding: 'utf-8',
-      maxBuffer: 50 * 1024 * 1024,
-    });
-    const types = output.trim().split('\n');
+    const { stdout } = runCommand(
+      'file',
+      ['--brief', '--mime-type', '--', ...batch],
+      { allowFailure: true },
+    );
+    const types = stdout.trim() ? stdout.trim().split('\n') : [];
+
+    if (types.length !== batch.length) {
+      console.warn(
+        `Unexpected file output for batch starting at index ${i}; falling back to per-file inspection`,
+      );
+      for (const filePath of batch) {
+        if (isMachOBinary(filePath)) {
+          results.push(filePath);
+        }
+      }
+      continue;
+    }
+
     for (let j = 0; j < types.length; j++) {
       if (types[j].includes('application/x-mach-binary')) {
         results.push(batch[j]);
@@ -40,22 +110,94 @@ function findMachOBinaries(appPath) {
 }
 
 function findBundles(appPath) {
-  const output = execSync(
-    `find "${appPath}" -type d \\( -name "*.framework" -o -name "*.app" \\) -not -path "${appPath}" 2>/dev/null || true`,
-    { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 },
-  );
-  return output.trim() ? output.trim().split('\n') : [];
+  return listFiles('find', [
+    appPath,
+    '-type',
+    'd',
+    '(',
+    '-name',
+    '*.framework',
+    '-o',
+    '-name',
+    '*.app',
+    ')',
+    '-not',
+    '-path',
+    appPath,
+  ]);
 }
 
 function signFile(filePath, identity, entitlements, useRuntime) {
-  const runtimeFlag = useRuntime ? '--options runtime --timestamp' : '';
-  const entitlementsFlag = entitlements
-    ? `--entitlements "${entitlements}"`
-    : '';
-  execSync(
-    `codesign --force --sign ${identity === '-' ? '-' : `"${identity}"`} ${runtimeFlag} ${entitlementsFlag} "${filePath}"`,
-    { stdio: 'inherit' },
-  );
+  const args = ['--force', '--sign', identity];
+  if (useRuntime) {
+    args.push('--options', 'runtime', '--timestamp');
+  }
+  if (entitlements) {
+    args.push('--entitlements', entitlements);
+  }
+  args.push(filePath);
+  runCommand('codesign', args, { stdio: 'inherit' });
+}
+
+function collectBundleMainExecutables(bundlePath) {
+  const executables = new Set();
+
+  if (bundlePath.endsWith('.app')) {
+    const macosDir = path.join(bundlePath, 'Contents', 'MacOS');
+    if (!fs.existsSync(macosDir)) {
+      console.warn(
+        `Skipping app bundle executable discovery: missing ${macosDir}`,
+      );
+      return executables;
+    }
+
+    for (const entry of fs.readdirSync(macosDir, { withFileTypes: true })) {
+      if (entry.isFile() || entry.isSymbolicLink()) {
+        executables.add(path.join(macosDir, entry.name));
+      }
+    }
+
+    return executables;
+  }
+
+  if (bundlePath.endsWith('.framework')) {
+    const frameworkName = path.basename(bundlePath, '.framework');
+    const candidatePaths = [
+      path.join(bundlePath, frameworkName),
+      path.join(bundlePath, 'Versions', 'Current', frameworkName),
+      path.join(bundlePath, 'Versions', 'A', frameworkName),
+    ];
+
+    for (const candidatePath of candidatePaths) {
+      if (fs.existsSync(candidatePath)) {
+        executables.add(candidatePath);
+      }
+    }
+
+    if (executables.size === 0) {
+      const versionsDir = path.join(bundlePath, 'Versions');
+      if (fs.existsSync(versionsDir)) {
+        for (const version of fs.readdirSync(versionsDir)) {
+          const versionedExecutable = path.join(
+            versionsDir,
+            version,
+            frameworkName,
+          );
+          if (fs.existsSync(versionedExecutable)) {
+            executables.add(versionedExecutable);
+          }
+        }
+      }
+    }
+
+    if (executables.size === 0) {
+      console.warn(
+        `Could not determine main executable for framework bundle ${bundlePath}`,
+      );
+    }
+  }
+
+  return executables;
 }
 
 exports.default = async function afterPack(context) {
@@ -74,7 +216,7 @@ exports.default = async function afterPack(context) {
 
   const identity = isCodeSigned ? getSignIdentity() : '-';
   const useRuntime = isCodeSigned;
-  const signingType = isCodeSigned ? `Developer ID (${identity})` : 'ad-hoc';
+  const signingType = isCodeSigned ? 'Developer ID' : 'ad-hoc';
 
   console.log(`Signing app bundle (${signingType}): ${appPath}`);
 
@@ -82,18 +224,8 @@ exports.default = async function afterPack(context) {
 
   const bundleMainExecutables = new Set();
   for (const bundle of bundles) {
-    if (bundle.endsWith('.app')) {
-      const macosDir = path.join(bundle, 'Contents', 'MacOS');
-      const files = execSync(`find "${macosDir}" -type f 2>/dev/null || true`, {
-        encoding: 'utf-8',
-      })
-        .trim()
-        .split('\n')
-        .filter(Boolean);
-      files.forEach((f) => bundleMainExecutables.add(f));
-    } else if (bundle.endsWith('.framework')) {
-      const fwName = path.basename(bundle, '.framework');
-      bundleMainExecutables.add(path.join(bundle, 'Versions', 'A', fwName));
+    for (const executable of collectBundleMainExecutables(bundle)) {
+      bundleMainExecutables.add(executable);
     }
   }
 
@@ -142,11 +274,19 @@ exports.default = async function afterPack(context) {
 
   console.log(`Notarizing ${appPath}...`);
   const { notarize } = require('@electron/notarize');
-  await notarize({
-    appPath,
-    appleId: APPLE_ID,
-    appleIdPassword: APPLE_APP_SPECIFIC_PASSWORD,
-    teamId: APPLE_TEAM_ID,
-  });
-  console.log('Notarization complete');
+  try {
+    await notarize({
+      appPath,
+      appleId: APPLE_ID,
+      appleIdPassword: APPLE_APP_SPECIFIC_PASSWORD,
+      teamId: APPLE_TEAM_ID,
+    });
+    console.log('Notarization complete');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(
+      `Notarization failed for ${path.basename(appPath)}: ${message}`,
+    );
+    throw error;
+  }
 };

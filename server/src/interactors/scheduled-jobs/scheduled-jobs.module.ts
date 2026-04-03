@@ -24,6 +24,8 @@ import { TriggerScheduledJobInteractor } from './trigger-scheduled-job/trigger-s
 import { TriggerTokenGuard } from './trigger-scheduled-job/trigger-token.guard';
 import { ScheduledJobResponseFactory } from './scheduled-job-response.factory';
 import { ScheduledJobsRuntimeModule } from './runtime/scheduled-jobs-runtime.module';
+import { PrepareUninstallController } from './prepare-uninstall/prepare-uninstall.controller';
+import { PrepareUninstallInteractor } from './prepare-uninstall/prepare-uninstall.interactor';
 
 @Module({
   imports: [
@@ -40,6 +42,7 @@ import { ScheduledJobsRuntimeModule } from './runtime/scheduled-jobs-runtime.mod
     GetScheduledJobController,
     UpdateScheduledJobController,
     ClearAllScheduledJobsController,
+    PrepareUninstallController,
     DeleteScheduledJobController,
     ListScheduledJobRunsController,
     GetScheduledJobRunStreamController,
@@ -52,6 +55,7 @@ import { ScheduledJobsRuntimeModule } from './runtime/scheduled-jobs-runtime.mod
     UpdateScheduledJobInteractor,
     DeleteScheduledJobInteractor,
     ClearAllScheduledJobsInteractor,
+    PrepareUninstallInteractor,
     ListScheduledJobRunsInteractor,
     TriggerScheduledJobInteractor,
     ScheduledJobResponseFactory,

@@ -13,6 +13,7 @@
     "package:dir": "node scripts/package.js --dir"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@types/node": "^22.10.7",

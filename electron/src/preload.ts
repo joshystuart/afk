@@ -8,4 +8,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     chrome: process.versions.chrome,
   },
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
+  updateTrayState: (state: unknown) =>
+    ipcRenderer.send('tray:update-state', state),
 });

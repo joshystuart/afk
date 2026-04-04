@@ -9,10 +9,16 @@ import {
   setIsQuitting,
   destroyTray,
   updateTrayState,
+  isTrayState,
 } from './tray';
 
-ipcMain.on('tray:update-state', (_event, state) => {
-  updateTrayState(state as Parameters<typeof updateTrayState>[0]);
+ipcMain.on('tray:update-state', (_event, state: unknown) => {
+  if (!isTrayState(state)) {
+    console.warn('Ignored invalid tray state update from renderer.');
+    return;
+  }
+
+  updateTrayState(state);
 });
 
 app.on('window-all-closed', () => {
@@ -42,7 +48,10 @@ app.whenReady().then(async () => {
 
   try {
     await startServer();
-    getMainWindow()?.loadURL(`http://localhost:${SERVER_PORT}`);
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      await mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
+    }
   } catch (error) {
     console.error('Failed to start server:', error);
     const window = getMainWindow();

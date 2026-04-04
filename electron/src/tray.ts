@@ -1,4 +1,5 @@
-import type { MenuItemConstructorOptions } from 'electron';
+import { existsSync } from 'node:fs';
+import type { BrowserWindow, MenuItemConstructorOptions } from 'electron';
 import { Tray, Menu, nativeImage, app } from 'electron';
 import { getResourcePath, SERVER_PORT } from './paths';
 import { getMainWindow, createWindow } from './window';
@@ -27,6 +28,9 @@ const EMPTY_TRAY_STATE: TrayState = {
   upcomingJobs: [],
 };
 
+const TRAY_ICON_SIZE = { width: 18, height: 18 };
+const MAX_TRAY_LINK_ITEMS = 5;
+
 let trayState: TrayState = EMPTY_TRAY_STATE;
 
 export function getIsQuitting(): boolean {
@@ -38,12 +42,7 @@ export function setIsQuitting(value: boolean): void {
 }
 
 export function createTray(): void {
-  const iconPath = getResourcePath('electron', 'build', 'tray-icon.png');
-  const icon = nativeImage
-    .createFromPath(iconPath)
-    .resize({ width: 18, height: 18 });
-
-  tray = new Tray(icon);
+  tray = new Tray(createTrayIcon());
   tray.setToolTip('AFK');
   rebuildTrayMenu();
 }
@@ -51,6 +50,21 @@ export function createTray(): void {
 export function updateTrayState(nextState: TrayState): void {
   trayState = nextState;
   rebuildTrayMenu();
+}
+
+export function isTrayState(value: unknown): value is TrayState {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const state = value as Partial<TrayState>;
+
+  return (
+    typeof state.isAuthenticated === 'boolean' &&
+    isTrayMenuLinkArray(state.runningSessions) &&
+    isTrayMenuLinkArray(state.activeJobs) &&
+    isTrayMenuLinkArray(state.upcomingJobs)
+  );
 }
 
 function showWindow(): void {
@@ -63,7 +77,7 @@ function openRoute(route = '/dashboard'): void {
     if (isServerRunning()) {
       const targetUrl = `http://localhost:${SERVER_PORT}${route}`;
       if (window.webContents.getURL() !== targetUrl) {
-        void window.loadURL(targetUrl);
+        loadWindowUrl(window, targetUrl);
       }
     }
     window.show();
@@ -75,7 +89,7 @@ function openRoute(route = '/dashboard'): void {
     createWindow();
     const nextWindow = getMainWindow();
     if (nextWindow) {
-      void nextWindow.loadURL(`http://localhost:${SERVER_PORT}${route}`);
+      loadWindowUrl(nextWindow, `http://localhost:${SERVER_PORT}${route}`);
       nextWindow.show();
       nextWindow.focus();
     }
@@ -197,7 +211,7 @@ function buildLinkSubmenu(
   }
 
   return [
-    ...links.slice(0, 5).map((link) => ({
+    ...links.slice(0, MAX_TRAY_LINK_ITEMS).map((link) => ({
       label: link.label,
       click: () => openRoute(link.route),
     })),
@@ -215,4 +229,54 @@ export function destroyTray(): void {
     tray = null;
   }
   trayState = EMPTY_TRAY_STATE;
+}
+
+function createTrayIcon() {
+  const trayIconPath = getResourcePath('electron', 'build', 'tray-icon.png');
+  const fallbackIconPath = getResourcePath('electron', 'build', 'icon.png');
+
+  for (const iconPath of [trayIconPath, fallbackIconPath]) {
+    if (!existsSync(iconPath)) {
+      continue;
+    }
+
+    const icon = nativeImage.createFromPath(iconPath).resize(TRAY_ICON_SIZE);
+    if (!icon.isEmpty()) {
+      if (iconPath !== trayIconPath) {
+        console.warn(
+          `Tray icon not found at "${trayIconPath}". Falling back to "${iconPath}".`,
+        );
+      }
+      return icon;
+    }
+  }
+
+  console.error(
+    `Tray icon assets were not found at "${trayIconPath}" or "${fallbackIconPath}".`,
+  );
+  return nativeImage.createEmpty();
+}
+
+function isTrayMenuLink(value: unknown): value is TrayMenuLink {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const link = value as Partial<TrayMenuLink>;
+
+  return (
+    typeof link.id === 'string' &&
+    typeof link.label === 'string' &&
+    typeof link.route === 'string'
+  );
+}
+
+function isTrayMenuLinkArray(value: unknown): value is TrayMenuLink[] {
+  return Array.isArray(value) && value.every(isTrayMenuLink);
+}
+
+function loadWindowUrl(window: BrowserWindow, targetUrl: string): void {
+  void window.loadURL(targetUrl).catch((error: unknown) => {
+    console.error(`Failed to load tray route "${targetUrl}":`, error);
+  });
 }

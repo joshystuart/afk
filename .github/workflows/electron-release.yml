@@ -148,3 +148,5 @@ jobs:
           files: |
             electron/release/*.dmg
             electron/release/*.zip
+            electron/release/*.yml
+            electron/release/*.yaml

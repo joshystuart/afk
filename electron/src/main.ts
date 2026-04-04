@@ -11,6 +11,12 @@ import {
   updateTrayState,
   isTrayState,
 } from './tray';
+import {
+  initAutoUpdater,
+  checkForUpdates,
+  quitAndInstall,
+  getUpdateState,
+} from './updater';
 
 ipcMain.on('tray:update-state', (_event, state: unknown) => {
   if (!isTrayState(state)) {
@@ -19,6 +25,18 @@ ipcMain.on('tray:update-state', (_event, state: unknown) => {
   }
 
   updateTrayState(state);
+});
+
+ipcMain.handle('updater:check', () => {
+  checkForUpdates();
+});
+
+ipcMain.handle('updater:install', () => {
+  quitAndInstall();
+});
+
+ipcMain.handle('updater:get-state', () => {
+  return getUpdateState();
 });
 
 app.on('window-all-closed', () => {
@@ -42,6 +60,7 @@ app.on('activate', () => {
 app.whenReady().then(async () => {
   createTray();
   createWindow();
+  initAutoUpdater();
 
   setLoadingStatus(getMainWindow(), 'Starting server\u2026');
   configureElectronEnvironment();

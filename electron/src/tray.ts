@@ -4,6 +4,7 @@ import { Tray, Menu, nativeImage, app } from 'electron';
 import { getResourcePath, SERVER_PORT } from './paths';
 import { getMainWindow, createWindow } from './window';
 import { isServerRunning } from './server';
+import { getUpdateState, checkForUpdates, quitAndInstall } from './updater';
 
 let tray: Tray | null = null;
 let isQuitting = false;
@@ -99,7 +100,7 @@ function openRoute(route = '/dashboard'): void {
   createWindow();
 }
 
-function rebuildTrayMenu(): void {
+export function rebuildTrayMenu(): void {
   if (!tray) {
     return;
   }
@@ -147,6 +148,8 @@ function buildMenuTemplate(): MenuItemConstructorOptions[] {
 
   template.push(
     { type: 'separator' },
+    ...buildUpdateMenuItems(),
+    { type: 'separator' },
     {
       label: 'Settings',
       click: () => openRoute('/settings'),
@@ -161,6 +164,50 @@ function buildMenuTemplate(): MenuItemConstructorOptions[] {
   );
 
   return template;
+}
+
+function buildUpdateMenuItems(): MenuItemConstructorOptions[] {
+  const state = getUpdateState();
+
+  switch (state.status) {
+    case 'checking':
+      return [{ label: 'Checking for Updates...', enabled: false }];
+    case 'downloading':
+      return [
+        {
+          label: `Downloading Update... ${state.progress ?? 0}%`,
+          enabled: false,
+        },
+      ];
+    case 'downloaded':
+      return [
+        {
+          label: `Restart to Update (v${state.version})`,
+          click: () => quitAndInstall(),
+        },
+      ];
+    case 'available':
+      return [
+        {
+          label: `Update Available (v${state.version})`,
+          enabled: false,
+        },
+      ];
+    case 'error':
+      return [
+        {
+          label: 'Check for Updates',
+          click: () => checkForUpdates(),
+        },
+      ];
+    default:
+      return [
+        {
+          label: 'Check for Updates',
+          click: () => checkForUpdates(),
+        },
+      ];
+  }
 }
 
 function buildRunningSessionsSubmenu(): MenuItemConstructorOptions[] {

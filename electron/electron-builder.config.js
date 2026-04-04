@@ -42,7 +42,11 @@ module.exports = {
       to: 'electron/build/tray-icon.png',
     },
   ],
-  publish: null,
+  publish: {
+    provider: 'github',
+    owner: 'joshystuart',
+    repo: 'afk',
+  },
   afterPack: './scripts/afterPack.js',
   afterAllArtifactBuild: './scripts/afterAllArtifactBuild.js',
   mac: {

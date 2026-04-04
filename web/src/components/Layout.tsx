@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Drawer,
@@ -20,8 +20,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '../utils/constants';
 import { useAuthStore } from '../stores/auth.store';
 import { useSession } from '../hooks/useSession';
+import { useScheduledJobs } from '../hooks/useScheduledJobs';
 import { useIsElectronMac } from '../hooks/useElectron';
-import { SessionStatus } from '../api/types';
+import { ScheduledJobRunStatus, SessionStatus } from '../api/types';
 import { afkColors } from '../themes/afk';
 import { DockerStatusBanner } from './DockerStatusBanner';
 
@@ -33,6 +34,24 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+function formatNextRunLabel(nextRunAt?: string): string {
+  if (!nextRunAt) {
+    return 'No schedule';
+  }
+
+  const nextRun = new Date(nextRunAt);
+  if (Number.isNaN(nextRun.getTime())) {
+    return 'Upcoming';
+  }
+
+  return nextRun.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const location = useLocation();
@@ -40,6 +59,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { logout } = useAuthStore();
   const { sessions } = useSession();
+  const { jobs } = useScheduledJobs();
   const isElectronMac = useIsElectronMac();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -56,6 +76,67 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const runningSessions = sessions.filter(
     (s) => s.status === SessionStatus.RUNNING,
   );
+
+  useEffect(() => {
+    if (!window.electronAPI?.updateTrayState) {
+      return;
+    }
+
+    const runningSessionLinks = sessions
+      .filter((session) => session.status === SessionStatus.RUNNING)
+      .map((session) => ({
+        id: session.id,
+        label: session.name || session.id.slice(0, 8),
+        route: ROUTES.getSessionDetails(session.id),
+      }));
+
+    const activeJobs = jobs
+      .filter(
+        (job) =>
+          job.currentRun?.status === ScheduledJobRunStatus.RUNNING ||
+          job.currentRun?.status === ScheduledJobRunStatus.PENDING,
+      )
+      .map((job) => ({
+        id: job.id,
+        label: job.name,
+        route: ROUTES.getScheduledJobDetails(job.id),
+      }));
+
+    const upcomingJobs = jobs
+      .filter((job) => job.enabled && !!job.nextRunAt)
+      .sort(
+        (left, right) =>
+          new Date(left.nextRunAt!).getTime() -
+          new Date(right.nextRunAt!).getTime(),
+      )
+      .map((job) => ({
+        id: job.id,
+        label: `${job.name} - ${formatNextRunLabel(job.nextRunAt)}`,
+        route: ROUTES.getScheduledJobDetails(job.id),
+      }));
+
+    window.electronAPI.updateTrayState({
+      isAuthenticated: true,
+      runningSessions: runningSessionLinks,
+      activeJobs,
+      upcomingJobs,
+    });
+  }, [jobs, sessions]);
+
+  useEffect(() => {
+    if (!window.electronAPI?.updateTrayState) {
+      return;
+    }
+
+    return () => {
+      window.electronAPI?.updateTrayState({
+        isAuthenticated: false,
+        runningSessions: [],
+        activeJobs: [],
+        upcomingJobs: [],
+      });
+    };
+  }, []);
 
   const menuItems = [
     {

@@ -1,10 +1,19 @@
-import { app, dialog } from 'electron';
+import { app, dialog, ipcMain } from 'electron';
 import { SERVER_PORT } from './paths';
 import { setLoadingStatus } from './loading-screen';
 import { configureElectronEnvironment } from './environment';
 import { startServer, stopServer, isServerRunning } from './server';
 import { createWindow, getMainWindow } from './window';
-import { createTray, setIsQuitting, destroyTray } from './tray';
+import {
+  createTray,
+  setIsQuitting,
+  destroyTray,
+  updateTrayState,
+} from './tray';
+
+ipcMain.on('tray:update-state', (_event, state) => {
+  updateTrayState(state as Parameters<typeof updateTrayState>[0]);
+});
 
 app.on('window-all-closed', () => {
   // On macOS, keep the app alive in the tray when all windows are closed.

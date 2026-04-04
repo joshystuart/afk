@@ -37,6 +37,10 @@ module.exports = {
       from: 'build/icon.png',
       to: 'electron/build/icon.png',
     },
+    {
+      from: 'build/tray-icon.png',
+      to: 'electron/build/tray-icon.png',
+    },
   ],
   publish: null,
   afterPack: './scripts/afterPack.js',

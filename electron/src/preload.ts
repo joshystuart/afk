@@ -1,4 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import type { UpdateState } from './updater';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
@@ -14,8 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     checkForUpdates: () => ipcRenderer.invoke('updater:check'),
     install: () => ipcRenderer.invoke('updater:install'),
     getState: () => ipcRenderer.invoke('updater:get-state'),
-    onStateChanged: (callback: (state: unknown) => void) => {
-      const handler = (_event: unknown, state: unknown) => callback(state);
+    onStateChanged: (callback: (state: UpdateState) => void) => {
+      const handler = (_event: IpcRendererEvent, state: UpdateState) =>
+        callback(state);
       ipcRenderer.on('updater:state-changed', handler);
       return () => {
         ipcRenderer.removeListener('updater:state-changed', handler);

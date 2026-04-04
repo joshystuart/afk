@@ -10,4 +10,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   updateTrayState: (state: unknown) =>
     ipcRenderer.send('tray:update-state', state),
+  updater: {
+    checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+    install: () => ipcRenderer.invoke('updater:install'),
+    getState: () => ipcRenderer.invoke('updater:get-state'),
+    onStateChanged: (callback: (state: unknown) => void) => {
+      const handler = (_event: unknown, state: unknown) => callback(state);
+      ipcRenderer.on('updater:state-changed', handler);
+      return () => {
+        ipcRenderer.removeListener('updater:state-changed', handler);
+      };
+    },
+  },
 });

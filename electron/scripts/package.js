@@ -14,10 +14,14 @@ try {
   execSync('npm prune --omit=dev', { cwd: serverDir, stdio: 'inherit' });
 
   console.log(`[3/4] Packaging with electron-builder...`);
-  execSync(`npx electron-builder --config electron-builder.config.js ${args}`, {
-    cwd: electronDir,
-    stdio: 'inherit',
-  });
+  const publishFlag = args.includes('--publish') ? '' : '--publish never';
+  execSync(
+    `npx electron-builder --config electron-builder.config.js ${publishFlag} ${args}`,
+    {
+      cwd: electronDir,
+      stdio: 'inherit',
+    },
+  );
 } finally {
   console.log('[4/4] Restoring server devDependencies...');
   execSync('npm install', { cwd: serverDir, stdio: 'inherit' });

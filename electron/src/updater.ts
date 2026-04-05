@@ -95,8 +95,7 @@ export function checkForUpdates(): void {
       );
       setTimeout(() => checkForUpdates(), retryDelay);
     } else {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       updateState = {
         status: 'error',
         error: `Update check failed after ${MAX_UPDATE_RETRIES} attempts: ${errorMessage}`,
@@ -121,9 +120,8 @@ function notifyRenderer(): void {
 
 function promptInstall(version: string): void {
   const window = getMainWindow();
-  const parent: BrowserWindow | undefined = window && !window.isDestroyed()
-    ? window
-    : undefined;
+  const parent: BrowserWindow | undefined =
+    window && !window.isDestroyed() ? window : undefined;
 
   dialog
     .showMessageBox({

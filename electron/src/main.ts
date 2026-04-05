@@ -39,6 +39,8 @@ ipcMain.handle('updater:get-state', () => {
   return getUpdateState();
 });
 
+ipcMain.handle('app:get-version', () => app.getVersion());
+
 app.on('window-all-closed', () => {
   // On macOS, keep the app alive in the tray when all windows are closed.
   // On other platforms, quit as usual.

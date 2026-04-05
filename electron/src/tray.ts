@@ -151,6 +151,14 @@ function buildMenuTemplate(): MenuItemConstructorOptions[] {
     ...buildUpdateMenuItems(),
     { type: 'separator' },
     {
+      label: `Version ${app.getVersion()}`,
+      enabled: false,
+    },
+    {
+      label: 'About',
+      click: () => openRoute('/settings?tab=about'),
+    },
+    {
       label: 'Settings',
       click: () => openRoute('/settings'),
     },

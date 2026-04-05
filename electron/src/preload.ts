@@ -3,6 +3,7 @@ import type { UpdateState } from './updater';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
+  getAppVersion: () => ipcRenderer.invoke('app:get-version') as Promise<string>,
   versions: {
     electron: process.versions.electron,
     node: process.versions.node,

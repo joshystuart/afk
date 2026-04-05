@@ -7,8 +7,9 @@ import { GeneralSettings } from './settings/GeneralSettings';
 import { GitSettings } from './settings/GitSettings';
 import { DockerSettings } from './settings/DockerSettings';
 import { DataManagementSettings } from './settings/DataManagementSettings';
+import { AboutSettings } from './settings/AboutSettings';
 
-const TAB_KEYS = ['general', 'git', 'docker', 'data'] as const;
+const TAB_KEYS = ['general', 'git', 'docker', 'data', 'about'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const Settings: React.FC = () => {
@@ -89,12 +90,14 @@ const Settings: React.FC = () => {
         <Tab label="Git" />
         <Tab label="Docker" />
         <Tab label="Data" />
+        <Tab label="About" />
       </Tabs>
 
       {activeTab === 0 && <GeneralSettings />}
       {activeTab === 1 && <GitSettings />}
       {activeTab === 2 && <DockerSettings />}
       {activeTab === 3 && <DataManagementSettings />}
+      {activeTab === 4 && <AboutSettings />}
     </Box>
   );
 };

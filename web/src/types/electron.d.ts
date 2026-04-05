@@ -11,7 +11,7 @@ interface TrayState {
   upcomingJobs: TrayMenuLink[];
 }
 
-type UpdateStatus =
+export type UpdateStatus =
   | 'idle'
   | 'checking'
   | 'available'
@@ -20,7 +20,7 @@ type UpdateStatus =
   | 'downloaded'
   | 'error';
 
-interface UpdateState {
+export interface UpdateState {
   status: UpdateStatus;
   version?: string;
   error?: string;
@@ -36,6 +36,7 @@ interface ElectronUpdaterAPI {
 
 interface ElectronAPI {
   platform: string;
+  getAppVersion: () => Promise<string>;
   versions: { electron: string; node: string; chrome: string };
   openExternal: (url: string) => Promise<void>;
   updateTrayState: (state: TrayState) => void;
@@ -47,5 +48,3 @@ declare global {
     electronAPI?: ElectronAPI;
   }
 }
-
-export {};

@@ -18,6 +18,7 @@ export type UpdateStatus =
   | 'not-available'
   | 'downloading'
   | 'downloaded'
+  | 'restarting'
   | 'error';
 
 export interface UpdateState {

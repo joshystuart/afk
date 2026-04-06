@@ -29,7 +29,6 @@ const EMPTY_TRAY_STATE: TrayState = {
   upcomingJobs: [],
 };
 
-const TRAY_ICON_SIZE = { width: 18, height: 18 };
 const MAX_TRAY_LINK_ITEMS = 5;
 
 let trayState: TrayState = EMPTY_TRAY_STATE;
@@ -194,6 +193,8 @@ function buildUpdateMenuItems(): MenuItemConstructorOptions[] {
           click: () => quitAndInstall(),
         },
       ];
+    case 'restarting':
+      return [{ label: 'Restarting...', enabled: false }];
     case 'available':
       return [
         {
@@ -295,13 +296,14 @@ function createTrayIcon() {
       continue;
     }
 
-    const icon = nativeImage.createFromPath(iconPath).resize(TRAY_ICON_SIZE);
+    const icon = nativeImage.createFromPath(iconPath);
     if (!icon.isEmpty()) {
       if (iconPath !== trayIconPath) {
         console.warn(
           `Tray icon not found at "${trayIconPath}". Falling back to "${iconPath}".`,
         );
       }
+      icon.setTemplateImage(true);
       return icon;
     }
   }

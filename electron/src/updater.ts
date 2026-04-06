@@ -1,7 +1,7 @@
 import { autoUpdater } from 'electron-updater';
-import { app, dialog, BrowserWindow } from 'electron';
-import { getMainWindow } from './window';
-import { rebuildTrayMenu } from './tray';
+import { app } from 'electron';
+import { getMainWindow, setUpdateInstalling } from './window';
+import { rebuildTrayMenu, setIsQuitting } from './tray';
 
 export type UpdateStatus =
   | 'idle'
@@ -10,6 +10,7 @@ export type UpdateStatus =
   | 'not-available'
   | 'downloading'
   | 'downloaded'
+  | 'restarting'
   | 'error';
 
 export interface UpdateState {
@@ -65,12 +66,17 @@ export function initAutoUpdater(): void {
   autoUpdater.on('update-downloaded', (info) => {
     updateState = { status: 'downloaded', version: info.version };
     notifyRenderer();
-    promptInstall(info.version);
   });
 
   autoUpdater.on('error', (err) => {
+    const wasRestarting = updateState.status === 'restarting';
     updateState = { status: 'error', error: err.message };
     notifyRenderer();
+
+    if (wasRestarting) {
+      setUpdateInstalling(false);
+      setIsQuitting(false);
+    }
   });
 
   // Initial check after a short delay to let the app finish starting
@@ -106,8 +112,18 @@ export function checkForUpdates(): void {
   });
 }
 
+const OVERLAY_RENDER_DELAY_MS = 500;
+
 export function quitAndInstall(): void {
-  autoUpdater.quitAndInstall();
+  updateState = { status: 'restarting', version: updateState.version };
+  notifyRenderer();
+
+  setUpdateInstalling(true);
+
+  setTimeout(() => {
+    setIsQuitting(true);
+    autoUpdater.quitAndInstall(false, true);
+  }, OVERLAY_RENDER_DELAY_MS);
 }
 
 function notifyRenderer(): void {
@@ -116,27 +132,4 @@ function notifyRenderer(): void {
   if (window && !window.isDestroyed()) {
     window.webContents.send('updater:state-changed', updateState);
   }
-}
-
-function promptInstall(version: string): void {
-  const window = getMainWindow();
-  const parent: BrowserWindow | undefined =
-    window && !window.isDestroyed() ? window : undefined;
-
-  dialog
-    .showMessageBox({
-      ...(parent ? { parent } : {}),
-      type: 'info',
-      title: 'Update Ready',
-      message: `AFK v${version} has been downloaded.`,
-      detail: 'Restart now to apply the update?',
-      buttons: ['Restart', 'Later'],
-      defaultId: 0,
-      cancelId: 1,
-    })
-    .then(({ response }) => {
-      if (response === 0) {
-        quitAndInstall();
-      }
-    });
 }

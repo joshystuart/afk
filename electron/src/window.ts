@@ -5,6 +5,7 @@ import { getLoadingURL } from './loading-screen';
 import { getIsQuitting } from './tray';
 
 let mainWindow: BrowserWindow | null = null;
+let updateInstalling = false;
 
 ipcMain.handle('open-external', (_event, url: string) => {
   return shell.openExternal(url);
@@ -74,6 +75,10 @@ export function createWindow(): void {
   }
 
   mainWindow.on('close', (event) => {
+    if (updateInstalling) {
+      event.preventDefault();
+      return;
+    }
     if (!getIsQuitting()) {
       event.preventDefault();
       mainWindow?.hide();
@@ -88,4 +93,11 @@ export function createWindow(): void {
 
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow;
+}
+
+export function setUpdateInstalling(value: boolean): void {
+  updateInstalling = value;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setClosable(!value);
+  }
 }

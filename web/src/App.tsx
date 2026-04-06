@@ -27,6 +27,10 @@ import { Layout } from './components/Layout';
 // AFK Theme
 import { afkTheme } from './themes/afk';
 
+// Update UX
+import { UpdateStateProvider } from './hooks/useUpdateState';
+import { UpdateOverlay } from './components/UpdateOverlay';
+
 // Create query client
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -150,7 +154,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={afkTheme}>
         <CssBaseline />
-        <AppContent />
+        <UpdateStateProvider>
+          <UpdateOverlay />
+          <AppContent />
+        </UpdateStateProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

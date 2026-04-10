@@ -1,7 +1,7 @@
 import { autoUpdater } from 'electron-updater';
-import { app, dialog, BrowserWindow } from 'electron';
-import { getMainWindow } from './window';
-import { rebuildTrayMenu } from './tray';
+import { app } from 'electron';
+import { getMainWindow, setUpdateInstalling } from './window';
+import { rebuildTrayMenu, setIsQuitting } from './tray';
 
 export type UpdateStatus =
   | 'idle'
@@ -10,6 +10,7 @@ export type UpdateStatus =
   | 'not-available'
   | 'downloading'
   | 'downloaded'
+  | 'restarting'
   | 'error';
 
 export interface UpdateState {
@@ -65,12 +66,22 @@ export function initAutoUpdater(): void {
   autoUpdater.on('update-downloaded', (info) => {
     updateState = { status: 'downloaded', version: info.version };
     notifyRenderer();
-    promptInstall(info.version);
   });
 
   autoUpdater.on('error', (err) => {
-    updateState = { status: 'error', error: err.message };
+    console.error('Auto-updater error:', err);
+    const wasRestarting = updateState.status === 'restarting';
+    updateState = {
+      status: 'error',
+      error: sanitizeErrorMessage(err.message),
+    };
     notifyRenderer();
+
+    if (wasRestarting) {
+      restartScheduled = false;
+      setUpdateInstalling(false);
+      setIsQuitting(false);
+    }
   });
 
   // Initial check after a short delay to let the app finish starting
@@ -98,7 +109,9 @@ export function checkForUpdates(): void {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       updateState = {
         status: 'error',
-        error: `Update check failed after ${MAX_UPDATE_RETRIES} attempts: ${errorMessage}`,
+        error: sanitizeErrorMessage(
+          `Update check failed after ${MAX_UPDATE_RETRIES} attempts: ${errorMessage}`,
+        ),
       };
       notifyRenderer();
       updateCheckRetries = 0; // Reset for next periodic check
@@ -106,8 +119,27 @@ export function checkForUpdates(): void {
   });
 }
 
+// Gives the renderer enough time to paint the "restarting" overlay before the
+// main process triggers the quit-and-install sequence.
+const OVERLAY_RENDER_DELAY_MS = 500;
+
+let restartScheduled = false;
+
 export function quitAndInstall(): void {
-  autoUpdater.quitAndInstall();
+  if (restartScheduled) {
+    return;
+  }
+  restartScheduled = true;
+
+  updateState = { status: 'restarting', version: updateState.version };
+  notifyRenderer();
+
+  setUpdateInstalling(true);
+
+  setTimeout(() => {
+    setIsQuitting(true);
+    autoUpdater.quitAndInstall(false, true);
+  }, OVERLAY_RENDER_DELAY_MS);
 }
 
 function notifyRenderer(): void {
@@ -118,25 +150,12 @@ function notifyRenderer(): void {
   }
 }
 
-function promptInstall(version: string): void {
-  const window = getMainWindow();
-  const parent: BrowserWindow | undefined =
-    window && !window.isDestroyed() ? window : undefined;
+const SENSITIVE_PATTERNS = [/\/Users\/[^\s/]+/gi, /\/home\/[^\s/]+/gi];
 
-  dialog
-    .showMessageBox({
-      ...(parent ? { parent } : {}),
-      type: 'info',
-      title: 'Update Ready',
-      message: `AFK v${version} has been downloaded.`,
-      detail: 'Restart now to apply the update?',
-      buttons: ['Restart', 'Later'],
-      defaultId: 0,
-      cancelId: 1,
-    })
-    .then(({ response }) => {
-      if (response === 0) {
-        quitAndInstall();
-      }
-    });
+function sanitizeErrorMessage(message: string): string {
+  let sanitized = message;
+  for (const pattern of SENSITIVE_PATTERNS) {
+    sanitized = sanitized.replace(pattern, '<path>');
+  }
+  return sanitized;
 }

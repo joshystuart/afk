@@ -41,6 +41,10 @@ module.exports = {
       from: 'build/tray-icon.png',
       to: 'electron/build/tray-icon.png',
     },
+    {
+      from: 'build/tray-icon@2x.png',
+      to: 'electron/build/tray-icon@2x.png',
+    },
   ],
   publish: {
     provider: 'github',
@@ -55,11 +59,11 @@ module.exports = {
     target: [
       {
         target: 'dmg',
-        arch: ['arm64', 'x64'],
+        arch: ['arm64'],
       },
       {
         target: 'zip',
-        arch: ['arm64', 'x64'],
+        arch: ['arm64'],
       },
     ],
     darkModeSupport: true,

@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { apiClient } from '../../api/client';
 import { afkColors } from '../../themes/afk';
-import type { UpdateState } from '../../types/electron';
+import { useUpdateState } from '../../hooks/useUpdateState';
 
 const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
   <Box
@@ -35,7 +35,7 @@ const AboutSettings: React.FC = () => {
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverLoading, setServerLoading] = useState(true);
 
-  const [updateState, setUpdateState] = useState<UpdateState | null>(null);
+  const updateState = useUpdateState();
 
   useEffect(() => {
     const api = window.electronAPI;
@@ -70,24 +70,12 @@ const AboutSettings: React.FC = () => {
       .finally(() => setServerLoading(false));
   }, []);
 
-  useEffect(() => {
-    const api = window.electronAPI?.updater;
-    if (!api) {
-      return;
-    }
-
-    void api.getState().then(setUpdateState);
-
-    const unsubscribe = api.onStateChanged(setUpdateState);
-    return unsubscribe;
-  }, []);
-
   const handleCheckForUpdates = useCallback(() => {
-    void window.electronAPI?.updater?.checkForUpdates();
+    window.electronAPI?.updater?.checkForUpdates().catch(console.error);
   }, []);
 
   const handleInstallUpdate = useCallback(() => {
-    void window.electronAPI?.updater?.install();
+    window.electronAPI?.updater?.install().catch(console.error);
   }, []);
 
   const renderUpdaterSection = () => {
@@ -100,9 +88,7 @@ const AboutSettings: React.FC = () => {
       );
     }
 
-    const state = updateState ?? { status: 'idle' as const };
-
-    switch (state.status) {
+    switch (updateState.status) {
       case 'checking':
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -115,7 +101,7 @@ const AboutSettings: React.FC = () => {
       case 'downloading':
         return (
           <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
-            Downloading update… {state.progress ?? 0}%
+            Downloading update… {updateState.progress ?? 0}%
           </Typography>
         );
       case 'downloaded':
@@ -126,22 +112,33 @@ const AboutSettings: React.FC = () => {
             </Typography>
             <Button variant="contained" onClick={handleInstallUpdate}>
               Restart to update
-              {state.version ? ` (v${state.version})` : ''}
+              {updateState.version ? ` (v${updateState.version})` : ''}
             </Button>
+          </Box>
+        );
+      case 'restarting':
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <CircularProgress size={16} />
+            <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
+              Restarting to apply update
+              {updateState.version ? ` (v${updateState.version})` : ''}…
+            </Typography>
           </Box>
         );
       case 'available':
         return (
           <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
-            Update available{state.version ? ` (v${state.version})` : ''}.
+            Update available
+            {updateState.version ? ` (v${updateState.version})` : ''}.
           </Typography>
         );
       case 'error':
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {state.error && (
+            {updateState.error && (
               <Alert severity="warning" sx={{ py: 0.5 }}>
-                {state.error}
+                {updateState.error}
               </Alert>
             )}
             <Button variant="outlined" onClick={handleCheckForUpdates}>
@@ -153,7 +150,7 @@ const AboutSettings: React.FC = () => {
         return (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Typography variant="body2" sx={{ color: afkColors.textSecondary }}>
-              {state.status === 'not-available'
+              {updateState.status === 'not-available'
                 ? 'You are on the latest version.'
                 : 'Check whether a newer version is available.'}
             </Typography>

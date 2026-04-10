@@ -7,6 +7,7 @@ import { ScheduledJob } from '../domain/scheduled-jobs/scheduled-job.entity';
 import { ScheduledJobRun } from '../domain/scheduled-jobs/scheduled-job-run.entity';
 import { ChatStreamChunk } from '../domain/chat/chat-stream-chunk.entity';
 import { ScheduledJobRunStreamChunk } from '../domain/scheduled-jobs/scheduled-job-run-stream-chunk.entity';
+import { AdminUser } from '../domain/admin-user/admin-user.entity';
 import { DatabaseConfig } from '../libs/config/database/database.config';
 
 export const typeormEntities = [
@@ -18,6 +19,7 @@ export const typeormEntities = [
   ScheduledJob,
   ScheduledJobRun,
   ScheduledJobRunStreamChunk,
+  AdminUser,
 ];
 
 export const createTypeOrmOptions = (

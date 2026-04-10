@@ -1,6 +1,7 @@
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  SETUP: '/setup',
   DASHBOARD: '/dashboard',
   CREATE_SESSION: '/sessions/create',
   SESSION_DETAILS: '/sessions/:id',

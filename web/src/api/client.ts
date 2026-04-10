@@ -24,9 +24,9 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response.data?.data || response.data,
   (error) => {
-    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    const isAuthRequest = error.config?.url?.includes('/auth/');
     if (
-      !isLoginRequest &&
+      !isAuthRequest &&
       (error.response?.status === 401 || error.response?.status === 403)
     ) {
       useAuthStore.getState().logout();

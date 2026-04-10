@@ -8,8 +8,9 @@ import { GitSettings } from './settings/GitSettings';
 import { DockerSettings } from './settings/DockerSettings';
 import { DataManagementSettings } from './settings/DataManagementSettings';
 import { AboutSettings } from './settings/AboutSettings';
+import { AccountSettings } from './settings/AccountSettings';
 
-const TAB_KEYS = ['general', 'git', 'docker', 'data', 'about'] as const;
+const TAB_KEYS = ['account', 'general', 'git', 'docker', 'data', 'about'] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 const Settings: React.FC = () => {
@@ -37,13 +38,14 @@ const Settings: React.FC = () => {
   }, [searchParams, setSearchParams, fetchSettings]);
 
   const tabParam = searchParams.get('tab') as TabKey | null;
+  const defaultTab: TabKey = 'general';
   const activeTab = TAB_KEYS.indexOf(
-    tabParam && TAB_KEYS.includes(tabParam) ? tabParam : 'general',
+    tabParam && TAB_KEYS.includes(tabParam) ? tabParam : defaultTab,
   );
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     const next = new URLSearchParams(searchParams);
-    if (newValue === 0) {
+    if (TAB_KEYS[newValue] === defaultTab) {
       next.delete('tab');
     } else {
       next.set('tab', TAB_KEYS[newValue]);
@@ -86,6 +88,7 @@ const Settings: React.FC = () => {
           '& .MuiTab-root': { minHeight: 36, py: 1 },
         }}
       >
+        <Tab label="Account" />
         <Tab label="General" />
         <Tab label="Git" />
         <Tab label="Docker" />
@@ -93,11 +96,12 @@ const Settings: React.FC = () => {
         <Tab label="About" />
       </Tabs>
 
-      {activeTab === 0 && <GeneralSettings />}
-      {activeTab === 1 && <GitSettings />}
-      {activeTab === 2 && <DockerSettings />}
-      {activeTab === 3 && <DataManagementSettings />}
-      {activeTab === 4 && <AboutSettings />}
+      {activeTab === 0 && <AccountSettings />}
+      {activeTab === 1 && <GeneralSettings />}
+      {activeTab === 2 && <GitSettings />}
+      {activeTab === 3 && <DockerSettings />}
+      {activeTab === 4 && <DataManagementSettings />}
+      {activeTab === 5 && <AboutSettings />}
     </Box>
   );
 };

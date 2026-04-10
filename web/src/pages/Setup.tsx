@@ -2,47 +2,59 @@ import React from 'react';
 import { Box, TextField, Typography, Alert } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, type LoginCredentials } from '../hooks/useAuth';
-import { useIsElectronMac } from '../hooks/useElectron';
 import { authApi } from '../api/auth.api';
+import { useAuthStore } from '../stores/auth.store';
+import { useIsElectronMac } from '../hooks/useElectron';
 import { ROUTES } from '../utils/constants';
 import { afkColors } from '../themes/afk';
 import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
 
-const Login: React.FC = () => {
+interface SetupFormData {
+  username: string;
+  password: string;
+  confirmPassword: string;
+}
+
+const Setup: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
-  const { login, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = React.useState(false);
   const navigate = useNavigate();
   const isElectronMac = useIsElectronMac();
-
-  React.useEffect(() => {
-    authApi.getSetupStatus().then(({ setupRequired }) => {
-      if (setupRequired) {
-        navigate(ROUTES.SETUP, { replace: true });
-      }
-    }).catch(() => {
-      // Ignore errors - server may not be reachable yet
-    });
-  }, [navigate]);
+  const loginStore = useAuthStore((s) => s.login);
 
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
-  } = useForm<LoginCredentials>({
+  } = useForm<SetupFormData>({
     defaultValues: {
       username: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
-  const onSubmit = async (data: LoginCredentials) => {
+  const password = watch('password');
+
+  const onSubmit = async (data: SetupFormData) => {
     try {
       setError(null);
-      await login(data);
+      setIsLoading(true);
+      const response = await authApi.setup({
+        username: data.username,
+        password: data.password,
+      });
+      loginStore(response.token, {
+        id: response.user.userId,
+        name: response.user.username,
+        email: `${response.user.username}@afk.local`,
+      });
       navigate(ROUTES.DASHBOARD);
-    } catch {
-      setError('Invalid credentials. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create admin account. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,7 +98,7 @@ const Login: React.FC = () => {
         }}
       />
 
-      {/* Login card */}
+      {/* Setup card */}
       <Box
         sx={{
           position: 'relative',
@@ -118,12 +130,23 @@ const Login: React.FC = () => {
           <Typography
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.875rem',
+              color: afkColors.textSecondary,
+              fontWeight: 500,
+              mb: 0.5,
+            }}
+          >
+            Getting Started
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.75rem',
               color: afkColors.textTertiary,
               fontWeight: 400,
             }}
           >
-            {'> containerized claude code sessions'}
+            Create your admin account
           </Typography>
         </Box>
 
@@ -183,6 +206,33 @@ const Login: React.FC = () => {
                 helperText={errors.password?.message}
                 disabled={isLoading}
                 sx={{
+                  mb: 1.5,
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: afkColors.background,
+                  },
+                }}
+              />
+            )}
+          />
+
+          <Controller
+            name="confirmPassword"
+            control={control}
+            rules={{
+              required: 'Please confirm your password',
+              validate: (value) =>
+                value === password || 'Passwords do not match',
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                fullWidth
+                placeholder="Confirm Password"
+                type="password"
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword?.message}
+                disabled={isLoading}
+                sx={{
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
                     bgcolor: afkColors.background,
@@ -202,7 +252,7 @@ const Login: React.FC = () => {
               fontWeight: 500,
             }}
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </PrimaryCtaButton>
         </Box>
       </Box>
@@ -210,4 +260,4 @@ const Login: React.FC = () => {
   );
 };
 
-export { Login };
+export { Setup };

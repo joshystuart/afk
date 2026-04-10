@@ -20,6 +20,7 @@ import { CreateScheduledJob } from './pages/CreateScheduledJob';
 import { ScheduledJobDetails } from './pages/ScheduledJobDetails';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
+import { Setup } from './pages/Setup';
 
 // Layout
 import { Layout } from './components/Layout';
@@ -58,6 +59,7 @@ const AppContent = () => {
       <Router>
         <Routes>
           <Route path={ROUTES.LOGIN} element={<Login />} />
+          <Route path={ROUTES.SETUP} element={<Setup />} />
           <Route
             path={ROUTES.HOME}
             element={<Navigate to={ROUTES.DASHBOARD} replace />}

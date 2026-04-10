@@ -1,6 +1,15 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  Logger,
+  Inject,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AppConfig } from '../config/app.config';
+import * as bcrypt from 'bcrypt';
+import { AdminUser } from '../../domain/admin-user/admin-user.entity';
+import { AdminUserRepository } from '../../domain/admin-user/admin-user.repository';
+import { ADMIN_USER_REPOSITORY } from '../../domain/admin-user/admin-user.tokens';
 
 export interface LoginCredentials {
   username: string;
@@ -19,19 +28,27 @@ export class AuthService {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly appConfig: AppConfig,
+    @Inject(ADMIN_USER_REPOSITORY)
+    private readonly adminUserRepository: AdminUserRepository,
   ) {}
 
   async login(
     credentials: LoginCredentials,
   ): Promise<{ token: string; user: AuthPayload }> {
     const { username, password } = credentials;
-    const { adminUser } = this.appConfig;
 
     this.logger.log(`Login attempt for username: ${username}`);
 
-    // Validate credentials against configured admin user
-    if (username !== adminUser.username || password !== adminUser.password) {
+    const adminUser = await this.adminUserRepository.get();
+    if (!adminUser) {
+      this.logger.warn('Login attempt but no admin user has been set up');
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (
+      username !== adminUser.username ||
+      !(await bcrypt.compare(password, adminUser.passwordHash))
+    ) {
       this.logger.warn(`Failed login attempt for username: ${username}`);
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -50,6 +67,66 @@ export class AuthService {
       token,
       user: payload,
     };
+  }
+
+  async setup(
+    username: string,
+    password: string,
+  ): Promise<{ token: string; user: AuthPayload }> {
+    const exists = await this.adminUserRepository.exists();
+    if (exists) {
+      throw new BadRequestException('Admin user already exists');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const adminUser = new AdminUser();
+    adminUser.username = username;
+    adminUser.passwordHash = passwordHash;
+    await this.adminUserRepository.save(adminUser);
+
+    this.logger.log(`Admin user created: ${username}`);
+
+    const payload: AuthPayload = {
+      userId: 'admin',
+      username,
+      isAdmin: true,
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    return {
+      token,
+      user: payload,
+    };
+  }
+
+  async updatePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const adminUser = await this.adminUserRepository.get();
+    if (!adminUser) {
+      throw new BadRequestException('No admin user exists');
+    }
+
+    const isValid = await bcrypt.compare(
+      currentPassword,
+      adminUser.passwordHash,
+    );
+    if (!isValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    adminUser.passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.adminUserRepository.save(adminUser);
+
+    this.logger.log('Admin user password updated');
+  }
+
+  async isSetupRequired(): Promise<boolean> {
+    const exists = await this.adminUserRepository.exists();
+    return !exists;
   }
 
   async validateToken(token: string): Promise<AuthPayload> {

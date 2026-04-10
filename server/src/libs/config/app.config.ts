@@ -2,7 +2,6 @@ import { IsNumber, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SessionConfig } from './session.config';
 import { LoggerConfig } from './logger.config';
-import { AdminUserConfig } from './admin-user.config';
 import { AuthConfig } from '../auth/auth.config';
 import { DatabaseConfig } from './database/database.config';
 
@@ -24,10 +23,6 @@ export class AppConfig {
   @ValidateNested()
   @Type(() => LoggerConfig)
   public readonly logger!: LoggerConfig;
-
-  @ValidateNested()
-  @Type(() => AdminUserConfig)
-  public readonly adminUser!: AdminUserConfig;
 
   @ValidateNested()
   @Type(() => AuthConfig)

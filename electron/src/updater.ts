@@ -69,11 +69,16 @@ export function initAutoUpdater(): void {
   });
 
   autoUpdater.on('error', (err) => {
+    console.error('Auto-updater error:', err);
     const wasRestarting = updateState.status === 'restarting';
-    updateState = { status: 'error', error: err.message };
+    updateState = {
+      status: 'error',
+      error: sanitizeErrorMessage(err.message),
+    };
     notifyRenderer();
 
     if (wasRestarting) {
+      restartScheduled = false;
       setUpdateInstalling(false);
       setIsQuitting(false);
     }
@@ -104,7 +109,9 @@ export function checkForUpdates(): void {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       updateState = {
         status: 'error',
-        error: `Update check failed after ${MAX_UPDATE_RETRIES} attempts: ${errorMessage}`,
+        error: sanitizeErrorMessage(
+          `Update check failed after ${MAX_UPDATE_RETRIES} attempts: ${errorMessage}`,
+        ),
       };
       notifyRenderer();
       updateCheckRetries = 0; // Reset for next periodic check
@@ -112,9 +119,18 @@ export function checkForUpdates(): void {
   });
 }
 
+// Gives the renderer enough time to paint the "restarting" overlay before the
+// main process triggers the quit-and-install sequence.
 const OVERLAY_RENDER_DELAY_MS = 500;
 
+let restartScheduled = false;
+
 export function quitAndInstall(): void {
+  if (restartScheduled) {
+    return;
+  }
+  restartScheduled = true;
+
   updateState = { status: 'restarting', version: updateState.version };
   notifyRenderer();
 
@@ -132,4 +148,14 @@ function notifyRenderer(): void {
   if (window && !window.isDestroyed()) {
     window.webContents.send('updater:state-changed', updateState);
   }
+}
+
+const SENSITIVE_PATTERNS = [/\/Users\/[^\s/]+/gi, /\/home\/[^\s/]+/gi];
+
+function sanitizeErrorMessage(message: string): string {
+  let sanitized = message;
+  for (const pattern of SENSITIVE_PATTERNS) {
+    sanitized = sanitized.replace(pattern, '<path>');
+  }
+  return sanitized;
 }

@@ -16,15 +16,29 @@ export const UpdateStateProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    void api.getState().then(setState);
+    let unmounted = false;
 
-    return api.onStateChanged(setState);
+    api
+      .getState()
+      .then((s) => {
+        if (!unmounted) setState(s);
+      })
+      .catch(console.error);
+
+    const unsubscribe = api.onStateChanged((s) => {
+      if (!unmounted) setState(s);
+    });
+
+    return () => {
+      unmounted = true;
+      unsubscribe();
+    };
   }, []);
 
-  return React.createElement(
-    UpdateStateContext.Provider,
-    { value: state },
-    children,
+  return (
+    <UpdateStateContext.Provider value={state}>
+      {children}
+    </UpdateStateContext.Provider>
   );
 };
 

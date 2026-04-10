@@ -3,7 +3,29 @@ import { Box, Typography, CircularProgress } from '@mui/material';
 import { afkColors } from '../themes/afk';
 import { useUpdateState } from '../hooks/useUpdateState';
 
-const UpdateOverlay: React.FC = () => {
+class UpdateOverlayErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo): void {
+    console.error('UpdateOverlay crashed:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
+const UpdateOverlayInner: React.FC = () => {
   const state = useUpdateState();
 
   if (state.status !== 'restarting') {
@@ -61,5 +83,11 @@ const UpdateOverlay: React.FC = () => {
     </Box>
   );
 };
+
+const UpdateOverlay: React.FC = () => (
+  <UpdateOverlayErrorBoundary>
+    <UpdateOverlayInner />
+  </UpdateOverlayErrorBoundary>
+);
 
 export { UpdateOverlay };

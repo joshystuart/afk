@@ -9,7 +9,7 @@ const UpdateReadyBanner: React.FC = () => {
   const state = useUpdateState();
 
   const handleInstall = useCallback(() => {
-    void window.electronAPI?.updater?.install();
+    window.electronAPI?.updater?.install().catch(console.error);
   }, []);
 
   const visible = state.status === 'downloaded';

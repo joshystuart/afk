@@ -71,11 +71,11 @@ const AboutSettings: React.FC = () => {
   }, []);
 
   const handleCheckForUpdates = useCallback(() => {
-    void window.electronAPI?.updater?.checkForUpdates();
+    window.electronAPI?.updater?.checkForUpdates().catch(console.error);
   }, []);
 
   const handleInstallUpdate = useCallback(() => {
-    void window.electronAPI?.updater?.install();
+    window.electronAPI?.updater?.install().catch(console.error);
   }, []);
 
   const renderUpdaterSection = () => {

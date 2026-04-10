@@ -87,26 +87,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SKIL-01 | — | Pending |
-| SKIL-02 | — | Pending |
-| SKIL-03 | — | Pending |
-| AGNT-01 | — | Pending |
-| AGNT-02 | — | Pending |
-| DIFF-01 | — | Pending |
-| DIFF-02 | — | Pending |
-| CTXT-01 | — | Pending |
-| CTXT-02 | — | Pending |
-| CTXT-03 | — | Pending |
-| CTXT-04 | — | Pending |
-| GAUT-01 | — | Pending |
-| GAUT-02 | — | Pending |
-| GAUT-03 | — | Pending |
-| SEUX-01 | — | Pending |
+| SEUX-01 | Phase 1: Session UX | Pending |
+| SKIL-01 | Phase 2: Skills Provisioning | Pending |
+| SKIL-02 | Phase 2: Skills Provisioning | Pending |
+| SKIL-03 | Phase 2: Skills Provisioning | Pending |
+| AGNT-01 | Phase 3: Agent Runner & Multi-Agent | Pending |
+| AGNT-02 | Phase 3: Agent Runner & Multi-Agent | Pending |
+| CTXT-01 | Phase 4: Workspace API & File Explorer | Pending |
+| CTXT-02 | Phase 4: Workspace API & File Explorer | Pending |
+| CTXT-03 | Phase 4: Workspace API & File Explorer | Pending |
+| CTXT-04 | Phase 4: Workspace API & File Explorer | Pending |
+| DIFF-01 | Phase 5: Diff Pipeline & Review | Pending |
+| DIFF-02 | Phase 5: Diff Pipeline & Review | Pending |
+| GAUT-01 | Phase 6: Git Automation | Pending |
+| GAUT-02 | Phase 6: Git Automation | Pending |
+| GAUT-03 | Phase 6: Git Automation | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-10*

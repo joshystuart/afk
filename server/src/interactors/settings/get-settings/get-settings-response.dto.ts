@@ -29,6 +29,13 @@ export class GetSettingsResponseDto {
   @ApiProperty({ required: false, nullable: true })
   defaultMountDirectory?: string | null;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Host skills directory path',
+  })
+  skillsDirectory?: string | null;
+
   @ApiProperty({ description: 'Docker socket path' })
   dockerSocketPath!: string;
 
@@ -73,6 +80,7 @@ export class GetSettingsResponseDto {
     dto.hasGitHubToken = !!settings.git.githubAccessToken;
     dto.githubUsername = settings.git.githubUsername ?? undefined;
     dto.defaultMountDirectory = settings.general.defaultMountDirectory ?? null;
+    dto.skillsDirectory = settings.general.skillsDirectory ?? null;
     dto.dockerSocketPath = settings.docker.socketPath;
     dto.dockerStartPort = settings.docker.startPort;
     dto.dockerEndPort = settings.docker.endPort;

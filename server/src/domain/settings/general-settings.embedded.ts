@@ -7,6 +7,9 @@ export class GeneralSettings {
   @Column('varchar', { length: 500, nullable: true })
   defaultMountDirectory?: string | null;
 
+  @Column('varchar', { length: 500, nullable: true })
+  skillsDirectory?: string | null;
+
   @Column('boolean', { default: true })
   idleCleanupEnabled: boolean = true;
 

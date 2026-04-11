@@ -138,6 +138,31 @@ configure_git_identity() {
     log_info "Git identity configured: $GIT_USER_NAME <$GIT_USER_EMAIL>"
 }
 
+setup_skills() {
+    if [ ! -d "/home/afk/.skills" ]; then
+        log_info "No skills directory mounted, skipping skills setup"
+        return 0
+    fi
+
+    log_step "Setting up skills symlinks"
+
+    rm -rf /home/afk/.claude/skills 2>/dev/null || true
+    ln -sfn /home/afk/.skills /home/afk/.claude/skills
+
+    mkdir -p /home/afk/.cursor
+    rm -rf /home/afk/.cursor/skills 2>/dev/null || true
+    ln -sfn /home/afk/.skills /home/afk/.cursor/skills
+
+    mkdir -p /home/afk/.agents
+    rm -rf /home/afk/.agents/skills 2>/dev/null || true
+    ln -sfn /home/afk/.skills /home/afk/.agents/skills
+
+    mkdir -p /home/afk/.codex
+    rm -rf /home/afk/.codex/skills 2>/dev/null || true
+    ln -sfn /home/afk/.skills /home/afk/.codex/skills
+
+    log_info "Skills symlinks created for all agent discovery paths"
+}
 
 start_terminal() {
     log_step "Starting terminal session"
@@ -314,6 +339,9 @@ main() {
     
     # Step 3: Configure git identity
     configure_git_identity
+    
+    # Step 4: Setup skills symlinks if mounted
+    setup_skills
     
     log_step "Launching terminal"
     

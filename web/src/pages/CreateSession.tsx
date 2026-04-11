@@ -86,6 +86,16 @@ const CreateSession: React.FC = () => {
     duplicateFrom?.hostMountPath ? `${duplicateFrom.hostMountPath}-copy` : '',
   );
   const [cleanupOnDelete, setCleanupOnDelete] = useState(true);
+  const [mountSkills, setMountSkills] = useState(true);
+
+  const hasSkillsDirectory = !!settings?.skillsDirectory;
+
+  const hasRunningSessions = useMemo(() => {
+    if (!sessions || !Array.isArray(sessions)) return false;
+    return sessions.some(
+      (s) => s.status === 'RUNNING' || s.status === 'STARTING',
+    );
+  }, [sessions]);
 
   // Fetch repos when connected
   const { data: repos, isLoading: reposLoading } = useRepos(
@@ -290,6 +300,7 @@ const CreateSession: React.FC = () => {
           ? hostMountPathOverride || derivedMountPath || undefined
           : undefined,
         cleanupOnDelete: mountToHost && cleanupOnDelete ? true : undefined,
+        mountSkills: hasSkillsDirectory ? mountSkills : undefined,
       };
 
       const session = await createSession(request);
@@ -329,6 +340,15 @@ const CreateSession: React.FC = () => {
             Configure your Claude Token in{' '}
             <Link to={ROUTES.SETTINGS}>Settings</Link> before creating a
             session.
+          </Typography>
+        </Alert>
+      )}
+
+      {hasSkillsDirectory && hasRunningSessions && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          <Typography variant="body2">
+            Skills directory was changed. Running sessions need to be restarted
+            to use the updated skills.
           </Typography>
         </Alert>
       )}
@@ -847,6 +867,55 @@ const CreateSession: React.FC = () => {
                   }
                 />
               </>
+            )}
+          </Box>
+        </Box>
+
+        {/* Skills */}
+        <Box sx={{ mb: 4 }}>
+          <Box
+            sx={{
+              borderLeft: `2px solid ${afkColors.accent}`,
+              pl: 2,
+              mb: 2.5,
+            }}
+          >
+            <Typography variant="h5" sx={{ color: afkColors.textPrimary }}>
+              Skills
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={mountSkills}
+                  onChange={(e) => setMountSkills(e.target.checked)}
+                  disabled={!hasSkillsDirectory}
+                  size="small"
+                />
+              }
+              label={
+                <Typography
+                  variant="body2"
+                  sx={{ color: afkColors.textPrimary }}
+                >
+                  Mount skills directory
+                </Typography>
+              }
+            />
+
+            {!hasSkillsDirectory && (
+              <Typography
+                variant="caption"
+                sx={{ color: afkColors.textTertiary, mt: -1 }}
+              >
+                Set a{' '}
+                <Link to={ROUTES.SETTINGS} style={{ color: afkColors.accent }}>
+                  Skills Directory
+                </Link>{' '}
+                in Settings to enable skills mounting
+              </Typography>
             )}
           </Box>
         </Box>

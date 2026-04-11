@@ -45,6 +45,15 @@ export class UpdateSettingsRequest {
   @IsString()
   @ApiProperty({
     required: false,
+    description:
+      'Host directory containing agent skills, mounted read-only into containers',
+  })
+  skillsDirectory?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({
+    required: false,
     description: 'Docker socket path (e.g. /var/run/docker.sock)',
   })
   dockerSocketPath?: string;

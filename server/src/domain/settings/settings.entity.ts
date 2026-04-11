@@ -10,6 +10,7 @@ export { DockerSettings } from './docker-settings.embedded';
 export interface SettingsUpdateData {
   claudeToken?: string;
   defaultMountDirectory?: string;
+  skillsDirectory?: string;
   sshPrivateKey?: string;
   gitUserName?: string;
   gitUserEmail?: string;
@@ -60,6 +61,9 @@ export class Settings {
     }
     if (data.defaultMountDirectory !== undefined) {
       this.general.defaultMountDirectory = data.defaultMountDirectory;
+    }
+    if (data.skillsDirectory !== undefined) {
+      this.general.skillsDirectory = data.skillsDirectory || null;
     }
     if (data.sshPrivateKey !== undefined) {
       this.git.sshPrivateKey = data.sshPrivateKey;

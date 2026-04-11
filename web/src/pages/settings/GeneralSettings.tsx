@@ -37,6 +37,7 @@ const GeneralSettings: React.FC = () => {
   const [formData, setFormData] = useState({
     defaultMountDirectory: '',
     claudeToken: '',
+    skillsDirectory: '',
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -48,6 +49,7 @@ const GeneralSettings: React.FC = () => {
       setFormData({
         defaultMountDirectory: settings.defaultMountDirectory || '',
         claudeToken: '',
+        skillsDirectory: settings.skillsDirectory || '',
       });
       setIsEditingClaudeToken(false);
       setClaudeTokenModified(false);
@@ -70,6 +72,7 @@ const GeneralSettings: React.FC = () => {
     try {
       const submitData: UpdateSettingsRequest = {
         defaultMountDirectory: formData.defaultMountDirectory,
+        skillsDirectory: formData.skillsDirectory,
       };
       if (claudeTokenModified) {
         submitData.claudeToken = formData.claudeToken;
@@ -113,6 +116,19 @@ const GeneralSettings: React.FC = () => {
             onChange={handleInputChange('defaultMountDirectory')}
             placeholder="/Users/josh/afk-workspaces"
             helperText="Base directory on the host for mounting session workspaces. When set, sessions can bind-mount their workspace to this directory."
+          />
+        </Box>
+
+        {/* Skills */}
+        <Box sx={{ mb: 4 }}>
+          <SectionHeader title="Skills" />
+          <TextField
+            fullWidth
+            label="Skills Directory"
+            value={formData.skillsDirectory}
+            onChange={handleInputChange('skillsDirectory')}
+            placeholder="/path/to/your/skills"
+            helperText="Host directory containing agent skills. Mounted read-only into session containers."
           />
         </Box>
 

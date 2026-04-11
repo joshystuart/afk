@@ -120,4 +120,54 @@ describe('DockerContainerProvisioningService', () => {
     });
     expect(createOptions.HostConfig.RestartPolicy).toEqual({ Name: 'no' });
   });
+
+  it('includes read-only skills bind mount when skillsPath is provided', async () => {
+    const container = {
+      id: 'c-skills',
+      start: jest.fn().mockResolvedValue(undefined),
+    };
+    const docker = {
+      createContainer: jest.fn().mockResolvedValue(container),
+    };
+    dockerClient.getClient.mockResolvedValue(docker as any);
+
+    await service.createContainer({
+      sessionId: 'session-skills',
+      sessionName: 'Skills Session',
+      imageName: 'afk-node:latest',
+      gitUserName: 'Bot',
+      gitUserEmail: 'bot@afk.local',
+      ports: new PortPairDto(3300),
+      skillsPath: '/Users/josh/.skills',
+    });
+
+    const createOptions = docker.createContainer.mock.calls[0][0];
+    expect(createOptions.HostConfig.Binds).toEqual(
+      expect.arrayContaining(['/Users/josh/.skills:/home/afk/.skills:ro']),
+    );
+  });
+
+  it('omits skills bind mount when skillsPath is not provided', async () => {
+    const container = {
+      id: 'c-no-skills',
+      start: jest.fn().mockResolvedValue(undefined),
+    };
+    const docker = {
+      createContainer: jest.fn().mockResolvedValue(container),
+    };
+    dockerClient.getClient.mockResolvedValue(docker as any);
+
+    await service.createContainer({
+      sessionId: 'session-no-skills',
+      sessionName: 'No Skills Session',
+      imageName: 'afk-node:latest',
+      gitUserName: 'Bot',
+      gitUserEmail: 'bot@afk.local',
+      ports: new PortPairDto(3400),
+    });
+
+    const createOptions = docker.createContainer.mock.calls[0][0];
+    const binds: string[] = createOptions.HostConfig.Binds;
+    expect(binds.some((b: string) => b.includes('.skills'))).toBe(false);
+  });
 });

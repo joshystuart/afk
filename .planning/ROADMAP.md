@@ -51,7 +51,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 2. New session containers automatically mount the configured skills directory as read-only
 3. Skills from GSD, skills.sh, and superpowers ecosystems are accessible inside the container at expected paths
 4. Container cannot write to or modify the mounted skills directory
-   **Plans**: TBD
+   **Plans**: 3 plans
+   Plans:
+
+- [x] 02-01-PLAN.md — Data contracts: settings entity, DTOs, session config, container options for skills fields
+- [x] 02-02-PLAN.md — Backend integration: container provisioning bind mount, session lifecycle wiring, entrypoint symlinks
+- [x] 02-03-PLAN.md — Frontend UI: settings skills section, create session opt-out toggle, restart notice
 
 ### Phase 3: Agent Runner & Multi-Agent
 

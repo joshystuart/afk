@@ -62,6 +62,7 @@ export class CreateSessionStartupService {
         claudeToken: settings.general.claudeToken,
         githubToken,
         hostMountPath: session.config.hostMountPath || undefined,
+        skillsPath: session.config.skillsPath || undefined,
       });
 
       session.imageId = dockerImage.id;

@@ -12,6 +12,8 @@ import {
 import { UpdateSettingsRequest } from './update-settings-request.dto';
 import { SETTINGS_REPOSITORY } from '../../../domain/settings/settings.tokens';
 import { GitHubService } from '../../../libs/github/github.service';
+import { MountPathValidator } from '../../../libs/validators/mount-path.validator';
+import { MountPathValidationError } from '../../../libs/validators/mount-path-validation.error';
 
 @Injectable()
 export class UpdateSettingsInteractor {
@@ -21,6 +23,7 @@ export class UpdateSettingsInteractor {
     @Inject(SETTINGS_REPOSITORY)
     private readonly settingsRepository: SettingsRepository,
     private readonly githubService: GitHubService,
+    private readonly mountPathValidator: MountPathValidator,
   ) {}
 
   async execute(request: UpdateSettingsRequest): Promise<Settings> {
@@ -41,6 +44,17 @@ export class UpdateSettingsInteractor {
       }
     }
 
+    if (request.skillsDirectory) {
+      try {
+        this.mountPathValidator.validate(request.skillsDirectory);
+      } catch (error) {
+        if (error instanceof MountPathValidationError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
+      }
+    }
+
     try {
       currentSettings.update({
         sshPrivateKey: request.sshPrivateKey,
@@ -48,6 +62,7 @@ export class UpdateSettingsInteractor {
         gitUserName: request.gitUserName,
         gitUserEmail: request.gitUserEmail,
         defaultMountDirectory: request.defaultMountDirectory,
+        skillsDirectory: request.skillsDirectory,
         dockerSocketPath: request.dockerSocketPath,
         dockerStartPort: request.dockerStartPort,
         dockerEndPort: request.dockerEndPort,

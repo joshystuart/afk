@@ -11,7 +11,7 @@ Requirements for v1 milestone. Each maps to roadmap phases.
 
 - [x] **SKIL-01**: User can configure a skills directory path in Settings
 - [x] **SKIL-02**: Session containers mount the configured skills directory as read-only at creation time
-- [ ] **SKIL-03**: Skills mounting supports multiple ecosystem layouts (GSD, skills.sh, superpowers)
+- [x] **SKIL-03**: Skills mounting supports multiple ecosystem layouts (GSD, skills.sh, superpowers)
 
 ### Multi-Agent
 
@@ -85,23 +85,23 @@ Deferred to future release. Tracked but not in current roadmap.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase                                  | Status  |
-| ----------- | -------------------------------------- | ------- |
-| SEUX-01     | Phase 1: Session UX                    | Pending |
+| Requirement | Phase                                  | Status   |
+| ----------- | -------------------------------------- | -------- |
+| SEUX-01     | Phase 1: Session UX                    | Pending  |
 | SKIL-01     | Phase 2: Skills Provisioning           | Complete |
 | SKIL-02     | Phase 2: Skills Provisioning           | Complete |
-| SKIL-03     | Phase 2: Skills Provisioning           | Pending |
-| AGNT-01     | Phase 3: Agent Runner & Multi-Agent    | Pending |
-| AGNT-02     | Phase 3: Agent Runner & Multi-Agent    | Pending |
-| CTXT-01     | Phase 4: Workspace API & File Explorer | Pending |
-| CTXT-02     | Phase 4: Workspace API & File Explorer | Pending |
-| CTXT-03     | Phase 4: Workspace API & File Explorer | Pending |
-| CTXT-04     | Phase 4: Workspace API & File Explorer | Pending |
-| DIFF-01     | Phase 5: Diff Pipeline & Review        | Pending |
-| DIFF-02     | Phase 5: Diff Pipeline & Review        | Pending |
-| GAUT-01     | Phase 6: Git Automation                | Pending |
-| GAUT-02     | Phase 6: Git Automation                | Pending |
-| GAUT-03     | Phase 6: Git Automation                | Pending |
+| SKIL-03     | Phase 2: Skills Provisioning           | Complete |
+| AGNT-01     | Phase 3: Agent Runner & Multi-Agent    | Pending  |
+| AGNT-02     | Phase 3: Agent Runner & Multi-Agent    | Pending  |
+| CTXT-01     | Phase 4: Workspace API & File Explorer | Pending  |
+| CTXT-02     | Phase 4: Workspace API & File Explorer | Pending  |
+| CTXT-03     | Phase 4: Workspace API & File Explorer | Pending  |
+| CTXT-04     | Phase 4: Workspace API & File Explorer | Pending  |
+| DIFF-01     | Phase 5: Diff Pipeline & Review        | Pending  |
+| DIFF-02     | Phase 5: Diff Pipeline & Review        | Pending  |
+| GAUT-01     | Phase 6: Git Automation                | Pending  |
+| GAUT-02     | Phase 6: Git Automation                | Pending  |
+| GAUT-03     | Phase 6: Git Automation                | Pending  |
 
 **Coverage:**
 

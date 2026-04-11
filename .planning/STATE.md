@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-04-11T04:11:27.865Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-04-11T04:16:11.611Z"
 last_activity: 2026-04-11
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 02 (skills-provisioning) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-11
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 _Updated after each plan completion_
 | Phase 02 P01 | 2min | 2 tasks | 10 files |
+| Phase 02 P02 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ Recent decisions affecting current work:
 - nest-typed-config for infra config, Settings entity for user-configurable options
 - [Phase 02]: Reused MountPathValidator for skillsDirectory validation — same security rules as host mount paths
 - [Phase 02]: mountSkills defaults to true so skills are mounted unless explicitly opted out per session
+- [Phase 02]: Skills bind mount uses :ro (read-only) enforced at Docker kernel level for container security
+- [Phase 02]: Entrypoint uses rm -rf before ln -sfn for idempotent symlink creation on container restarts
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T04:11:27.861Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-04-11T04:16:11.607Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

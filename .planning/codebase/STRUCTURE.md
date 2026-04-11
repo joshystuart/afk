@@ -185,4 +185,4 @@ afk/                          # Monorepo root — npm scripts orchestrate server
 
 ---
 
-*Structure analysis: 2026-04-10*
+_Structure analysis: 2026-04-10_

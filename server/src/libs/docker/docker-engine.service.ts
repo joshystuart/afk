@@ -90,6 +90,25 @@ export class DockerEngineService implements OnModuleInit {
     );
   }
 
+  async execInteractive(
+    containerId: string,
+    cols: number,
+    rows: number,
+    workingDir: string,
+  ): Promise<{
+    stream: NodeJS.ReadWriteStream;
+    execId: string;
+    resize: (cols: number, rows: number) => Promise<void>;
+    destroy: () => void;
+  }> {
+    return this.dockerContainerExec.execInteractive(
+      containerId,
+      cols,
+      rows,
+      workingDir,
+    );
+  }
+
   async execStreamInContainer(
     containerId: string,
     cmd: string[],

@@ -63,19 +63,20 @@ The current architecture already supports the core loop: create a session, chat 
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Docker containers as the security boundary | Harness-level sandboxes can be circumvented; containers provide OS-level isolation | — Pending |
-| `claude -p` headless invocation | Enables streaming responses back to the UI without maintaining a persistent agent process | ✓ Good |
-| Skills as mounted directory | Simplest approach that supports multiple skill ecosystems; read-only mount for security | — Pending |
-| Agent-per-session or per-prompt selection | Flexible multi-agent support without requiring architectural changes per agent | — Pending |
-| Workspace mount opt-in for IDE integration | Only expose container filesystem to host when user explicitly enables it | ✓ Good |
+| Decision                                   | Rationale                                                                                 | Outcome   |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------- | --------- |
+| Docker containers as the security boundary | Harness-level sandboxes can be circumvented; containers provide OS-level isolation        | — Pending |
+| `claude -p` headless invocation            | Enables streaming responses back to the UI without maintaining a persistent agent process | ✓ Good    |
+| Skills as mounted directory                | Simplest approach that supports multiple skill ecosystems; read-only mount for security   | — Pending |
+| Agent-per-session or per-prompt selection  | Flexible multi-agent support without requiring architectural changes per agent            | — Pending |
+| Workspace mount opt-in for IDE integration | Only expose container filesystem to host when user explicitly enables it                  | ✓ Good    |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 **After each phase transition** (via `/gsd-transition`):
+
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -83,10 +84,12 @@ This document evolves at phase transitions and milestone boundaries.
 5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone** (via `/gsd-complete-milestone`):
+
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after initialization*
+
+_Last updated: 2026-04-10 after initialization_

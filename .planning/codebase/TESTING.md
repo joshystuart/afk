@@ -87,8 +87,12 @@ describe('CreateSessionRequestService', () => {
   });
 
   it('allows prepare without repo URL when ...', async () => {
-    settingsRepository.get.mockResolvedValue({ /* ... */ } as any);
-    const prepared = await service.prepare({ /* ... */ });
+    settingsRepository.get.mockResolvedValue({
+      /* ... */
+    } as any);
+    const prepared = await service.prepare({
+      /* ... */
+    });
     expect(prepared.sessionConfig.repoUrl).toBeNull();
   });
 });
@@ -108,9 +112,12 @@ import { buildCronExpression } from './cron-helpers';
 
 describe('buildCronExpression', () => {
   it('should build a daily expression', () => {
-    expect(buildCronExpression({ frequency: 'daily', time: { hour: 9, minute: 30 } })).toBe(
-      '30 9 * * *',
-    );
+    expect(
+      buildCronExpression({
+        frequency: 'daily',
+        time: { hour: 9, minute: 30 },
+      }),
+    ).toBe('30 9 * * *');
   });
 });
 ```
@@ -211,4 +218,4 @@ it('should return initial empty settings', async () => {
 
 ---
 
-*Testing analysis: 2026-04-10*
+_Testing analysis: 2026-04-10_

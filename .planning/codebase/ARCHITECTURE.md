@@ -174,4 +174,4 @@
 
 ---
 
-*Architecture analysis: 2026-04-10*
+_Architecture analysis: 2026-04-10_

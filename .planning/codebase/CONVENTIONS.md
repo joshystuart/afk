@@ -120,4 +120,4 @@
 
 ---
 
-*Convention analysis: 2026-04-10*
+_Convention analysis: 2026-04-10_

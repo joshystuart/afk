@@ -73,6 +73,65 @@ export class DockerContainerExecService {
     });
   }
 
+  async execInteractive(
+    containerId: string,
+    cols: number,
+    rows: number,
+    workingDir = DEFAULT_EXEC_WORKING_DIR,
+  ): Promise<{
+    stream: NodeJS.ReadWriteStream;
+    execId: string;
+    resize: (cols: number, rows: number) => Promise<void>;
+    destroy: () => void;
+  }> {
+    const docker = await this.dockerClient.getClient();
+    const container = docker.getContainer(containerId);
+
+    const exec = await container.exec({
+      Cmd: ['/bin/bash'],
+      AttachStdin: true,
+      AttachStdout: true,
+      AttachStderr: true,
+      Tty: true,
+      WorkingDir: workingDir,
+    });
+
+    const stream = await exec.start({
+      hijack: true,
+      stdin: true,
+      Tty: true,
+    });
+
+    await exec.resize({ h: rows, w: cols });
+
+    this.logger.debug('Interactive PTY exec created', {
+      containerId,
+      execId: exec.id,
+      cols,
+      rows,
+    });
+
+    const resize = async (c: number, r: number) => {
+      await exec.resize({ h: r, w: c });
+    };
+
+    const destroy = () => {
+      try {
+        stream.destroy();
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
+        this.logger.warn('Error destroying interactive exec stream', {
+          containerId,
+          execId: exec.id,
+          error: message,
+        });
+      }
+    };
+
+    return { stream, execId: exec.id, resize, destroy };
+  }
+
   async execStreamInContainer(
     containerId: string,
     cmd: string[],

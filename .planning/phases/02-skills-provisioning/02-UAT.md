@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 02-skills-provisioning
 source: [02-01-SUMMARY.md, 02-02-SUMMARY.md, 02-03-SUMMARY.md]
 started: 2026-04-11T06:00:00Z
@@ -66,5 +66,23 @@ blocked: 0
   reason: "User reported: Skills autocomplete still shows cached skills when skills are off for session. Skills should be conditionally loaded based on session toggle. Caching TTL is too long — new skills won't appear until cache expires."
   severity: major
   test: 6
-  artifacts: []
-  missing: []
+  root_cause: "Two sub-problems: (1) useSkills() is global and session-agnostic — no mountSkills on Session API type or response DTO, ChatPanel always passes skills through, ChatInput only checks skills.length > 0. (2) React Query staleTime is 5 minutes with no invalidation on settings changes, plus server has 60s in-memory cache in ListSkillsInteractor."
+  artifacts:
+    - path: "web/src/hooks/useSkills.ts"
+      issue: "Global query with 5min staleTime, no session awareness"
+    - path: "web/src/components/chat/ChatPanel.tsx"
+      issue: "Always passes skills to ChatInput regardless of session mountSkills"
+    - path: "web/src/components/chat/ChatInput.tsx"
+      issue: "Only checks skills.length > 0, not session mount state"
+    - path: "web/src/api/types.ts"
+      issue: "Session interface lacks mountSkills/skillsPath field"
+    - path: "server/src/interactors/sessions/create-session/create-session-response.dto.ts"
+      issue: "Does not expose mountSkills or skillsPath from session config"
+    - path: "server/src/interactors/settings/list-skills/list-skills.interactor.ts"
+      issue: "60s in-memory cache with no invalidation on settings changes"
+  missing:
+    - "Expose mountSkills or skillsMounted on session response DTO and web Session type"
+    - "Gate skills autocomplete in ChatPanel on session.mountSkills"
+    - "Lower React Query staleTime for skills (e.g. 30-60s)"
+    - "Invalidate ['skills'] query key when settings are updated"
+    - "Shorten or invalidate server-side skills cache on settings change"

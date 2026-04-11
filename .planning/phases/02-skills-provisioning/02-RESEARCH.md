@@ -419,17 +419,15 @@ export class SessionConfigDto {
 | A2  | `ln -sfn` correctly replaces existing symlinks and creates new ones idempotently  | Code Examples       | If not idempotent, container restarts would fail on second run                           |
 | A3  | Ephemeral/scheduled-job containers should NOT get skills mounting                 | Claude's Discretion | If skills are needed for scheduled jobs, the ephemeral container flow needs updating too |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **TypeORM migration for new column**
+1. **TypeORM migration for new column** — RESOLVED
    - What we know: Adding `skillsDirectory` to `GeneralSettings` embedded class adds a column to the `settings` table
-   - What's unclear: Whether TypeORM's `synchronize: true` handles this automatically in dev, or if a migration is needed
-   - Recommendation: For SQLite (dev), synchronize handles it. For PostgreSQL (prod), a migration may be needed. Check `database.config.ts` for synchronize setting.
+   - Resolution: TypeORM `synchronize: true` handles the column addition automatically in dev (SQLite). Verified during Plan 01 execution — column added without manual migration.
 
-2. **Skills directory validation timing**
+2. **Skills directory validation timing** — RESOLVED
    - What we know: D-14 says reuse MountPathValidator. The CONTEXT.md suggests validation on both settings save and session creation.
-   - What's unclear: Should validation on settings save check that the directory exists, or just validate the path format? The directory might not exist yet when configuring.
-   - Recommendation: Settings save validates path format only (forbidden paths, depth). Session creation validates existence. This matches how `defaultMountDirectory` works — it's a base path, not required to exist at config time.
+   - Resolution: Settings save validates path format via MountPathValidator (forbidden paths, depth >= 2). Session creation validates existence. This matches the `defaultMountDirectory` pattern — implemented in Plan 01 and Plan 02.
 
 ## Validation Architecture
 

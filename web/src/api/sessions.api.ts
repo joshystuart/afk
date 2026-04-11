@@ -10,105 +10,51 @@ import type {
   ChatStreamEvent,
 } from './types';
 
+function mapSession(data: any): Session {
+  return {
+    id: data.id,
+    name: data.name,
+    status: data.status,
+    repoUrl: data.repoUrl,
+    branch: data.branch || 'main',
+    port: data.port,
+    terminalUrl: data.terminalUrl,
+    imageId: data.imageId,
+    imageName: data.imageName,
+    hostMountPath: data.hostMountPath,
+    model: data.model,
+    agentMode: data.agentMode,
+    mountSkills: data.mountSkills,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+  };
+}
+
 export const sessionsApi = {
-  // Create a new session
   createSession: async (request: CreateSessionRequest): Promise<Session> => {
     const response = await apiClient.post('/sessions', request);
-    const sessionData = response as any;
-
-    return {
-      id: sessionData.id,
-      name: sessionData.name,
-      status: sessionData.status,
-      repoUrl: sessionData.repoUrl,
-      branch: sessionData.branch || 'main',
-      port: sessionData.port,
-      terminalUrl: sessionData.terminalUrl,
-      imageId: sessionData.imageId,
-      imageName: sessionData.imageName,
-      hostMountPath: sessionData.hostMountPath,
-      model: sessionData.model,
-      agentMode: sessionData.agentMode,
-      createdAt: sessionData.createdAt,
-      updatedAt: sessionData.updatedAt,
-    } as Session;
+    return mapSession(response);
   },
 
-  // List all sessions with pagination
   listSessions: async (page = 1, limit = 10): Promise<Session[]> => {
     const response = await apiClient.get(
       `/sessions?page=${page}&limit=${limit}`,
     );
-    // The API client already unwraps to just the array of sessions
     const sessions = Array.isArray(response) ? response : [];
-
-    // Transform each session to match frontend format
-    return sessions.map((sessionData: any) => ({
-      id: sessionData.id,
-      name: sessionData.name,
-      status: sessionData.status,
-      repoUrl: sessionData.repoUrl,
-      branch: sessionData.branch || 'main',
-      port: sessionData.port,
-      terminalUrl: sessionData.terminalUrl,
-      imageId: sessionData.imageId,
-      imageName: sessionData.imageName,
-      hostMountPath: sessionData.hostMountPath,
-      model: sessionData.model,
-      agentMode: sessionData.agentMode,
-      createdAt: sessionData.createdAt,
-      updatedAt: sessionData.updatedAt,
-    })) as Session[];
+    return sessions.map(mapSession);
   },
 
-  // Get a specific session by ID
   getSession: async (sessionId: string): Promise<Session> => {
     const response = await apiClient.get(`/sessions/${sessionId}`);
-    // The response now should be properly formatted from the backend
-    const sessionData = response as any;
-
-    return {
-      id: sessionData.id,
-      name: sessionData.name,
-      status: sessionData.status,
-      repoUrl: sessionData.repoUrl,
-      branch: sessionData.branch || 'main',
-      port: sessionData.port,
-      terminalUrl: sessionData.terminalUrl,
-      imageId: sessionData.imageId,
-      imageName: sessionData.imageName,
-      hostMountPath: sessionData.hostMountPath,
-      model: sessionData.model,
-      agentMode: sessionData.agentMode,
-      createdAt: sessionData.createdAt,
-      updatedAt: sessionData.updatedAt,
-    } as Session;
+    return mapSession(response);
   },
 
-  // Update session fields
   updateSession: async (
     sessionId: string,
     request: UpdateSessionRequest,
   ): Promise<Session> => {
     const response = await apiClient.put(`/sessions/${sessionId}`, request);
-    const sessionData = response as any;
-
-    return {
-      id: sessionData.id,
-      name: sessionData.name,
-      status: sessionData.status,
-      repoUrl: sessionData.repoUrl,
-      branch: sessionData.branch || 'main',
-      port: sessionData.port,
-      terminalUrl: sessionData.terminalUrl,
-      imageId: sessionData.imageId,
-      imageName: sessionData.imageName,
-      hostMountPath: sessionData.hostMountPath,
-      model: sessionData.model,
-      agentMode: sessionData.agentMode,
-      createdAt: sessionData.createdAt,
-      updatedAt: sessionData.updatedAt,
-    } as Session;
+    return mapSession(response);
   },
 
   // Start a session

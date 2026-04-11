@@ -24,7 +24,7 @@ decisions:
   - Server cache TTL reduced to 15s to complement client 30s staleTime
 metrics:
   duration: 1min
-  completed: "2026-04-11T12:34:25Z"
+  completed: '2026-04-11T12:34:25Z'
   tasks: 2
   files: 6
 ---
@@ -62,7 +62,7 @@ None — plan executed exactly as written.
 
 ## Commits
 
-| Task | Name | Commit | Files |
-|------|------|--------|-------|
-| 1 | Expose mountSkills on server response DTO and web type | 8c045bd | create-session-response.dto.ts, types.ts |
-| 2 | Gate skills autocomplete, reduce cache TTL, invalidate on save | 4349104 | ChatPanel.tsx, useSkills.ts, GeneralSettings.tsx, list-skills.interactor.ts |
+| Task | Name                                                           | Commit  | Files                                                                       |
+| ---- | -------------------------------------------------------------- | ------- | --------------------------------------------------------------------------- |
+| 1    | Expose mountSkills on server response DTO and web type         | 8c045bd | create-session-response.dto.ts, types.ts                                    |
+| 2    | Gate skills autocomplete, reduce cache TTL, invalidate on save | 4349104 | ChatPanel.tsx, useSkills.ts, GeneralSettings.tsx, list-skills.interactor.ts |

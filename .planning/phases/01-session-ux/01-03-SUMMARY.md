@@ -6,18 +6,19 @@ tags: [react, tabs, keyboard-shortcut, badges, integration]
 
 requires:
   - phase: 01-session-ux/01
-    provides: "Terminal socket events (terminal.start/data/input/resize/close) on server"
+    provides: 'Terminal socket events (terminal.start/data/input/resize/close) on server'
   - phase: 01-session-ux/02
-    provides: "useTerminal, useSessionTabs hooks, TerminalView, SessionTabBar, SessionTabPanel components"
+    provides: 'useTerminal, useSessionTabs hooks, TerminalView, SessionTabBar, SessionTabPanel components'
 provides:
-  - "Integrated tabbed session page with chat and terminal panels"
-  - "Keyboard shortcut (Ctrl+`/Cmd+`) for tab toggling"
-  - "Unread badge indicators on both chat and terminal tabs"
+  - 'Integrated tabbed session page with chat and terminal panels'
+  - 'Keyboard shortcut (Ctrl+`/Cmd+`) for tab toggling'
+  - 'Unread badge indicators on both chat and terminal tabs'
 affects: []
 
 tech-stack:
   added: []
-  patterns: [tabbed-interface-integration, socket-badge-detection, hotkey-tab-toggle]
+  patterns:
+    [tabbed-interface-integration, socket-badge-detection, hotkey-tab-toggle]
 
 key-files:
   created: []
@@ -25,13 +26,13 @@ key-files:
     - web/src/pages/SessionDetails.tsx
 
 key-decisions:
-  - "Socket listeners for terminal.data and chat.stream provide badge signals without polling"
-  - "Both tab panels always mounted (display toggle) to preserve xterm.js and chat state"
-  - "Separate useHotkeys calls for ctrl+` and meta+` to support both Windows/Linux and macOS"
+  - 'Socket listeners for terminal.data and chat.stream provide badge signals without polling'
+  - 'Both tab panels always mounted (display toggle) to preserve xterm.js and chat state'
+  - 'Separate useHotkeys calls for ctrl+` and meta+` to support both Windows/Linux and macOS'
 
 patterns-established:
-  - "Badge state managed in parent component, cleared on tab switch via useEffect"
-  - "Tab registry defined as useMemo SessionTab[] array wired to SessionTabBar"
+  - 'Badge state managed in parent component, cleared on tab switch via useEffect'
+  - 'Tab registry defined as useMemo SessionTab[] array wired to SessionTabBar'
 
 requirements-completed: [SEUX-01]
 
@@ -96,5 +97,6 @@ None — all data sources wired, no placeholder content.
 Task 1 complete. Task 2 checkpoint pending human verification.
 
 ---
-*Phase: 01-session-ux*
-*Status: Checkpoint pending*
+
+_Phase: 01-session-ux_
+_Status: Checkpoint pending_

@@ -36,7 +36,7 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 - [ ] Multiple agent support — support for Claude, Cursor, Codex, and other CLI-based agents; lock a session to an agent or select per prompt
 - [ ] Diff viewer — post-run summary showing what files the agent changed after completing a task
 - [ ] File system explorer — browse container filesystem in the UI; open in local IDE when workspace mount is enabled
-- [ ] Tab between chat and terminal — toggle between the chat view and the Claude terminal view within a session
+- ✓ Tab between chat and terminal — toggle between the chat view and the Claude terminal view within a session (Validated in Phase 1: Session UX)
 
 ### Out of Scope
 
@@ -92,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-10 after initialization_
+_Last updated: 2026-04-11 after Phase 1 (Session UX) completion_

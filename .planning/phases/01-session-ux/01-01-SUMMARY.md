@@ -14,7 +14,8 @@ affects: [01-02, 01-03]
 
 tech-stack:
   added: []
-  patterns: [gateway-service-decomposition, pty-over-websocket, base64-binary-transport]
+  patterns:
+    [gateway-service-decomposition, pty-over-websocket, base64-binary-transport]
 
 key-files:
   created:
@@ -27,13 +28,13 @@ key-files:
     - server/src/gateways/gateways.module.ts
 
 key-decisions:
-  - "Base64 encoding for terminal data transport over Socket.IO for binary safety"
-  - "One PTY per session per client with auto-destroy of previous PTY on re-open"
-  - "Terminal cleanup runs before subscription cleanup on disconnect to prevent zombie execs"
+  - 'Base64 encoding for terminal data transport over Socket.IO for binary safety'
+  - 'One PTY per session per client with auto-destroy of previous PTY on re-open'
+  - 'Terminal cleanup runs before subscription cleanup on disconnect to prevent zombie execs'
 
 patterns-established:
-  - "Gateway terminal service follows same DI/decomposition pattern as SessionGatewayChatService"
-  - "execInteractive returns destroy + resize closures for caller-managed lifecycle"
+  - 'Gateway terminal service follows same DI/decomposition pattern as SessionGatewayChatService'
+  - 'execInteractive returns destroy + resize closures for caller-managed lifecycle'
 
 requirements-completed: [SEUX-01]
 
@@ -105,5 +106,6 @@ None - no external service configuration required.
 All 6 files verified present. Both commits (543fa27, 73a5680) verified in git log.
 
 ---
-*Phase: 01-session-ux*
-*Completed: 2026-04-11*
+
+_Phase: 01-session-ux_
+_Completed: 2026-04-11_

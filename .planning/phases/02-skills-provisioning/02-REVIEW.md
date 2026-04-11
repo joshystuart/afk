@@ -56,6 +56,7 @@ No critical issues found. The `:ro` mount constraint and admin-only settings acc
 If the skills directory path is a symlink (or contains symlink components) pointing to a protected system directory, `validate()` would pass but Docker would mount the symlink's real target. The `:ro` flag limits exposure to reading files, not writing. The attack also requires host filesystem access to plant the symlink, which limits practical risk.
 
 **Fix:**
+
 ```typescript
 if (sessionConfig.skillsPath) {
   try {
@@ -80,14 +81,16 @@ Add `import * as fs from 'fs';` at the top. The `existsSync` guard avoids errors
 **Issue:** The warning alert is displayed whenever `hasSkillsDirectory && hasRunningSessions` is true. This condition is met on every visit to the Create Session page as long as skills are configured and any session is running — even if the skills directory setting hasn't been modified. The text says "Skills directory was changed" which is misleading.
 
 ```tsx
-{hasSkillsDirectory && hasRunningSessions && (
-  <Alert severity="warning" sx={{ mb: 3 }}>
-    <Typography variant="body2">
-      Skills directory was changed. Running sessions need to be restarted
-      to use the updated skills.
-    </Typography>
-  </Alert>
-)}
+{
+  hasSkillsDirectory && hasRunningSessions && (
+    <Alert severity="warning" sx={{ mb: 3 }}>
+      <Typography variant="body2">
+        Skills directory was changed. Running sessions need to be restarted to
+        use the updated skills.
+      </Typography>
+    </Alert>
+  );
+}
 ```
 
 **Fix:** Either remove this warning entirely (it's not actionable during session creation), or track whether the skills directory was actually modified in the current browser session. The simplest fix is to remove it since the information is better suited for the Settings page after a save:
@@ -99,14 +102,16 @@ Add `import * as fs from 'fs';` at the top. The `existsSync` guard avoids errors
 Alternatively, if you want to keep a hint on the create page, make the copy informational rather than suggesting a change occurred:
 
 ```tsx
-{hasSkillsDirectory && (
-  <Alert severity="info" sx={{ mb: 3 }}>
-    <Typography variant="body2">
-      Skills from <strong>{settings.skillsDirectory}</strong> will be
-      mounted read-only into this session.
-    </Typography>
-  </Alert>
-)}
+{
+  hasSkillsDirectory && (
+    <Alert severity="info" sx={{ mb: 3 }}>
+      <Typography variant="body2">
+        Skills from <strong>{settings.skillsDirectory}</strong> will be mounted
+        read-only into this session.
+      </Typography>
+    </Alert>
+  );
+}
 ```
 
 ## Info
@@ -126,7 +131,9 @@ Alternatively, if you want to keep a hint on the create page, make the copy info
   onChange={handleInputChange('skillsDirectory')}
   placeholder="/path/to/your/skills"
   helperText="Host directory containing agent skills. Mounted read-only into session containers."
-  error={!!formData.skillsDirectory && !formData.skillsDirectory.startsWith('/')}
+  error={
+    !!formData.skillsDirectory && !formData.skillsDirectory.startsWith('/')
+  }
 />
 ```
 
@@ -134,12 +141,15 @@ Alternatively, if you want to keep a hint on the create page, make the copy info
 
 **File:** `server/src/libs/docker/docker-container-provisioning.service.ts:50-52`
 **Issue:** The bind mount string is constructed via template literal:
+
 ```typescript
-`${options.skillsPath}:/home/afk/.skills:ro`
+`${options.skillsPath}:/home/afk/.skills:ro`;
 ```
+
 Docker uses `:` as the separator between host path, container path, and options. If `skillsPath` contains a `:` character (extremely rare on macOS/Linux but technically possible), the bind mount would be mis-parsed. This same pattern applies to the pre-existing `hostMountPath` mount and is not skills-specific, but worth noting for completeness.
 
 **Fix:** This is very low risk on macOS/Linux since `:` is not a common path character. If desired, add a check in `MountPathValidator`:
+
 ```typescript
 if (resolved.includes(':')) {
   throw new MountPathValidationError(

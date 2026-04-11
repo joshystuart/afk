@@ -30,7 +30,7 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 
 ### Active
 
-- [ ] Centralized skills — configurable skills directory mounted read-only into each session at runtime, supporting popular skill ecosystems (skills.sh, GSD, superpowers)
+- ✓ Centralized skills — configurable skills directory mounted read-only into each session at runtime, supporting popular skill ecosystems (skills.sh, GSD, superpowers) (Validated in Phase 2: Skills Provisioning)
 - [ ] File tagging in prompt input — `@file/folder-name` with autocomplete dropdown for providing file context in prompts
 - [ ] Auto commit and PR messages — automatically generate commit messages and PR descriptions, configurable which model is used
 - [ ] Multiple agent support — support for Claude, Cursor, Codex, and other CLI-based agents; lock a session to an agent or select per prompt
@@ -67,7 +67,7 @@ The current architecture already supports the core loop: create a session, chat 
 | ------------------------------------------ | ----------------------------------------------------------------------------------------- | --------- |
 | Docker containers as the security boundary | Harness-level sandboxes can be circumvented; containers provide OS-level isolation        | — Pending |
 | `claude -p` headless invocation            | Enables streaming responses back to the UI without maintaining a persistent agent process | ✓ Good    |
-| Skills as mounted directory                | Simplest approach that supports multiple skill ecosystems; read-only mount for security   | — Pending |
+| Skills as mounted directory                | Simplest approach that supports multiple skill ecosystems; read-only mount for security   | ✓ Good    |
 | Agent-per-session or per-prompt selection  | Flexible multi-agent support without requiring architectural changes per agent            | — Pending |
 | Workspace mount opt-in for IDE integration | Only expose container filesystem to host when user explicitly enables it                  | ✓ Good    |
 
@@ -92,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-11 after Phase 1 (Session UX) completion_
+_Last updated: 2026-04-11 after Phase 2 (Skills Provisioning) completion_

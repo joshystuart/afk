@@ -16,7 +16,11 @@ affects: [02-skills-provisioning plan 03 (frontend UI)]
 
 tech-stack:
   added: []
-  patterns: [read-only bind mount with :ro suffix for security, conditional symlink creation at container startup]
+  patterns:
+    [
+      read-only bind mount with :ro suffix for security,
+      conditional symlink creation at container startup,
+    ]
 
 key-files:
   created: []
@@ -29,13 +33,13 @@ key-files:
     - docker/scripts/entrypoint.sh
 
 key-decisions:
-  - "Skills bind mount uses :ro (read-only) enforced at Docker kernel level for container security"
-  - "Entrypoint uses rm -rf before ln -sfn for idempotent symlink creation on container restarts"
+  - 'Skills bind mount uses :ro (read-only) enforced at Docker kernel level for container security'
+  - 'Entrypoint uses rm -rf before ln -sfn for idempotent symlink creation on container restarts'
   - "mkdir -p creates parent dirs for .cursor, .agents, .codex that don't exist in base image"
 
 patterns-established:
-  - "Read-only bind mounts use :ro suffix in Docker HostConfig.Binds array"
-  - "Entrypoint functions guard on directory existence before acting"
+  - 'Read-only bind mounts use :ro suffix in Docker HostConfig.Binds array'
+  - 'Entrypoint functions guard on directory existence before acting'
 
 requirements-completed: [SKIL-02, SKIL-03]
 
@@ -108,5 +112,6 @@ None - no external service configuration required.
 All 6 modified files confirmed present. Both task commits (e1e1a09, 6bcb0c1) confirmed in git log. TypeScript compilation clean. All provisioning tests passing (4 total: 2 existing + 2 new).
 
 ---
-*Phase: 02-skills-provisioning*
-*Completed: 2026-04-11*
+
+_Phase: 02-skills-provisioning_
+_Completed: 2026-04-11_

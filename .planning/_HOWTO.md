@@ -8,6 +8,7 @@ End-to-end flow for this repo: **discovery → planning → implementation → t
 | --------- | --------------------------- | ------------------------------------------------------------------------ |
 | Discovery | Understand the codebase     | `/gsd-map-codebase`, `/gsd-scan`, `/gsd-intel refresh`                   |
 | Planning  | Requirements, phases, plans | `/gsd-new-project`, `/gsd-discuss-phase`, `/gsd-plan-phase`              |
+| Quick     | Small ad-hoc change         | `/gsd-quick` (see [Small changes](#small-changes-quick-mode))            |
 | Coding    | Execute plans with commits  | `/gsd-execute-phase`                                                     |
 | Testing   | Automated + human UAT       | Project test scripts, `/gsd-verify-work`, optional `/gsd-validate-phase` |
 | PR        | Push and open GitHub PR     | `/gsd-pr-branch` (optional), `/gsd-ship`                                 |
@@ -59,6 +60,31 @@ Use `/gsd-next` to advance when you are not sure what the next planning step is.
 **Tips (brownfield):** `/gsd-discuss-phase` is especially valuable so assumptions match NestJS / typed config / Docker patterns here. If your GSD settings use `workflow.discuss_mode: "assumptions"`, GSD surfaces codebase-derived assumptions for you to confirm or correct.
 
 **Keeping `.planning/` out of code review:** During init set `commit_docs: false`, or add `.planning/` to `.gitignore`, if you want artifacts local-only.
+
+---
+
+## Small changes (quick mode)
+
+For **ad-hoc tasks that do not need a full phase** (bugfix, small UI tweak, doc-only change), use [GSD quick mode](https://github.com/gsd-build/get-shit-done#quick-mode) instead of discuss → plan → execute on `ROADMAP.md`:
+
+```bash
+/gsd-quick
+```
+
+Quick mode keeps **atomic commits** and **state tracking** like phased work, but uses a shorter path: planner + executor, with research / plan-checker / verifier **off by default**. Artifacts live under **`.planning/quick/`** (numbered folders with `PLAN.md`, `SUMMARY.md`), not under `phases/`. Completed quick tasks are also reflected in **`STATE.md`** (“Quick Tasks Completed”), not in the roadmap phase list.
+
+**Optional flags** (composable; same semantics as upstream GSD):
+
+| Flag         | Effect                                                                              |
+| ------------ | ----------------------------------------------------------------------------------- |
+| `--discuss`  | Light discussion before planning to surface gray areas                              |
+| `--research` | Focused research before planning (libraries, approaches, pitfalls)                  |
+| `--validate` | Plan-checking plus post-execution verification                                      |
+| `--full`     | Full pipeline in quick-task form: discuss + research + plan-checking + verification |
+
+**Capture only (no implementation yet):** `/gsd-add-todo` or `/gsd-add-backlog` to park an idea without running quick mode.
+
+Upstream reference: [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done).
 
 ---
 

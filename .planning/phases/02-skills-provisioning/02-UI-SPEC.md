@@ -15,13 +15,13 @@ created: 2026-04-11
 
 ## Design System
 
-| Property | Value |
-|----------|-------|
-| Tool | none (MUI v5+ custom theme) |
-| Preset | not applicable |
-| Component library | @mui/material |
-| Icon library | @mui/icons-material |
-| Font | DM Sans (body), JetBrains Mono (headings/monospace) |
+| Property          | Value                                               |
+| ----------------- | --------------------------------------------------- |
+| Tool              | none (MUI v5+ custom theme)                         |
+| Preset            | not applicable                                      |
+| Component library | @mui/material                                       |
+| Icon library      | @mui/icons-material                                 |
+| Font              | DM Sans (body), JetBrains Mono (headings/monospace) |
 
 **Source:** Pre-existing — `web/src/themes/afk.ts`. No changes to the design system required for this phase.
 
@@ -31,14 +31,14 @@ created: 2026-04-11
 
 Declared values (MUI 8px base via `theme.spacing()`):
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| xs | 4px (`0.5`) | Icon gaps, inline padding |
-| sm | 8px (`1`) | Compact element spacing, gap between switch and label |
-| md | 16px (`2`) | Section header left padding (`pl: 2`), inter-field gaps |
-| lg | 20px (`2.5`) | Section header bottom margin (`mb: 2.5`) |
-| xl | 24px (`3`) | Page padding (`p: 3`) |
-| 2xl | 32px (`4`) | Section bottom margin (`mb: 4`) |
+| Token | Value        | Usage                                                   |
+| ----- | ------------ | ------------------------------------------------------- |
+| xs    | 4px (`0.5`)  | Icon gaps, inline padding                               |
+| sm    | 8px (`1`)    | Compact element spacing, gap between switch and label   |
+| md    | 16px (`2`)   | Section header left padding (`pl: 2`), inter-field gaps |
+| lg    | 20px (`2.5`) | Section header bottom margin (`mb: 2.5`)                |
+| xl    | 24px (`3`)   | Page padding (`p: 3`)                                   |
+| 2xl   | 32px (`4`)   | Section bottom margin (`mb: 4`)                         |
 
 Exceptions: none — follows established `GeneralSettings.tsx` and `CreateSession.tsx` spacing exactly.
 
@@ -48,13 +48,13 @@ Exceptions: none — follows established `GeneralSettings.tsx` and `CreateSessio
 
 ## Typography
 
-| Role | Size | Weight | Line Height | Font |
-|------|------|--------|-------------|------|
-| Section header (h5) | 0.875rem (14px) | 600 | 1.5 | JetBrains Mono |
-| Body (body1) | 0.875rem (14px) | 400 | 1.6 | DM Sans |
-| Body secondary (body2) | 0.8125rem (13px) | 400 | 1.6 | DM Sans |
-| Caption | 0.75rem (12px) | 400 | 1.5 | DM Sans |
-| Button | 0.8125rem (13px) | 500 | — | DM Sans |
+| Role                   | Size             | Weight | Line Height | Font           |
+| ---------------------- | ---------------- | ------ | ----------- | -------------- |
+| Section header (h5)    | 0.875rem (14px)  | 600    | 1.5         | JetBrains Mono |
+| Body (body1)           | 0.875rem (14px)  | 400    | 1.6         | DM Sans        |
+| Body secondary (body2) | 0.8125rem (13px) | 400    | 1.6         | DM Sans        |
+| Caption                | 0.75rem (12px)   | 400    | 1.5         | DM Sans        |
+| Button                 | 0.8125rem (13px) | 500    | —           | DM Sans        |
 
 **Source:** Pre-existing — `web/src/themes/afk.ts` lines 88–157. No new typographic roles needed.
 
@@ -62,13 +62,13 @@ Exceptions: none — follows established `GeneralSettings.tsx` and `CreateSessio
 
 ## Color
 
-| Role | Value | Usage |
-|------|-------|-------|
-| Dominant (60%) | `#09090b` (background) | Page background |
-| Secondary (30%) | `#0f0f11` (surface), `#18181b` (surfaceElevated) | Cards, form input backgrounds |
-| Accent (10%) | `#10b981` (emerald green) | Section header left border, focused input ring, switch thumb when on, warning alert links |
-| Destructive | `#ef4444` | Not used in this phase (no destructive actions) |
-| Warning | `#f59e0b` | Inline restart-needed notice |
+| Role            | Value                                            | Usage                                                                                     |
+| --------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Dominant (60%)  | `#09090b` (background)                           | Page background                                                                           |
+| Secondary (30%) | `#0f0f11` (surface), `#18181b` (surfaceElevated) | Cards, form input backgrounds                                                             |
+| Accent (10%)    | `#10b981` (emerald green)                        | Section header left border, focused input ring, switch thumb when on, warning alert links |
+| Destructive     | `#ef4444`                                        | Not used in this phase (no destructive actions)                                           |
+| Warning         | `#f59e0b`                                        | Inline restart-needed notice                                                              |
 
 Accent reserved for: section header left border indicator, Switch thumb (checked state), TextField focus ring, inline link to Settings page.
 
@@ -84,14 +84,15 @@ This phase adds two small UI surfaces using only existing MUI components. No new
 
 **Location:** New section in `web/src/pages/settings/GeneralSettings.tsx`, placed between the "Workspace" section and the "Claude Configuration" section.
 
-| Element | MUI Component | Props/Variant | Notes |
-|---------|--------------|---------------|-------|
-| Section header | `Box` + `Typography` | `variant="h5"`, `borderLeft: 2px solid accent`, `pl: 2`, `mb: 2.5` | Reuse existing `SectionHeader` component defined in GeneralSettings.tsx |
-| Skills directory input | `TextField` | `fullWidth`, `label`, `value`, `onChange`, `placeholder`, `helperText` | Same pattern as "Default Mount Directory" field |
+| Element                | MUI Component        | Props/Variant                                                          | Notes                                                                   |
+| ---------------------- | -------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Section header         | `Box` + `Typography` | `variant="h5"`, `borderLeft: 2px solid accent`, `pl: 2`, `mb: 2.5`     | Reuse existing `SectionHeader` component defined in GeneralSettings.tsx |
+| Skills directory input | `TextField`          | `fullWidth`, `label`, `value`, `onChange`, `placeholder`, `helperText` | Same pattern as "Default Mount Directory" field                         |
 
 **Layout:** `Box` with `mb: 4` wrapping the section — identical to the Workspace section pattern.
 
 **Interaction states:**
+
 - **Empty (no value):** Placeholder shown: `/path/to/your/skills`
 - **Filled:** Path value displayed in standard DM Sans input text
 - **Focused:** Accent border ring (`boxShadow: 0 0 0 3px accentGlow`) — handled by MUI theme override
@@ -101,16 +102,17 @@ This phase adds two small UI surfaces using only existing MUI components. No new
 
 **Location:** New section in `web/src/pages/CreateSession.tsx`, placed between the "Workspace" section and the "Session Details" section.
 
-| Element | MUI Component | Props/Variant | Notes |
-|---------|--------------|---------------|-------|
-| Section header | `Box` + `Typography` | `variant="h5"`, `borderLeft: 2px solid accent`, `pl: 2`, `mb: 2.5` | Inline SectionHeader pattern (same as other sections in CreateSession) |
-| Mount skills toggle | `FormControlLabel` + `Switch` | `size="small"`, `checked`, `onChange`, `disabled` | Same pattern as "Mount workspace to host" toggle |
-| Toggle label | `Typography` | `variant="body2"`, `color: textPrimary` | Label text: "Mount skills directory" |
-| Disabled hint | `Typography` | `variant="caption"`, `color: textTertiary` | Shown only when no skills directory is configured |
+| Element             | MUI Component                 | Props/Variant                                                      | Notes                                                                  |
+| ------------------- | ----------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Section header      | `Box` + `Typography`          | `variant="h5"`, `borderLeft: 2px solid accent`, `pl: 2`, `mb: 2.5` | Inline SectionHeader pattern (same as other sections in CreateSession) |
+| Mount skills toggle | `FormControlLabel` + `Switch` | `size="small"`, `checked`, `onChange`, `disabled`                  | Same pattern as "Mount workspace to host" toggle                       |
+| Toggle label        | `Typography`                  | `variant="body2"`, `color: textPrimary`                            | Label text: "Mount skills directory"                                   |
+| Disabled hint       | `Typography`                  | `variant="caption"`, `color: textTertiary`                         | Shown only when no skills directory is configured                      |
 
 **Layout:** `Box` with `mb: 4` wrapping the section — identical to other CreateSession sections.
 
 **Interaction states:**
+
 - **Toggle enabled, checked (default):** Switch is on (accent color). Skills will be mounted.
 - **Toggle enabled, unchecked:** Switch is off. Skills will not be mounted for this session.
 - **Toggle disabled:** Switch grayed out. Caption below explains: link to Settings to configure a skills directory.
@@ -122,23 +124,23 @@ This phase adds two small UI surfaces using only existing MUI components. No new
 
 ### Settings > General > Skills Section
 
-| Element | Copy |
-|---------|------|
-| Section header | Skills |
-| Field label | Skills Directory |
-| Field placeholder | /path/to/your/skills |
+| Element           | Copy                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| Section header    | Skills                                                                             |
+| Field label       | Skills Directory                                                                   |
+| Field placeholder | /path/to/your/skills                                                               |
 | Field helper text | Host directory containing agent skills. Mounted read-only into session containers. |
-| Save CTA | Save Settings *(existing, shared across all General tab fields)* |
-| Success message | Settings saved successfully! *(existing)* |
-| Error message | Failed to save settings: {server error message} *(existing pattern)* |
+| Save CTA          | Save Settings _(existing, shared across all General tab fields)_                   |
+| Success message   | Settings saved successfully! _(existing)_                                          |
+| Error message     | Failed to save settings: {server error message} _(existing pattern)_               |
 
 ### Create Session > Skills Section
 
-| Element | Copy |
-|---------|------|
-| Section header | Skills |
-| Toggle label | Mount skills directory |
-| Disabled hint | Set a [Skills Directory](/settings) in Settings to enable skills mounting |
+| Element        | Copy                                                                                           |
+| -------------- | ---------------------------------------------------------------------------------------------- |
+| Section header | Skills                                                                                         |
+| Toggle label   | Mount skills directory                                                                         |
+| Disabled hint  | Set a [Skills Directory](/settings) in Settings to enable skills mounting                      |
 | Restart notice | Skills directory was changed. Running sessions need to be restarted to use the updated skills. |
 
 ### Empty State
@@ -172,6 +174,7 @@ No skills-specific error states. Path validation errors on save use the existing
 ### Restart Notice Trigger
 
 The restart notice in Create Session is displayed when:
+
 - The skills directory setting has a value AND
 - There are running sessions (status `running` or `started`)
 
@@ -181,9 +184,9 @@ This is a passive informational notice, not a blocking state. The user can still
 
 ## Registry Safety
 
-| Registry | Blocks Used | Safety Gate |
-|----------|-------------|-------------|
-| not applicable | — | MUI only, no shadcn registry |
+| Registry       | Blocks Used | Safety Gate                  |
+| -------------- | ----------- | ---------------------------- |
+| not applicable | —           | MUI only, no shadcn registry |
 
 ---
 

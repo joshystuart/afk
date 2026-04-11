@@ -12,7 +12,11 @@ provides:
   - skillsPath and mountSkills on SessionConfigDto for per-session persistence
   - skillsPath on ContainerCreateOptions for container provisioning
   - mountSkills boolean on CreateSessionRequest for session-level opt-out
-affects: [02-skills-provisioning plan 02 (backend integration), 02-skills-provisioning plan 03 (frontend UI)]
+affects:
+  [
+    02-skills-provisioning plan 02 (backend integration),
+    02-skills-provisioning plan 03 (frontend UI),
+  ]
 
 tech-stack:
   added: []
@@ -33,11 +37,11 @@ key-files:
     - server/src/interactors/sessions/create-session/create-session-request.dto.ts
 
 key-decisions:
-  - "Reused MountPathValidator for skillsDirectory validation — same security rules as host mount paths"
-  - "mountSkills defaults to true so skills are mounted unless explicitly opted out per session"
+  - 'Reused MountPathValidator for skillsDirectory validation — same security rules as host mount paths'
+  - 'mountSkills defaults to true so skills are mounted unless explicitly opted out per session'
 
 patterns-established:
-  - "Skills fields follow the same column → interface → update handler → DTO pattern as defaultMountDirectory"
+  - 'Skills fields follow the same column → interface → update handler → DTO pattern as defaultMountDirectory'
 
 requirements-completed: [SKIL-01, SKIL-02]
 
@@ -114,5 +118,6 @@ None - no external service configuration required.
 All 10 modified files confirmed present. Both task commits (0813d70, 1db173a) confirmed in git log. TypeScript compilation clean. All tests passing (35 unit + 43 E2E).
 
 ---
-*Phase: 02-skills-provisioning*
-*Completed: 2026-04-11*
+
+_Phase: 02-skills-provisioning_
+_Completed: 2026-04-11_

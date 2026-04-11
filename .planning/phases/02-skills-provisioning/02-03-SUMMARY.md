@@ -11,14 +11,15 @@ provides:
   - Skills section in GeneralSettings with directory path field
   - Skills toggle in CreateSession with opt-out and restart notice
   - Web type definitions for skillsDirectory and mountSkills
-affects:
-  [
-    future phases requiring skills UI modifications,
-  ]
+affects: [future phases requiring skills UI modifications]
 
 tech-stack:
   added: []
-  patterns: [reuse SectionHeader pattern for new settings sections, mirror workspace mount toggle pattern for skills toggle]
+  patterns:
+    [
+      reuse SectionHeader pattern for new settings sections,
+      mirror workspace mount toggle pattern for skills toggle,
+    ]
 
 key-files:
   created: []

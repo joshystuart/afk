@@ -47,6 +47,9 @@ export class DockerContainerProvisioningService {
                   `${options.hostMountPath}:${this.getContainerMountTarget(options.repoUrl)}:rw`,
                 ]
               : []),
+            ...(options.skillsPath
+              ? [`${options.skillsPath}:/home/afk/.skills:ro`]
+              : []),
           ],
           RestartPolicy: { Name: 'unless-stopped' },
         },

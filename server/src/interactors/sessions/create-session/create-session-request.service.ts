@@ -53,9 +53,22 @@ export class CreateSessionRequestService {
       defaultMountDirectory:
         settings.general.defaultMountDirectory ?? undefined,
       cleanupOnDelete: request.cleanupOnDelete,
+      skillsDirectory: settings.general.skillsDirectory ?? undefined,
+      mountSkills: request.mountSkills,
     });
 
     await this.ensureMountPathReady(sessionConfig.hostMountPath, sessionName);
+
+    if (sessionConfig.skillsPath) {
+      try {
+        this.mountPathValidator.validate(sessionConfig.skillsPath);
+      } catch (error) {
+        if (error instanceof MountPathValidationError) {
+          throw new Error(`Skills directory: ${error.message}`);
+        }
+        throw error;
+      }
+    }
 
     return {
       sessionConfig,

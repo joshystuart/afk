@@ -131,6 +131,7 @@ export class StartSessionInteractor {
       gitUserEmail: session.config.gitUserEmail,
       ports: session.ports!,
       hostMountPath: session.config.hostMountPath || undefined,
+      skillsPath: session.config.skillsPath || undefined,
     });
 
     session.containerId = container.id;

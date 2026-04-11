@@ -56,7 +56,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] 02-01-PLAN.md — Data contracts: settings entity, DTOs, session config, container options for skills fields
 - [x] 02-02-PLAN.md — Backend integration: container provisioning bind mount, session lifecycle wiring, entrypoint symlinks
-- [ ] 02-03-PLAN.md — Frontend UI: settings skills section, create session opt-out toggle, restart notice
+- [x] 02-03-PLAN.md — Frontend UI: settings skills section, create session opt-out toggle, restart notice
 
 ### Phase 3: Agent Runner & Multi-Agent
 

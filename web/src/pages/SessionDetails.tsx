@@ -162,15 +162,6 @@ const SessionDetails: React.FC = () => {
     { enableOnFormTags: true, enableOnContentEditable: true },
   );
 
-  useHotkeys(
-    'meta+`',
-    (e) => {
-      e.preventDefault();
-      switchTab(activeTab === 'chat' ? 'terminal' : 'chat');
-    },
-    { enableOnFormTags: true, enableOnContentEditable: true },
-  );
-
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
 
   React.useEffect(() => {

@@ -219,6 +219,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
         sx={{
           width: '100%',
           height: '100%',
+          p: '12px 24px',
           visibility: showTerminal ? 'visible' : 'hidden',
         }}
       />

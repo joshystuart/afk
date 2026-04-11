@@ -42,11 +42,10 @@ created: 2026-04-11
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 1 | SEUX-01 | T-1-01 | Verify session ownership before PTY creation | unit | `cd server && npx jest session-gateway-terminal` | ❌ W0 | ⬜ pending |
-| 01-01-02 | 01 | 1 | SEUX-01 | T-1-02 | Reject terminal events from unsubscribed sockets | unit | `cd server && npx jest session-gateway-terminal` | ❌ W0 | ⬜ pending |
-| 01-01-03 | 01 | 1 | SEUX-01 | T-1-03 | Limit one active PTY per session per client | unit | `cd server && npx jest docker-container-exec` | ❌ W0 | ⬜ pending |
-| 01-01-04 | 01 | 1 | SEUX-01 | T-1-04 | Validate cols/rows bounds server-side | unit | `cd server && npx jest session-gateway-terminal` | ❌ W0 | ⬜ pending |
-| 01-02-01 | 02 | 1 | SEUX-01 | — | N/A | unit | `cd web && npx vitest run --project unit -- useSessionTabs` | ❌ W0 | ⬜ pending |
+| 1-01-01 | 01 | 1 | SEUX-01a | T-1-01 | Verify session ownership before creating PTY | unit | `cd server && npx jest session-gateway-terminal` | ❌ W0 | ⬜ pending |
+| 1-01-02 | 01 | 1 | SEUX-01b | T-1-02 | Reject terminal events from unsubscribed sockets | unit | `cd server && npx jest docker-container-exec` | ❌ W0 | ⬜ pending |
+| 1-01-03 | 01 | 1 | SEUX-01c | — | N/A | unit | `cd web && npx vitest run --project unit -- useSessionTabs` | ❌ W0 | ⬜ pending |
+| 1-01-04 | 01 | 1 | SEUX-01d | — | N/A | unit | `cd server && npx jest session-gateway` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -54,11 +53,11 @@ created: 2026-04-11
 
 ## Wave 0 Requirements
 
-- [ ] `server/src/gateways/session-gateway-terminal.service.spec.ts` — stubs for SEUX-01 (terminal gateway service)
-- [ ] `server/src/libs/docker/docker-container-exec.service.spec.ts` — extend for interactive PTY method
-- [ ] `web/src/hooks/useSessionTabs.test.ts` — stubs for tab state management
+- [ ] `server/src/gateways/session-gateway-terminal.service.spec.ts` — covers SEUX-01a
+- [ ] `server/src/libs/docker/docker-container-exec.service.spec.ts` — covers SEUX-01b (may already exist partially)
+- [ ] `web/src/hooks/useSessionTabs.test.ts` — covers SEUX-01c
 
-*Existing infrastructure covers test framework setup — no new framework installation needed.*
+*If none: "Existing infrastructure covers all phase requirements."*
 
 ---
 
@@ -66,10 +65,9 @@ created: 2026-04-11
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Tab keyboard shortcut (Ctrl+`) toggles views | SEUX-01 | Browser keyboard event simulation unreliable | Open session, press Ctrl+`, verify view switches |
-| Badge/dot indicator on inactive tab | SEUX-01 | Visual indicator requires browser rendering | Switch to chat tab, type in terminal, verify badge appears on terminal tab |
-| Terminal auto-reconnect on WebSocket drop | SEUX-01 | Requires network disruption simulation | Kill server, restart, verify terminal reconnects without manual action |
-| Terminal inherits dark theme colors | SEUX-01 | Visual appearance verification | Open terminal, compare bg/fg/cursor colors to theme values |
+| Visual tab switching UX | SEUX-01 | Browser interaction required | Open session page, verify tab bar between status bar and content, click Chat/Terminal tabs, verify instant switch, verify Ctrl+` shortcut |
+| Terminal theme cohesion (D-17) | SEUX-01 | Visual assessment | Verify terminal background matches app background (#09090b), cursor is accent green |
+| Unread badges (D-14, D-15) | SEUX-01 | Cross-tab interaction | Send terminal output while on chat tab, verify badge appears; send chat message while on terminal tab, verify badge appears |
 
 ---
 

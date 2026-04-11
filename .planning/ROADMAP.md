@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] 01-01-PLAN.md — Backend PTY infrastructure (terminal socket events, Docker interactive exec, gateway terminal service)
 - [x] 01-02-PLAN.md — Frontend tab and terminal components (xterm.js, hooks, tab bar, terminal view)
-- [ ] 01-03-PLAN.md — Session page integration (wire tab bar + terminal into SessionDetails, badges, keyboard shortcut)
+- [x] 01-03-PLAN.md — Session page integration (wire tab bar + terminal into SessionDetails, badges, keyboard shortcut)
       **UI hint**: yes
 
 ### Phase 2: Skills Provisioning

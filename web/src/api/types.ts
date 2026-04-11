@@ -45,6 +45,7 @@ export interface CreateSessionRequest {
   mountToHost?: boolean;
   hostMountPath?: string;
   cleanupOnDelete?: boolean;
+  mountSkills?: boolean;
 }
 
 export interface UpdateSessionRequest {
@@ -79,6 +80,7 @@ export interface Settings {
   hasGitHubToken: boolean;
   githubUsername?: string;
   defaultMountDirectory?: string | null;
+  skillsDirectory?: string | null;
   dockerSocketPath?: string | null;
   dockerStartPort?: number | null;
   dockerEndPort?: number | null;
@@ -116,6 +118,7 @@ export interface UpdateSettingsRequest {
   gitUserName?: string;
   gitUserEmail?: string;
   defaultMountDirectory?: string;
+  skillsDirectory?: string;
   dockerSocketPath?: string;
   dockerStartPort?: number;
   dockerEndPort?: number;

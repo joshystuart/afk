@@ -6,7 +6,7 @@ import { SettingsRepository } from '../../../domain/settings/settings.repository
 import { ListSkillsResponseDto } from './list-skills-response.dto';
 
 const MAX_SKILLS = 200;
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 15_000;
 
 interface SkillsCache {
   dir: string;

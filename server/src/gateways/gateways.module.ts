@@ -11,6 +11,7 @@ import { SessionGatewayChatService } from './session-gateway-chat.service';
 import { SessionGatewayFanoutService } from './session-gateway-fanout.service';
 import { SessionGatewayJobRunsService } from './session-gateway-job-runs.service';
 import { SessionGatewaySubscriptionsService } from './session-gateway-subscriptions.service';
+import { SessionGatewayTerminalService } from './session-gateway-terminal.service';
 import { SessionSubscriptionsModule } from './session-subscriptions.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { SessionSubscriptionsModule } from './session-subscriptions.module';
     SessionGatewayFanoutService,
     SessionGatewayJobRunsService,
     SessionGatewaySubscriptionsService,
+    SessionGatewayTerminalService,
     ScheduledJobGatewayResponseFactory,
   ],
   exports: [SessionGateway, SessionSubscriptionsModule],

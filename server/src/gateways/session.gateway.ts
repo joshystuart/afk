@@ -36,6 +36,7 @@ import {
   JobRunUpdatedPayload,
   SessionGatewayJobRunsService,
 } from './session-gateway-job-runs.service';
+import { SessionGatewayTerminalService } from './session-gateway-terminal.service';
 
 @WebSocketGateway({
   namespace: '/sessions',
@@ -57,6 +58,7 @@ export class SessionGateway
     private readonly sessionGatewayChatService: SessionGatewayChatService,
     private readonly sessionGatewayJobRunsService: SessionGatewayJobRunsService,
     private readonly sessionGatewayFanoutService: SessionGatewayFanoutService,
+    private readonly sessionGatewayTerminalService: SessionGatewayTerminalService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -66,6 +68,7 @@ export class SessionGateway
   }
 
   async handleDisconnect(client: Socket) {
+    await this.sessionGatewayTerminalService.handleDisconnect(client.id);
     await this.sessionGatewaySubscriptionsService.handleDisconnect(client.id);
 
     this.logger.log('Client disconnected', { clientId: client.id });
@@ -239,6 +242,45 @@ export class SessionGateway
     @ConnectedSocket() _client: Socket,
   ) {
     return this.sessionGatewayChatService.handleChatCancel(data);
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.terminalStart)
+  async handleTerminalStart(
+    @MessageBody() data: { sessionId: string; cols: number; rows: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    return this.sessionGatewayTerminalService.handleTerminalStart(
+      this.server,
+      client,
+      data,
+    );
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.terminalInput)
+  handleTerminalInput(
+    @MessageBody() data: { sessionId: string; data: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    return this.sessionGatewayTerminalService.handleTerminalInput(client, data);
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.terminalResize)
+  async handleTerminalResize(
+    @MessageBody() data: { sessionId: string; cols: number; rows: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    return this.sessionGatewayTerminalService.handleTerminalResize(
+      client,
+      data,
+    );
+  }
+
+  @SubscribeMessage(SOCKET_EVENTS.terminalClose)
+  handleTerminalClose(
+    @MessageBody() data: { sessionId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    return this.sessionGatewayTerminalService.handleTerminalClose(client, data);
   }
 
   @OnEvent(SOCKET_EVENTS.sessionDeleteProgress)

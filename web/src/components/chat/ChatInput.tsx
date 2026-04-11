@@ -30,6 +30,8 @@ import {
   getNextAgentMode,
   type AgentModeId,
 } from '../../utils/agent-modes';
+import { SkillAutocomplete } from './SkillAutocomplete';
+import type { SkillInfo } from '../../api/types';
 
 export const DEFAULT_MODEL = DEFAULT_CLAUDE_MODEL;
 export type ModelId = ClaudeModelId;
@@ -49,6 +51,7 @@ interface ChatInputProps {
   onModelChange: (model: ClaudeModelId) => void;
   selectedAgentMode: AgentModeId;
   onAgentModeChange: (mode: AgentModeId) => void;
+  skills?: SkillInfo[];
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -60,6 +63,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onModelChange,
   selectedAgentMode,
   onAgentModeChange,
+  skills = [],
 }) => {
   const [value, setValue] = React.useState('');
   const [continueConversation, setContinueConversation] = React.useState(true);
@@ -68,7 +72,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   );
   const [agentModeAnchorEl, setAgentModeAnchorEl] =
     React.useState<null | HTMLElement>(null);
+  const [showAutocomplete, setShowAutocomplete] = React.useState(false);
+  const [autocompleteFilter, setAutocompleteFilter] = React.useState('');
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
+  const inputContainerRef = React.useRef<HTMLDivElement>(null);
 
   const selectedModelLabel = getClaudeModelLabel(selectedModel);
   const selectedAgentModeLabel = getAgentModeLabel(selectedAgentMode);
@@ -85,14 +92,55 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     [selectedAgentMode, isProcessing, onAgentModeChange],
   );
 
+  const findSlashToken = (text: string, cursorPos: number) => {
+    const before = text.slice(0, cursorPos);
+    const match = before.match(/(^|\s)\/([\w-]*)$/);
+    if (!match) return null;
+    return {
+      filter: match[2],
+      start: before.lastIndexOf('/'),
+    };
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+
+    const cursorPos =
+      (e.target as HTMLInputElement).selectionStart ?? newValue.length;
+    const token = findSlashToken(newValue, cursorPos);
+
+    if (token && skills.length > 0) {
+      setShowAutocomplete(true);
+      setAutocompleteFilter(token.filter);
+    } else {
+      setShowAutocomplete(false);
+    }
+  };
+
+  const handleSkillSelect = (skillName: string) => {
+    const cursorPos = inputRef.current?.selectionStart ?? value.length;
+    const token = findSlashToken(value, cursorPos);
+    if (token) {
+      const before = value.slice(0, token.start);
+      const after = value.slice(cursorPos);
+      const newValue = `${before}/${skillName} ${after}`;
+      setValue(newValue);
+    }
+    setShowAutocomplete(false);
+    inputRef.current?.focus();
+  };
+
   const handleSend = () => {
     const trimmed = value.trim();
     if (!trimmed || isProcessing || disabled) return;
     onSend(trimmed, continueConversation, selectedModel);
     setValue('');
+    setShowAutocomplete(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (showAutocomplete) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -113,7 +161,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         bgcolor: afkColors.surface,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box
+        ref={inputContainerRef}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          position: 'relative',
+        }}
+      >
+        {showAutocomplete && (
+          <SkillAutocomplete
+            skills={skills}
+            filter={autocompleteFilter}
+            onSelect={handleSkillSelect}
+            onClose={() => setShowAutocomplete(false)}
+            anchorEl={inputRef.current}
+          />
+        )}
         <TextField
           inputRef={inputRef}
           fullWidth
@@ -122,10 +187,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           placeholder={
             isProcessing
               ? 'Claude is working...'
-              : 'Send a message to Claude...'
+              : 'Send a message to Claude... (type / for skills)'
           }
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           disabled={isProcessing || disabled}
           sx={{

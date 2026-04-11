@@ -125,6 +125,15 @@ export interface UpdateSettingsRequest {
   githubAccessToken?: string;
 }
 
+export interface SkillInfo {
+  name: string;
+  description: string;
+}
+
+export interface ListSkillsResponse {
+  skills: SkillInfo[];
+}
+
 export interface ApiError {
   success: false;
   error: {

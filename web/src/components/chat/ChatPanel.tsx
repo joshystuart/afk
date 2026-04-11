@@ -12,6 +12,7 @@ import {
 } from './ChatInput';
 import { StreamingIndicator } from './StreamingIndicator';
 import { useChat } from '../../hooks/useChat';
+import { useSkills } from '../../hooks/useSkills';
 import { sessionsApi } from '../../api/sessions.api';
 
 interface ChatPanelProps {
@@ -28,6 +29,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     cancelExecution,
   } = useChat(sessionId);
 
+  const { skills } = useSkills();
   const queryClient = useQueryClient();
   const { data: session } = useQuery({
     queryKey: ['session', sessionId],
@@ -264,6 +266,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         onModelChange={handleModelChange}
         selectedAgentMode={selectedAgentMode}
         onAgentModeChange={handleAgentModeChange}
+        skills={skills}
       />
     </Box>
   );

@@ -93,6 +93,19 @@ export class SessionGatewayTerminalService {
         });
       });
 
+      ptySession.stream.on('error', (err: Error) => {
+        this.logger.warn('PTY stream error', {
+          sessionId,
+          clientId: client.id,
+          error: err.message,
+        });
+        this.destroyClientPty(sessionId, client.id);
+        client.emit(SOCKET_EVENTS.terminalError, {
+          sessionId,
+          error: 'Terminal connection lost',
+        });
+      });
+
       ptySession.stream.on('end', () => {
         this.destroyClientPty(sessionId, client.id);
         client.emit(SOCKET_EVENTS.terminalClose, { sessionId });
@@ -133,6 +146,13 @@ export class SessionGatewayTerminalService {
       return {
         event: SOCKET_EVENTS.terminalError,
         data: { sessionId, error: 'Not subscribed to session' },
+      };
+    }
+
+    if (typeof data.data !== 'string') {
+      return {
+        event: SOCKET_EVENTS.terminalError,
+        data: { sessionId, error: 'Invalid terminal input' },
       };
     }
 

@@ -10,6 +10,14 @@ type TerminalStatus =
 
 const MAX_RECONNECT_ATTEMPTS = 3;
 
+function encodeToBase64(str: string): string {
+  return btoa(
+    Array.from(new TextEncoder().encode(str), (b) =>
+      String.fromCharCode(b),
+    ).join(''),
+  );
+}
+
 export const useTerminal = (sessionId: string) => {
   const { socket, connected } = useWebSocket();
   const [status, setStatus] = useState<TerminalStatus>('idle');
@@ -32,7 +40,7 @@ export const useTerminal = (sessionId: string) => {
   const sendInput = useCallback(
     (data: string) => {
       if (!socket?.connected) return;
-      const encoded = btoa(data);
+      const encoded = encodeToBase64(data);
       socket.emit('terminal.input', { sessionId, data: encoded });
     },
     [socket, sessionId],
@@ -73,7 +81,6 @@ export const useTerminal = (sessionId: string) => {
 
     const onError = (payload: { sessionId: string; error: string }) => {
       if (payload.sessionId !== sessionId) return;
-      console.error('Terminal error:', payload.error);
       setStatus('error');
     };
 

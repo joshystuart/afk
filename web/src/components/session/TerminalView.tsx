@@ -43,8 +43,10 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   const initializedRef = useRef(false);
   const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { startTerminal, sendInput, resize, status, setOnData } =
+  const { startTerminal, sendInput, resize, closeTerminal, status, setOnData } =
     useTerminal(sessionId);
+  const closeTerminalRef = useRef(closeTerminal);
+  closeTerminalRef.current = closeTerminal;
   const { terminalReady } = useSessionHealth(sessionId, true);
 
   const doFit = useCallback(() => {
@@ -96,6 +98,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
     initializedRef.current = true;
 
     return () => {
+      closeTerminalRef.current();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;

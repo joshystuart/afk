@@ -9,8 +9,8 @@ Requirements for v1 milestone. Each maps to roadmap phases.
 
 ### Skills Management
 
-- [ ] **SKIL-01**: User can configure a skills directory path in Settings
-- [ ] **SKIL-02**: Session containers mount the configured skills directory as read-only at creation time
+- [x] **SKIL-01**: User can configure a skills directory path in Settings
+- [x] **SKIL-02**: Session containers mount the configured skills directory as read-only at creation time
 - [ ] **SKIL-03**: Skills mounting supports multiple ecosystem layouts (GSD, skills.sh, superpowers)
 
 ### Multi-Agent
@@ -88,8 +88,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase                                  | Status  |
 | ----------- | -------------------------------------- | ------- |
 | SEUX-01     | Phase 1: Session UX                    | Pending |
-| SKIL-01     | Phase 2: Skills Provisioning           | Pending |
-| SKIL-02     | Phase 2: Skills Provisioning           | Pending |
+| SKIL-01     | Phase 2: Skills Provisioning           | Complete |
+| SKIL-02     | Phase 2: Skills Provisioning           | Complete |
 | SKIL-03     | Phase 2: Skills Provisioning           | Pending |
 | AGNT-01     | Phase 3: Agent Runner & Multi-Agent    | Pending |
 | AGNT-02     | Phase 3: Agent Runner & Multi-Agent    | Pending |

@@ -53,7 +53,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 4. Container cannot write to or modify the mounted skills directory
    **Plans**: 3 plans
    Plans:
-- [ ] 02-01-PLAN.md — Data contracts: settings entity, DTOs, session config, container options for skills fields
+
+- [x] 02-01-PLAN.md — Data contracts: settings entity, DTOs, session config, container options for skills fields
 - [ ] 02-02-PLAN.md — Backend integration: container provisioning bind mount, session lifecycle wiring, entrypoint symlinks
 - [ ] 02-03-PLAN.md — Frontend UI: settings skills section, create session opt-out toggle, restart notice
 

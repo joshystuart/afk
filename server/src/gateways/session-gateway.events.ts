@@ -36,6 +36,13 @@ export const SOCKET_EVENTS = {
   sessionDeleteProgress: 'session.delete.progress',
   sessionDeleted: 'session.deleted',
   sessionDeleteFailed: 'session.delete.failed',
+  terminalStart: 'terminal.start',
+  terminalData: 'terminal.data',
+  terminalInput: 'terminal.input',
+  terminalResize: 'terminal.resize',
+  terminalClose: 'terminal.close',
+  terminalError: 'terminal.error',
+  terminalStarted: 'terminal.started',
 } as const;
 
 export const CHAT_STATUS = {

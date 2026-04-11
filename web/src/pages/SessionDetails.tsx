@@ -25,7 +25,9 @@ import {
   ContentCopy as DuplicateIcon,
   FiberManualRecord as DotIcon,
   CloudUpload as PushIcon,
+  ChatBubbleOutline as ChatIcon,
 } from '@mui/icons-material';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { DockerLogsExpander } from '../components/DockerLogsExpander';
 import { PrimaryCtaButton } from '../components/PrimaryCtaButton';
@@ -41,13 +43,18 @@ import { ApprovalModal } from '../components/ApprovalModal';
 import { TerminalCursor } from '../components/TerminalCursor';
 import { CommitPushDialog } from '../components/CommitPushDialog';
 import { ChatPanel } from '../components/chat/ChatPanel';
+import { useSessionTabs } from '../hooks/useSessionTabs';
+import type { SessionTab } from '../hooks/useSessionTabs';
+import { SessionTabBar } from '../components/session/SessionTabBar';
+import { SessionTabPanel } from '../components/session/SessionTabPanel';
+import { TerminalView } from '../components/session/TerminalView';
 
 const CONTENT_HEIGHT = 'calc(100vh - 48px)';
 
 const SessionDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { subscribeToSession, unsubscribeFromSession, connected } =
+  const { socket, subscribeToSession, unsubscribeFromSession, connected } =
     useWebSocket();
 
   const {
@@ -88,6 +95,72 @@ const SessionDetails: React.FC = () => {
   const gitStatus = useGitStatus(id || null, isReady && hasGitRepo);
 
   const { deleteProgress } = useSessionStore();
+
+  const { activeTab, switchTab } = useSessionTabs(id || '');
+
+  const [terminalUnread, setTerminalUnread] = React.useState(false);
+  const [chatUnread, setChatUnread] = React.useState(false);
+
+  React.useEffect(() => {
+    if (activeTab === 'terminal') setTerminalUnread(false);
+    if (activeTab === 'chat') setChatUnread(false);
+  }, [activeTab]);
+
+  React.useEffect(() => {
+    if (!socket || !id) return;
+    const onTerminalData = (payload: { sessionId: string }) => {
+      if (payload.sessionId !== id) return;
+      if (activeTab !== 'terminal') {
+        setTerminalUnread(true);
+      }
+    };
+    socket.on('terminal.data', onTerminalData);
+    return () => {
+      socket.off('terminal.data', onTerminalData);
+    };
+  }, [socket, id, activeTab]);
+
+  React.useEffect(() => {
+    if (!socket || !id) return;
+    const onChatStream = (payload: { sessionId: string }) => {
+      if (payload.sessionId !== id) return;
+      if (activeTab !== 'chat') {
+        setChatUnread(true);
+      }
+    };
+    socket.on('chat.stream', onChatStream);
+    return () => {
+      socket.off('chat.stream', onChatStream);
+    };
+  }, [socket, id, activeTab]);
+
+  const sessionTabs: SessionTab[] = React.useMemo(
+    () => [
+      {
+        id: 'chat',
+        label: 'Chat',
+        icon: <ChatIcon sx={{ fontSize: 18 }} />,
+        badge: chatUnread,
+      },
+      {
+        id: 'terminal',
+        label: 'Terminal',
+        icon: <TerminalIcon sx={{ fontSize: 18 }} />,
+        badge: terminalUnread,
+        disabled: !healthCheck.terminalReady,
+      },
+    ],
+    [chatUnread, terminalUnread, healthCheck.terminalReady],
+  );
+
+  useHotkeys(
+    'ctrl+`',
+    (e) => {
+      e.preventDefault();
+      switchTab(activeTab === 'chat' ? 'terminal' : 'chat');
+    },
+    { enableOnFormTags: true, enableOnContentEditable: true },
+  );
 
   const [commitDialogOpen, setCommitDialogOpen] = React.useState(false);
 
@@ -925,9 +998,31 @@ const SessionDetails: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Chat area */}
-        <Box sx={{ flex: 1, minHeight: 0 }}>
-          <ChatPanel sessionId={session.id} />
+        {/* Tab bar — between status bar and content */}
+        <SessionTabBar
+          tabs={sessionTabs}
+          activeTab={activeTab}
+          onTabChange={switchTab}
+        />
+
+        {/* Tab panels — both mounted, visibility toggled */}
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <SessionTabPanel active={activeTab === 'chat'}>
+            <ChatPanel sessionId={session.id} />
+          </SessionTabPanel>
+          <SessionTabPanel active={activeTab === 'terminal'}>
+            <TerminalView
+              sessionId={session.id}
+              visible={activeTab === 'terminal'}
+            />
+          </SessionTabPanel>
         </Box>
       </Box>
 

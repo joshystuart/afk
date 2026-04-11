@@ -13,9 +13,11 @@ The approach is straightforward: xterm.js v6 is the de facto browser terminal li
 **Primary recommendation:** Use `@xterm/xterm` 6.0.0 with the fit and web-links addons on the frontend, and `dockerode` exec with `Tty: true` on the backend, piped through the existing Socket.IO session gateway as a new `SessionGatewayTerminalService`.
 
 <user_constraints>
+
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
+
 - **D-01:** Embed xterm.js as a direct dependency in the web app — no iframe, no external terminal URL for the in-page view
 - **D-02:** Keep the existing terminal popup as a "pop-out" option alongside the embedded terminal (both available)
 - **D-03:** Add a new PTY-over-WebSocket channel through the existing Socket.IO session gateway — do not reuse the current external terminal backend for the embedded view
@@ -35,6 +37,7 @@ The approach is straightforward: xterm.js v6 is the de facto browser terminal li
 - **D-17:** Terminal inherits the app's MUI dark theme colors for a cohesive look
 
 ### Claude's Discretion
+
 - Terminal copy/paste behavior (selection auto-copy vs Ctrl+Shift+C/V — choose what works best cross-platform)
 - Exact badge styling and animation
 - Terminal font family and size (should feel native but match the app's design language)
@@ -42,43 +45,50 @@ The approach is straightforward: xterm.js v6 is the de facto browser terminal li
 - Scrollback buffer size
 
 ### Deferred Ideas (OUT OF SCOPE)
+
 None — discussion stayed within phase scope
 </user_constraints>
 
 <phase_requirements>
+
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|------------------|
+| ID      | Description                                                       | Research Support                                                                                                                                |
+| ------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | SEUX-01 | User can tab between chat view and terminal view within a session | Tab infrastructure (MUI Tabs + extensible registry), embedded xterm.js terminal, PTY-over-Socket.IO backend, keyboard shortcut, activity badges |
+
 </phase_requirements>
 
 ## Standard Stack
 
 ### Core
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| @xterm/xterm | 6.0.0 | Terminal emulator in browser | [VERIFIED: npm registry] De facto standard for browser terminals. Used by VS Code, Theia, Gitpod. v6 is current major. |
-| @xterm/addon-fit | 0.11.0 | Auto-resize terminal to container | [VERIFIED: npm registry] Official addon, required for responsive layouts (D-05) |
-| @xterm/addon-web-links | 0.12.0 | Clickable URLs in terminal output | [VERIFIED: npm registry] Official addon, standard UX enhancement |
-| dockerode | (existing) | Docker Engine API — exec with PTY | [VERIFIED: codebase] Already in server/package.json, used by DockerContainerExecService |
-| socket.io / socket.io-client | (existing) | Real-time PTY data transport | [VERIFIED: codebase] Already powering chat, logs, job runs via session gateway |
-| react-hotkeys-hook | (existing) | Keyboard shortcut for tab toggle | [VERIFIED: codebase] Already a web dependency, used in ChatInput for Shift+Tab |
-| @mui/material Tabs | (existing) | Tab bar UI component | [VERIFIED: codebase] Already themed in afk.ts, used in Settings page |
+
+| Library                      | Version    | Purpose                           | Why Standard                                                                                                           |
+| ---------------------------- | ---------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| @xterm/xterm                 | 6.0.0      | Terminal emulator in browser      | [VERIFIED: npm registry] De facto standard for browser terminals. Used by VS Code, Theia, Gitpod. v6 is current major. |
+| @xterm/addon-fit             | 0.11.0     | Auto-resize terminal to container | [VERIFIED: npm registry] Official addon, required for responsive layouts (D-05)                                        |
+| @xterm/addon-web-links       | 0.12.0     | Clickable URLs in terminal output | [VERIFIED: npm registry] Official addon, standard UX enhancement                                                       |
+| dockerode                    | (existing) | Docker Engine API — exec with PTY | [VERIFIED: codebase] Already in server/package.json, used by DockerContainerExecService                                |
+| socket.io / socket.io-client | (existing) | Real-time PTY data transport      | [VERIFIED: codebase] Already powering chat, logs, job runs via session gateway                                         |
+| react-hotkeys-hook           | (existing) | Keyboard shortcut for tab toggle  | [VERIFIED: codebase] Already a web dependency, used in ChatInput for Shift+Tab                                         |
+| @mui/material Tabs           | (existing) | Tab bar UI component              | [VERIFIED: codebase] Already themed in afk.ts, used in Settings page                                                   |
 
 ### Supporting
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| @xterm/addon-unicode11 | latest | Unicode width calculation | If terminal text alignment issues appear with CJK/emoji characters |
-| @xterm/addon-clipboard | latest | Enhanced clipboard API | If cross-browser clipboard issues arise |
+
+| Library                | Version | Purpose                   | When to Use                                                        |
+| ---------------------- | ------- | ------------------------- | ------------------------------------------------------------------ |
+| @xterm/addon-unicode11 | latest  | Unicode width calculation | If terminal text alignment issues appear with CJK/emoji characters |
+| @xterm/addon-clipboard | latest  | Enhanced clipboard API    | If cross-browser clipboard issues arise                            |
 
 ### Alternatives Considered
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| @xterm/xterm | terminal.js | xterm.js is industry standard, massive ecosystem, VS Code-backed. No reason to consider alternatives. |
-| Socket.IO PTY channel | Separate WebSocket | Would require new auth, connection lifecycle. Reusing Socket.IO is simpler and consistent with D-03. |
+
+| Instead of            | Could Use          | Tradeoff                                                                                              |
+| --------------------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
+| @xterm/xterm          | terminal.js        | xterm.js is industry standard, massive ecosystem, VS Code-backed. No reason to consider alternatives. |
+| Socket.IO PTY channel | Separate WebSocket | Would require new auth, connection lifecycle. Reusing Socket.IO is simpler and consistent with D-03.  |
 
 **Installation:**
+
 ```bash
 cd web && npm install @xterm/xterm@6.0.0 @xterm/addon-fit@0.11.0 @xterm/addon-web-links@0.12.0
 ```
@@ -90,6 +100,7 @@ cd web && npm install @xterm/xterm@6.0.0 @xterm/addon-fit@0.11.0 @xterm/addon-we
 ### Recommended Project Structure
 
 **Frontend:**
+
 ```
 web/src/
 ├── components/
@@ -107,6 +118,7 @@ web/src/
 ```
 
 **Backend:**
+
 ```
 server/src/
 ├── gateways/
@@ -117,9 +129,11 @@ server/src/
 ```
 
 ### Pattern 1: Gateway Service Decomposition (Existing)
+
 **What:** Each Socket.IO concern gets its own injectable service, injected into the main gateway.
 **When to use:** For the new terminal PTY service — follows `SessionGatewayChatService` pattern exactly.
 **Example:**
+
 ```typescript
 // Source: server/src/gateways/session-gateway-chat.service.ts (existing pattern)
 @Injectable()
@@ -129,16 +143,21 @@ export class SessionGatewayTerminalService {
     private readonly dockerExec: DockerContainerExecService,
   ) {}
 
-  async handleTerminalStart(server: Server, data: { sessionId: string; cols: number; rows: number }) {
+  async handleTerminalStart(
+    server: Server,
+    data: { sessionId: string; cols: number; rows: number },
+  ) {
     // Create PTY exec, pipe to socket room
   }
 }
 ```
 
 ### Pattern 2: Socket Event Naming Convention (Existing)
+
 **What:** Events use dot-delimited namespaces: `{domain}.{action}`.
 **When to use:** New terminal events follow: `terminal.start`, `terminal.data`, `terminal.resize`, `terminal.close`.
 **Example:**
+
 ```typescript
 // Source: server/src/gateways/session-gateway.events.ts (extend existing)
 export const SOCKET_EVENTS = {
@@ -154,9 +173,11 @@ export const SOCKET_EVENTS = {
 ```
 
 ### Pattern 3: Mounted-but-Hidden Tab Panels (D-13)
+
 **What:** Both chat and terminal components stay in the DOM; visibility toggled via CSS `display: none` / `display: flex`.
 **When to use:** Required by D-13 — terminal must preserve scrollback and not disconnect when switching to chat.
 **Example:**
+
 ```typescript
 // Keep both mounted, toggle visibility
 <Box sx={{ display: activeTab === 'chat' ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
@@ -168,9 +189,11 @@ export const SOCKET_EVENTS = {
 ```
 
 ### Pattern 4: Extensible Tab Registry (D-12)
+
 **What:** Tab definitions as a typed array/registry that components can extend without modifying the tab bar itself.
 **When to use:** Designing the tab bar so future phases (file explorer, diff viewer) add tabs trivially.
 **Example:**
+
 ```typescript
 interface SessionTab {
   id: string;
@@ -188,6 +211,7 @@ const SESSION_TABS: SessionTab[] = [
 ```
 
 ### Anti-Patterns to Avoid
+
 - **Unmounting terminal on tab switch:** Would destroy xterm instance, lose scrollback, and disconnect PTY. Use CSS visibility instead.
 - **Creating a new WebSocket connection for terminal:** The project already has Socket.IO with auth, rooms, and reconnection. Adding a separate WS connection duplicates auth and complicates lifecycle.
 - **Sharing the TTY exec between embedded and popup terminal:** They're different transport mechanisms (Socket.IO vs ttyd). Each should have its own shell session. The container already runs tmux so users can create multiple sessions.
@@ -195,47 +219,53 @@ const SESSION_TABS: SessionTab[] = [
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Terminal emulation | Custom ANSI parser | @xterm/xterm | Thousands of ANSI escape sequences, Unicode width tables, selection, accessibility. Years of edge cases. |
-| Terminal auto-resize | Manual ResizeObserver + row/col math | @xterm/addon-fit | Correctly calculates rows/cols from pixel dimensions accounting for font metrics |
-| URL detection in terminal | Regex over terminal buffer | @xterm/addon-web-links | Handles URLs wrapped across lines, various URL formats |
-| PTY allocation in Docker | Raw Docker API calls | dockerode exec with `Tty: true` | Handles stream multiplexing, hijack protocol |
-| Keyboard shortcuts | addEventListener('keydown') | react-hotkeys-hook (already installed) | Handles focus scoping, form element conflicts, platform differences |
+| Problem                   | Don't Build                          | Use Instead                            | Why                                                                                                      |
+| ------------------------- | ------------------------------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Terminal emulation        | Custom ANSI parser                   | @xterm/xterm                           | Thousands of ANSI escape sequences, Unicode width tables, selection, accessibility. Years of edge cases. |
+| Terminal auto-resize      | Manual ResizeObserver + row/col math | @xterm/addon-fit                       | Correctly calculates rows/cols from pixel dimensions accounting for font metrics                         |
+| URL detection in terminal | Regex over terminal buffer           | @xterm/addon-web-links                 | Handles URLs wrapped across lines, various URL formats                                                   |
+| PTY allocation in Docker  | Raw Docker API calls                 | dockerode exec with `Tty: true`        | Handles stream multiplexing, hijack protocol                                                             |
+| Keyboard shortcuts        | addEventListener('keydown')          | react-hotkeys-hook (already installed) | Handles focus scoping, form element conflicts, platform differences                                      |
 
 ## Common Pitfalls
 
 ### Pitfall 1: xterm.js CSS Not Imported
+
 **What goes wrong:** Terminal renders as unstyled text, no cursor, broken layout.
 **Why it happens:** xterm.js v6 requires importing `@xterm/xterm/css/xterm.css`. Easy to forget since it's a JS library.
 **How to avoid:** Import CSS in the TerminalView component or in the app's entry point. Vite handles CSS imports natively.
 **Warning signs:** Terminal text visible but no cursor blinking, text not in a grid.
 
 ### Pitfall 2: Terminal Resize Race Condition
+
 **What goes wrong:** Terminal shows wrong number of columns after container resize, text wraps incorrectly.
 **Why it happens:** `fit()` called before the container has its final dimensions (during CSS transitions or initial render).
 **How to avoid:** Use ResizeObserver on the terminal container div, debounce fit() calls by ~50ms, and call fit() after the tab becomes visible.
 **Warning signs:** Terminal content rewraps when switching tabs, or shows one-column-wide text.
 
 ### Pitfall 3: Docker Exec Stream Not in TTY Mode
+
 **What goes wrong:** Terminal shows garbled output, no colors, no interactive programs (vim, htop).
 **Why it happens:** Docker exec created without `Tty: true` — defaults to multiplexed stdout/stderr which requires demuxing.
 **How to avoid:** Always set `Tty: true` and `AttachStdin: true` when creating the exec for the embedded terminal. With TTY mode, the stream is a raw PTY — no demuxing needed.
 **Warning signs:** Output has binary-looking prefixes (8-byte headers from demux protocol).
 
 ### Pitfall 4: xterm.js Instance Opened Multiple Times
+
 **What goes wrong:** Terminal appears to duplicate, flickers, or becomes unresponsive.
 **Why it happens:** React strict mode or re-renders call `terminal.open(container)` multiple times.
 **How to avoid:** Use a ref to track initialization state. Open terminal only once per mount. Clean up with `terminal.dispose()` on unmount.
 **Warning signs:** Two cursors visible, terminal not responding to input.
 
 ### Pitfall 5: PTY Session Not Cleaned Up on Disconnect
+
 **What goes wrong:** Zombie exec processes accumulate inside the container, consuming resources.
 **Why it happens:** Client disconnects (tab close, navigation) without sending a close event, or server doesn't handle socket disconnect.
 **How to avoid:** On server: track active PTY exec streams per client socket ID. In `handleDisconnect`, destroy all streams for that client. On client: send `terminal.close` before unmounting.
 **Warning signs:** `docker exec` processes accumulating in container (`ps aux` shows many bash processes).
 
 ### Pitfall 6: fit() on Hidden Element Returns 0 Rows/Cols
+
 **What goes wrong:** Terminal sends resize event with 0x0 dimensions, which either errors or makes the PTY unusable.
 **Why it happens:** When terminal container has `display: none`, `fitAddon.proposeDimensions()` returns undefined or 0.
 **How to avoid:** Only call `fit()` when the terminal tab is active/visible. Call `fit()` when switching TO the terminal tab.
@@ -244,6 +274,7 @@ const SESSION_TABS: SessionTab[] = [
 ## Code Examples
 
 ### Docker Interactive Exec with PTY
+
 ```typescript
 // Based on existing DockerContainerExecService pattern + dockerode TTY mode
 async execInteractive(
@@ -278,6 +309,7 @@ async execInteractive(
 ```
 
 ### xterm.js React Integration
+
 ```typescript
 // TerminalView component pattern
 import { Terminal } from '@xterm/xterm';
@@ -340,6 +372,7 @@ const TerminalView: React.FC<{ sessionId: string; visible: boolean }> = ({
 ```
 
 ### Socket.IO Terminal Events (Client Side)
+
 ```typescript
 // useTerminal hook pattern — mirrors useChat hook structure
 const useTerminal = (sessionId: string) => {
@@ -375,7 +408,9 @@ const useTerminal = (sessionId: string) => {
     };
 
     socket.on('terminal.data', onData);
-    return () => { socket.off('terminal.data', onData); };
+    return () => {
+      socket.off('terminal.data', onData);
+    };
   }, [socket, connected, sessionId]);
 
   return { startTerminal, sendInput, resize };
@@ -383,6 +418,7 @@ const useTerminal = (sessionId: string) => {
 ```
 
 ### Tab State Persistence (D-08)
+
 ```typescript
 // Simple session-scoped persistence via sessionStorage
 const ACTIVE_TAB_KEY = 'afk:session-tab:';
@@ -406,13 +442,14 @@ const useSessionTabs = (sessionId: string) => {
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| xterm.js v4 (`xterm`) | xterm.js v6 (`@xterm/xterm`) | 2024 | New scoped package names. v4/v5 packages deprecated. Must use `@xterm/` prefix. |
-| xterm `Terminal.loadAddon()` with old API | Same API but from `@xterm/` packages | 2024 | Import paths changed, API mostly stable |
-| Docker exec with demux | Docker exec with Tty: true (no demux needed) | Always available | When Tty is true, stream is raw PTY data — simpler |
+| Old Approach                              | Current Approach                             | When Changed     | Impact                                                                          |
+| ----------------------------------------- | -------------------------------------------- | ---------------- | ------------------------------------------------------------------------------- |
+| xterm.js v4 (`xterm`)                     | xterm.js v6 (`@xterm/xterm`)                 | 2024             | New scoped package names. v4/v5 packages deprecated. Must use `@xterm/` prefix. |
+| xterm `Terminal.loadAddon()` with old API | Same API but from `@xterm/` packages         | 2024             | Import paths changed, API mostly stable                                         |
+| Docker exec with demux                    | Docker exec with Tty: true (no demux needed) | Always available | When Tty is true, stream is raw PTY data — simpler                              |
 
 **Deprecated/outdated:**
+
 - `xterm` npm package (without `@xterm/` prefix): Deprecated. Must use `@xterm/xterm` v6+.
 - `xterm-addon-fit`, `xterm-addon-web-links`: Old unscoped addon names. Use `@xterm/addon-fit`, `@xterm/addon-web-links`.
 
@@ -427,13 +464,13 @@ const useSessionTabs = (sessionId: string) => {
 
 ## Assumptions Log
 
-| # | Claim | Section | Risk if Wrong |
-|---|-------|---------|---------------|
-| A1 | `dockerode` exec supports `Tty: true` with bidirectional stream in the current project version | Code Examples | Would need different stream handling. LOW risk — this is core dockerode functionality. |
-| A2 | xterm.js v6 Terminal constructor accepts `theme` object for custom colors | Code Examples | Would need to apply theme via CSS instead. LOW risk — well-documented feature. |
-| A3 | `sessionStorage` is appropriate for tab state persistence (D-08) | Code Examples | If persistence across browser sessions is needed, would need `localStorage` instead. MEDIUM risk — "restore when reopening" could mean browser restart. |
-| A4 | Socket.IO binary data (terminal output) performs adequately for interactive terminal use | Architecture | If latency is too high, may need raw WebSocket. LOW risk — Socket.IO handles binary efficiently with WebSocket transport. |
-| A5 | Container's bash shell is available at `/bin/bash` for all Docker images | Code Examples | Some minimal images might only have `/bin/sh`. LOW risk — AFK's base Dockerfile installs bash. |
+| #   | Claim                                                                                          | Section       | Risk if Wrong                                                                                                                                           |
+| --- | ---------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | `dockerode` exec supports `Tty: true` with bidirectional stream in the current project version | Code Examples | Would need different stream handling. LOW risk — this is core dockerode functionality.                                                                  |
+| A2  | xterm.js v6 Terminal constructor accepts `theme` object for custom colors                      | Code Examples | Would need to apply theme via CSS instead. LOW risk — well-documented feature.                                                                          |
+| A3  | `sessionStorage` is appropriate for tab state persistence (D-08)                               | Code Examples | If persistence across browser sessions is needed, would need `localStorage` instead. MEDIUM risk — "restore when reopening" could mean browser restart. |
+| A4  | Socket.IO binary data (terminal output) performs adequately for interactive terminal use       | Architecture  | If latency is too high, may need raw WebSocket. LOW risk — Socket.IO handles binary efficiently with WebSocket transport.                               |
+| A5  | Container's bash shell is available at `/bin/bash` for all Docker images                       | Code Examples | Some minimal images might only have `/bin/sh`. LOW risk — AFK's base Dockerfile installs bash.                                                          |
 
 ## Open Questions
 
@@ -459,31 +496,35 @@ Step 2.6: SKIPPED — This phase adds npm packages (frontend) and extends existi
 ## Validation Architecture
 
 ### Test Framework
-| Property | Value |
-|----------|-------|
-| Framework (server) | Jest 29 via ts-jest |
-| Config file (server) | `server/package.json` jest block + `server/test/jest-e2e.json` |
-| Quick run command (server) | `cd server && npx jest --testPathPattern=session-gateway-terminal` |
-| Full suite command (server) | `cd server && npx jest` |
-| Framework (web) | Vitest 4 |
-| Config file (web) | `web/vite.config.ts` (unit project) |
-| Quick run command (web) | `cd web && npx vitest run --project unit` |
-| Full suite command (web) | `cd web && npx vitest run --project unit` |
+
+| Property                    | Value                                                              |
+| --------------------------- | ------------------------------------------------------------------ |
+| Framework (server)          | Jest 29 via ts-jest                                                |
+| Config file (server)        | `server/package.json` jest block + `server/test/jest-e2e.json`     |
+| Quick run command (server)  | `cd server && npx jest --testPathPattern=session-gateway-terminal` |
+| Full suite command (server) | `cd server && npx jest`                                            |
+| Framework (web)             | Vitest 4                                                           |
+| Config file (web)           | `web/vite.config.ts` (unit project)                                |
+| Quick run command (web)     | `cd web && npx vitest run --project unit`                          |
+| Full suite command (web)    | `cd web && npx vitest run --project unit`                          |
 
 ### Phase Requirements → Test Map
-| Req ID | Behavior | Test Type | Automated Command | File Exists? |
-|--------|----------|-----------|-------------------|-------------|
-| SEUX-01a | Terminal gateway service handles start/data/resize/close events | unit | `cd server && npx jest session-gateway-terminal` | ❌ Wave 0 |
-| SEUX-01b | Docker exec interactive PTY method creates bidirectional stream | unit | `cd server && npx jest docker-container-exec` | ❌ Wave 0 |
-| SEUX-01c | Tab state hook returns correct active tab and persists changes | unit | `cd web && npx vitest run --project unit -- useSessionTabs` | ❌ Wave 0 |
-| SEUX-01d | Terminal socket events registered in gateway events constant | unit | `cd server && npx jest session-gateway` | ✅ (extend existing spec) |
+
+| Req ID   | Behavior                                                        | Test Type | Automated Command                                           | File Exists?              |
+| -------- | --------------------------------------------------------------- | --------- | ----------------------------------------------------------- | ------------------------- |
+| SEUX-01a | Terminal gateway service handles start/data/resize/close events | unit      | `cd server && npx jest session-gateway-terminal`            | ❌ Wave 0                 |
+| SEUX-01b | Docker exec interactive PTY method creates bidirectional stream | unit      | `cd server && npx jest docker-container-exec`               | ❌ Wave 0                 |
+| SEUX-01c | Tab state hook returns correct active tab and persists changes  | unit      | `cd web && npx vitest run --project unit -- useSessionTabs` | ❌ Wave 0                 |
+| SEUX-01d | Terminal socket events registered in gateway events constant    | unit      | `cd server && npx jest session-gateway`                     | ✅ (extend existing spec) |
 
 ### Sampling Rate
+
 - **Per task commit:** Quick run commands above for changed module
 - **Per wave merge:** Full server + web test suites
 - **Phase gate:** Full suites green before `/gsd-verify-work`
 
 ### Wave 0 Gaps
+
 - [ ] `server/src/gateways/session-gateway-terminal.service.spec.ts` — covers SEUX-01a
 - [ ] `server/src/libs/docker/docker-container-exec.service.spec.ts` — covers SEUX-01b (may already exist partially)
 - [ ] `web/src/hooks/useSessionTabs.test.ts` — covers SEUX-01c
@@ -492,39 +533,43 @@ Step 2.6: SKIPPED — This phase adds npm packages (frontend) and extends existi
 
 ### Applicable ASVS Categories
 
-| ASVS Category | Applies | Standard Control |
-|---------------|---------|-----------------|
-| V2 Authentication | yes | Existing Socket.IO auth guard validates JWT before any terminal events. No new auth needed. |
-| V3 Session Management | yes | Terminal PTY tied to session subscription — existing `SessionGatewaySubscriptionsService` verifies session ownership. |
-| V4 Access Control | yes | Only clients subscribed to a session room can send terminal events for that session. Room-based isolation via Socket.IO. |
-| V5 Input Validation | yes | Validate `cols`/`rows` as positive integers within sane bounds (e.g., 1-500). Validate `sessionId` format. |
-| V6 Cryptography | no | No crypto operations in this phase. |
+| ASVS Category         | Applies | Standard Control                                                                                                         |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| V2 Authentication     | yes     | Existing Socket.IO auth guard validates JWT before any terminal events. No new auth needed.                              |
+| V3 Session Management | yes     | Terminal PTY tied to session subscription — existing `SessionGatewaySubscriptionsService` verifies session ownership.    |
+| V4 Access Control     | yes     | Only clients subscribed to a session room can send terminal events for that session. Room-based isolation via Socket.IO. |
+| V5 Input Validation   | yes     | Validate `cols`/`rows` as positive integers within sane bounds (e.g., 1-500). Validate `sessionId` format.               |
+| V6 Cryptography       | no      | No crypto operations in this phase.                                                                                      |
 
 ### Known Threat Patterns for Terminal-over-WebSocket
 
-| Pattern | STRIDE | Standard Mitigation |
-|---------|--------|---------------------|
-| Cross-session terminal access | Tampering / Elevation | Verify session ownership before creating PTY. Use Socket.IO room isolation (existing pattern from chat). |
-| Terminal input injection from unsubscribed client | Tampering | Reject terminal events from sockets not in the session room. |
-| PTY resource exhaustion | Denial of Service | Limit one active PTY per session per client. Clean up on disconnect. Track active execs per socket. |
-| Oversized resize values | Denial of Service | Validate cols/rows bounds server-side before calling `exec.resize()`. |
+| Pattern                                           | STRIDE                | Standard Mitigation                                                                                      |
+| ------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------- |
+| Cross-session terminal access                     | Tampering / Elevation | Verify session ownership before creating PTY. Use Socket.IO room isolation (existing pattern from chat). |
+| Terminal input injection from unsubscribed client | Tampering             | Reject terminal events from sockets not in the session room.                                             |
+| PTY resource exhaustion                           | Denial of Service     | Limit one active PTY per session per client. Clean up on disconnect. Track active execs per socket.      |
+| Oversized resize values                           | Denial of Service     | Validate cols/rows bounds server-side before calling `exec.resize()`.                                    |
 
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - **Codebase analysis:** `SessionDetails.tsx`, `useWebSocket.tsx`, `useChat.ts`, `session.gateway.ts`, `session-gateway-chat.service.ts`, `session-gateway.events.ts`, `docker-container-exec.service.ts`, `docker-container-provisioning.service.ts`, `Settings.tsx`, `afk.ts` theme, `ChatPanel.tsx`, `Layout.tsx`, `docker/scripts/entrypoint.sh`, `docker/base/Dockerfile`
 - **npm registry:** @xterm/xterm@6.0.0, @xterm/addon-fit@0.11.0, @xterm/addon-web-links@0.12.0 — versions verified 2026-04-11
 - **Dockerode documentation:** exec with Tty mode [VERIFIED: existing project usage in DockerContainerExecService]
 
 ### Secondary (MEDIUM confidence)
+
 - xterm.js API patterns from official examples and VS Code integration model
 
 ### Tertiary (LOW confidence)
+
 - None — all claims either verified against codebase or npm registry
 
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH — all libraries either already in codebase or verified against npm registry
 - Architecture: HIGH — patterns directly derived from existing codebase (gateway service decomposition, socket events, MUI Tabs usage)
 - Pitfalls: HIGH — common xterm.js integration issues well-documented and verified through Docker exec API behavior

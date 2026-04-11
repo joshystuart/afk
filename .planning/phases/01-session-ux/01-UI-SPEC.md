@@ -15,15 +15,15 @@ created: 2026-04-11
 
 ## Design System
 
-| Property | Value |
-|----------|-------|
-| Tool | none (MUI custom theme) |
-| Preset | not applicable |
-| Component library | @mui/material (existing) |
-| Icon library | @mui/icons-material (existing) |
-| Font (body) | DM Sans, Helvetica Neue, Arial, sans-serif |
-| Font (headings/mono) | JetBrains Mono, monospace |
-| Theme file | `web/src/themes/afk.ts` — all tokens sourced from `afkColors` export |
+| Property             | Value                                                                |
+| -------------------- | -------------------------------------------------------------------- |
+| Tool                 | none (MUI custom theme)                                              |
+| Preset               | not applicable                                                       |
+| Component library    | @mui/material (existing)                                             |
+| Icon library         | @mui/icons-material (existing)                                       |
+| Font (body)          | DM Sans, Helvetica Neue, Arial, sans-serif                           |
+| Font (headings/mono) | JetBrains Mono, monospace                                            |
+| Theme file           | `web/src/themes/afk.ts` — all tokens sourced from `afkColors` export |
 
 **Source:** Codebase — `web/src/themes/afk.ts`, `web/src/index.css`
 
@@ -33,15 +33,15 @@ created: 2026-04-11
 
 Declared values (must be multiples of 4):
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| xs | 4px | Icon gaps, inline padding |
-| sm | 8px | Compact element spacing, tab icon-to-label gap |
-| md | 16px | Default element spacing, tab bar horizontal padding |
-| lg | 24px | Section padding |
-| xl | 32px | Layout gaps |
-| 2xl | 48px | Major section breaks |
-| 3xl | 64px | Page-level spacing |
+| Token | Value | Usage                                               |
+| ----- | ----- | --------------------------------------------------- |
+| xs    | 4px   | Icon gaps, inline padding                           |
+| sm    | 8px   | Compact element spacing, tab icon-to-label gap      |
+| md    | 16px  | Default element spacing, tab bar horizontal padding |
+| lg    | 24px  | Section padding                                     |
+| xl    | 32px  | Layout gaps                                         |
+| 2xl   | 48px  | Major section breaks                                |
+| 3xl   | 64px  | Page-level spacing                                  |
 
 Exceptions: Tab bar height is 40px (from existing MuiTab `minHeight: 40` override in `afk.ts`). Not on the 8-point grid but locked by existing theme — do not change.
 
@@ -51,12 +51,12 @@ Exceptions: Tab bar height is 40px (from existing MuiTab `minHeight: 40` overrid
 
 ## Typography
 
-| Role | Size | Weight | Line Height | Font Family |
-|------|------|--------|-------------|-------------|
-| Body | 14px (0.875rem) | 400 | 1.6 | DM Sans |
-| Label/Tab | 13px (0.8125rem) | 500 | 1.5 | DM Sans |
-| Caption | 12px (0.75rem) | 400 | 1.5 | DM Sans |
-| Terminal | 14px | 400 | normal (xterm default) | JetBrains Mono, Menlo, monospace |
+| Role      | Size             | Weight | Line Height            | Font Family                      |
+| --------- | ---------------- | ------ | ---------------------- | -------------------------------- |
+| Body      | 14px (0.875rem)  | 400    | 1.6                    | DM Sans                          |
+| Label/Tab | 13px (0.8125rem) | 500    | 1.5                    | DM Sans                          |
+| Caption   | 12px (0.75rem)   | 400    | 1.5                    | DM Sans                          |
+| Terminal  | 14px             | 400    | normal (xterm default) | JetBrains Mono, Menlo, monospace |
 
 **Rationale:** Body, Label, and Caption sizes match existing `afk.ts` typography definitions (`body1`, `button`/`MuiTab`, `caption`). Terminal font at 14px JetBrains Mono matches the mono family already used for headings and code elements across the app.
 
@@ -66,12 +66,12 @@ Exceptions: Tab bar height is 40px (from existing MuiTab `minHeight: 40` overrid
 
 ## Color
 
-| Role | Value | Usage |
-|------|-------|-------|
-| Dominant (60%) | `#09090b` | Page background, terminal background |
-| Secondary (30%) | `#0f0f11` / `#18181b` | Surface (paper), elevated surface (tab bar background, cards) |
-| Accent (10%) | `#10b981` | Active tab indicator, tab label when selected, terminal cursor, focus rings, unread badge |
-| Destructive | `#ef4444` | Not used in this phase (no destructive actions) |
+| Role            | Value                 | Usage                                                                                     |
+| --------------- | --------------------- | ----------------------------------------------------------------------------------------- |
+| Dominant (60%)  | `#09090b`             | Page background, terminal background                                                      |
+| Secondary (30%) | `#0f0f11` / `#18181b` | Surface (paper), elevated surface (tab bar background, cards)                             |
+| Accent (10%)    | `#10b981`             | Active tab indicator, tab label when selected, terminal cursor, focus rings, unread badge |
+| Destructive     | `#ef4444`             | Not used in this phase (no destructive actions)                                           |
 
 ### Accent Reserved For (this phase)
 
@@ -83,15 +83,15 @@ Exceptions: Tab bar height is 40px (from existing MuiTab `minHeight: 40` overrid
 
 ### Supporting Palette
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `textPrimary` | `#fafafa` | Tab labels (inactive hover), terminal foreground |
-| `textSecondary` | `#a1a1aa` | Tab labels (inactive default), terminal status text |
-| `textTertiary` | `#71717a` | Disabled tab labels |
-| `border` | `#1c1c1f` | Tab bar bottom border |
-| `borderSubtle` | `#141416` | Dividers within the session page |
-| `accentMuted` | `rgba(16, 185, 129, 0.12)` | Selected tab background tint |
-| `accentGlow` | `rgba(16, 185, 129, 0.25)` | Focus glow on interactive elements |
+| Token           | Value                      | Usage                                               |
+| --------------- | -------------------------- | --------------------------------------------------- |
+| `textPrimary`   | `#fafafa`                  | Tab labels (inactive hover), terminal foreground    |
+| `textSecondary` | `#a1a1aa`                  | Tab labels (inactive default), terminal status text |
+| `textTertiary`  | `#71717a`                  | Disabled tab labels                                 |
+| `border`        | `#1c1c1f`                  | Tab bar bottom border                               |
+| `borderSubtle`  | `#141416`                  | Dividers within the session page                    |
+| `accentMuted`   | `rgba(16, 185, 129, 0.12)` | Selected tab background tint                        |
+| `accentGlow`    | `rgba(16, 185, 129, 0.25)` | Focus glow on interactive elements                  |
 
 **Source:** Codebase — `afk.ts` `colors` object, MuiTab/MuiTabs overrides
 
@@ -101,23 +101,23 @@ Exceptions: Tab bar height is 40px (from existing MuiTab `minHeight: 40` overrid
 
 ### New Components (this phase)
 
-| Component | File | Description |
-|-----------|------|-------------|
-| `SessionTabBar` | `web/src/components/session/SessionTabBar.tsx` | Extensible tab bar using MUI Tabs, renders from a typed tab registry array |
+| Component         | File                                             | Description                                                                  |
+| ----------------- | ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `SessionTabBar`   | `web/src/components/session/SessionTabBar.tsx`   | Extensible tab bar using MUI Tabs, renders from a typed tab registry array   |
 | `SessionTabPanel` | `web/src/components/session/SessionTabPanel.tsx` | Mounted-but-hidden panel wrapper — toggles `display: flex` / `display: none` |
-| `TerminalView` | `web/src/components/session/TerminalView.tsx` | xterm.js wrapper — manages Terminal instance lifecycle, theme, and fit addon |
+| `TerminalView`    | `web/src/components/session/TerminalView.tsx`    | xterm.js wrapper — manages Terminal instance lifecycle, theme, and fit addon |
 
 ### New Hooks (this phase)
 
-| Hook | File | Description |
-|------|------|-------------|
+| Hook             | File                              | Description                                                 |
+| ---------------- | --------------------------------- | ----------------------------------------------------------- |
 | `useSessionTabs` | `web/src/hooks/useSessionTabs.ts` | Active tab state per session, persistence to sessionStorage |
-| `useTerminal` | `web/src/hooks/useTerminal.ts` | PTY socket lifecycle — start, input, resize, close events |
+| `useTerminal`    | `web/src/hooks/useTerminal.ts`    | PTY socket lifecycle — start, input, resize, close events   |
 
 ### Existing Components (modified)
 
-| Component | Change |
-|-----------|--------|
+| Component            | Change                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `SessionDetails.tsx` | Insert `SessionTabBar` between status bar and content area; wrap `ChatPanel` and `TerminalView` in `SessionTabPanel` containers |
 
 ### Tab Registry Contract (D-12)
@@ -133,6 +133,7 @@ interface SessionTab {
 ```
 
 Phase 1 registers two tabs:
+
 1. `{ id: 'chat', label: 'Chat', icon: <ChatBubbleOutline /> }`
 2. `{ id: 'terminal', label: 'Terminal', icon: <Terminal /> }`
 
@@ -144,63 +145,63 @@ Future phases add entries without modifying SessionTabBar.
 
 ### Tab Switching (D-06, D-07, D-11)
 
-| Interaction | Behavior |
-|-------------|----------|
-| Click tab | Instant swap — active panel gets `display: flex`, inactive gets `display: none` (D-07) |
-| Keyboard `Ctrl+\`` | Toggle between chat and terminal tabs (D-11) |
-| Tab persistence | Active tab ID stored in `sessionStorage` keyed by session ID, restored on re-open (D-08) |
-| Tab indicator | 2px accent bottom border on active tab (existing MuiTabs indicator) |
+| Interaction        | Behavior                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| Click tab          | Instant swap — active panel gets `display: flex`, inactive gets `display: none` (D-07)   |
+| Keyboard `Ctrl+\`` | Toggle between chat and terminal tabs (D-11)                                             |
+| Tab persistence    | Active tab ID stored in `sessionStorage` keyed by session ID, restored on re-open (D-08) |
+| Tab indicator      | 2px accent bottom border on active tab (existing MuiTabs indicator)                      |
 
 ### Unread Badges (D-14, D-15)
 
-| Badge | Trigger | Style |
-|-------|---------|-------|
-| Terminal tab badge | New terminal output while chat tab is active | 6px solid circle, `#10b981`, positioned top-right of tab icon area |
-| Chat tab badge | New chat message while terminal tab is active | Same style — 6px solid circle, `#10b981` |
-| Badge clear | Switching to the tab clears its badge | Immediate, no animation on clear |
-| Badge appear | `pulse-dot` animation from `index.css` — scale 1→1.5→1 over 2s, runs once on first appear then holds steady |
+| Badge              | Trigger                                                                                                     | Style                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Terminal tab badge | New terminal output while chat tab is active                                                                | 6px solid circle, `#10b981`, positioned top-right of tab icon area |
+| Chat tab badge     | New chat message while terminal tab is active                                                               | Same style — 6px solid circle, `#10b981`                           |
+| Badge clear        | Switching to the tab clears its badge                                                                       | Immediate, no animation on clear                                   |
+| Badge appear       | `pulse-dot` animation from `index.css` — scale 1→1.5→1 over 2s, runs once on first appear then holds steady |
 
 ### Terminal Panel States
 
-| State | Visual | Condition |
-|-------|--------|-----------|
-| **Ready** | xterm.js terminal, full-bleed, dark background matching `#09090b` | Session running + PTY connected |
-| **Connecting** | Centered spinner (MUI CircularProgress, accent color) + "Connecting to terminal..." caption text (`#a1a1aa`, 12px) | Session running + PTY connecting |
-| **Not ready** | Centered terminal icon (`#71717a`, 48px) + "Session not running" heading (13px, `#a1a1aa`) + "Start the session to access the terminal" body (12px, `#71717a`) | Session stopped/starting |
-| **Disconnected** | Inline banner at top of terminal area — "Terminal disconnected — reconnecting..." with accent spinner | PTY WebSocket dropped, auto-reconnecting (D-16) |
-| **Error** | Inline banner — "Terminal connection failed" + "Check that the session is running and try again" (`#ef4444` icon, `#fafafa` text) | PTY connection failed after retries |
+| State            | Visual                                                                                                                                                         | Condition                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Ready**        | xterm.js terminal, full-bleed, dark background matching `#09090b`                                                                                              | Session running + PTY connected                 |
+| **Connecting**   | Centered spinner (MUI CircularProgress, accent color) + "Connecting to terminal..." caption text (`#a1a1aa`, 12px)                                             | Session running + PTY connecting                |
+| **Not ready**    | Centered terminal icon (`#71717a`, 48px) + "Session not running" heading (13px, `#a1a1aa`) + "Start the session to access the terminal" body (12px, `#71717a`) | Session stopped/starting                        |
+| **Disconnected** | Inline banner at top of terminal area — "Terminal disconnected — reconnecting..." with accent spinner                                                          | PTY WebSocket dropped, auto-reconnecting (D-16) |
+| **Error**        | Inline banner — "Terminal connection failed" + "Check that the session is running and try again" (`#ef4444` icon, `#fafafa` text)                              | PTY connection failed after retries             |
 
 ### Terminal Visual Config
 
-| Property | Value | Source |
-|----------|-------|--------|
-| Font family | `'JetBrains Mono', 'Menlo', monospace` | Claude's discretion — matches app mono font |
-| Font size | 14px | Claude's discretion — readable default, matches body text size |
-| Cursor style | Bar (`'bar'`) | Claude's discretion — modern feel, matches VS Code default |
-| Cursor blink | `true` | Standard terminal behavior |
-| Scrollback | 5000 lines | Claude's discretion — balances memory vs history |
-| Theme background | `#09090b` | Matches `afkColors.background` — seamless with app |
-| Theme foreground | `#fafafa` | Matches `afkColors.textPrimary` |
-| Theme cursor | `#10b981` | Matches `afkColors.accent` |
-| Theme selection | `rgba(16, 185, 129, 0.3)` | Matches `::selection` in `index.css` |
+| Property         | Value                                  | Source                                                         |
+| ---------------- | -------------------------------------- | -------------------------------------------------------------- |
+| Font family      | `'JetBrains Mono', 'Menlo', monospace` | Claude's discretion — matches app mono font                    |
+| Font size        | 14px                                   | Claude's discretion — readable default, matches body text size |
+| Cursor style     | Bar (`'bar'`)                          | Claude's discretion — modern feel, matches VS Code default     |
+| Cursor blink     | `true`                                 | Standard terminal behavior                                     |
+| Scrollback       | 5000 lines                             | Claude's discretion — balances memory vs history               |
+| Theme background | `#09090b`                              | Matches `afkColors.background` — seamless with app             |
+| Theme foreground | `#fafafa`                              | Matches `afkColors.textPrimary`                                |
+| Theme cursor     | `#10b981`                              | Matches `afkColors.accent`                                     |
+| Theme selection  | `rgba(16, 185, 129, 0.3)`              | Matches `::selection` in `index.css`                           |
 
 ### Terminal Clipboard (Claude's Discretion)
 
-| Platform | Copy | Paste |
-|----------|------|-------|
-| macOS | Cmd+C (text selection) | Cmd+V |
+| Platform      | Copy                          | Paste        |
+| ------------- | ----------------------------- | ------------ |
+| macOS         | Cmd+C (text selection)        | Cmd+V        |
 | Linux/Windows | Ctrl+Shift+C (text selection) | Ctrl+Shift+V |
 
 xterm.js handles this natively. No custom clipboard code needed — the browser's selection and clipboard APIs apply within the terminal canvas.
 
 ### Auto-Reconnect (D-16)
 
-| Phase | Visual |
-|-------|--------|
-| Disconnected (0-2s) | "Disconnected" banner appears at top of terminal panel, muted |
-| Reconnecting (2s+) | Banner updates to "Reconnecting..." with small accent spinner |
-| Reconnected | Banner fades out over 300ms, terminal resumes |
-| Failed (after 3 retries) | Banner becomes error state — "Terminal connection failed" |
+| Phase                    | Visual                                                        |
+| ------------------------ | ------------------------------------------------------------- |
+| Disconnected (0-2s)      | "Disconnected" banner appears at top of terminal panel, muted |
+| Reconnecting (2s+)       | Banner updates to "Reconnecting..." with small accent spinner |
+| Reconnected              | Banner fades out over 300ms, terminal resumes                 |
+| Failed (after 3 retries) | Banner becomes error state — "Terminal connection failed"     |
 
 ---
 
@@ -238,16 +239,16 @@ xterm.js handles this natively. No custom clipboard code needed — the browser'
 
 ## Copywriting Contract
 
-| Element | Copy |
-|---------|------|
-| Chat tab label | "Chat" |
-| Terminal tab label | "Terminal" |
-| Terminal empty state heading | "Session not running" |
-| Terminal empty state body | "Start the session to access the terminal" |
-| Terminal connecting | "Connecting to terminal..." |
-| Terminal disconnected | "Terminal disconnected — reconnecting..." |
-| Terminal error | "Terminal connection failed — check that the session is running and try again" |
-| Keyboard shortcut tooltip | "Toggle terminal (Ctrl+`)" / "Toggle terminal (⌘+`)" (platform-aware) |
+| Element                      | Copy                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| Chat tab label               | "Chat"                                                                         |
+| Terminal tab label           | "Terminal"                                                                     |
+| Terminal empty state heading | "Session not running"                                                          |
+| Terminal empty state body    | "Start the session to access the terminal"                                     |
+| Terminal connecting          | "Connecting to terminal..."                                                    |
+| Terminal disconnected        | "Terminal disconnected — reconnecting..."                                      |
+| Terminal error               | "Terminal connection failed — check that the session is running and try again" |
+| Keyboard shortcut tooltip    | "Toggle terminal (Ctrl+`)" / "Toggle terminal (⌘+`)" (platform-aware)          |
 
 No primary CTA button in this phase — the tab bar is the primary interaction surface. No destructive actions.
 
@@ -255,9 +256,9 @@ No primary CTA button in this phase — the tab bar is the primary interaction s
 
 ## Registry Safety
 
-| Registry | Blocks Used | Safety Gate |
-|----------|-------------|-------------|
-| Not applicable | — | MUI project, no shadcn registries |
+| Registry       | Blocks Used | Safety Gate                       |
+| -------------- | ----------- | --------------------------------- |
+| Not applicable | —           | MUI project, no shadcn registries |
 
 ---
 
@@ -274,6 +275,6 @@ No primary CTA button in this phase — the tab bar is the primary interaction s
 
 ---
 
-*Phase: 01-session-ux*
-*Contract created: 2026-04-11*
-*Sources: CONTEXT.md (17 decisions), RESEARCH.md (stack + architecture), afk.ts (theme tokens), index.css (animations)*
+_Phase: 01-session-ux_
+_Contract created: 2026-04-11_
+_Sources: CONTEXT.md (17 decisions), RESEARCH.md (stack + architecture), afk.ts (theme tokens), index.css (animations)_

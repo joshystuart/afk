@@ -70,44 +70,46 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Full in-browser IDE / code editor | AFK hosts agents, not an IDE; "open in IDE" defers to local editors |
-| Real-time collaborative editing | Single-user tool, not a multiplayer IDE |
-| Hosted agent marketplace | Supply-chain risk; conflicts with read-only skills and security stance |
-| Silent auto-merge to main | Breaks review/compliance workflow |
-| Unrestricted host filesystem from container | Destroys isolation story |
-| Mobile app | Poor fit for agentic coding UX |
-| Browser-in-agent (OpenHands-style) | High security surface area; defer to v2+ |
-| Micro-VM / Firecracker isolation | Docker sufficient unless proven otherwise |
+| Feature                                     | Reason                                                                 |
+| ------------------------------------------- | ---------------------------------------------------------------------- |
+| Full in-browser IDE / code editor           | AFK hosts agents, not an IDE; "open in IDE" defers to local editors    |
+| Real-time collaborative editing             | Single-user tool, not a multiplayer IDE                                |
+| Hosted agent marketplace                    | Supply-chain risk; conflicts with read-only skills and security stance |
+| Silent auto-merge to main                   | Breaks review/compliance workflow                                      |
+| Unrestricted host filesystem from container | Destroys isolation story                                               |
+| Mobile app                                  | Poor fit for agentic coding UX                                         |
+| Browser-in-agent (OpenHands-style)          | High security surface area; defer to v2+                               |
+| Micro-VM / Firecracker isolation            | Docker sufficient unless proven otherwise                              |
 
 ## Traceability
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SEUX-01 | Phase 1: Session UX | Pending |
-| SKIL-01 | Phase 2: Skills Provisioning | Pending |
-| SKIL-02 | Phase 2: Skills Provisioning | Pending |
-| SKIL-03 | Phase 2: Skills Provisioning | Pending |
-| AGNT-01 | Phase 3: Agent Runner & Multi-Agent | Pending |
-| AGNT-02 | Phase 3: Agent Runner & Multi-Agent | Pending |
-| CTXT-01 | Phase 4: Workspace API & File Explorer | Pending |
-| CTXT-02 | Phase 4: Workspace API & File Explorer | Pending |
-| CTXT-03 | Phase 4: Workspace API & File Explorer | Pending |
-| CTXT-04 | Phase 4: Workspace API & File Explorer | Pending |
-| DIFF-01 | Phase 5: Diff Pipeline & Review | Pending |
-| DIFF-02 | Phase 5: Diff Pipeline & Review | Pending |
-| GAUT-01 | Phase 6: Git Automation | Pending |
-| GAUT-02 | Phase 6: Git Automation | Pending |
-| GAUT-03 | Phase 6: Git Automation | Pending |
+| Requirement | Phase                                  | Status  |
+| ----------- | -------------------------------------- | ------- |
+| SEUX-01     | Phase 1: Session UX                    | Pending |
+| SKIL-01     | Phase 2: Skills Provisioning           | Pending |
+| SKIL-02     | Phase 2: Skills Provisioning           | Pending |
+| SKIL-03     | Phase 2: Skills Provisioning           | Pending |
+| AGNT-01     | Phase 3: Agent Runner & Multi-Agent    | Pending |
+| AGNT-02     | Phase 3: Agent Runner & Multi-Agent    | Pending |
+| CTXT-01     | Phase 4: Workspace API & File Explorer | Pending |
+| CTXT-02     | Phase 4: Workspace API & File Explorer | Pending |
+| CTXT-03     | Phase 4: Workspace API & File Explorer | Pending |
+| CTXT-04     | Phase 4: Workspace API & File Explorer | Pending |
+| DIFF-01     | Phase 5: Diff Pipeline & Review        | Pending |
+| DIFF-02     | Phase 5: Diff Pipeline & Review        | Pending |
+| GAUT-01     | Phase 6: Git Automation                | Pending |
+| GAUT-02     | Phase 6: Git Automation                | Pending |
+| GAUT-03     | Phase 6: Git Automation                | Pending |
 
 **Coverage:**
+
 - v1 requirements: 15 total
 - Mapped to phases: 15
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-04-10*
-*Last updated: 2026-04-10 after initial definition*
+
+_Requirements defined: 2026-04-10_
+_Last updated: 2026-04-10 after initial definition_

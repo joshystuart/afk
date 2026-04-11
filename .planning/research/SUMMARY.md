@@ -66,15 +66,15 @@ In-browser IDE, multiplayer editing, hosted agent marketplace, silent auto-merge
 
 Suggested phases follow **architecture build order** while threading **pitfall controls** early—especially WebSocket auth and path-safe workspace APIs before exposing richer streams.
 
-| Suggested phase | Rationale | Delivers (PROJECT / FEATURES) | Pitfalls to bake in |
-|-----------------|-----------|-------------------------------|---------------------|
-| **1. Transport security & bounded workspace FS** | Unblocks safe file/diff events; foundation for explorer/`@` data per architecture | Session-scoped WS auth; `GET` workspace list/read with validation | 2, 9, 10 |
-| **2. Session/Settings model + read-only skills provisioning** | Skills bind depends on persisted paths and Docker `Binds` | Centralized skills (Active); validated host paths | 6 |
-| **3. Agent runner registry & multi-agent images** | Second CLI requires abstraction—not string switches | Claude / Codex / Cursor paths; per-session or per-prompt selection | 1, 8 |
-| **4. Post-run diff pipeline & diff viewer UI** | Git read paths + completion hook; structured diff to UI | Diff viewer (Active); caps and no-shell git | 3, 4 |
-| **5. Composer: `@` mentions + file explorer + IDE open** | Consumes same workspace API; product-facing slice | File tagging + explorer (Active); ignore globs | 2, 5, 10 |
-| **6. Auto commit & PR message generation** | Depends on diff/summary + GitHub | Auto messages (Active); secret gates | 7 |
-| **7. Session UX polish (v1.x)** | Lower risk once core loop stable | Tab between chat and terminal (Active, can slip) | 4, 9 |
+| Suggested phase                                               | Rationale                                                                         | Delivers (PROJECT / FEATURES)                                      | Pitfalls to bake in |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------- |
+| **1. Transport security & bounded workspace FS**              | Unblocks safe file/diff events; foundation for explorer/`@` data per architecture | Session-scoped WS auth; `GET` workspace list/read with validation  | 2, 9, 10            |
+| **2. Session/Settings model + read-only skills provisioning** | Skills bind depends on persisted paths and Docker `Binds`                         | Centralized skills (Active); validated host paths                  | 6                   |
+| **3. Agent runner registry & multi-agent images**             | Second CLI requires abstraction—not string switches                               | Claude / Codex / Cursor paths; per-session or per-prompt selection | 1, 8                |
+| **4. Post-run diff pipeline & diff viewer UI**                | Git read paths + completion hook; structured diff to UI                           | Diff viewer (Active); caps and no-shell git                        | 3, 4                |
+| **5. Composer: `@` mentions + file explorer + IDE open**      | Consumes same workspace API; product-facing slice                                 | File tagging + explorer (Active); ignore globs                     | 2, 5, 10            |
+| **6. Auto commit & PR message generation**                    | Depends on diff/summary + GitHub                                                  | Auto messages (Active); secret gates                               | 7                   |
+| **7. Session UX polish (v1.x)**                               | Lower risk once core loop stable                                                  | Tab between chat and terminal (Active, can slip)                   | 4, 9                |
 
 **Parallel track:** UI for tree/mentions can proceed against stable workspace APIs once phase 1 is API-stable; Electron unchanged unless deep-link scope expands.
 
@@ -90,12 +90,12 @@ Suggested phases follow **architecture build order** while threading **pitfall c
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH (npm-verified); MEDIUM for Cursor-in-Docker | Pin Codex minor; verify Cursor docs + image CI |
-| Features | MEDIUM | Strong on OSS/container patterns; vendor marketing claims need roadmap-time refresh |
-| Architecture | MEDIUM-HIGH | High alignment with existing AFK code; multi-agent CLI details vary by vendor |
-| Pitfalls | MEDIUM–HIGH | OWASP-class issues and OpenHands advisory are strong; multi-agent “best” patterns partly anecdotal |
+| Area         | Confidence                                       | Notes                                                                                              |
+| ------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| Stack        | HIGH (npm-verified); MEDIUM for Cursor-in-Docker | Pin Codex minor; verify Cursor docs + image CI                                                     |
+| Features     | MEDIUM                                           | Strong on OSS/container patterns; vendor marketing claims need roadmap-time refresh                |
+| Architecture | MEDIUM-HIGH                                      | High alignment with existing AFK code; multi-agent CLI details vary by vendor                      |
+| Pitfalls     | MEDIUM–HIGH                                      | OWASP-class issues and OpenHands advisory are strong; multi-agent “best” patterns partly anecdotal |
 
 **Gaps to address in planning:** Lock **multi-agent concurrency** policy; confirm **Socket.IO auth** implementation scope against CONCERNS.md; add **automated tests** for path/git/WS (per pitfalls checklist); decide **minimum** prompt-injection UX for `@file`.
 

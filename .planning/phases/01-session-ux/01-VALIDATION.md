@@ -15,17 +15,17 @@ created: 2026-04-11
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework (server)** | Jest 29 via ts-jest |
-| **Config file (server)** | `server/package.json` jest block + `server/test/jest-e2e.json` |
-| **Quick run command (server)** | `cd server && npx jest --testPathPattern=session-gateway-terminal` |
-| **Full suite command (server)** | `cd server && npx jest` |
-| **Framework (web)** | Vitest 4 |
-| **Config file (web)** | `web/vite.config.ts` (unit project) |
-| **Quick run command (web)** | `cd web && npx vitest run --project unit` |
-| **Full suite command (web)** | `cd web && npx vitest run --project unit` |
-| **Estimated runtime** | ~30 seconds (server) + ~15 seconds (web) |
+| Property                        | Value                                                              |
+| ------------------------------- | ------------------------------------------------------------------ |
+| **Framework (server)**          | Jest 29 via ts-jest                                                |
+| **Config file (server)**        | `server/package.json` jest block + `server/test/jest-e2e.json`     |
+| **Quick run command (server)**  | `cd server && npx jest --testPathPattern=session-gateway-terminal` |
+| **Full suite command (server)** | `cd server && npx jest`                                            |
+| **Framework (web)**             | Vitest 4                                                           |
+| **Config file (web)**           | `web/vite.config.ts` (unit project)                                |
+| **Quick run command (web)**     | `cd web && npx vitest run --project unit`                          |
+| **Full suite command (web)**    | `cd web && npx vitest run --project unit`                          |
+| **Estimated runtime**           | ~30 seconds (server) + ~15 seconds (web)                           |
 
 ---
 
@@ -40,14 +40,14 @@ created: 2026-04-11
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 1-01-01 | 01 | 1 | SEUX-01a | T-1-01 | Verify session ownership before creating PTY | unit | `cd server && npx jest session-gateway-terminal` | ❌ W0 | ⬜ pending |
-| 1-01-02 | 01 | 1 | SEUX-01b | T-1-02 | Reject terminal events from unsubscribed sockets | unit | `cd server && npx jest docker-container-exec` | ❌ W0 | ⬜ pending |
-| 1-01-03 | 01 | 1 | SEUX-01c | — | N/A | unit | `cd web && npx vitest run --project unit -- useSessionTabs` | ❌ W0 | ⬜ pending |
-| 1-01-04 | 01 | 1 | SEUX-01d | — | N/A | unit | `cd server && npx jest session-gateway` | ✅ | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior                                  | Test Type | Automated Command                                           | File Exists | Status     |
+| ------- | ---- | ---- | ----------- | ---------- | ------------------------------------------------ | --------- | ----------------------------------------------------------- | ----------- | ---------- |
+| 1-01-01 | 01   | 1    | SEUX-01a    | T-1-01     | Verify session ownership before creating PTY     | unit      | `cd server && npx jest session-gateway-terminal`            | ❌ W0       | ⬜ pending |
+| 1-01-02 | 01   | 1    | SEUX-01b    | T-1-02     | Reject terminal events from unsubscribed sockets | unit      | `cd server && npx jest docker-container-exec`               | ❌ W0       | ⬜ pending |
+| 1-01-03 | 01   | 1    | SEUX-01c    | —          | N/A                                              | unit      | `cd web && npx vitest run --project unit -- useSessionTabs` | ❌ W0       | ⬜ pending |
+| 1-01-04 | 01   | 1    | SEUX-01d    | —          | N/A                                              | unit      | `cd server && npx jest session-gateway`                     | ✅          | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+_Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky_
 
 ---
 
@@ -57,17 +57,17 @@ created: 2026-04-11
 - [ ] `server/src/libs/docker/docker-container-exec.service.spec.ts` — covers SEUX-01b (may already exist partially)
 - [ ] `web/src/hooks/useSessionTabs.test.ts` — covers SEUX-01c
 
-*If none: "Existing infrastructure covers all phase requirements."*
+_If none: "Existing infrastructure covers all phase requirements."_
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Visual tab switching UX | SEUX-01 | Browser interaction required | Open session page, verify tab bar between status bar and content, click Chat/Terminal tabs, verify instant switch, verify Ctrl+` shortcut |
-| Terminal theme cohesion (D-17) | SEUX-01 | Visual assessment | Verify terminal background matches app background (#09090b), cursor is accent green |
-| Unread badges (D-14, D-15) | SEUX-01 | Cross-tab interaction | Send terminal output while on chat tab, verify badge appears; send chat message while on terminal tab, verify badge appears |
+| Behavior                       | Requirement | Why Manual                   | Test Instructions                                                                                                                         |
+| ------------------------------ | ----------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Visual tab switching UX        | SEUX-01     | Browser interaction required | Open session page, verify tab bar between status bar and content, click Chat/Terminal tabs, verify instant switch, verify Ctrl+` shortcut |
+| Terminal theme cohesion (D-17) | SEUX-01     | Visual assessment            | Verify terminal background matches app background (#09090b), cursor is accent green                                                       |
+| Unread badges (D-14, D-15)     | SEUX-01     | Cross-tab interaction        | Send terminal output while on chat tab, verify badge appears; send chat message while on terminal tab, verify badge appears               |
 
 ---
 

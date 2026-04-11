@@ -2,7 +2,7 @@ Great question. The user guide has a specific workflow for existing codebases (c
 
 ## Brownfield Workflow (Existing Codebase)
 
-The key difference from a greenfield project is that you **map your codebase first** before initializing GSD, so the project setup focuses on what you're *adding* rather than describing what already exists.
+The key difference from a greenfield project is that you **map your codebase first** before initializing GSD, so the project setup focuses on what you're _adding_ rather than describing what already exists.
 
 ### Step 1: Map the Codebase
 
@@ -12,12 +12,12 @@ The key difference from a greenfield project is that you **map your codebase fir
 
 This launches 4 parallel agents that analyze your existing code and produce:
 
-| File | What it captures |
-|------|-----------------|
-| `.planning/codebase/STACK.md` | Languages, frameworks, dependencies, build tools |
-| `.planning/codebase/ARCHITECTURE.md` | Module structure, data flow, entry points |
-| `.planning/codebase/CONVENTIONS.md` | Code patterns, naming, file organization |
-| `.planning/codebase/CONCERNS.md` | Tech debt, risks, areas of complexity |
+| File                                 | What it captures                                 |
+| ------------------------------------ | ------------------------------------------------ |
+| `.planning/codebase/STACK.md`        | Languages, frameworks, dependencies, build tools |
+| `.planning/codebase/ARCHITECTURE.md` | Module structure, data flow, entry points        |
+| `.planning/codebase/CONVENTIONS.md`  | Code patterns, naming, file organization         |
+| `.planning/codebase/CONCERNS.md`     | Tech debt, risks, areas of complexity            |
 
 If you want something lighter, `/gsd-scan` does a single-agent quick assessment instead.
 

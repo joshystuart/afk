@@ -12,6 +12,7 @@ import {
   Check as CheckIcon,
   Lock as LockIcon,
 } from '@mui/icons-material';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSettingsStore } from '../../stores/settings.store';
 import type { UpdateSettingsRequest } from '../../api/types';
 import { afkColors } from '../../themes/afk';
@@ -33,6 +34,7 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
 
 const GeneralSettings: React.FC = () => {
   const { settings, error, updateSettings, clearError } = useSettingsStore();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
     defaultMountDirectory: '',
@@ -78,6 +80,7 @@ const GeneralSettings: React.FC = () => {
         submitData.claudeToken = formData.claudeToken;
       }
       await updateSettings(submitData);
+      queryClient.invalidateQueries({ queryKey: ['skills'] });
       setSuccessMessage('Settings saved successfully!');
     } catch {
       // Error handled by store

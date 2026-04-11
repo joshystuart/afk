@@ -6,7 +6,7 @@ export function useSkills() {
   const { data, isLoading } = useQuery({
     queryKey: ['skills'],
     queryFn: () => settingsApi.listSkills(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
   const skills: SkillInfo[] = data?.skills ?? [];

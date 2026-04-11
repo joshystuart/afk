@@ -3,7 +3,7 @@ status: partial
 phase: 02-skills-provisioning
 source: [02-VERIFICATION.md]
 started: 2026-04-11T05:00:00Z
-updated: 2026-04-11T05:00:00Z
+updated: 2026-04-11T11:30:00Z
 ---
 
 ## Current Test
@@ -47,12 +47,22 @@ result: [pending]
 expected: Without skills directory configured, toggle disabled with Settings link
 result: [pending]
 
+### 8. Autocomplete Gating on mountSkills
+
+expected: Create session with mountSkills OFF, open chat, type `/` — no autocomplete suggestions appear. With mountSkills ON, autocomplete works normally.
+result: [pending]
+
+### 9. Cache Freshness After Settings Save
+
+expected: Change skills directory in Settings, save — within ~30 seconds, autocomplete reflects new directory contents
+result: [pending]
+
 ## Summary
 
-total: 7
+total: 9
 passed: 0
 issues: 0
-pending: 7
+pending: 9
 skipped: 0
 blocked: 0
 

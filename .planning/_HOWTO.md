@@ -2,6 +2,8 @@
 
 End-to-end flow for this repo: **discovery → planning → implementation → testing → pull request**. Commands are GSD slash commands in Claude unless noted.
 
+**GSD (Get Shit Done)** is the upstream meta-prompting and spec-driven workflow this project uses. Repository, install, and changelog: [github.com/gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done). Update the CLI periodically: `npx get-shit-done-cc@latest`. In chat, **`/gsd-help`** prints the full upstream command reference (GSD evolves quickly; this file summarizes for AFK).
+
 ## Overview
 
 | Stage     | Goal                        | Typical commands / actions                                               |
@@ -12,6 +14,156 @@ End-to-end flow for this repo: **discovery → planning → implementation → t
 | Coding    | Execute plans with commits  | `/gsd-execute-phase`                                                     |
 | Testing   | Automated + human UAT       | Project test scripts, `/gsd-verify-work`, optional `/gsd-validate-phase` |
 | PR        | Push and open GitHub PR     | `/gsd-pr-branch` (optional), `/gsd-ship`                                 |
+
+---
+
+## GSD commands (what each is for)
+
+Grouped by role. Arguments like `<n>` are phase numbers; see each workflow for flags (`--wave`, `--full`, etc.).
+
+### Project, codebase, and workspaces
+
+| Command                 | Use for                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `/gsd-new-project`      | Greenfield: questioning → optional research → requirements → roadmap → `.planning/` artifacts.           |
+| `/gsd-map-codebase`     | Brownfield: parallel mappers → `.planning/codebase/` (stack, architecture, conventions, concerns, etc.). |
+| `/gsd-scan`             | Lighter single-agent codebase pass; optional `--focus` (e.g. concerns).                                  |
+| `/gsd-import`           | Ingest an external plan with conflict detection before writing PLAN.md.                                  |
+| `/gsd-new-workspace`    | Isolated workspace (worktrees/clones) with its own `.planning/`.                                         |
+| `/gsd-list-workspaces`  | List GSD workspaces under `~/gsd-workspaces/`.                                                           |
+| `/gsd-remove-workspace` | Tear down a workspace and clean up worktrees.                                                            |
+
+### Phase planning and design
+
+| Command                           | Use for                                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `/gsd-discuss-phase <n>`          | Capture vision and decisions → CONTEXT.md before planning (optional `--batch`, auto/chain/power modes per GSD). |
+| `/gsd-research-phase <n>`         | Standalone ecosystem research → RESEARCH.md (niche domains; planning usually bundles research).                 |
+| `/gsd-list-phase-assumptions <n>` | See Claude’s assumed approach before planning (conversation only).                                              |
+| `/gsd-plan-phase <n>`             | Executable PLAN.md files + research/plan-check loop (e.g. `--prd`, `--gaps`, `--reviews`).                      |
+| `/gsd-ui-phase <n>`               | UI design contract → UI-SPEC.md before implementation-heavy frontend work.                                      |
+
+### Execution and automation
+
+| Command                  | Use for                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `/gsd-execute-phase <n>` | Run all plans in a phase by wave (optional `--wave N`, gap-only variants per GSD).      |
+| `/gsd-autonomous`        | Drive remaining phases (or `--from` / `--to` / `--only`) with discuss → plan → execute. |
+
+### Router and quick paths
+
+| Command              | Use for                                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `/gsd-do <text>`     | Dispatch natural language to the best `/gsd-*` command.                                                                    |
+| `/gsd-quick`         | Small ad-hoc work under `.planning/quick/` with atomic commits (flags: `--full`, `--validate`, `--discuss`, `--research`). |
+| `/gsd-fast "<text>"` | Trivial inline fix (no PLAN); redirects to quick if too large.                                                             |
+| `/gsd-next`          | Inspect STATE/ROADMAP and route to the next sensible step.                                                                 |
+
+### Roadmap and backlog
+
+| Command                               | Use for                                                                           |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `/gsd-add-phase "<title>"`            | Append a new integer phase to the current milestone.                              |
+| `/gsd-insert-phase <after> "<title>"` | Decimal phase (e.g. 7.1) for urgent mid-milestone work.                           |
+| `/gsd-remove-phase <n>`               | Remove a **future** unstarted phase and renumber.                                 |
+| `/gsd-add-backlog "<title>"`          | Parking-lot item under 999.x numbering (ideas not yet sequenced).                 |
+| `/gsd-analyze-dependencies`           | Suggest `Depends on` between phases to reduce merge conflicts when parallelizing. |
+| `/gsd-plant-seed "<idea>"`            | Forward-looking idea with triggers; can resurface at `/gsd-new-milestone`.        |
+
+### Milestones
+
+| Command                             | Use for                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------- |
+| `/gsd-new-milestone "<name>"`       | Next milestone cycle on an existing project (optional `--reset-phase-numbers`). |
+| `/gsd-complete-milestone <version>` | Archive milestone, tag, MILESTONES.md, prep next version.                       |
+| `/gsd-milestone-summary`            | Human-readable summary from milestone artifacts (onboarding).                   |
+| `/gsd-plan-milestone-gaps`          | Turn MILESTONE-AUDIT gaps into new roadmap phases.                              |
+
+### Progress, session, and reporting
+
+| Command               | Use for                                                           |
+| --------------------- | ----------------------------------------------------------------- |
+| `/gsd-progress`       | Progress bar, recent summaries, routing to execute or plan.       |
+| `/gsd-resume-work`    | Restore context after a break (pairs with pause handoff).         |
+| `/gsd-pause-work`     | Write handoff files for session continuity.                       |
+| `/gsd-session-report` | Session summary to `.planning/reports/` (stakeholders / history). |
+| `/gsd-stats`          | Phases, plans, requirements, git stats, timeline.                 |
+
+### Workstreams (parallel milestone tracks)
+
+| Command            | Use for                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/gsd-workstreams` | Defaults to `list`; subcommands: `list`, `create <name>`, `status <name>`, `switch <name>`, `progress`, `complete <name>`, `resume <name>`. |
+
+### Debugging and investigation
+
+| Command                | Use for                                                                   |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `/gsd-debug [issue]`   | Structured debug log under `.planning/debug/`; resume with `/gsd-debug`.  |
+| `/gsd-diagnose-issues` | Parallel investigation of UAT gaps → root causes for plan-phase `--gaps`. |
+| `/gsd-forensics`       | Post-mortem when a GSD workflow fails or stalls (git + `.planning/`).     |
+
+### Notes, todos, and ideation
+
+| Command                   | Use for                                                |
+| ------------------------- | ------------------------------------------------------ |
+| `/gsd-note <text>`        | Append/list/promote quick notes (optional `--global`). |
+| `/gsd-add-todo [text]`    | Structured todo under `.planning/todos/pending/`.      |
+| `/gsd-check-todos [area]` | List and pick a todo to work.                          |
+| `/gsd-explore`            | Socratic ideation; routes outputs into GSD artifacts.  |
+
+### Testing, verification, security, and UI quality
+
+| Command                   | Use for                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `/gsd-verify-work <n>`    | Conversational UAT → UAT.md and gap handoff to planning.                       |
+| `/gsd-validate-phase <n>` | Nyquist-style validation gaps, tests, VALIDATION.md (gate in `/gsd-settings`). |
+| `/gsd-add-tests <n>`      | Generate tests from phase artifacts (classification + approval).               |
+| `/gsd-secure-phase <n>`   | Threat mitigations vs PLAN.md → SECURITY.md.                                   |
+| `/gsd-ui-review <n>`      | Retroactive 6-pillar visual audit → UI-REVIEW.md.                              |
+
+### Ship, review, and branches
+
+| Command                       | Use for                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| `/gsd-ship [n]`               | Push branch, open PR with body from artifacts (needs `gh`).             |
+| `/gsd-review --phase <n> ...` | Cross-AI review (Gemini, Claude, Codex, CodeRabbit, etc.) → REVIEWS.md. |
+| `/gsd-pr-branch [base]`       | Review-only branch without `.planning/` commit noise.                   |
+| `/gsd-code-review <n>`        | Repo review of phase-changed files → REVIEW.md.                         |
+| `/gsd-code-review-fix <n>`    | Apply fixes from REVIEW.md with bounded iterations.                     |
+
+### Audits and documentation
+
+| Command                          | Use for                                                               |
+| -------------------------------- | --------------------------------------------------------------------- |
+| `/gsd-audit-uat`                 | Cross-phase UAT/verification debt before closing a milestone.         |
+| `/gsd-audit-milestone [version]` | Milestone vs intent → MILESTONE-AUDIT.md.                             |
+| `/gsd-audit-fix`                 | Run an audit (e.g. UAT), auto-fix classified items, test, commit.     |
+| `/gsd-docs-update`               | Generate/verify project docs against the codebase (manifest + waves). |
+
+### Configuration and tooling
+
+| Command                      | Use for                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| `/gsd-settings`              | Interactive toggles (researcher, plan checker, verifier, UI/security gates, model profile). |
+| `/gsd-set-profile <profile>` | Quick model profile: `quality`, `balanced`, `budget`, `inherit`.                            |
+| `/gsd-cleanup`               | Archive old phase dirs into milestone folders.                                              |
+| `/gsd-health`                | Integrity check (and optional repair) for `.planning/`.                                     |
+| `/gsd-undo`                  | Safe revert of GSD commits (`--last`, `--phase`, `--plan` forms).                           |
+| `/gsd-update`                | Update GSD install with changelog.                                                          |
+| `/gsd-reapply-patches`       | After update, merge local GSD patches from `gsd-local-patches/`.                            |
+| `/gsd-help`                  | Print full command reference from the installed GSD.                                        |
+| `/gsd-join-discord`          | Community link / onboarding.                                                                |
+
+### Interactive orchestration and meta
+
+| Command             | Use for                                                                      |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `/gsd-manager`      | Terminal dashboard: phase status, dispatch discuss/plan/execute in parallel. |
+| `/gsd-profile-user` | Consent + session analysis → developer profile artifacts.                    |
+| `/gsd-inbox`        | Triage GitHub issues/PRs against contribution templates (if present).        |
+
+_Internal workflows (no user slash command):_ e.g. transition between phase steps is invoked automatically—see upstream docs.
 
 ---
 
@@ -83,8 +235,6 @@ Quick mode keeps **atomic commits** and **state tracking** like phased work, but
 | `--full`     | Full pipeline in quick-task form: discuss + research + plan-checking + verification |
 
 **Capture only (no implementation yet):** `/gsd-add-todo` or `/gsd-add-backlog` to park an idea without running quick mode.
-
-Upstream reference: [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done).
 
 ---
 

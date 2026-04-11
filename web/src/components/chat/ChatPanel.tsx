@@ -266,7 +266,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         onModelChange={handleModelChange}
         selectedAgentMode={selectedAgentMode}
         onAgentModeChange={handleAgentModeChange}
-        skills={skills}
+        skills={session?.mountSkills === false ? [] : skills}
       />
     </Box>
   );

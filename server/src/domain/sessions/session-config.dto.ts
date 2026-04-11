@@ -7,5 +7,7 @@ export class SessionConfigDto {
     public readonly hasSSHKey: boolean,
     public readonly hostMountPath: string | null = null,
     public readonly cleanupOnDelete: boolean = false,
+    public readonly skillsPath: string | null = null,
+    public readonly mountSkills: boolean = true,
   ) {}
 }

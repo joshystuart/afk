@@ -49,6 +49,10 @@ export class CreateSessionRequest {
   @IsBoolean()
   cleanupOnDelete?: boolean;
 
+  @IsOptional()
+  @IsBoolean()
+  mountSkills?: boolean;
+
   // This would be populated from authentication context
   @Allow()
   userId?: string;

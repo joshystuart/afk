@@ -44,6 +44,7 @@ export interface ContainerCreateOptions {
   claudeToken?: string;
   githubToken?: string;
   hostMountPath?: string;
+  skillsPath?: string;
 }
 
 export interface EphemeralContainerCreateOptions {

@@ -6,6 +6,7 @@ export interface SessionConfigCreateParams extends Partial<SessionConfigDto> {
   mountToHost?: boolean;
   hostMountPathOverride?: string;
   defaultMountDirectory?: string;
+  skillsDirectory?: string;
 }
 
 @Injectable()
@@ -22,6 +23,10 @@ export class SessionConfigDtoFactory {
 
   create(params: SessionConfigCreateParams): SessionConfigDto {
     const hostMountPath = this.deriveMountPath(params);
+    const skillsPath =
+      params.mountSkills !== false && params.skillsDirectory
+        ? params.skillsDirectory
+        : null;
 
     return new SessionConfigDto(
       params.repoUrl ?? null,
@@ -31,6 +36,8 @@ export class SessionConfigDtoFactory {
       params.hasSSHKey ?? false,
       hostMountPath,
       params.cleanupOnDelete ?? false,
+      skillsPath,
+      params.mountSkills ?? true,
     );
   }
 

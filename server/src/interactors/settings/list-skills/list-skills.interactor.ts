@@ -6,10 +6,18 @@ import { SettingsRepository } from '../../../domain/settings/settings.repository
 import { ListSkillsResponseDto } from './list-skills-response.dto';
 
 const MAX_SKILLS = 200;
+const CACHE_TTL_MS = 60_000;
+
+interface SkillsCache {
+  dir: string;
+  result: ListSkillsResponseDto;
+  expiresAt: number;
+}
 
 @Injectable()
 export class ListSkillsInteractor {
   private readonly logger = new Logger(ListSkillsInteractor.name);
+  private cache: SkillsCache | null = null;
 
   constructor(
     @Inject(SETTINGS_REPOSITORY)
@@ -22,6 +30,15 @@ export class ListSkillsInteractor {
 
     if (!skillsDir) {
       return { skills: [] };
+    }
+
+    const now = Date.now();
+    if (
+      this.cache &&
+      this.cache.dir === skillsDir &&
+      this.cache.expiresAt > now
+    ) {
+      return this.cache.result;
     }
 
     try {
@@ -38,7 +55,9 @@ export class ListSkillsInteractor {
         }),
       );
 
-      return { skills };
+      const result = { skills };
+      this.cache = { dir: skillsDir, result, expiresAt: now + CACHE_TTL_MS };
+      return result;
     } catch (error: any) {
       if (error?.code === 'ENOENT' || error?.code === 'EACCES') {
         this.logger.warn(

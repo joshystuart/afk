@@ -44,6 +44,7 @@ export interface ContainerCreateOptions {
   claudeToken?: string;
   githubToken?: string;
   hostMountPath?: string;
+  /** Absolute host path for the skills directory, mounted read-only at /home/afk/.skills inside the container. Omit to skip the skills bind mount. */
   skillsPath?: string;
 }
 

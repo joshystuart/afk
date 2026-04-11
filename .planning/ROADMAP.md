@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can toggle between chat view and terminal view without losing context in either
   2. Both views remain connected to the same session and reflect current state
   3. Toggle is accessible from within the session UI without navigating away
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Backend PTY infrastructure (terminal socket events, Docker interactive exec, gateway terminal service)
+- [ ] 01-02-PLAN.md — Frontend tab and terminal components (xterm.js, hooks, tab bar, terminal view)
+- [ ] 01-03-PLAN.md — Session page integration (wire tab bar + terminal into SessionDetails, badges, keyboard shortcut)
 **UI hint**: yes
 
 ### Phase 2: Skills Provisioning
@@ -93,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Session UX | 0/0 | Not started | - |
+| 1. Session UX | 0/3 | Planning complete | - |
 | 2. Skills Provisioning | 0/0 | Not started | - |
 | 3. Agent Runner & Multi-Agent | 0/0 | Not started | - |
 | 4. Workspace API & File Explorer | 0/0 | Not started | - |

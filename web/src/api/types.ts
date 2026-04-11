@@ -31,6 +31,7 @@ export interface Session {
   hostMountPath?: string;
   model?: string;
   agentMode?: string;
+  mountSkills?: boolean;
   createdAt: string;
   updatedAt: string;
 }

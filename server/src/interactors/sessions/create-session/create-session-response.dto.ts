@@ -14,6 +14,7 @@ export class CreateSessionResponseDto {
   hostMountPath?: string;
   model?: string;
   agentMode?: string;
+  mountSkills?: boolean;
   createdAt!: string;
   updatedAt!: string;
 
@@ -32,6 +33,7 @@ export class CreateSessionResponseDto {
     dto.hostMountPath = session.config.hostMountPath || undefined;
     dto.model = session.model || undefined;
     dto.agentMode = session.agentMode || undefined;
+    dto.mountSkills = session.config.mountSkills;
     dto.createdAt = session.createdAt.toISOString();
     dto.updatedAt = session.updatedAt.toISOString();
 

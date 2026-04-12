@@ -72,9 +72,9 @@ Decimal phases appear between their surrounding integers in numeric order.
    **Plans**: 3 plans
    Plans:
 
-- [ ] 03-01-PLAN.md — Backend workspace REST API (directory listing, file content, file index), Settings IDE command, frontend API client
-- [ ] 03-02-PLAN.md — File explorer tab UI (VS Code-style tree, Shiki syntax-highlighted preview, open-in-IDE, Settings IDE field)
-- [ ] 03-03-PLAN.md — @-mention file autocomplete in chat input (Fuse.js fuzzy search, FileAutocomplete component)
+- [ ] 03-01-PLAN.md — Backend workspace API: REST endpoints for directory listing, file content, file index; Settings ideCommand; web API client
+- [ ] 03-02-PLAN.md — Frontend file explorer tab: VS Code-style tree, Shiki syntax-highlighted preview, open-in-IDE, SessionDetails integration
+- [ ] 03-03-PLAN.md — @-mention autocomplete: FileAutocomplete with Fuse.js fuzzy search, ChatInput integration, IDE command in Settings UI
       **UI hint**: yes
 
 ### Phase 3: Diff Pipeline & Review

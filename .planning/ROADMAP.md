@@ -15,10 +15,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Session UX** - Tab toggle between chat and terminal views within a session
 - [ ] **Phase 2: Skills Provisioning** - Read-only skills directory mounting into session containers
-- [ ] **Phase 3: Agent Runner & Multi-Agent** - Pluggable agent runner abstraction with Claude, Codex, and Cursor support
-- [ ] **Phase 4: Workspace API & File Explorer** - Container file browsing, @-mention autocomplete, and open-in-IDE
-- [ ] **Phase 5: Diff Pipeline & Review** - Post-run git diff summary and syntax-highlighted diff viewer
-- [ ] **Phase 6: Git Automation** - Auto-generated commit messages and PR descriptions with model selection
+- [ ] **Phase 3: Workspace API & File Explorer** - Container file browsing, @-mention autocomplete, and open-in-IDE
+- [ ] **Phase 3: Diff Pipeline & Review** - Post-run git diff summary and syntax-highlighted diff viewer
+- [ ] **Phase 3: Git Automation** - Auto-generated commit messages and PR descriptions with model selection
 
 ## Phase Details
 
@@ -59,19 +58,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 02-03-PLAN.md — Frontend UI: settings skills section, create session opt-out toggle, restart notice
 - [x] 02-04-PLAN.md — Gap closure: gate skills autocomplete on session mountSkills, reduce cache TTL
 
-### Phase 3: Agent Runner & Multi-Agent
-
-**Goal**: Users can run different AI coding agents in their sessions beyond just Claude
-**Depends on**: Nothing
-**Requirements**: AGNT-01, AGNT-02
-**Success Criteria** (what must be TRUE):
-
-1. Claude continues to work as before through the new agent runner abstraction (no regression)
-2. Sessions can run Codex via the agent runner with streaming output in the chat UI
-3. Sessions can run Cursor CLI via the agent runner with streaming output in the chat UI
-   **Plans**: TBD
-
-### Phase 4: Workspace API & File Explorer
+### Phase 3: Workspace API & File Explorer
 
 **Goal**: Users can browse and reference container files directly from the web UI
 **Depends on**: Nothing
@@ -85,7 +72,7 @@ Decimal phases appear between their surrounding integers in numeric order.
    **Plans**: TBD
    **UI hint**: yes
 
-### Phase 5: Diff Pipeline & Review
+### Phase 3: Diff Pipeline & Review
 
 **Goal**: Users can review what an agent changed after completing a task
 **Depends on**: Nothing
@@ -97,10 +84,10 @@ Decimal phases appear between their surrounding integers in numeric order.
    **Plans**: TBD
    **UI hint**: yes
 
-### Phase 6: Git Automation
+### Phase 3: Git Automation
 
 **Goal**: Users can auto-generate commit and PR messages from agent changes
-**Depends on**: Phase 5
+**Depends on**: Phase 3
 **Requirements**: GAUT-01, GAUT-02, GAUT-03
 **Success Criteria** (what must be TRUE):
 
@@ -119,7 +106,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | -------------------------------- | -------------- | ----------------- | --------- |
 | 1. Session UX                    | 0/3            | Planning complete | -         |
 | 2. Skills Provisioning           | 0/0            | Not started       | -         |
-| 3. Agent Runner & Multi-Agent    | 0/0            | Not started       | -         |
-| 4. Workspace API & File Explorer | 0/0            | Not started       | -         |
-| 5. Diff Pipeline & Review        | 0/0            | Not started       | -         |
-| 6. Git Automation                | 0/0            | Not started       | -         |
+| 3. Workspace API & File Explorer | 0/0            | Not started       | -         |
+| 3. Diff Pipeline & Review        | 0/0            | Not started       | -         |
+| 3. Git Automation                | 0/0            | Not started       | -         |

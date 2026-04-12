@@ -427,7 +427,7 @@ const files = result.stdout.split('\n').filter(Boolean);
 | A3 | Container `find` command supports `-printf` format | Code Examples | Alpine/busybox `find` may not support `-printf`; use `stat` or `ls -la` as portable alternative |
 | A4 | 512KB is a reasonable maximum file preview size | Pitfalls | If users commonly work with larger files, they'll see truncation — but this matches VS Code's web preview behavior |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Docker image git availability**
    - What we know: AFK containers are purpose-built for coding agents, likely have git installed

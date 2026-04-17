@@ -50,7 +50,10 @@ export const FileAutocomplete: React.FC<FileAutocompleteProps> = ({
     if (!filter) {
       return files.slice(0, MAX_RESULTS).map((path) => ({ path }));
     }
-    return fuse.search(filter).slice(0, MAX_RESULTS).map((r) => r.item);
+    return fuse
+      .search(filter)
+      .slice(0, MAX_RESULTS)
+      .map((r) => r.item);
   }, [fuse, filter, files]);
 
   React.useEffect(() => {

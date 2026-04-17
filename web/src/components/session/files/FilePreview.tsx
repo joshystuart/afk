@@ -109,7 +109,17 @@ const EmptyState: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </Box>
 );
 
-export const FilePreview: React.FC<FilePreviewProps> = ({
+// Isolating the rendered HTML in its own memoized component means unrelated
+// parent re-renders (health polling, socket events, sibling tab updates) can
+// never reach down and replace the DOM nodes that hold the user's active
+// text selection. React.memo's default shallow comparison of the single
+// `html` prop is exactly what we want.
+const HighlightedCode = React.memo<{ html: string }>(({ html }) => (
+  <Box dangerouslySetInnerHTML={{ __html: html }} sx={{ height: '100%' }} />
+));
+HighlightedCode.displayName = 'HighlightedCode';
+
+const FilePreviewComponent: React.FC<FilePreviewProps> = ({
   sessionId,
   filePath,
   hostMountPath,
@@ -305,10 +315,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
               {data.content}
             </Box>
           ) : highlightedHtml ? (
-            <Box
-              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-              sx={{ height: '100%' }}
-            />
+            <HighlightedCode html={highlightedHtml} />
           ) : (
             <Box
               sx={{
@@ -329,3 +336,6 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     </Box>
   );
 };
+
+export const FilePreview = React.memo(FilePreviewComponent);
+FilePreview.displayName = 'FilePreview';

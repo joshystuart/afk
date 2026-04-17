@@ -144,6 +144,14 @@ export const WebSocketProvider = ({
           branch: data.branch,
         };
         queryClient.setQueryData(['gitStatus', data.sessionId], gitStatus);
+
+        // Agent activity that changes git state almost always means files
+        // were added, removed, or modified — refresh the workspace views so
+        // the file tree, preview, and @-mention index reflect reality.
+        void queryClient.invalidateQueries({
+          queryKey: ['workspace'],
+          predicate: (query) => query.queryKey[2] === data.sessionId,
+        });
       },
     );
 

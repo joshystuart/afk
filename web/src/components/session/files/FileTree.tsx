@@ -134,7 +134,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   );
 };
 
-export const FileTree: React.FC<FileTreeProps> = ({
+const FileTreeComponent: React.FC<FileTreeProps> = ({
   sessionId,
   onFileSelect,
   selectedFile,
@@ -176,3 +176,6 @@ export const FileTree: React.FC<FileTreeProps> = ({
     </Box>
   );
 };
+
+export const FileTree = React.memo(FileTreeComponent);
+FileTree.displayName = 'FileTree';

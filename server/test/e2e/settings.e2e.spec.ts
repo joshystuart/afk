@@ -178,6 +178,28 @@ describe('Settings E2E Tests', () => {
       expect(response.body.data.claudeToken).toBe('••••••••');
     });
 
+    it('should persist and round-trip ideCommand', async () => {
+      const putResponse = await authPut('/api/settings')
+        .send({ ideCommand: 'cursor' })
+        .expect(200);
+
+      expect(putResponse.body.success).toBe(true);
+      expect(putResponse.body.data.ideCommand).toBe('cursor');
+
+      const getResponse = await authGet('/api/settings').expect(200);
+
+      expect(getResponse.body.success).toBe(true);
+      expect(getResponse.body.data.ideCommand).toBe('cursor');
+
+      // empty string should clear the value back to null (matches domain update semantics)
+      const clearResponse = await authPut('/api/settings')
+        .send({ ideCommand: '' })
+        .expect(200);
+
+      expect(clearResponse.body.success).toBe(true);
+      expect(clearResponse.body.data.ideCommand).toBeNull();
+    });
+
     it('should reject unknown fields', async () => {
       const dataWithUnknownFields = {
         sshPrivateKey: 'valid-key',

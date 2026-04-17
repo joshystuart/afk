@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsBoolean,
   Min,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -101,4 +102,13 @@ export class UpdateSettingsRequest {
     description: 'Minutes of inactivity before a session is auto-stopped',
   })
   idleTimeoutMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @ApiProperty({
+    required: false,
+    description: 'IDE command used to open workspaces (e.g. "cursor", "code")',
+  })
+  ideCommand?: string;
 }

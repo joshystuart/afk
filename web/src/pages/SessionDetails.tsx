@@ -164,7 +164,7 @@ const SessionDetails: React.FC = () => {
   );
 
   useHotkeys(
-    'ctrl+`',
+    'mod+`, ctrl+`',
     (e) => {
       e.preventDefault();
       const tabCycle = ['chat', 'terminal', 'files'];

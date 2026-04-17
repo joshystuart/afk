@@ -59,12 +59,12 @@ None — discussion stayed within phase scope
 
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|------------------|
+| ID      | Description                                                                             | Research Support                                                                                                                                                                 |
+| ------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | CTXT-01 | User can type `@` in prompt input to get autocomplete suggestions for files and folders | `@`-mention detection in ChatInput (mirrors `findSlashToken` pattern), `FileAutocomplete` component (mirrors `SkillAutocomplete`), flat file index API, Fuse.js for fuzzy search |
-| CTXT-02 | User can browse the container workspace file tree in the UI | Files tab in session tab bar, tree component with lazy-loaded directory listing via REST API, `execInContainer` for `ls`/`git ls-files` |
-| CTXT-03 | File listing respects .gitignore rules | `git ls-files` is inherently .gitignore-aware; `ignore` npm package provides fallback filtering for non-git workspaces |
-| CTXT-04 | User can open files in their local IDE when workspace mount is enabled | IDE command in Settings entity, protocol URL generation (`vscode://file/...`, `cursor://file/...`), hostMountPath→containerPath mapping from SessionConfigDto |
+| CTXT-02 | User can browse the container workspace file tree in the UI                             | Files tab in session tab bar, tree component with lazy-loaded directory listing via REST API, `execInContainer` for `ls`/`git ls-files`                                          |
+| CTXT-03 | File listing respects .gitignore rules                                                  | `git ls-files` is inherently .gitignore-aware; `ignore` npm package provides fallback filtering for non-git workspaces                                                           |
+| CTXT-04 | User can open files in their local IDE when workspace mount is enabled                  | IDE command in Settings entity, protocol URL generation (`vscode://file/...`, `cursor://file/...`), hostMountPath→containerPath mapping from SessionConfigDto                    |
 
 </phase_requirements>
 
@@ -72,26 +72,26 @@ None — discussion stayed within phase scope
 
 ### Core
 
-| Library | Version | Purpose | Why Standard |
-|---------|---------|---------|--------------|
-| Shiki | 4.0.2 | Syntax highlighting for file preview | VS Code-quality highlighting using TextMate grammars; fine-grained bundles keep payload manageable; project already uses VS Code-style UX patterns [VERIFIED: npm registry] |
-| Fuse.js | 7.3.0 | Client-side fuzzy search for `@`-mention autocomplete | Lightweight (~5KB gzipped), zero-dependency, supports weighted fuzzy matching on file paths; used by thousands of projects for exactly this use case [VERIFIED: npm registry] |
+| Library | Version | Purpose                                               | Why Standard                                                                                                                                                                  |
+| ------- | ------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shiki   | 4.0.2   | Syntax highlighting for file preview                  | VS Code-quality highlighting using TextMate grammars; fine-grained bundles keep payload manageable; project already uses VS Code-style UX patterns [VERIFIED: npm registry]   |
+| Fuse.js | 7.3.0   | Client-side fuzzy search for `@`-mention autocomplete | Lightweight (~5KB gzipped), zero-dependency, supports weighted fuzzy matching on file paths; used by thousands of projects for exactly this use case [VERIFIED: npm registry] |
 
 ### Supporting
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| ignore | 7.0.5 | Server-side .gitignore pattern matching | Fallback for non-git workspaces where `git ls-files` is unavailable; parse .gitignore and filter `find` output [VERIFIED: npm registry] |
+| Library | Version | Purpose                                 | When to Use                                                                                                                             |
+| ------- | ------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| ignore  | 7.0.5   | Server-side .gitignore pattern matching | Fallback for non-git workspaces where `git ls-files` is unavailable; parse .gitignore and filter `find` output [VERIFIED: npm registry] |
 
 ### Alternatives Considered
 
-| Instead of | Could Use | Tradeoff |
-|------------|-----------|----------|
-| Shiki | highlight.js | Smaller bundle, faster render, but shallow parsing — less accurate for TypeScript/JSX; project targets VS Code-like feel so accuracy matters |
-| Shiki | react-syntax-highlighter (16.1.1) | Wraps Prism/highlight.js; adds React layer but no quality improvement over Shiki; heavier than raw Prism with less accuracy |
-| Fuse.js | match-sorter | More opinionated ranking; Fuse.js gives more control over threshold and scoring keys |
-| Fuse.js | Server-side search | D-13 specifies server-cached flat index sent to client; client-side fuzzy search avoids network round-trips during typing |
-| MUI TreeView (@mui/x-tree-view) | Custom tree with MUI primitives | MUI X TreeView is paid/pro for some features and adds a heavy dependency; a custom tree using `Box`/`Collapse` is simpler and follows the project's existing pattern of building with MUI primitives |
+| Instead of                      | Could Use                         | Tradeoff                                                                                                                                                                                             |
+| ------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shiki                           | highlight.js                      | Smaller bundle, faster render, but shallow parsing — less accurate for TypeScript/JSX; project targets VS Code-like feel so accuracy matters                                                         |
+| Shiki                           | react-syntax-highlighter (16.1.1) | Wraps Prism/highlight.js; adds React layer but no quality improvement over Shiki; heavier than raw Prism with less accuracy                                                                          |
+| Fuse.js                         | match-sorter                      | More opinionated ranking; Fuse.js gives more control over threshold and scoring keys                                                                                                                 |
+| Fuse.js                         | Server-side search                | D-13 specifies server-cached flat index sent to client; client-side fuzzy search avoids network round-trips during typing                                                                            |
+| MUI TreeView (@mui/x-tree-view) | Custom tree with MUI primitives   | MUI X TreeView is paid/pro for some features and adds a heavy dependency; a custom tree using `Box`/`Collapse` is simpler and follows the project's existing pattern of building with MUI primitives |
 
 **Installation:**
 
@@ -244,7 +244,11 @@ const findAtToken = (text: string, cursorPos: number) => {
 
 ```typescript
 // Utility for generating IDE URLs
-function buildIdeUrl(ideCommand: string, hostFilePath: string, line?: number): string {
+function buildIdeUrl(
+  ideCommand: string,
+  hostFilePath: string,
+  line?: number,
+): string {
   const encodedPath = encodeURIComponent(hostFilePath);
   switch (ideCommand) {
     case 'code':
@@ -269,13 +273,13 @@ function buildIdeUrl(ideCommand: string, hostFilePath: string, line?: number): s
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| .gitignore pattern matching | Custom regex or glob matching | `ignore` npm package (server) + `git ls-files` | .gitignore spec has 20+ edge cases (negation, directory-only, anchoring, cascading); `ignore` is spec-compliant and used by ESLint [VERIFIED: npm docs] |
-| Fuzzy path search | Custom scoring algorithm | Fuse.js (client) | Threshold tuning, weighted keys, and Unicode support are deceptively complex; Fuse.js handles all of this [VERIFIED: npm registry] |
-| Syntax highlighting | Custom tokenizer or regex highlighter | Shiki with fine-grained bundles | TextMate grammar parsing is thousands of lines; Shiki uses VS Code's exact engine [VERIFIED: shiki.style docs] |
-| File type icon mapping | Manual icon assignment per extension | Extension→icon lookup map (use MUI icons + a small curated set) | Dozens of file types; a lookup map with sensible defaults covers 95% of cases without a heavy icon library |
-| Path traversal prevention | Manual string checking | `path.resolve()` + prefix validation | Must prevent `../../etc/passwd` style attacks; path resolution with strict prefix check is the standard approach |
+| Problem                     | Don't Build                           | Use Instead                                                     | Why                                                                                                                                                     |
+| --------------------------- | ------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| .gitignore pattern matching | Custom regex or glob matching         | `ignore` npm package (server) + `git ls-files`                  | .gitignore spec has 20+ edge cases (negation, directory-only, anchoring, cascading); `ignore` is spec-compliant and used by ESLint [VERIFIED: npm docs] |
+| Fuzzy path search           | Custom scoring algorithm              | Fuse.js (client)                                                | Threshold tuning, weighted keys, and Unicode support are deceptively complex; Fuse.js handles all of this [VERIFIED: npm registry]                      |
+| Syntax highlighting         | Custom tokenizer or regex highlighter | Shiki with fine-grained bundles                                 | TextMate grammar parsing is thousands of lines; Shiki uses VS Code's exact engine [VERIFIED: shiki.style docs]                                          |
+| File type icon mapping      | Manual icon assignment per extension  | Extension→icon lookup map (use MUI icons + a small curated set) | Dozens of file types; a lookup map with sensible defaults covers 95% of cases without a heavy icon library                                              |
+| Path traversal prevention   | Manual string checking                | `path.resolve()` + prefix validation                            | Must prevent `../../etc/passwd` style attacks; path resolution with strict prefix check is the standard approach                                        |
 
 **Key insight:** File operations inside containers are inherently sandboxed — the container filesystem is the security boundary. But the REST API still needs path traversal validation to prevent accessing files outside the workspace directory within the container.
 
@@ -386,7 +390,8 @@ const results = fuse.search(query).slice(0, 20);
 ```typescript
 // Single command to get typed directory listing inside container
 const cmd = [
-  'sh', '-c',
+  'sh',
+  '-c',
   `find "${safePath}" -maxdepth 1 -mindepth 1 -printf '%y %P\\n' 2>/dev/null | sort`,
 ];
 // Output: "d src\nf README.md\nd node_modules\n..."
@@ -408,24 +413,25 @@ const files = result.stdout.split('\n').filter(Boolean);
 
 ## State of the Art
 
-| Old Approach | Current Approach | When Changed | Impact |
-|--------------|------------------|--------------|--------|
-| highlight.js / Prism for syntax highlighting | Shiki with JS RegExp engine (no WASM) | Shiki 1.0+ (2024) | Full VS Code accuracy without WASM overhead when using JS engine |
-| Custom .gitignore regex | `ignore` npm package | Stable for years | Spec-compliant, maintained, used by ESLint |
-| Full tree fetch on page load | Lazy-loaded tree with on-demand children | Industry standard | Essential for repos with >10K files |
+| Old Approach                                 | Current Approach                         | When Changed      | Impact                                                           |
+| -------------------------------------------- | ---------------------------------------- | ----------------- | ---------------------------------------------------------------- |
+| highlight.js / Prism for syntax highlighting | Shiki with JS RegExp engine (no WASM)    | Shiki 1.0+ (2024) | Full VS Code accuracy without WASM overhead when using JS engine |
+| Custom .gitignore regex                      | `ignore` npm package                     | Stable for years  | Spec-compliant, maintained, used by ESLint                       |
+| Full tree fetch on page load                 | Lazy-loaded tree with on-demand children | Industry standard | Essential for repos with >10K files                              |
 
 **Deprecated/outdated:**
+
 - `react-syntax-highlighter`: Wraps Prism/highlight.js but hasn't kept up with Shiki's quality; many projects migrating away
 - WASM-only Shiki: Shiki 1.0+ added `engine/javascript` for non-WASM environments
 
 ## Assumptions Log
 
-| # | Claim | Section | Risk if Wrong |
-|---|-------|---------|---------------|
-| A1 | `git ls-files` is available in all AFK Docker container images | Architecture Patterns | If containers don't have git installed, the primary listing strategy fails — fallback to `find` + `ignore` would become the only path |
-| A2 | Shiki JS RegExp engine provides sufficient language support without WASM | Standard Stack | Some complex grammars (e.g., Haskell) may not work with JS engine — fallback to plaintext for unsupported languages |
-| A3 | Container `find` command supports `-printf` format | Code Examples | Alpine/busybox `find` may not support `-printf`; use `stat` or `ls -la` as portable alternative |
-| A4 | 512KB is a reasonable maximum file preview size | Pitfalls | If users commonly work with larger files, they'll see truncation — but this matches VS Code's web preview behavior |
+| #   | Claim                                                                    | Section               | Risk if Wrong                                                                                                                         |
+| --- | ------------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | `git ls-files` is available in all AFK Docker container images           | Architecture Patterns | If containers don't have git installed, the primary listing strategy fails — fallback to `find` + `ignore` would become the only path |
+| A2  | Shiki JS RegExp engine provides sufficient language support without WASM | Standard Stack        | Some complex grammars (e.g., Haskell) may not work with JS engine — fallback to plaintext for unsupported languages                   |
+| A3  | Container `find` command supports `-printf` format                       | Code Examples         | Alpine/busybox `find` may not support `-printf`; use `stat` or `ls -la` as portable alternative                                       |
+| A4  | 512KB is a reasonable maximum file preview size                          | Pitfalls              | If users commonly work with larger files, they'll see truncation — but this matches VS Code's web preview behavior                    |
 
 ## Open Questions (RESOLVED)
 
@@ -452,21 +458,21 @@ Step 2.6: SKIPPED (no external dependencies beyond Docker exec, which is the exi
 
 ### Test Framework
 
-| Property | Value |
-|----------|-------|
-| Framework | Jest 29 (server), Vitest 4 (web) |
-| Config file | `server/test/jest-e2e.json` (server), `web/vite.config.ts` (web) |
-| Quick run command | `cd server && npm test -- --testPathPattern=workspace` |
-| Full suite command | `cd server && npm test` |
+| Property           | Value                                                            |
+| ------------------ | ---------------------------------------------------------------- |
+| Framework          | Jest 29 (server), Vitest 4 (web)                                 |
+| Config file        | `server/test/jest-e2e.json` (server), `web/vite.config.ts` (web) |
+| Quick run command  | `cd server && npm test -- --testPathPattern=workspace`           |
+| Full suite command | `cd server && npm test`                                          |
 
 ### Phase Requirements → Test Map
 
-| Req ID | Behavior | Test Type | Automated Command | File Exists? |
-|--------|----------|-----------|-------------------|-------------|
-| CTXT-01 | `@`-mention autocomplete triggers and filters files | unit (web) | `cd web && npx vitest run --reporter=verbose src/components/chat/FileAutocomplete.test.tsx` | ❌ Wave 0 |
-| CTXT-02 | Directory listing returns children with types | e2e (server) | `cd server && npm test -- --testPathPattern=workspace` | ❌ Wave 0 |
-| CTXT-03 | .gitignore entries excluded from listing | e2e (server) | `cd server && npm test -- --testPathPattern=workspace` | ❌ Wave 0 |
-| CTXT-04 | Open-in-IDE generates correct protocol URL | unit (server) | `cd server && npx jest --testPathPattern=ide-url` | ❌ Wave 0 |
+| Req ID  | Behavior                                            | Test Type     | Automated Command                                                                           | File Exists? |
+| ------- | --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------- | ------------ |
+| CTXT-01 | `@`-mention autocomplete triggers and filters files | unit (web)    | `cd web && npx vitest run --reporter=verbose src/components/chat/FileAutocomplete.test.tsx` | ❌ Wave 0    |
+| CTXT-02 | Directory listing returns children with types       | e2e (server)  | `cd server && npm test -- --testPathPattern=workspace`                                      | ❌ Wave 0    |
+| CTXT-03 | .gitignore entries excluded from listing            | e2e (server)  | `cd server && npm test -- --testPathPattern=workspace`                                      | ❌ Wave 0    |
+| CTXT-04 | Open-in-IDE generates correct protocol URL          | unit (server) | `cd server && npx jest --testPathPattern=ide-url`                                           | ❌ Wave 0    |
 
 ### Sampling Rate
 
@@ -484,22 +490,22 @@ Step 2.6: SKIPPED (no external dependencies beyond Docker exec, which is the exi
 
 ### Applicable ASVS Categories
 
-| ASVS Category | Applies | Standard Control |
-|---------------|---------|-----------------|
-| V2 Authentication | no | Existing auth guard covers all API routes |
-| V3 Session Management | no | Existing session management unchanged |
-| V4 Access Control | yes | Verify session belongs to requesting user before serving files |
-| V5 Input Validation | yes | Path parameter validation — prevent traversal via `path.resolve()` + prefix check |
-| V6 Cryptography | no | No crypto operations in this phase |
+| ASVS Category         | Applies | Standard Control                                                                  |
+| --------------------- | ------- | --------------------------------------------------------------------------------- |
+| V2 Authentication     | no      | Existing auth guard covers all API routes                                         |
+| V3 Session Management | no      | Existing session management unchanged                                             |
+| V4 Access Control     | yes     | Verify session belongs to requesting user before serving files                    |
+| V5 Input Validation   | yes     | Path parameter validation — prevent traversal via `path.resolve()` + prefix check |
+| V6 Cryptography       | no      | No crypto operations in this phase                                                |
 
 ### Known Threat Patterns
 
-| Pattern | STRIDE | Standard Mitigation |
-|---------|--------|---------------------|
-| Path traversal (`../../etc/passwd`) | Information Disclosure | `path.resolve()` + workspace prefix validation; reject any path outside workspace root |
-| Large file DoS (request 1GB file preview) | Denial of Service | File size check before reading; 512KB cap with truncation |
-| Command injection via path | Tampering | Never interpolate user paths into shell strings; use array-based `cmd` args for `execInContainer` |
-| Container state mismatch | Denial of Service | Verify container is running before exec; return clear 400/503 on failure |
+| Pattern                                   | STRIDE                 | Standard Mitigation                                                                               |
+| ----------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| Path traversal (`../../etc/passwd`)       | Information Disclosure | `path.resolve()` + workspace prefix validation; reject any path outside workspace root            |
+| Large file DoS (request 1GB file preview) | Denial of Service      | File size check before reading; 512KB cap with truncation                                         |
+| Command injection via path                | Tampering              | Never interpolate user paths into shell strings; use array-based `cmd` args for `execInContainer` |
+| Container state mismatch                  | Denial of Service      | Verify container is running before exec; return clear 400/503 on failure                          |
 
 ## Sources
 
@@ -520,6 +526,7 @@ Step 2.6: SKIPPED (no external dependencies beyond Docker exec, which is the exi
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH — all libraries verified on npm, alternatives evaluated
 - Architecture: HIGH — patterns derived directly from existing codebase (controllers, gateway, tab system, autocomplete)
 - Pitfalls: HIGH — based on standard web security patterns and real codebase analysis

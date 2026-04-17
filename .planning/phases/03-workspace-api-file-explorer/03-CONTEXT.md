@@ -58,6 +58,7 @@ Users can browse and reference container files directly from the web UI. This ph
 </decisions>
 
 <canonical_refs>
+
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
@@ -100,6 +101,7 @@ Users can browse and reference container files directly from the web UI. This ph
 </canonical_refs>
 
 <code_context>
+
 ## Existing Code Insights
 
 ### Reusable Assets
@@ -149,5 +151,5 @@ None — discussion stayed within phase scope
 
 ---
 
-*Phase: 03-workspace-api-file-explorer*
-*Context gathered: 2026-04-12*
+_Phase: 03-workspace-api-file-explorer_
+_Context gathered: 2026-04-12_

@@ -15,13 +15,13 @@ created: 2026-04-12
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Jest 29 (server), Vitest 4 (web) |
-| **Config file** | `server/test/jest-e2e.json` (server), `web/vite.config.ts` (web) |
-| **Quick run command** | `cd server && npm test -- --testPathPattern=workspace` |
-| **Full suite command** | `cd server && npm test && cd ../web && npx vitest run` |
-| **Estimated runtime** | ~30 seconds |
+| Property               | Value                                                            |
+| ---------------------- | ---------------------------------------------------------------- |
+| **Framework**          | Jest 29 (server), Vitest 4 (web)                                 |
+| **Config file**        | `server/test/jest-e2e.json` (server), `web/vite.config.ts` (web) |
+| **Quick run command**  | `cd server && npm test -- --testPathPattern=workspace`           |
+| **Full suite command** | `cd server && npm test && cd ../web && npx vitest run`           |
+| **Estimated runtime**  | ~30 seconds                                                      |
 
 ---
 
@@ -36,14 +36,14 @@ created: 2026-04-12
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | CTXT-02 | T-03-01 | Path traversal prevented via resolve+prefix | e2e | `cd server && npm test -- --testPathPattern=workspace` | ❌ W0 | ⬜ pending |
-| 03-01-02 | 01 | 1 | CTXT-03 | — | N/A | e2e | `cd server && npm test -- --testPathPattern=workspace` | ❌ W0 | ⬜ pending |
-| 03-02-01 | 02 | 1 | CTXT-01 | — | N/A | unit (web) | `cd web && npx vitest run src/components/chat/FileAutocomplete.test.tsx` | ❌ W0 | ⬜ pending |
-| 03-03-01 | 03 | 2 | CTXT-04 | — | N/A | unit | `cd server && npx jest --testPathPattern=ide-url` | ❌ W0 | ⬜ pending |
+| Task ID  | Plan | Wave | Requirement | Threat Ref | Secure Behavior                             | Test Type  | Automated Command                                                        | File Exists | Status     |
+| -------- | ---- | ---- | ----------- | ---------- | ------------------------------------------- | ---------- | ------------------------------------------------------------------------ | ----------- | ---------- |
+| 03-01-01 | 01   | 1    | CTXT-02     | T-03-01    | Path traversal prevented via resolve+prefix | e2e        | `cd server && npm test -- --testPathPattern=workspace`                   | ❌ W0       | ⬜ pending |
+| 03-01-02 | 01   | 1    | CTXT-03     | —          | N/A                                         | e2e        | `cd server && npm test -- --testPathPattern=workspace`                   | ❌ W0       | ⬜ pending |
+| 03-02-01 | 02   | 1    | CTXT-01     | —          | N/A                                         | unit (web) | `cd web && npx vitest run src/components/chat/FileAutocomplete.test.tsx` | ❌ W0       | ⬜ pending |
+| 03-03-01 | 03   | 2    | CTXT-04     | —          | N/A                                         | unit       | `cd server && npx jest --testPathPattern=ide-url`                        | ❌ W0       | ⬜ pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+_Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky_
 
 ---
 
@@ -53,16 +53,16 @@ created: 2026-04-12
 - [ ] `web/src/components/chat/FileAutocomplete.test.tsx` — stubs for CTXT-01
 - [ ] `server/src/interactors/sessions/workspace/workspace-file-listing.service.spec.ts` — path traversal prevention
 
-*Existing test infrastructure covers framework and config needs.*
+_Existing test infrastructure covers framework and config needs._
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| VS Code-style tree visual appearance | CTXT-02 | Visual layout verification | Open Files tab, verify indented tree with file icons, expand/collapse folders |
-| Open-in-IDE launches correct editor | CTXT-04 | Requires local IDE installed | Configure IDE in Settings, click "Open in IDE" on a file, verify editor opens to correct file |
+| Behavior                             | Requirement | Why Manual                   | Test Instructions                                                                             |
+| ------------------------------------ | ----------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
+| VS Code-style tree visual appearance | CTXT-02     | Visual layout verification   | Open Files tab, verify indented tree with file icons, expand/collapse folders                 |
+| Open-in-IDE launches correct editor  | CTXT-04     | Requires local IDE installed | Configure IDE in Settings, click "Open in IDE" on a file, verify editor opens to correct file |
 
 ---
 

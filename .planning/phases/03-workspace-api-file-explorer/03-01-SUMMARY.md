@@ -104,10 +104,10 @@ Backend workspace REST API (directory listing, file content, flat index) with `.
 
 ## Commits
 
-| Task | Description                                                   | Hash      |
-| ---- | ------------------------------------------------------------- | --------- |
-| 1    | Workspace DTOs, routes, file-listing and file-index services  | `5ecc677` |
-| 2    | Controller, interactor, module, Settings ideCommand, web API  | `e2096b1` |
+| Task | Description                                                  | Hash      |
+| ---- | ------------------------------------------------------------ | --------- |
+| 1    | Workspace DTOs, routes, file-listing and file-index services | `5ecc677` |
+| 2    | Controller, interactor, module, Settings ideCommand, web API | `e2096b1` |
 
 ## Verification
 
@@ -117,20 +117,20 @@ Backend workspace REST API (directory listing, file content, flat index) with `.
 
 ## Threat Model Coverage
 
-| Threat ID | Mitigation in this plan |
-| --------- | ------------------------ |
-| T-03-01 (Path traversal) | `WorkspaceFileListingService.resolveSafePath` — `path.resolve` + `startsWith(base + sep)` check; throws `BadRequestException('Path traversal detected')`. Applied at both `listDirectory` and `getFileContent` entry. |
-| T-03-02 (File-content DoS) | `stat -c %s` before read; `head -c 524288` when > 512KB; `truncated: true` flag in response. |
-| T-03-03 (Command injection via exec) | All exec calls use array-form `cmd` (`['git', 'ls-files', ...]`, `['stat', '-c', '%s', resolved]`, `['cat', resolved]`). No `sh -c` + string concatenation anywhere. |
-| T-03-04 (Container-stopped DoS) | `WorkspaceInteractor.loadRunningSession` — `session.status !== SessionStatus.RUNNING` → `BadRequestException('Session is not running')`; missing `containerId` → `BadRequestException('Session has no associated container')`. |
-| T-03-05 (Binary leakage) | Extension-based binary set (`.png`, `.jpg`, `.zip`, `.exe`, fonts, media, native libs) → returns `{ binary: true, content: '' }`. |
+| Threat ID                            | Mitigation in this plan                                                                                                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T-03-01 (Path traversal)             | `WorkspaceFileListingService.resolveSafePath` — `path.resolve` + `startsWith(base + sep)` check; throws `BadRequestException('Path traversal detected')`. Applied at both `listDirectory` and `getFileContent` entry.          |
+| T-03-02 (File-content DoS)           | `stat -c %s` before read; `head -c 524288` when > 512KB; `truncated: true` flag in response.                                                                                                                                   |
+| T-03-03 (Command injection via exec) | All exec calls use array-form `cmd` (`['git', 'ls-files', ...]`, `['stat', '-c', '%s', resolved]`, `['cat', resolved]`). No `sh -c` + string concatenation anywhere.                                                           |
+| T-03-04 (Container-stopped DoS)      | `WorkspaceInteractor.loadRunningSession` — `session.status !== SessionStatus.RUNNING` → `BadRequestException('Session is not running')`; missing `containerId` → `BadRequestException('Session has no associated container')`. |
+| T-03-05 (Binary leakage)             | Extension-based binary set (`.png`, `.jpg`, `.zip`, `.exe`, fonts, media, native libs) → returns `{ binary: true, content: '' }`.                                                                                              |
 
 ## Requirements Coverage
 
-| Requirement | Delivered | How |
-| ----------- | --------- | --- |
-| CTXT-02 (File browsing) | API surface | `GET /api/sessions/:id/files?path=` returns directory listing with name/type/size |
-| CTXT-03 (.gitignore filtering) | API surface | Primary strategy uses `git ls-files --cached --others --exclude-standard`; fallback uses `ignore()` seeded from `.gitignore` |
+| Requirement                                   | Delivered         | How                                                                                                                                     |
+| --------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| CTXT-02 (File browsing)                       | API surface       | `GET /api/sessions/:id/files?path=` returns directory listing with name/type/size                                                       |
+| CTXT-03 (.gitignore filtering)                | API surface       | Primary strategy uses `git ls-files --cached --others --exclude-standard`; fallback uses `ignore()` seeded from `.gitignore`            |
 | CTXT-04 (Open-in-IDE via Settings ideCommand) | Persistence layer | `GeneralSettings.ideCommand` column + `Settings.update()` handler + web `Settings.ideCommand` type + `UpdateSettingsRequest.ideCommand` |
 
 UI surfacing of these (tree, editor, autocomplete, Settings form field) is deferred to the Wave 2 frontend plans as designed.

@@ -31,11 +31,11 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 ### Active
 
 - ✓ Centralized skills — configurable skills directory mounted read-only into each session at runtime, supporting popular skill ecosystems (skills.sh, GSD, superpowers) (Validated in Phase 2: Skills Provisioning)
-- [ ] File tagging in prompt input — `@file/folder-name` with autocomplete dropdown for providing file context in prompts
+- ✓ File tagging in prompt input — `@file/folder-name` with autocomplete dropdown for providing file context in prompts (Validated in Phase 3: Workspace API & File Explorer)
+- ✓ File system explorer — browse container filesystem in the UI; open in local IDE when workspace mount is enabled (Validated in Phase 3: Workspace API & File Explorer)
 - [ ] Auto commit and PR messages — automatically generate commit messages and PR descriptions, configurable which model is used
 - [ ] Multiple agent support — support for Claude, Cursor, Codex, and other CLI-based agents; lock a session to an agent or select per prompt
 - [ ] Diff viewer — post-run summary showing what files the agent changed after completing a task
-- [ ] File system explorer — browse container filesystem in the UI; open in local IDE when workspace mount is enabled
 - ✓ Tab between chat and terminal — toggle between the chat view and the Claude terminal view within a session (Validated in Phase 1: Session UX)
 
 ### Out of Scope
@@ -92,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-11 after Phase 2 (Skills Provisioning) completion_
+_Last updated: 2026-04-17 after Phase 3 (Workspace API & File Explorer) completion_

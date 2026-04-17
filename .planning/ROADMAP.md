@@ -69,12 +69,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 2. User can type `@` in the prompt input and see autocomplete suggestions for files and folders
 3. File and folder listings exclude entries matched by .gitignore
 4. User can click a file in the explorer to open it in their local IDE when workspace mount is enabled
-   **Plans**: 3 plans
+   **Plans**: 4 plans
    Plans:
 
 - [x] 03-01-PLAN.md — Backend workspace API: REST endpoints for directory listing, file content, file index; Settings ideCommand; web API client
 - [x] 03-02-PLAN.md — Frontend file explorer tab: VS Code-style tree, Shiki syntax-highlighted preview, open-in-IDE, SessionDetails integration
 - [x] 03-03-PLAN.md — @-mention autocomplete: FileAutocomplete with Fuse.js fuzzy search, ChatInput integration, IDE command in Settings UI
+- [ ] 03-04-PLAN.md — Gap closure: fix ideCommand DTO whitelist + interactor forwarding + GET response exposure (Test 8 blocker); make Ctrl+` tab cycle cross-platform with mod modifier (Test 7 major)
       **UI hint**: yes
 
 ### Phase 3: Diff Pipeline & Review

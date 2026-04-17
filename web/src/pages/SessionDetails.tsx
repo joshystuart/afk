@@ -26,6 +26,7 @@ import {
   FiberManualRecord as DotIcon,
   CloudUpload as PushIcon,
   ChatBubbleOutline as ChatIcon,
+  FolderOpen as FilesIcon,
 } from '@mui/icons-material';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { Link, useParams, useNavigate } from 'react-router-dom';
@@ -48,6 +49,8 @@ import type { SessionTab } from '../hooks/useSessionTabs';
 import { SessionTabBar } from '../components/session/SessionTabBar';
 import { SessionTabPanel } from '../components/session/SessionTabPanel';
 import { TerminalView } from '../components/session/TerminalView';
+import { FilesPanel } from '../components/session/files/FilesPanel';
+import { useSettingsStore } from '../stores/settings.store';
 
 const CONTENT_HEIGHT = 'calc(100vh - 48px)';
 
@@ -97,6 +100,7 @@ const SessionDetails: React.FC = () => {
   const { deleteProgress } = useSessionStore();
 
   const { activeTab, switchTab } = useSessionTabs(id || '');
+  const { settings } = useSettingsStore();
 
   const [terminalUnread, setTerminalUnread] = React.useState(false);
   const [chatUnread, setChatUnread] = React.useState(false);
@@ -149,15 +153,24 @@ const SessionDetails: React.FC = () => {
         badge: terminalUnread,
         disabled: !healthCheck.terminalReady,
       },
+      {
+        id: 'files',
+        label: 'Files',
+        icon: <FilesIcon sx={{ fontSize: 18 }} />,
+        disabled: !isReady,
+      },
     ],
-    [chatUnread, terminalUnread, healthCheck.terminalReady],
+    [chatUnread, terminalUnread, healthCheck.terminalReady, isReady],
   );
 
   useHotkeys(
     'ctrl+`',
     (e) => {
       e.preventDefault();
-      switchTab(activeTab === 'chat' ? 'terminal' : 'chat');
+      const tabCycle = ['chat', 'terminal', 'files'];
+      const currentIdx = tabCycle.indexOf(activeTab);
+      const nextIdx = (currentIdx + 1) % tabCycle.length;
+      switchTab(tabCycle[nextIdx]);
     },
     { enableOnFormTags: true, enableOnContentEditable: true },
   );
@@ -1021,6 +1034,13 @@ const SessionDetails: React.FC = () => {
             <TerminalView
               sessionId={session.id}
               visible={activeTab === 'terminal'}
+            />
+          </SessionTabPanel>
+          <SessionTabPanel active={activeTab === 'files'}>
+            <FilesPanel
+              sessionId={session.id}
+              hostMountPath={session.hostMountPath ?? null}
+              ideCommand={settings?.ideCommand ?? null}
             />
           </SessionTabPanel>
         </Box>

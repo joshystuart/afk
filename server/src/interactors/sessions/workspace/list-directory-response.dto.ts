@@ -6,12 +6,7 @@ export class FileEntryDto {
   type: FileEntryType;
   size?: number;
 
-  constructor(
-    name: string,
-    path: string,
-    type: FileEntryType,
-    size?: number,
-  ) {
+  constructor(name: string, path: string, type: FileEntryType, size?: number) {
     this.name = name;
     this.path = path;
     this.type = type;

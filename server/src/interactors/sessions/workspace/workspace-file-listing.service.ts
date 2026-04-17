@@ -7,10 +7,7 @@ import {
 import * as path from 'path';
 import ignore from 'ignore';
 import { DockerEngineService } from '../../../libs/docker/docker-engine.service';
-import {
-  FileEntryDto,
-  FileEntryType,
-} from './list-directory-response.dto';
+import { FileEntryDto, FileEntryType } from './list-directory-response.dto';
 import { FileContentResponseDto } from './file-content-response.dto';
 
 const MAX_FILE_CONTENT_BYTES = 524288;
@@ -133,10 +130,18 @@ export class WorkspaceFileListingService {
     const resolved = this.resolveSafePath(workingDir, dirPath);
     const relative = this.toRelative(workingDir, resolved);
 
-    let names = await this.listDirectoryViaGit(containerId, workingDir, relative);
+    let names = await this.listDirectoryViaGit(
+      containerId,
+      workingDir,
+      relative,
+    );
 
     if (names === null) {
-      names = await this.listDirectoryViaFind(containerId, workingDir, resolved);
+      names = await this.listDirectoryViaFind(
+        containerId,
+        workingDir,
+        resolved,
+      );
     }
 
     const uniqueNames = Array.from(new Set(names)).filter((n) => n.length > 0);
@@ -310,15 +315,14 @@ export class WorkspaceFileListingService {
     containerId: string,
     resolvedDir: string,
   ): Promise<void> {
-    const result = await this.execService.execInContainer(
-      containerId,
-      ['test', '-d', resolvedDir],
-    );
+    const result = await this.execService.execInContainer(containerId, [
+      'test',
+      '-d',
+      resolvedDir,
+    ]);
 
     if (result.exitCode !== 0) {
-      throw new NotFoundException(
-        `Directory does not exist: ${resolvedDir}`,
-      );
+      throw new NotFoundException(`Directory does not exist: ${resolvedDir}`);
     }
   }
 
@@ -329,12 +333,9 @@ export class WorkspaceFileListingService {
     names: string[],
   ): Promise<FileEntryDto[]> {
     const entries = await Promise.all(
-      names.map(async (name) => this.buildEntry(
-        containerId,
-        resolvedDir,
-        relativeDir,
-        name,
-      )),
+      names.map(async (name) =>
+        this.buildEntry(containerId, resolvedDir, relativeDir, name),
+      ),
     );
 
     entries.sort((a, b) => {
@@ -354,13 +355,13 @@ export class WorkspaceFileListingService {
     name: string,
   ): Promise<FileEntryDto> {
     const entryResolved = path.join(resolvedDir, name);
-    const entryRelative =
-      relativeDir === '.' ? name : `${relativeDir}/${name}`;
+    const entryRelative = relativeDir === '.' ? name : `${relativeDir}/${name}`;
 
-    const typeResult = await this.execService.execInContainer(
-      containerId,
-      ['test', '-d', entryResolved],
-    );
+    const typeResult = await this.execService.execInContainer(containerId, [
+      'test',
+      '-d',
+      entryResolved,
+    ]);
     const type: FileEntryType =
       typeResult.exitCode === 0 ? 'directory' : 'file';
 
@@ -368,10 +369,12 @@ export class WorkspaceFileListingService {
       return new FileEntryDto(name, entryRelative, 'directory');
     }
 
-    const sizeResult = await this.execService.execInContainer(
-      containerId,
-      ['stat', '-c', '%s', entryResolved],
-    );
+    const sizeResult = await this.execService.execInContainer(containerId, [
+      'stat',
+      '-c',
+      '%s',
+      entryResolved,
+    ]);
     const size =
       sizeResult.exitCode === 0
         ? Number.parseInt(sizeResult.stdout.trim(), 10)

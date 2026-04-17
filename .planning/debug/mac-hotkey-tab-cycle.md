@@ -1,6 +1,6 @@
 ---
 status: diagnosed
-trigger: "Ctrl+` hotkey to cycle session tabs does not work on macOS"
+trigger: 'Ctrl+` hotkey to cycle session tabs does not work on macOS'
 created: 2026-04-17T10:00:00Z
 updated: 2026-04-17T10:15:00Z
 ---
@@ -44,16 +44,16 @@ started: "Phase 03 Plan 02 (commit dd76e02) — added Files tab and expanded tab
 - timestamp: 2026-04-17T10:10:00Z
   checked: "react-hotkeys-hook match logic dist/index.js lines 117-131 (matchesHotkey function)"
   found: |
-    const { alt: i, meta: c, mod: a, shift: n, ctrl: y, keys: u } = r
-    const { ctrlKey: d, metaKey: m, ... } = e
-    if (a) {                                   // <-- 'mod' branch
-      if (!m && !d) return !1                  // accepts metaKey OR ctrlKey
-    } else if (c !== m && p !== "meta" && p !== "os"
-               || y !== d && p !== "ctrl" && p !== "control") return !1
+  const { alt: i, meta: c, mod: a, shift: n, ctrl: y, keys: u } = r
+  const { ctrlKey: d, metaKey: m, ... } = e
+  if (a) { // <-- 'mod' branch
+  if (!m && !d) return !1 // accepts metaKey OR ctrlKey
+  } else if (c !== m && p !== "meta" && p !== "os"
+  || y !== d && p !== "ctrl" && p !== "control") return !1
   implication: |
-    With binding 'ctrl+`' → y=true, a=false, c=false. Matcher requires ctrlKey===true.
-    On macOS, ⌘+` produces metaKey=true, ctrlKey=false → y (true) !== d (false) → return false.
-    Using 'mod+`' would set a=true → accepts EITHER metaKey OR ctrlKey → works cross-platform.
+  With binding 'ctrl+`' → y=true, a=false, c=false. Matcher requires ctrlKey===true.
+On macOS, ⌘+` produces metaKey=true, ctrlKey=false → y (true) !== d (false) → return false.
+  Using 'mod+`' would set a=true → accepts EITHER metaKey OR ctrlKey → works cross-platform.
 
 - timestamp: 2026-04-17T10:11:00Z
   checked: "Existing useHotkeys usage across web/src (cross-platform reference pattern)"
@@ -62,38 +62,38 @@ started: "Phase 03 Plan 02 (commit dd76e02) — added Files tab and expanded tab
 
 - timestamp: 2026-04-17T10:13:00Z
   checked: "macOS system shortcut reservation for ⌘+`"
-  found: "⌘+` is the standard macOS system shortcut 'Move focus to next window of active application' (System Settings → Keyboard → Keyboard Shortcuts → Keyboard → Move focus to next window). When the browser has only one window, the OS still consumes the event in many configurations, though with multiple windows JS often still sees it."
+found: "⌘+` is the standard macOS system shortcut 'Move focus to next window of active application' (System Settings → Keyboard → Keyboard Shortcuts → Keyboard → Move focus to next window). When the browser has only one window, the OS still consumes the event in many configurations, though with multiple windows JS often still sees it."
   implication: |
-    'mod+`' will work on Win/Linux reliably. On macOS it MAY be intercepted by the OS in some setups.
-    Safer: register multiple accelerators or pick a non-reserved combo. Dual-register 'mod+`' AND a
-    Mac-friendly alternative (e.g. 'ctrl+tab' or 'mod+shift+]') via comma-separated keys string.
+  'mod+`' will work on Win/Linux reliably. On macOS it MAY be intercepted by the OS in some setups.
+  Safer: register multiple accelerators or pick a non-reserved combo. Dual-register 'mod+`' AND a
+  Mac-friendly alternative (e.g. 'ctrl+tab' or 'mod+shift+]') via comma-separated keys string.
 
 - timestamp: 2026-04-17T10:14:00Z
   checked: "react-hotkeys-hook docs — modifier semantics"
   found: |
-    Per library README and parseHotkey implementation:
-    - 'ctrl' / 'control' → ctrlKey === true literally
-    - 'meta' → metaKey === true literally (⌘ on Mac, Win key on Windows)
-    - 'mod' → ctrlKey === true OR metaKey === true (platform-aware shortcut modifier)
-  implication: "'mod' is the idiomatic fix. Supports both single binding 'mod+`' and multi-binding 'ctrl+`,meta+`' via comma delimiter."
+  Per library README and parseHotkey implementation:
+  - 'ctrl' / 'control' → ctrlKey === true literally
+  - 'meta' → metaKey === true literally (⌘ on Mac, Win key on Windows)
+  - 'mod' → ctrlKey === true OR metaKey === true (platform-aware shortcut modifier)
+    implication: "'mod' is the idiomatic fix. Supports both single binding 'mod+`' and multi-binding 'ctrl+`,meta+`' via comma delimiter."
 
 ## Resolution
 
 root_cause: |
-  The hotkey registration at web/src/pages/SessionDetails.tsx:167 uses the literal token 'ctrl'
-  in the binding 'ctrl+`'. In react-hotkeys-hook v5.2.4 (and all v4+ versions), 'ctrl' maps
+The hotkey registration at web/src/pages/SessionDetails.tsx:167 uses the literal token 'ctrl'
+in the binding 'ctrl+`'. In react-hotkeys-hook v5.2.4 (and all v4+ versions), 'ctrl' maps
   exclusively to the keyboard's Control key (event.ctrlKey). It does NOT alias to Command on
   macOS. The library provides a dedicated cross-platform modifier — 'mod' — which matches
   either ctrlKey or metaKey (verified in dist/index.js:125-127). Because Mac users reach for
   ⌘ by muscle memory (confirmed by the reporter's message "Im on a mac, would it be command+`?"),
-  the hotkey never fires on macOS for the vast majority of users. The literal Ctrl+` combination
-  would technically still work on a Mac, but it is not the platform-idiomatic input and is not
-  what the UAT test (or any Mac user) will try.
+the hotkey never fires on macOS for the vast majority of users. The literal Ctrl+` combination
+would technically still work on a Mac, but it is not the platform-idiomatic input and is not
+what the UAT test (or any Mac user) will try.
 
 fix: |
-  (Empty — diagnose-only mode. See Suggested Fix Direction below.)
+(Empty — diagnose-only mode. See Suggested Fix Direction below.)
 
 verification: |
-  (Empty — diagnose-only mode.)
+(Empty — diagnose-only mode.)
 
 files_changed: []

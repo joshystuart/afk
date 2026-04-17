@@ -100,7 +100,13 @@ const SessionDetails: React.FC = () => {
   const { deleteProgress } = useSessionStore();
 
   const { activeTab, switchTab } = useSessionTabs(id || '');
-  const { settings } = useSettingsStore();
+  const { settings, fetchSettings } = useSettingsStore();
+
+  React.useEffect(() => {
+    if (!settings) {
+      fetchSettings();
+    }
+  }, [settings, fetchSettings]);
 
   const [terminalUnread, setTerminalUnread] = React.useState(false);
   const [chatUnread, setChatUnread] = React.useState(false);
@@ -163,8 +169,9 @@ const SessionDetails: React.FC = () => {
     [chatUnread, terminalUnread, healthCheck.terminalReady, isReady],
   );
 
+  // Shift+` (same key as `~` on US keyboards): avoids macOS consuming ⌘+` for "next window"
   useHotkeys(
-    'mod+`, ctrl+`',
+    'shift+backquote',
     (e) => {
       e.preventDefault();
       const tabCycle = ['chat', 'terminal', 'files'];

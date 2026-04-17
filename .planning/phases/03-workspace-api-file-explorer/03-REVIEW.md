@@ -75,7 +75,7 @@ The main concerns are **correctness and resource-use risks at scale**, plus **de
 ### WR-01: File-index cache leaks entries for removed containers
 
 **File:** `server/src/interactors/sessions/workspace/workspace-file-index.service.ts:16,48`
-**Issue:** `fileIndexCache` is a `Map<containerId, FileIndexCacheEntry>` with TTL-based *lookup-time* freshness (`now - cached.timestamp < INDEX_TTL_MS`) but **no eviction policy**. Entries for containers that have been stopped/deleted stay in the Map until `invalidateIndex` is called. `WorkspaceInteractor.invalidateFileIndex` exists but is **never called from any lifecycle hook** (grep confirms no caller; the phase plan acknowledges this as a follow-up). Over time this is an unbounded memory leak — each cache entry can be up to ~10,000 path strings (single-digit MB per container).
+**Issue:** `fileIndexCache` is a `Map<containerId, FileIndexCacheEntry>` with TTL-based _lookup-time_ freshness (`now - cached.timestamp < INDEX_TTL_MS`) but **no eviction policy**. Entries for containers that have been stopped/deleted stay in the Map until `invalidateIndex` is called. `WorkspaceInteractor.invalidateFileIndex` exists but is **never called from any lifecycle hook** (grep confirms no caller; the phase plan acknowledges this as a follow-up). Over time this is an unbounded memory leak — each cache entry can be up to ~10,000 path strings (single-digit MB per container).
 **Fix:** Wire `WorkspaceFileIndexService.invalidateIndex(containerId)` into `DeleteSessionInteractor`/`StopSessionInteractor` (the exported service is already available from `WorkspaceModule`), and add a periodic sweep or cap on Map size. Minimal fix:
 
 ```typescript
@@ -96,6 +96,7 @@ export class WorkspaceFileIndexService {
   }
 }
 ```
+
 And subscribe to `SessionDeletedEvent` (or call from `DeleteSessionInteractor`) to call `invalidateIndex`.
 
 ### WR-02: File-index buildIndex materialises full `git ls-files` output before truncating
@@ -112,9 +113,15 @@ const countResult = await this.execService.execInContainer(
 );
 // If count > threshold, warn and take a smaller sample or return empty
 ```
+
 Simplest mitigation: pipe through `head`:
+
 ```typescript
-['sh', '-c', `git ls-files --cached --others --exclude-standard | head -n ${MAX_INDEX_SIZE * 2}`]
+[
+  'sh',
+  '-c',
+  `git ls-files --cached --others --exclude-standard | head -n ${MAX_INDEX_SIZE * 2}`,
+];
 ```
 
 ### WR-03: Symlinks inside the workspace are followed without revalidation
@@ -131,7 +138,10 @@ const realpathResult = await this.execService.execInContainer(
   workingDir,
 );
 const realPath = realpathResult.stdout.trim();
-if (!realPath.startsWith(normalizedBase + path.sep) && realPath !== normalizedBase) {
+if (
+  !realPath.startsWith(normalizedBase + path.sep) &&
+  realPath !== normalizedBase
+) {
   throw new BadRequestException('Path traversal via symlink');
 }
 
@@ -154,17 +164,25 @@ if (truncated) {
     content = content.slice(0, lastNewline);
   }
 }
-return new FileContentResponseDto(relative, content, size, truncated, language, false);
+return new FileContentResponseDto(
+  relative,
+  content,
+  size,
+  truncated,
+  language,
+  false,
+);
 ```
 
 ### WR-05: File tree and autocomplete lack keyboard navigation and ARIA roles
 
 **File:** `web/src/components/session/files/FileTree.tsx:103-134`, `web/src/components/session/files/FileTreeItem.tsx:39-97`, `web/src/components/chat/FileAutocomplete.tsx:115-232`
 **Issue:** Multiple accessibility problems:
+
 - `FileTreeItem` is a plain `<Box onClick>` with `userSelect: 'none'` — no `role`, no `tabIndex`, no `onKeyDown`. Keyboard-only users cannot expand folders or select files. It has no `aria-expanded` / `aria-selected` / `aria-level`, so screen readers cannot announce state.
 - `FileTree` has no wrapping `role="tree"`.
 - `FileAutocomplete` relies on a `keydown` listener attached to `anchorEl` (the textarea) for Arrow/Enter/Tab navigation, but the popup itself has no `role="listbox"` or `role="option"` on the items, and no `aria-activedescendant` on the input. Screen readers will not announce the highlighted option.
-**Fix:** Add ARIA semantics + keyboard handling. Minimal changes:
+  **Fix:** Add ARIA semantics + keyboard handling. Minimal changes:
 
 ```tsx
 // FileTreeItem.tsx
@@ -184,10 +202,12 @@ return new FileContentResponseDto(relative, content, size, truncated, language, 
   // ...
 >
 ```
+
 ```tsx
 // FileTree.tsx — wrap the outer Box
 <Box role="tree" aria-label="Workspace files" /* ... */>
 ```
+
 ```tsx
 // FileAutocomplete.tsx — add listbox/option roles + aria-activedescendant on the anchor input
 <Box ref={listRef} role="listbox" id="file-autocomplete-listbox" /* ... */>
@@ -200,6 +220,7 @@ return new FileContentResponseDto(relative, content, size, truncated, language, 
       /* ... */
     >
 ```
+
 Also set `aria-activedescendant={…}` and `aria-controls="file-autocomplete-listbox"` on the textarea in `ChatInput.tsx` when the popup is open.
 
 ### WR-06: `invalidateFileIndex` on `WorkspaceInteractor` is unreachable dead code
@@ -207,6 +228,7 @@ Also set `aria-activedescendant={…}` and `aria-controls="file-autocomplete-lis
 **File:** `server/src/interactors/sessions/workspace/workspace.interactor.ts:75-81`
 **Issue:** `invalidateFileIndex(sessionId)` is defined and exported but no controller route, gateway handler, or event subscriber calls it. The only invalidation mechanism is the 60s TTL check inside `getFileIndex`. Consequence: users who create/rename/delete files via the agent won't see updates in `@`-mention until the TTL expires; and on session deletion the cache entry leaks (see WR-01). This is tracked as a follow-up in the phase plan but should at least be wired to session delete to avoid leaks.
 **Fix:** Either remove the method (and stop exporting `WorkspaceFileIndexService`) or, preferably, wire it into:
+
 - `DeleteSessionInteractor` → `invalidateFileIndex` (or `clearAllIndexes`-on-delete if multiple caches share a container ID).
 - The session gateway's `chat.complete` / git-write event handler — call `invalidateIndex(containerId)` so fresh file lists surface within seconds.
 
@@ -233,10 +255,19 @@ Also set `aria-activedescendant={…}` and `aria-controls="file-autocomplete-lis
 ```typescript
 if (!binary && size > 0) {
   const probe = await this.execService.execInContainer(
-    containerId, ['head', '-c', '4096', resolved], workingDir,
+    containerId,
+    ['head', '-c', '4096', resolved],
+    workingDir,
   );
   if (probe.stdout.includes('\0')) {
-    return new FileContentResponseDto(relative, '', size, false, language, true);
+    return new FileContentResponseDto(
+      relative,
+      '',
+      size,
+      false,
+      language,
+      true,
+    );
   }
 }
 ```
@@ -299,11 +330,14 @@ return `${ideCommand}://file${encodedHostPath.startsWith('/') ? '' : '/'}${encod
 **Fix:** Either remove the folder branch, or include top-level directory stems derived from the file list:
 
 ```typescript
-const dirs = new Set(files.flatMap(f => {
-  const parts = f.split('/').slice(0, -1);
-  return parts.map((_, i) => parts.slice(0, i + 1).join('/') + '/');
-}));
+const dirs = new Set(
+  files.flatMap((f) => {
+    const parts = f.split('/').slice(0, -1);
+    return parts.map((_, i) => parts.slice(0, i + 1).join('/') + '/');
+  }),
+);
 ```
+
 (This would materially change behaviour; leaving as info only.)
 
 ### IN-09: `WorkspaceController.handleError` swallows non-`HttpException` errors into `BadRequestException`

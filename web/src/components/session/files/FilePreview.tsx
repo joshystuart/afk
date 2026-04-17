@@ -50,6 +50,11 @@ const getHighlighter = (): Promise<Highlighter> => {
   return highlighterPromise;
 };
 
+const normalizeIdeCommand = (raw: string): string => {
+  // Tolerate users pasting "cursor://", "cursor:", or "Cursor" as their IDE command.
+  return raw.trim().toLowerCase().replace(/:\/+$/, '').replace(/:+$/, '');
+};
+
 const buildIdeUrl = (
   containerPath: string,
   hostMountPath: string | null,
@@ -57,35 +62,35 @@ const buildIdeUrl = (
 ): string | null => {
   if (!hostMountPath || !ideCommand) return null;
 
+  const cmd = normalizeIdeCommand(ideCommand);
+  if (!cmd) return null;
+
   const normalizedMount = hostMountPath.replace(/\/+$/, '');
 
-  let relative: string | null = null;
+  let relative: string;
   if (containerPath.startsWith('/workspace/repo/')) {
     relative = containerPath.slice('/workspace/repo/'.length);
-  } else if (containerPath === '/workspace/repo') {
+  } else if (
+    containerPath === '/workspace/repo' ||
+    containerPath === '/workspace'
+  ) {
     relative = '';
   } else if (containerPath.startsWith('/workspace/')) {
     relative = containerPath.slice('/workspace/'.length);
-  } else if (containerPath === '/workspace') {
-    relative = '';
-  } else {
+  } else if (containerPath.startsWith('/')) {
     return null;
+  } else {
+    // The workspace API returns paths relative to the repo root
+    // (e.g. "AGENTS.md", "src/index.ts") — map straight onto the host mount.
+    relative = containerPath.replace(/^\/+/, '');
   }
 
   const hostPath = relative
     ? `${normalizedMount}/${relative}`
     : normalizedMount;
 
-  switch (ideCommand) {
-    case 'cursor':
-      return `cursor://file/${hostPath}`;
-    case 'code':
-      return `vscode://file/${hostPath}`;
-    case 'zed':
-      return `zed://file/${hostPath}`;
-    default:
-      return `${ideCommand}://file/${hostPath}`;
-  }
+  const scheme = cmd === 'code' ? 'vscode' : cmd;
+  return `${scheme}://file/${hostPath}`;
 };
 
 const EmptyState: React.FC<{ children: React.ReactNode }> = ({ children }) => (

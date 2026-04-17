@@ -129,10 +129,10 @@ Mirrors `SkillAutocomplete` for familiarity and consistency:
 
 ## Requirements Coverage
 
-| Requirement                              | Delivered | How                                                                                                                                                                                                |
-| ---------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CTXT-01 (@-mention file autocomplete)    | Full UI   | `FileAutocomplete` component + `ChatInput.findAtToken` + `ChatPanel.useFileIndex`. Fuse.js fuzzy search over the flat index, 20-result cap, keyboard navigable, mutually exclusive with `/skills`. |
-| CTXT-04 (IDE command configurable)       | Full UI   | IDE Integration section in General Settings persists `ideCommand` through `UpdateSettingsRequest`. Completes the end-to-end chain: Plan 01 stored it, Plan 02 consumed it, Plan 03 lets the user edit it. |
+| Requirement                           | Delivered | How                                                                                                                                                                                                       |
+| ------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CTXT-01 (@-mention file autocomplete) | Full UI   | `FileAutocomplete` component + `ChatInput.findAtToken` + `ChatPanel.useFileIndex`. Fuse.js fuzzy search over the flat index, 20-result cap, keyboard navigable, mutually exclusive with `/skills`.        |
+| CTXT-04 (IDE command configurable)    | Full UI   | IDE Integration section in General Settings persists `ideCommand` through `UpdateSettingsRequest`. Completes the end-to-end chain: Plan 01 stored it, Plan 02 consumed it, Plan 03 lets the user edit it. |
 
 ## Deviations from Plan
 

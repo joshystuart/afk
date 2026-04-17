@@ -7,19 +7,19 @@ tags: [nestjs, class-validator, settings, react-hotkeys-hook, dto, e2e]
 # Dependency graph
 requires:
   - phase: 03-workspace-api-file-explorer
-    provides: "Plan 03-01 added ideCommand column + domain update handler; Plan 03-03 wired Settings → General form"
+    provides: 'Plan 03-01 added ideCommand column + domain update handler; Plan 03-03 wired Settings → General form'
 provides:
-  - "ideCommand flows PUT /api/settings → Settings.update() → GET /api/settings"
-  - "e2e regression guarding round-trip and empty-string-clears-to-null semantics"
-  - "Cross-platform tab-cycle hotkey (Cmd+` on macOS / Ctrl+` on Win/Linux + ctrl+` macOS fallback)"
+  - 'ideCommand flows PUT /api/settings → Settings.update() → GET /api/settings'
+  - 'e2e regression guarding round-trip and empty-string-clears-to-null semantics'
+  - 'Cross-platform tab-cycle hotkey (Cmd+` on macOS / Ctrl+` on Win/Linux + ctrl+` macOS fallback)'
 affects: [workspace-api-file-explorer, future settings additions]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "DTO field triad for persisted strings: UpdateSettingsRequest (validate) + Interactor (forward) + GetSettingsResponseDto (expose)"
-    - "react-hotkeys-hook comma-separated accelerator list for platform-aware bindings with fallback"
+    - 'DTO field triad for persisted strings: UpdateSettingsRequest (validate) + Interactor (forward) + GetSettingsResponseDto (expose)'
+    - 'react-hotkeys-hook comma-separated accelerator list for platform-aware bindings with fallback'
 
 key-files:
   created: []
@@ -31,12 +31,12 @@ key-files:
     - web/src/pages/SessionDetails.tsx
 
 key-decisions:
-  - "MaxLength(100) on ideCommand DTO matches varchar(100) column in GeneralSettings for input contract parity"
-  - "`?? null` (not `|| null`) on read DTO to stay byte-identical to the domain value for non-empty strings"
-  - "Register both `mod+`` and `ctrl+`` — `mod` covers cross-platform primary, `ctrl` survives macOS Cmd+` system consumption"
+  - 'MaxLength(100) on ideCommand DTO matches varchar(100) column in GeneralSettings for input contract parity'
+  - '`?? null` (not `|| null`) on read DTO to stay byte-identical to the domain value for non-empty strings'
+  - 'Register both `mod+`` and `ctrl+`` — `mod` covers cross-platform primary, `ctrl` survives macOS Cmd+` system consumption'
 
 patterns-established:
-  - "Whenever a new nullable string column reaches the UI, add DTO field + interactor forward + response DTO expose as a triad — any one missing breaks reload re-hydration"
+  - 'Whenever a new nullable string column reaches the UI, add DTO field + interactor forward + response DTO expose as a triad — any one missing breaks reload re-hydration'
 
 requirements-completed:
   - CTXT-02
@@ -65,7 +65,7 @@ completed: 2026-04-17
 - Forwarded `request.ideCommand` into `currentSettings.update({...})` in `UpdateSettingsInteractor` so the value reaches the domain entity (which already normalises empty-string → null).
 - Exposed `ideCommand` on `GetSettingsResponseDto` via `@ApiProperty` + `fromDomain` mapping using `?? null`, enabling the Settings → General form to re-hydrate on reload.
 - Added e2e regression `should persist and round-trip ideCommand` inside `describe('PUT /api/settings', …)` that PUTs `{ ideCommand: 'cursor' }`, asserts 200 + `data.ideCommand === 'cursor'`, GETs and re-asserts, then PUTs `{ ideCommand: '' }` and asserts `data.ideCommand === null`. All 19 tests in the Settings E2E suite pass.
-- Replaced `useHotkeys('ctrl+`', …)` with `useHotkeys('mod+`, ctrl+`', …)` in `SessionDetails.tsx` so `react-hotkeys-hook` registers both `mod+`` (cross-platform alias, matches Cmd on macOS / Ctrl elsewhere) and `ctrl+`` (literal fallback for macOS where the OS consumes ⌘+`). Handler body, deps, and options object are byte-identical.
+- Replaced `useHotkeys('ctrl+`', …)`with`useHotkeys('mod+`, ctrl+`', …)`in`SessionDetails.tsx`so`react-hotkeys-hook`registers both`mod+`` (cross-platform alias, matches Cmd on macOS / Ctrl elsewhere) and `ctrl+`` (literal fallback for macOS where the OS consumes ⌘+`). Handler body, deps, and options object are byte-identical.
 
 ## Task Commits
 
@@ -80,7 +80,7 @@ Each task was committed atomically:
 - `server/src/interactors/settings/update-settings/update-settings.interactor.ts` — add `ideCommand: request.ideCommand` to the `currentSettings.update({...})` object literal.
 - `server/src/interactors/settings/get-settings/get-settings-response.dto.ts` — add `ideCommand?: string | null` with `@ApiProperty` and `dto.ideCommand = settings.general.ideCommand ?? null` mapping in `fromDomain`.
 - `server/test/e2e/settings.e2e.spec.ts` — insert `it('should persist and round-trip ideCommand', …)` before the `'should reject unknown fields'` case.
-- `web/src/pages/SessionDetails.tsx` — change first argument of the tab-cycle `useHotkeys(…)` call from `'ctrl+`'` to `'mod+`, ctrl+`'` (single-line change).
+- `web/src/pages/SessionDetails.tsx` — change first argument of the tab-cycle `useHotkeys(…)` call from `'ctrl+`'`to`'mod+`, ctrl+`'` (single-line change).
 
 ## Decisions Made
 

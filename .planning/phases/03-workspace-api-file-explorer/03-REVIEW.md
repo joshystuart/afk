@@ -1,6 +1,7 @@
 ---
 phase: 03-workspace-api-file-explorer
 reviewed: 2026-04-17T00:00:00Z
+gap_closure_reviewed: 2026-04-17T11:35:00Z
 depth: standard
 files_reviewed: 28
 files_reviewed_list:
@@ -32,11 +33,22 @@ files_reviewed_list:
   - web/src/components/chat/ChatInput.tsx
   - web/src/components/chat/ChatPanel.tsx
   - web/src/pages/settings/GeneralSettings.tsx
+gap_closure_files_reviewed:
+  - server/src/interactors/settings/update-settings/update-settings-request.dto.ts
+  - server/src/interactors/settings/update-settings/update-settings.interactor.ts
+  - server/src/interactors/settings/get-settings/get-settings-response.dto.ts
+  - server/test/e2e/settings.e2e.spec.ts
+  - web/src/pages/SessionDetails.tsx
 findings:
   critical: 0
   warning: 6
-  info: 9
-  total: 15
+  info: 10
+  total: 16
+gap_closure_findings:
+  critical: 0
+  warning: 0
+  info: 1
+  total: 1
 status: issues_found
 ---
 
@@ -314,5 +326,71 @@ private handleError(operation: string, sessionId: string, error: unknown): never
 ---
 
 _Reviewed: 2026-04-17_
+_Reviewer: Claude (gsd-code-reviewer)_
+_Depth: standard_
+
+---
+
+# Gap Closure Review (03-04)
+
+**Reviewed:** 2026-04-17T11:35:00Z
+**Depth:** standard
+**Scope:** 5 files modified by Plan 03-04 (ideCommand persistence chain + cross-platform hotkey)
+**Gap Closure Status:** clean
+
+## Summary
+
+Reviewed the five-file delta from Plan 03-04, which closes the two UAT gaps recorded in `03-UAT.md` (Test 7 hotkey on macOS, Test 8 ideCommand persistence).
+
+All five changes are minimal, focused, and internally consistent with the patterns already established in this phase (plans 03-01 through 03-03):
+
+- **`update-settings-request.dto.ts`** — `MaxLength` import added; `ideCommand?: string` field declared with `@IsOptional @IsString @MaxLength(100) @ApiProperty({ required: false, description: ... })`. Bound (100) matches the `varchar(100)` column in `GeneralSettings` (verified against `server/src/domain/settings/general-settings.embedded.ts:20`) — a correct input-contract parity.
+- **`update-settings.interactor.ts`** — single-line `ideCommand: request.ideCommand,` added to the `currentSettings.update({...})` object literal at the same position in the field list as the other general settings. Empty-string-to-null normalisation is correctly delegated to `Settings.update()` (verified at `settings.entity.ts:100-101`: `data.ideCommand || null`).
+- **`get-settings-response.dto.ts`** — `ideCommand?: string | null` added with `@ApiProperty({ required: false, nullable: true, ... })`, placed next to `skillsDirectory` (good grouping). `fromDomain` uses `?? null` (not `|| null`) to stay byte-identical to the domain value for legitimate non-empty strings — matches the pattern used elsewhere in this DTO.
+- **`settings.e2e.spec.ts`** — new `should persist and round-trip ideCommand` test is well-structured: covers PUT→GET round-trip AND empty-string-clears-to-null, using the same `authPut`/`authGet` helpers and `afterEach: clearDatabase()` fixture as the existing cases. Assertions target `data.ideCommand` which is valid because `SettingsController.updateSettings` wraps the interactor's return value in `GetSettingsResponseDto.fromDomain(...)` (verified at `settings.controller.ts:67-69`).
+- **`SessionDetails.tsx`** — single-line change to `useHotkeys('mod+`, ctrl+`', ...)`. Handler body, `tabCycle` array, `enableOnFormTags`/`enableOnContentEditable` options are byte-identical. No new imports needed.
+
+Security posture is preserved: the `ideCommand` value is never executed server-side (per the Plan 03 threat model, T-03-09 mitigation is exclusively "server doesn't execute the value" + `MaxLength(100)` bound). The value is only consumed client-side to build `cursor://file/...` protocol URLs in `FilePreview.buildIdeUrl` — there is no new code path from the persisted value to a shell invocation.
+
+**No Critical or Warning findings in the 03-04 delta.** One Info-level testing gap below.
+
+## Info
+
+### IN-10: `MaxLength(100)` upper bound on `ideCommand` is not regression-tested
+
+**File:** `server/test/e2e/settings.e2e.spec.ts:181-201`
+**Issue:** The new `should persist and round-trip ideCommand` test covers the positive path (`'cursor'` round-trip) and the clear-to-null path (empty string), but does not verify that a value > 100 characters is rejected with a 400. If someone later removes `@MaxLength(100)` from the DTO (or bumps the column length without updating the DTO), this drift would silently pass CI. Given that the bound was explicitly added to match the `varchar(100)` column as a T-03-09 Tampering mitigation, it is worth pinning with a test.
+**Fix:** Add one assertion inside the existing `describe('PUT /api/settings', ...)` block (co-located with the new test):
+
+```ts
+it('should reject ideCommand longer than 100 characters', async () => {
+  const response = await authPut('/api/settings')
+    .send({ ideCommand: 'a'.repeat(101) })
+    .expect(400);
+
+  expect(response.body.success).toBe(false);
+  expect(JSON.stringify(response.body.error.message)).toContain('ideCommand');
+});
+```
+
+Low priority — the existing `should reject unknown fields` case already proves the global `ValidationPipe` is wired, and `class-validator`'s `@MaxLength` is library-tested. This is pure drift-detection.
+
+## Notes (not findings)
+
+- **Field ordering in `UpdateSettingsRequest`.** `ideCommand` is appended at the bottom of the DTO (after `idleTimeoutMinutes`) rather than grouped with the other general-settings fields (e.g. next to `skillsDirectory`). The placement matches the plan's explicit instruction and is acceptable — the read-path DTO (`GetSettingsResponseDto`) correctly groups it near `skillsDirectory`, which is where user-facing API discovery (Swagger) matters most.
+- **Hotkey double-fire on Windows/Linux.** On Windows/Linux, `Ctrl+`` matches both the `mod+`` registration (because `mod` aliases `Ctrl` on non-mac) and the `ctrl+`` registration, but `react-hotkeys-hook` v5 routes a single keypress through a single handler invocation per comma-separated accelerator set — the handler is registered once and matched once per event. No double-cycle is expected. The UAT re-run will confirm empirically; noted here only so future maintainers know this was considered.
+- **No server-side execution surface for `ideCommand`.** Re-verified: the value is never passed to `exec`, `spawn`, `dockerode`, or any shell interpolation. It flows domain → read DTO → React component → `window.location.href = 'cursor://file/...'` only. No CR-grade concern.
+
+## Gap Closure Verdict
+
+All acceptance criteria from `03-04-PLAN.md` are met by the code as written. The delta is tight, uses existing patterns, and the new e2e regression pins all three server-side fix points with a single round-trip assertion. The hotkey fix is one line and preserves every other binding invariant.
+
+**Gap closure review status: clean (1 Info item, 0 Warnings, 0 Critical).**
+
+Phase-level status remains `issues_found` because the pre-gap Warnings (WR-01 through WR-06, the file-index cache + symlink + ARIA concerns) are unchanged — none are in the 03-04 scope and none were regressed by it.
+
+---
+
+_Gap Closure Reviewed: 2026-04-17_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_

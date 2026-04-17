@@ -1,9 +1,9 @@
 ---
-status: partial
+status: diagnosed
 phase: 03-workspace-api-file-explorer
 source: [03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md]
 started: 2026-04-17T09:19:21Z
-updated: 2026-04-17T09:33:30Z
+updated: 2026-04-17T09:35:00Z
 ---
 
 ## Current Test
@@ -147,13 +147,36 @@ blocked: 1
   reason: "User reported: this isnt working for me. Im on a mac, would it be command+` ?"
   severity: major
   test: 7
-  artifacts: []
-  missing: []
+  root_cause: |
+    useHotkeys binding uses literal 'ctrl+`' which react-hotkeys-hook matches against
+    event.ctrlKey only (not metaKey). On macOS users press ⌘+` (metaKey=true,
+    ctrlKey=false) so the matcher short-circuits. The library supports a platform-aware
+    'mod' token that accepts either Cmd or Ctrl.
+  artifacts:
+    - path: "web/src/pages/SessionDetails.tsx:166-176"
+      issue: "useHotkeys bound to literal 'ctrl+`' — not cross-platform"
+  missing:
+    - "Change binding to 'mod+`, ctrl+`' (mod aliases ⌘ on mac / Ctrl elsewhere; ctrl+` kept as fallback when OS intercepts ⌘+` for window-cycling)"
+  debug_session: .planning/debug/mac-hotkey-tab-cycle.md
 
 - truth: "Saving ideCommand in Settings → General persists and survives reload"
   status: failed
   reason: 'User reported: It fails to persist. Response 400 with message ["property ideCommand should not exist"]'
   severity: blocker
   test: 8
-  artifacts: []
-  missing: []
+  root_cause: |
+    UpdateSettingsRequest DTO does not declare ideCommand, so the global ValidationPipe
+    (whitelist: true, forbidNonWhitelisted: true) rejects the property with HTTP 400.
+    Secondary bug: UpdateSettingsInteractor.execute also does not forward ideCommand into
+    currentSettings.update({...}), so even after the DTO is fixed the value would still
+    silently fail to persist. Domain entity layer (GeneralSettings.ideCommand,
+    Settings.update) is already correct.
+  artifacts:
+    - path: "server/src/interactors/settings/update-settings/update-settings-request.dto.ts"
+      issue: "ideCommand field missing from DTO — ValidationPipe rejects it"
+    - path: "server/src/interactors/settings/update-settings/update-settings.interactor.ts:58-72"
+      issue: "execute() does not forward ideCommand into currentSettings.update({...})"
+  missing:
+    - "Add `@IsOptional() @IsString() @MaxLength(100) @ApiProperty({ required: false, description: 'IDE command used to open workspaces (e.g. cursor, code)' }) ideCommand?: string;` to UpdateSettingsRequest (import MaxLength from class-validator if not already)"
+    - "In UpdateSettingsInteractor.execute, add `ideCommand: request.ideCommand,` to the object literal passed to currentSettings.update({...}) around lines 59-72"
+  debug_session: .planning/debug/ide-command-dto-whitelist.md

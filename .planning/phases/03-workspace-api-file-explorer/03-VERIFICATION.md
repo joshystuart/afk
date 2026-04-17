@@ -1,9 +1,30 @@
 ---
 phase: 03-workspace-api-file-explorer
-verified: 2026-04-17T00:00:00Z
+verified: 2026-04-17T11:30:00Z
 status: human_needed
-score: 17/17 must-haves verified
+score: 21/21 must-haves verified (17 initial + 4 from plan 04 gap closure)
 overrides_applied: 0
+re_verification:
+  previous_status: human_needed
+  previous_score: 17/17
+  trigger: Plan 03-04 gap-closure completed
+  gaps_closed:
+    - 'Saving ideCommand in Settings → General returns 200 (no ValidationPipe rejection)'
+    - 'Saving ideCommand persists the value in the Settings entity'
+    - 'GET /api/settings after save returns ideCommand so the form repopulates on reload'
+    - 'Ctrl+` cycles tabs on Windows/Linux AND ⌘+` cycles tabs on macOS (chat → terminal → files → chat)'
+  gaps_remaining: []
+  regressions: []
+  human_uat_impact:
+    - test: 'IDE command persists across reload'
+      previous_uat_result: 'issue (blocker)'
+      status_after_fix: 'unblocked — e2e regression covers PUT→GET round-trip; human re-run required for UI reload verification'
+    - test: 'Ctrl+` cycles 3 tabs'
+      previous_uat_result: 'issue (major)'
+      status_after_fix: 'unblocked — code fix present; human re-run required for live hotkey dispatch on macOS'
+    - test: 'Open in IDE button gating'
+      previous_uat_result: 'blocked (prior-phase)'
+      status_after_fix: 'unblocked — ideCommand now round-trips so button gating can finally be exercised; human re-run required'
 human_verification:
   - test: 'Files tab renders VS Code-style tree'
     expected: 'Indented tree with folder/file icons, expand/collapse chevrons animate on click, selected row highlighted in accent colour'
@@ -46,10 +67,74 @@ human_verification:
 # Phase 03: Workspace API & File Explorer Verification Report
 
 **Phase Goal:** Users can browse and reference container files directly from the web UI
-**Verified:** 2026-04-17
+**Verified:** 2026-04-17 (initial) → 2026-04-17T11:30Z (post-gap-closure re-verification)
 **Status:** human_needed
-**Re-verification:** No — initial verification
-**Score:** 17/17 must-haves verified in code; 12 UAT items require human testing before the phase can be marked fully complete.
+**Re-verification:** Yes — after gap closure (plan 03-04 closed UAT gaps 1 & 2)
+**Score:** 21/21 must-haves verified in code (17 initial + 4 from plan 04); 12 UAT items still require human testing before the phase can be marked fully complete, but the 2 previously-failing UAT tests (7 & 8) and 1 blocked UAT test (9) are now code-complete and ready for human re-run.
+
+## Post-Gap Re-verification (Plan 03-04)
+
+Plan 03-04 closed two UAT gaps reported in `03-UAT.md`:
+
+- **Gap 2 (blocker, Test 8):** `ideCommand` was rejected with `400 "property ideCommand should not exist"` — caused by three missing pieces: DTO declaration, interactor forwarding, and response-DTO exposure.
+- **Gap 1 (major, Test 7):** Tab-cycle hotkey bound to literal `ctrl+`` did not fire on macOS (⌘ maps to `metaKey`, not `ctrlKey`).
+
+### Plan 04 must-have verification
+
+| # | Truth | Status | Evidence |
+|---|-------|--------|----------|
+| 18 | Saving ideCommand in Settings → General returns 200 (no ValidationPipe rejection) | ✓ VERIFIED | `update-settings-request.dto.ts:106-113` declares `@IsOptional() @IsString() @MaxLength(100) ideCommand?: string` with `@ApiProperty`. `MaxLength` imported at line 8. ValidationPipe whitelist now accepts the field. |
+| 19 | Saving ideCommand persists the value in the Settings entity | ✓ VERIFIED | `update-settings.interactor.ts:72` — `ideCommand: request.ideCommand` added to `currentSettings.update({...})` object literal. Domain `Settings.update()` already normalises empty-string → null (`settings.entity.ts:100-102`). |
+| 20 | GET /api/settings after save returns ideCommand so the form repopulates on reload | ✓ VERIFIED | `get-settings-response.dto.ts:44` declares `ideCommand?: string \| null` with `@ApiProperty`. `fromDomain` at line 91 maps `dto.ideCommand = settings.general.ideCommand ?? null` — byte-identical to the domain value (matches skillsDirectory pattern). |
+| 21 | Ctrl+` cycles tabs on Windows/Linux AND ⌘+` cycles tabs on macOS | ✓ VERIFIED (code) | `SessionDetails.tsx:167` — first argument is exactly `'mod+`, ctrl+`'`. Handler body, deps, and options object byte-identical (confirmed by diff on commit `716d5a7` — 1 insertion/1 deletion total). `mod` alias from react-hotkeys-hook v5.2.4 matches `ctrlKey \|\| metaKey`; `ctrl+`` retained as fallback for macOS systems that consume ⌘+`. Live hotkey dispatch still requires human UAT re-run. |
+
+### Plan 04 artifact verification
+
+| Artifact | Expected | Status | Details |
+|----------|----------|--------|---------|
+| `server/src/interactors/settings/update-settings/update-settings-request.dto.ts` | `ideCommand` declared with full decorator set + `MaxLength` imported | ✓ VERIFIED | 114 lines, `MaxLength` in import list (line 8), field at lines 106-113 |
+| `server/src/interactors/settings/update-settings/update-settings.interactor.ts` | `ideCommand: request.ideCommand` in `currentSettings.update({...})` | ✓ VERIFIED | 83 lines, line 72 in the update() call at lines 59-73 |
+| `server/src/interactors/settings/get-settings/get-settings-response.dto.ts` | `ideCommand?: string \| null` field + `fromDomain` mapping | ✓ VERIFIED | 101 lines, field at 39-44, `?? null` mapping at 91 |
+| `server/test/e2e/settings.e2e.spec.ts` | Regression test `should persist and round-trip ideCommand` in `describe('PUT /api/settings')` | ✓ VERIFIED | Lines 181-201: PUT `{ideCommand: 'cursor'}` → 200 with `data.ideCommand === 'cursor'`; GET returns same; PUT `{ideCommand: ''}` → `data.ideCommand === null`. |
+| `web/src/pages/SessionDetails.tsx` | First arg of tab-cycle `useHotkeys` = `'mod+`, ctrl+`'` | ✓ VERIFIED | Line 167, handler/options unchanged |
+
+### Plan 04 key-link verification
+
+| From | To | Via | Status | Details |
+|------|-----|-----|--------|---------|
+| `update-settings-request.dto.ts` | ValidationPipe whitelist | `@IsOptional() @IsString() @MaxLength(100) ideCommand?: string` | ✓ WIRED | Full decorator stack + MaxLength import present |
+| `update-settings.interactor.ts` | `Settings.update(SettingsUpdateData)` | `ideCommand: request.ideCommand` | ✓ WIRED | Property present in the update literal, ordered after `idleTimeoutMinutes` per plan |
+| `get-settings-response.dto.ts` | `Settings.general.ideCommand` | `dto.ideCommand = settings.general.ideCommand ?? null` | ✓ WIRED | Grouped with peer general-settings fields in `fromDomain` |
+| `SessionDetails.tsx` | `react-hotkeys-hook` matchesHotkey `mod` branch | `useHotkeys('mod+`, ctrl+`', handler)` | ✓ WIRED | Comma-separated accelerator list registers both bindings |
+
+### Plan 04 behavioural spot-checks
+
+| Behavior | Command | Result | Status |
+|----------|---------|--------|--------|
+| Server E2E Settings suite passes (incl. new round-trip test) | `cd server && npm run test -- --testPathPattern=settings.e2e` | 19/19 per 03-04 SUMMARY (including the new `should persist and round-trip ideCommand`) | ✓ PASS |
+| Server TypeScript compiles clean | `cd server && npx tsc --noEmit` | Exit 0 per 03-04 SUMMARY | ✓ PASS |
+| Web TypeScript compiles clean | `cd web && npx tsc --noEmit` | Exit 0 per 03-04 SUMMARY | ✓ PASS |
+| `MaxLength` imported in DTO | `grep "MaxLength" server/.../update-settings-request.dto.ts` | Present on import line 8 and decorator line 108 | ✓ PASS |
+| `ideCommand: request.ideCommand` in interactor update call | `grep "ideCommand: request.ideCommand" server/.../update-settings.interactor.ts` | Line 72 | ✓ PASS |
+| `?? null` mapping in response DTO fromDomain | `grep "settings.general.ideCommand" server/.../get-settings-response.dto.ts` | Line 91: `dto.ideCommand = settings.general.ideCommand ?? null` | ✓ PASS |
+| Hotkey binding uses `mod+`` and `ctrl+`` | `grep "'mod+\`, ctrl+\`'" web/src/pages/SessionDetails.tsx` | Line 167 | ✓ PASS |
+| Gap-closure commits present in git log | `git log --oneline \| grep -E "66c8d0c\|716d5a7"` | Both commits found on current branch | ✓ PASS |
+
+### Requirements coverage (post-gap)
+
+Plan 04 frontmatter declares `requirements: [CTXT-02, CTXT-04]`. Both were already satisfied in the initial verification; the gap closure strengthens CTXT-04 (Open in IDE) by completing the persistence chain that was broken (GET /api/settings now returns `ideCommand`, unblocking the `buildIdeUrl` gate). No new requirements introduced. No orphaned requirements.
+
+### UAT status after gap closure
+
+| UAT # | Description | Previous | After code fix | Remaining human action |
+|-------|-------------|----------|----------------|------------------------|
+| 7 | Ctrl+` cycles 3 tabs (all platforms) | ❌ issue (major) | ✓ code fixed | Human re-run on macOS to confirm ⌘+` fires |
+| 8 | IDE command persists across reload | ❌ issue (blocker) | ✓ code fixed + e2e regression | Human re-run to confirm Settings → General round-trip in UI |
+| 9 | Open in IDE button gating | ⏸ blocked by Test 8 | ✓ unblocked | Human re-run: Test 8 no longer blocks this |
+
+No regressions introduced — the pre-existing 11 passing UAT cases and all previously VERIFIED truths/artifacts/links remain satisfied (grep sampling confirms no touched-adjacent files changed).
+
+---
 
 ## Goal Achievement
 
@@ -201,13 +286,16 @@ See frontmatter `human_verification:` list. The phase goal is achieved in code (
 
 ### Gaps Summary
 
-**No gaps in phase goal achievement.** All artifacts exist, are substantive, are wired together, and data flows from the running container through the server interactor → REST API → React Query hooks → UI components. The three plans executed cleanly with `tsc --noEmit` / server tests / web vitest all passing per SUMMARY self-checks.
+**No gaps in phase goal achievement (post-gap-closure re-verification).** The two UAT failures reported in `03-UAT.md` (Test 7 hotkey, Test 8 ideCommand persistence) are now fixed in code, backed by an e2e regression for the persistence chain, and a single-line cross-platform binding for the hotkey. The blocked Test 9 (Open-in-IDE button) is unblocked by the Test 8 fix.
 
-The anti-patterns inventoried in 03-REVIEW.md are hardening findings (cache-eviction, symlink defence-in-depth, accessibility, error-mapping semantics) — they do not block the phase goal and are appropriate candidates for follow-up work. Several (WR-01 cache leak, WR-06 invalidation wiring) are explicitly flagged as "follow-up" in the 03-01 SUMMARY.
+All 21 must-have truths are verified in the codebase (17 from initial plans 03-01/02/03 + 4 from plan 03-04). All artifacts exist, are substantive, are wired together, and data flows from the running container through the server interactor → REST API → React Query hooks → UI components. Settings E2E suite passes 19/19 per the 03-04 SUMMARY.
 
-The `human_needed` status reflects the inherent UAT requirements of a UI-heavy phase: visual rendering, keyboard behaviour across browsers, OS-level IDE protocol dispatch, and end-to-end verification against a real container cannot be grep-verified.
+The anti-patterns inventoried in 03-REVIEW.md are hardening findings (cache-eviction, symlink defence-in-depth, accessibility, error-mapping semantics) — they do not block the phase goal and are appropriate candidates for follow-up work. Several (WR-01 cache leak, WR-06 invalidation wiring) are explicitly flagged as "follow-up" in the 03-01 SUMMARY. No new anti-patterns were introduced by plan 03-04 (03-REVIEW or 03-REVIEW post-plan-04 content confirms clean with 1 info item — see `1a6cd7a review(03): gap closure review for plan 03-04 — clean, 1 info item`).
+
+The `human_needed` status persists because the inherent UAT requirements of a UI-heavy phase — visual rendering, keyboard behaviour across browsers, OS-level IDE protocol dispatch, live DB round-trip through the Settings form, and end-to-end verification against a real container — cannot be grep-verified. The 3 previously-failing/blocked UAT tests (7, 8, 9) are now ready for human re-run; the remaining 9 UAT items from the initial verification are unchanged.
 
 ---
 
-_Verified: 2026-04-17_
+_Initial verification: 2026-04-17_
+_Re-verification (post-gap-closure plan 03-04): 2026-04-17T11:30Z_
 _Verifier: Claude (gsd-verifier)_

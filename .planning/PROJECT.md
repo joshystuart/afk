@@ -46,13 +46,19 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 - Self-hosted cloud deployment guides — focus on local Docker-based usage for now
 - Agent marketplace — skills are file-based, not a hosted registry
 
+## Current state (v1.0 shipped)
+
+Milestone **v1.0** (2026-04-18) shipped: in-session **chat ↔ terminal** UX, **read-only skills** mounts and Settings/session wiring, and **workspace file explorer** with `@` file autocomplete and open-in-IDE when the workspace mount is enabled. Archives: `.planning/milestones/v1.0-ROADMAP.md`, `v1.0-REQUIREMENTS.md`; summary: `.planning/MILESTONES.md`.
+
+**Not in v1.0:** post-run **diff review UI**, **git commit/PR message** generation, and **pluggable multi-agent runner** — still on the roadmap for a follow-on milestone.
+
 ## Context
 
 AFK exists because despite security enhancements in agentic coding harnesses (sandboxing, permission models), most can be circumvented in one form or another. A fully isolated Docker container is fundamentally more secure. The tradeoff is that container-based development traditionally has terrible DX — AFK bridges that gap.
 
 The existing codebase is a modular monorepo: NestJS backend (REST + Socket.IO), React SPA (Vite + MUI), optional Electron shell. The server follows an interactor pattern with typed config via `nest-typed-config`, TypeORM persistence (SQLite/PostgreSQL), and token-based repository abstractions. The web client uses TanStack Query, Zustand stores, and MUI components.
 
-The current architecture already supports the core loop: create a session, chat with Claude via `claude -p` in the container, see streaming responses, use the web terminal for manual access. The v1 push is about making this a daily-driver tool — the kind of DX where you stop reaching for bare `claude` locally because AFK is better.
+The current architecture supports the core loop: create a session, chat with Claude via `claude -p` in the container, see streaming responses, use the web terminal for manual access, browse files, and attach paths via `@` mentions.
 
 ## Constraints
 
@@ -92,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-17 after Phase 3 (Workspace API & File Explorer) completion_
+_Last updated: 2026-04-18 after v1.0 milestone archive_

@@ -8,6 +8,16 @@ AFK is an open-source secure agentic coding platform that runs AI coding agents 
 
 Secure agentic coding without DX compromise — containers provide isolation that can't be circumvented, while the UI makes working inside them feel as natural as working locally.
 
+## Current State
+
+**Shipped:** v0.3.4 (2026-04-18) — Session UX (chat/terminal tabs), read-only skills provisioning, workspace API with file explorer, @-file autocomplete, and open-in-IDE when workspace mount is enabled.
+
+## Next Milestone Goals
+
+- Diff pipeline: post-run summary and syntax-highlighted review of agent changes
+- Git automation: generated commit and PR messages with configurable model
+- Multi-agent: pluggable runner and container support for Claude, Codex, and Cursor CLIs
+
 ## Requirements
 
 ### Validated
@@ -47,6 +57,8 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 - Agent marketplace — skills are file-based, not a hosted registry
 
 ## Context
+
+**Release line:** The app is iterating toward v1 on the 0.3.x line; planning milestone **v0.3.4** archives Phases 1–3 (session, skills, workspace). Remaining v1 scope is diff review, git message generation, and multi-agent.
 
 AFK exists because despite security enhancements in agentic coding harnesses (sandboxing, permission models), most can be circumvented in one form or another. A fully isolated Docker container is fundamentally more secure. The tradeoff is that container-based development traditionally has terrible DX — AFK bridges that gap.
 
@@ -92,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-17 after Phase 3 (Workspace API & File Explorer) completion_
+_Last updated: 2026-04-18 after v0.3.4 milestone (Session UX, Skills, Workspace API & File Explorer)_

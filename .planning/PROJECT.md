@@ -58,7 +58,7 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 
 ## Current state
 
-**v1.0** (2026-04-18) shipped in-session **chat ↔ terminal** UX, **read-only skills** mounts and Settings/session wiring, and **workspace file explorer** with `@` autocomplete and open-in-IDE when the workspace mount is enabled. Archives: `.planning/milestones/v1.0-ROADMAP.md`, `v1.0-REQUIREMENTS.md`; shipped phase artifacts: `.planning/milestones/v1.0-phases/`; summary: `.planning/MILESTONES.md`.
+**v1.0** (2026-04-18) shipped in-session **chat ↔ terminal** UX, **read-only skills** mounts and Settings/session wiring, and **workspace file explorer** with `@` autocomplete and open-in-IDE when the workspace mount is enabled. Archives: `.planning/milestones/v1.0-ROADMAP.md`, `v1.0-REQUIREMENTS.md`; summary: `.planning/MILESTONES.md`. (Executed phase directories were cleared from `.planning/phases/` at v2.0 start; history remains in git prior to the v2.0 milestone commits.)
 
 **v2.0** (in progress) targets post-run **diff review**, **git commit/PR message** generation, and **pluggable multi-agent runner**. Scope and phases: `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`.
 

@@ -28,7 +28,6 @@ Phase numbering **continues** from v1.0 (ended at Phase 3): v2.0 executes **Phas
 - [ ] **Phase 4: Diff Pipeline & Review** — Post-run change summary and syntax-highlighted diff viewer (**DIFF-01**, **DIFF-02**)
 
   **Success criteria:**
-
   1. After an agent run finishes, the user sees which files changed and a concise summary suitable for review at a glance.
   2. The user can open a diff experience that shows structured patches with syntax highlighting for text sources.
   3. Diff data is obtained safely for the session workspace (no path escape; reasonable limits on size/binary files).
@@ -36,7 +35,6 @@ Phase numbering **continues** from v1.0 (ended at Phase 3): v2.0 executes **Phas
 - [ ] **Phase 5: Git Automation** — Auto-generated commit messages and PR descriptions with configurable model (**GAUT-01**, **GAUT-02**, **GAUT-03**)
 
   **Success criteria:**
-
   1. The user can request a generated commit message from the current change context without leaving the session workflow.
   2. The user can request a generated PR-style description when branch/repo context is available.
   3. The user can configure which model powers generation, consistent with existing settings patterns.
@@ -44,7 +42,6 @@ Phase numbering **continues** from v1.0 (ended at Phase 3): v2.0 executes **Phas
 - [ ] **Phase 6: Agent Runner & Multi-Agent** — Pluggable runner and selectable agents (**AGNT-01**, **AGNT-02**, **AGNT-03**)
 
   **Success criteria:**
-
   1. Agent invocation routes through a single runner abstraction that can be extended for additional CLI agents.
   2. Containers satisfy a clear contract for installing/invoking the supported CLI agents targeted by the milestone.
   3. The user can choose agent scope at session and/or per-prompt granularity for supported agents.

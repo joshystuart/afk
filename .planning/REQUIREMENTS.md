@@ -68,16 +68,16 @@ Tracked for later milestones; not committed in v2.0 roadmap phases.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase                                       | Status  |
-| ----------- | ------------------------------------------- | ------- |
-| DIFF-01     | Phase 4: Diff Pipeline & Review             | Pending |
-| DIFF-02     | Phase 4: Diff Pipeline & Review             | Pending |
-| GAUT-01     | Phase 5: Git Automation                     | Pending |
-| GAUT-02     | Phase 5: Git Automation                     | Pending |
-| GAUT-03     | Phase 5: Git Automation                     | Pending |
-| AGNT-01     | Phase 6: Agent Runner & Multi-Agent         | Pending |
-| AGNT-02     | Phase 6: Agent Runner & Multi-Agent         | Pending |
-| AGNT-03     | Phase 6: Agent Runner & Multi-Agent         | Pending |
+| Requirement | Phase                               | Status  |
+| ----------- | ----------------------------------- | ------- |
+| DIFF-01     | Phase 4: Diff Pipeline & Review     | Pending |
+| DIFF-02     | Phase 4: Diff Pipeline & Review     | Pending |
+| GAUT-01     | Phase 5: Git Automation             | Pending |
+| GAUT-02     | Phase 5: Git Automation             | Pending |
+| GAUT-03     | Phase 5: Git Automation             | Pending |
+| AGNT-01     | Phase 6: Agent Runner & Multi-Agent | Pending |
+| AGNT-02     | Phase 6: Agent Runner & Multi-Agent | Pending |
+| AGNT-03     | Phase 6: Agent Runner & Multi-Agent | Pending |
 
 **Coverage:**
 

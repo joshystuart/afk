@@ -75,15 +75,18 @@ export function createWindow(): void {
   }
 
   mainWindow.on('close', (event) => {
+    const isQuitting = getIsQuitting();
+    // Allow programmatic quit (updates, app.quit) even while the install overlay
+    // has set updateInstalling — otherwise quit never completes.
+    if (isQuitting) {
+      return;
+    }
     if (updateInstalling) {
       event.preventDefault();
       return;
     }
-    if (!getIsQuitting()) {
-      event.preventDefault();
-      mainWindow?.hide();
-      return;
-    }
+    event.preventDefault();
+    mainWindow?.hide();
   });
 
   mainWindow.on('closed', () => {
@@ -97,7 +100,7 @@ export function getMainWindow(): BrowserWindow | null {
 
 export function setUpdateInstalling(value: boolean): void {
   updateInstalling = value;
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setClosable(!value);
-  }
+  // Do not call setClosable(false) during updates: on macOS that can prevent
+  // app.quit() / quitAndInstall from closing the window (electron#5680). User
+  // close while installing is still blocked in the 'close' handler below.
 }

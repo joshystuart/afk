@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: complete
+milestone: v2.0
+milestone_name: Diff, Git & Multi-Agent
+status: planning
 stopped_at: null
 last_updated: '2026-04-18T12:00:00.000Z'
-last_activity: 2026-04-18 — v1.0 milestone archived
+last_activity: 2026-04-18 — Milestone v2.0 initialized (requirements + roadmap)
 progress:
   total_phases: 3
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,21 +21,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-18)
 
 **Core value:** Secure agentic coding without DX compromise — containers provide isolation that can't be circumvented, while the UI makes working inside them feel as natural as working locally.
-**Current focus:** Planning the next milestone (`/gsd-new-milestone`)
+
+**Current focus:** Execute v2.0 phases (diff → git automation → agent runner).
 
 ## Current Position
 
-**Milestone v1.0** — complete (archived 2026-04-18).
+Phase: Not started (ready for Phase 4 planning)
 
-Executed phases: 01 Session UX, 02 Skills provisioning, 03 Workspace API & file explorer (11 plans total).
+Plan: —
 
-Progress: [████████████████████] 100%
+Status: Milestone v2.0 roadmap defined
+
+Last activity: 2026-04-18 — Milestone v2.0 started; requirements and roadmap committed
+
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11 (v1.0 scope)
+- Total plans completed: 0 (v2.0 scope)
 - Average duration: —
 - Total execution time: —
 
@@ -43,15 +48,15 @@ Progress: [████████████████████] 100%
 
 | Phase | Plans | Total | Avg/Plan |
 | ----- | ----- | ----- | -------- |
-| 01    | 3     | -     | -        |
-| 02    | 4     | -     | -        |
-| 03    | 4     | -     | -        |
+| 04    | —     | —     | —        |
+| 05    | —     | —     | —        |
+| 06    | —     | —     | —        |
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table. See also `.planning/MILESTONES.md` for v1.0 accomplishments.
+Decisions are logged in PROJECT.md Key Decisions table. v1.0 summary: `.planning/MILESTONES.md`.
 
 ### Pending Todos
 
@@ -60,7 +65,7 @@ None.
 ### Blockers/Concerns
 
 - Cursor CLI non-interactive behavior in Docker needs spike/validation before multi-agent hardening
-- Multi-agent concurrency model (locking/queuing) deferred to v2 (AGNT-04)
+- Multi-agent concurrency model (locking/queuing) remains deferred past v2.0 core runner (see AGNT-04 in REQUIREMENTS.md)
 
 ### Quick Tasks Completed
 
@@ -71,4 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-18
-Milestone close: v1.0 archived; see `.planning/milestones/` and `MILESTONES.md`.
+
+Milestone: v2.0 — see `.planning/ROADMAP.md` for Phase 4–6.

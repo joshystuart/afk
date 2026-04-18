@@ -8,6 +8,16 @@ AFK is an open-source secure agentic coding platform that runs AI coding agents 
 
 Secure agentic coding without DX compromise — containers provide isolation that can't be circumvented, while the UI makes working inside them feel as natural as working locally.
 
+## Current Milestone: v2.0 — Diff, Git & Multi-Agent
+
+**Goal:** Ship post-run diff review, git message automation, and a pluggable multi-agent runner on top of the v1.0 session, skills, and workspace baseline.
+
+**Target features:**
+
+- Diff pipeline and review UI — post-task change summary and syntax-highlighted diffs
+- Git automation — auto-generated commit messages and PR descriptions with configurable model
+- Agent runner and multi-agent — CLI-pluggable agents with session-level or per-prompt selection
+
 ## Requirements
 
 ### Validated
@@ -46,11 +56,11 @@ Secure agentic coding without DX compromise — containers provide isolation tha
 - Self-hosted cloud deployment guides — focus on local Docker-based usage for now
 - Agent marketplace — skills are file-based, not a hosted registry
 
-## Current state (v1.0 shipped)
+## Current state
 
-Milestone **v1.0** (2026-04-18) shipped: in-session **chat ↔ terminal** UX, **read-only skills** mounts and Settings/session wiring, and **workspace file explorer** with `@` file autocomplete and open-in-IDE when the workspace mount is enabled. Archives: `.planning/milestones/v1.0-ROADMAP.md`, `v1.0-REQUIREMENTS.md`; summary: `.planning/MILESTONES.md`.
+**v1.0** (2026-04-18) shipped in-session **chat ↔ terminal** UX, **read-only skills** mounts and Settings/session wiring, and **workspace file explorer** with `@` autocomplete and open-in-IDE when the workspace mount is enabled. Archives: `.planning/milestones/v1.0-ROADMAP.md`, `v1.0-REQUIREMENTS.md`; shipped phase artifacts: `.planning/milestones/v1.0-phases/`; summary: `.planning/MILESTONES.md`.
 
-**Not in v1.0:** post-run **diff review UI**, **git commit/PR message** generation, and **pluggable multi-agent runner** — still on the roadmap for a follow-on milestone.
+**v2.0** (in progress) targets post-run **diff review**, **git commit/PR message** generation, and **pluggable multi-agent runner**. Scope and phases: `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`.
 
 ## Context
 
@@ -98,4 +108,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-04-18 after v1.0 milestone archive_
+_Last updated: 2026-04-18 after starting v2.0 milestone_

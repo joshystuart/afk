@@ -91,6 +91,11 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', async () => {
   setIsQuitting(true);
+  const mainWin = getMainWindow();
+  if (mainWin && !mainWin.isDestroyed()) {
+    // Detached DevTools can block main window close; always tear it down on quit.
+    mainWin.webContents.closeDevTools();
+  }
   destroyTray();
   await stopServer();
 });

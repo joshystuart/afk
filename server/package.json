@@ -37,6 +37,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "dockerode": "^4.0.7",
+    "ignore": "^7.0.5",
     "js-yaml": "^4.1.0",
     "nest-typed-config": "^2.10.1",
     "nestjs-pino": "^4.4.0",

@@ -4,7 +4,9 @@ import {
   IsOptional,
   IsNumber,
   IsBoolean,
+  Matches,
   Min,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -101,4 +103,17 @@ export class UpdateSettingsRequest {
     description: 'Minutes of inactivity before a session is auto-stopped',
   })
   idleTimeoutMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Matches(/^(|[A-Za-z][A-Za-z0-9+.-]*)$/, {
+    message:
+      'ideCommand must be a bare command name (e.g. "cursor", "code", "zed") — do not include "://" or a URL scheme',
+  })
+  @ApiProperty({
+    required: false,
+    description: 'IDE command used to open workspaces (e.g. "cursor", "code")',
+  })
+  ideCommand?: string;
 }

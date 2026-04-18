@@ -69,6 +69,7 @@ export class UpdateSettingsInteractor {
         githubAccessToken: request.githubAccessToken,
         idleCleanupEnabled: request.idleCleanupEnabled,
         idleTimeoutMinutes: request.idleTimeoutMinutes,
+        ideCommand: request.ideCommand,
       });
     } catch (error) {
       if (error instanceof SettingsValidationError) {

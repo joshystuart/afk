@@ -39,6 +39,7 @@ import { SessionHealthMonitorService } from './session-health-monitor.service';
 import { StartSessionInteractor } from './start-session/start-session.interactor';
 import { StopSessionInteractor } from './stop-session/stop-session.interactor';
 import { SessionRuntimeModule } from './runtime/session-runtime.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { SessionRuntimeModule } from './runtime/session-runtime.module';
     GitModule,
     ChatModule,
     SessionRuntimeModule,
+    WorkspaceModule,
   ],
   controllers: [
     CreateSessionController,

@@ -85,7 +85,33 @@ export interface Settings {
   dockerSocketPath?: string | null;
   dockerStartPort?: number | null;
   dockerEndPort?: number | null;
+  ideCommand?: string | null;
   updatedAt: string;
+}
+
+export interface FileEntry {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size?: number;
+}
+
+export interface DirectoryListing {
+  entries: FileEntry[];
+  path: string;
+}
+
+export interface FileContent {
+  path: string;
+  content: string;
+  size: number;
+  truncated: boolean;
+  language: string;
+  binary: boolean;
+}
+
+export interface FileIndexResponse {
+  files: string[];
 }
 
 export interface GitHubRepo {
@@ -124,6 +150,7 @@ export interface UpdateSettingsRequest {
   dockerStartPort?: number;
   dockerEndPort?: number;
   githubAccessToken?: string;
+  ideCommand?: string;
 }
 
 export interface SkillInfo {

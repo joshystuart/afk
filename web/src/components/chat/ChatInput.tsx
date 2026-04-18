@@ -31,6 +31,7 @@ import {
   type AgentModeId,
 } from '../../utils/agent-modes';
 import { SkillAutocomplete } from './SkillAutocomplete';
+import { FileAutocomplete } from './FileAutocomplete';
 import type { SkillInfo } from '../../api/types';
 
 export const DEFAULT_MODEL = DEFAULT_CLAUDE_MODEL;
@@ -52,6 +53,8 @@ interface ChatInputProps {
   selectedAgentMode: AgentModeId;
   onAgentModeChange: (mode: AgentModeId) => void;
   skills?: SkillInfo[];
+  sessionId?: string;
+  fileIndex?: string[];
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -64,6 +67,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   selectedAgentMode,
   onAgentModeChange,
   skills = [],
+  fileIndex = [],
 }) => {
   const [value, setValue] = React.useState('');
   const [continueConversation, setContinueConversation] = React.useState(true);
@@ -74,6 +78,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     React.useState<null | HTMLElement>(null);
   const [showAutocomplete, setShowAutocomplete] = React.useState(false);
   const [autocompleteFilter, setAutocompleteFilter] = React.useState('');
+  const [showFileAutocomplete, setShowFileAutocomplete] = React.useState(false);
+  const [fileAutocompleteFilter, setFileAutocompleteFilter] =
+    React.useState('');
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   const inputContainerRef = React.useRef<HTMLDivElement>(null);
 
@@ -102,6 +109,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     };
   };
 
+  const findAtToken = (text: string, cursorPos: number) => {
+    const before = text.slice(0, cursorPos);
+    const match = before.match(/(^|\s)@([\w./-]*)$/);
+    if (!match) return null;
+    return {
+      filter: match[2],
+      start: before.lastIndexOf('@'),
+    };
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setValue(newValue);
@@ -109,12 +126,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const cursorPos =
       (e.target as HTMLInputElement).selectionStart ?? newValue.length;
     const token = findSlashToken(newValue, cursorPos);
+    const slashActive = !!token && skills.length > 0;
 
-    if (token && skills.length > 0) {
+    if (slashActive && token) {
       setShowAutocomplete(true);
       setAutocompleteFilter(token.filter);
     } else {
       setShowAutocomplete(false);
+    }
+
+    const atToken = slashActive ? null : findAtToken(newValue, cursorPos);
+    if (atToken && fileIndex.length > 0) {
+      setShowFileAutocomplete(true);
+      setFileAutocompleteFilter(atToken.filter);
+    } else {
+      setShowFileAutocomplete(false);
     }
   };
 
@@ -131,16 +157,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     inputRef.current?.focus();
   };
 
+  const handleFileSelect = (filePath: string) => {
+    const cursorPos = inputRef.current?.selectionStart ?? value.length;
+    const atToken = findAtToken(value, cursorPos);
+    if (atToken) {
+      const before = value.slice(0, atToken.start);
+      const after = value.slice(cursorPos);
+      const newValue = `${before}@${filePath} ${after}`;
+      setValue(newValue);
+    }
+    setShowFileAutocomplete(false);
+    inputRef.current?.focus();
+  };
+
   const handleSend = () => {
     const trimmed = value.trim();
     if (!trimmed || isProcessing || disabled) return;
     onSend(trimmed, continueConversation, selectedModel);
     setValue('');
     setShowAutocomplete(false);
+    setShowFileAutocomplete(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (showAutocomplete) return;
+    if (showAutocomplete || showFileAutocomplete) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -179,6 +219,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             anchorEl={inputRef.current}
           />
         )}
+        {showFileAutocomplete && (
+          <FileAutocomplete
+            files={fileIndex}
+            filter={fileAutocompleteFilter}
+            onSelect={handleFileSelect}
+            onClose={() => setShowFileAutocomplete(false)}
+            anchorEl={inputRef.current}
+          />
+        )}
         <TextField
           inputRef={inputRef}
           fullWidth
@@ -187,7 +236,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           placeholder={
             isProcessing
               ? 'Claude is working...'
-              : 'Send a message to Claude... (type / for skills)'
+              : 'Send a message to Claude... (type / for skills, @ for files)'
           }
           value={value}
           onChange={handleChange}

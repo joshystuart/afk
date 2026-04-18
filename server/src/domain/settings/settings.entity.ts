@@ -20,6 +20,7 @@ export interface SettingsUpdateData {
   githubAccessToken?: string;
   idleCleanupEnabled?: boolean;
   idleTimeoutMinutes?: number;
+  ideCommand?: string;
 }
 
 export class SettingsValidationError extends Error {
@@ -95,6 +96,9 @@ export class Settings {
     if (data.idleTimeoutMinutes !== undefined) {
       this.validateIdleTimeout(data.idleTimeoutMinutes);
       this.general.idleTimeoutMinutes = data.idleTimeoutMinutes;
+    }
+    if (data.ideCommand !== undefined) {
+      this.general.ideCommand = data.ideCommand || null;
     }
 
     this.validatePortRange();

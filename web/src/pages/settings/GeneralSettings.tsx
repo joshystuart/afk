@@ -40,6 +40,7 @@ const GeneralSettings: React.FC = () => {
     defaultMountDirectory: '',
     claudeToken: '',
     skillsDirectory: '',
+    ideCommand: '',
   });
   const [saveLoading, setSaveLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -52,6 +53,7 @@ const GeneralSettings: React.FC = () => {
         defaultMountDirectory: settings.defaultMountDirectory || '',
         claudeToken: '',
         skillsDirectory: settings.skillsDirectory || '',
+        ideCommand: settings.ideCommand || '',
       });
       setIsEditingClaudeToken(false);
       setClaudeTokenModified(false);
@@ -75,6 +77,7 @@ const GeneralSettings: React.FC = () => {
       const submitData: UpdateSettingsRequest = {
         defaultMountDirectory: formData.defaultMountDirectory,
         skillsDirectory: formData.skillsDirectory,
+        ideCommand: formData.ideCommand,
       };
       if (claudeTokenModified) {
         submitData.claudeToken = formData.claudeToken;
@@ -132,6 +135,19 @@ const GeneralSettings: React.FC = () => {
             onChange={handleInputChange('skillsDirectory')}
             placeholder="/path/to/your/skills"
             helperText="Host directory containing agent skills. Mounted read-only into session containers."
+          />
+        </Box>
+
+        {/* IDE Integration */}
+        <Box sx={{ mb: 4 }}>
+          <SectionHeader title="IDE Integration" />
+          <TextField
+            fullWidth
+            label="IDE Command"
+            value={formData.ideCommand}
+            onChange={handleInputChange('ideCommand')}
+            placeholder="cursor"
+            helperText="IDE to use for 'Open in IDE' in the file explorer. Common values: cursor, code, zed. Used to generate protocol URLs (e.g., cursor://file/path)."
           />
         </Box>
 

@@ -13,7 +13,9 @@ import {
 import { StreamingIndicator } from './StreamingIndicator';
 import { useChat } from '../../hooks/useChat';
 import { useSkills } from '../../hooks/useSkills';
+import { useFileIndex } from '../../hooks/useFileIndex';
 import { sessionsApi } from '../../api/sessions.api';
+import { SessionStatus } from '../../api/types';
 
 interface ChatPanelProps {
   sessionId: string;
@@ -36,6 +38,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
     queryFn: () => sessionsApi.getSession(sessionId),
     enabled: !!sessionId,
   });
+
+  const isSessionRunning = session?.status === SessionStatus.RUNNING;
+  const { data: fileIndex } = useFileIndex(sessionId, isSessionRunning);
 
   const [selectedModel, setSelectedModel] =
     React.useState<ModelId>(DEFAULT_MODEL);
@@ -267,6 +272,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId }) => {
         selectedAgentMode={selectedAgentMode}
         onAgentModeChange={handleAgentModeChange}
         skills={session?.mountSkills === false ? [] : skills}
+        sessionId={sessionId}
+        fileIndex={fileIndex ?? []}
       />
     </Box>
   );

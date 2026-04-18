@@ -36,6 +36,13 @@ export class GetSettingsResponseDto {
   })
   skillsDirectory?: string | null;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'IDE command used to open workspaces (e.g. "cursor", "code")',
+  })
+  ideCommand?: string | null;
+
   @ApiProperty({ description: 'Docker socket path' })
   dockerSocketPath!: string;
 
@@ -81,6 +88,7 @@ export class GetSettingsResponseDto {
     dto.githubUsername = settings.git.githubUsername ?? undefined;
     dto.defaultMountDirectory = settings.general.defaultMountDirectory ?? null;
     dto.skillsDirectory = settings.general.skillsDirectory ?? null;
+    dto.ideCommand = settings.general.ideCommand ?? null;
     dto.dockerSocketPath = settings.docker.socketPath;
     dto.dockerStartPort = settings.docker.startPort;
     dto.dockerEndPort = settings.docker.endPort;

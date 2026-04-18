@@ -15,4 +15,7 @@ export class GeneralSettings {
 
   @Column('integer', { default: 120 })
   idleTimeoutMinutes: number = 120;
+
+  @Column('varchar', { length: 100, nullable: true })
+  ideCommand?: string | null;
 }

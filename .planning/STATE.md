@@ -1,44 +1,40 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Phase 3 context gathered
-last_updated: '2026-04-17T11:17:00.629Z'
-last_activity: 2026-04-17 -- Phase 03 execution started
+milestone: v0.3.4
+milestone_name: Workspace release
+status: idle
+stopped_at: Milestone v0.3.4 closed
+last_updated: '2026-04-18T12:00:00.000Z'
+last_activity: 2026-04-18 — Milestone v0.3.4 archived
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-10)
+See: .planning/PROJECT.md (updated 2026-04-18)
 
 **Core value:** Secure agentic coding without DX compromise — containers provide isolation that can't be circumvented, while the UI makes working inside them feel as natural as working locally.
-**Current focus:** Phase 03 — workspace-api-file-explorer
+
+**Current focus:** Plan next v1 work — diff pipeline, git automation, agent runner (see `.planning/ROADMAP.md`).
 
 ## Current Position
 
-Phase: 03 (workspace-api-file-explorer) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 03
-Last activity: 2026-04-17 -- Phase 03 execution started
-
-Progress: [░░░░░░░░░░] 0%
+Milestone **v0.3.4** (Workspace release) is **complete**. Phases 1–3 (Session UX, Skills, Workspace API & File Explorer) are shipped; see `.planning/MILESTONES.md` and `.planning/milestones/v0.3.4-ROADMAP.md`.
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 11 (v0.3.4 scope)
 - Average duration: —
-- Total execution time: 0 hours
+- Total execution time: —
 
 **By Phase:**
 
@@ -46,24 +42,19 @@ Progress: [░░░░░░░░░░] 0%
 | ----- | ----- | ----- | -------- |
 | 01    | 3     | -     | -        |
 | 02    | 4     | -     | -        |
-| 03    | 3     | -     | -        |
+| 03    | 4     | -     | -        |
 
 **Recent Trend:**
 
-- Last 5 plans: —
-- Trend: —
+- Last milestone: v0.3.4 — workspace API, explorer, @-mentions
 
-_Updated after each plan completion_
-| Phase 02 P01 | 2min | 2 tasks | 10 files |
-| Phase 02 P02 | 2min | 2 tasks | 6 files |
-| Phase 02 P03 | 2min | 2 tasks | 3 files |
+_Updated at milestone close_
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecting shipped work:
 
 - Skills must be read-only bind mounts (security constraint from PROJECT.md)
 - Agents must be CLI-invoked inside containers, no API-level integration
@@ -72,8 +63,6 @@ Recent decisions affecting current work:
 - [Phase 02]: mountSkills defaults to true so skills are mounted unless explicitly opted out per session
 - [Phase 02]: Skills bind mount uses :ro (read-only) enforced at Docker kernel level for container security
 - [Phase 02]: Entrypoint uses rm -rf before ln -sfn for idempotent symlink creation on container restarts
-- [Phase 02]: Skills section placed between Workspace and Claude Configuration in Settings per UI-SPEC.md visual hierarchy
-- [Phase 02]: Skills toggle mirrors workspace mount toggle pattern for UX consistency
 
 ### Pending Todos
 
@@ -81,7 +70,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- Cursor CLI non-interactive behavior in Docker needs spike/validation before Phase 3 execution
+- Cursor CLI non-interactive behavior in Docker needs spike/validation before multi-agent phase
 - Multi-agent concurrency model (locking/queuing) deferred to v2 (AGNT-04)
 
 ### Quick Tasks Completed
@@ -92,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-12T09:43:15.847Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-workspace-api-file-explorer/03-CONTEXT.md
+Last session: 2026-04-18
+Stopped at: Milestone v0.3.4 complete
+Resume file: start with `/gsd-new-milestone` or next phase planning

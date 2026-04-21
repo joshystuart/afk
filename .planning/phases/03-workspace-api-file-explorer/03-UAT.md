@@ -67,8 +67,8 @@ result: pass
 ### 7. Shift+` Cycles Tabs (chat → terminal → files → chat)
 
 expected: |
-With focus in the session page, press Shift+` (same key as `~` on US
-layout; `shift+backquote` in code). Active tab cycles in order: chat →
+With focus in the session page, press Shift+`(same key as`~`on US
+layout;`shift+backquote` in code). Active tab cycles in order: chat →
 terminal → files → chat. Works from any starting tab. (⌘+`/Ctrl+` are not
 used — macOS often captures ⌘+` for window switching.)
 result: pass

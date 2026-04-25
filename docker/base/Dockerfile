@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-ARG CLAUDE_CODE_VERSION=2.1.42
+ARG CLAUDE_CODE_VERSION=latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   less \
